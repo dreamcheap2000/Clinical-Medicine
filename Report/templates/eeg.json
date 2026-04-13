@@ -1,0 +1,172 @@
+{
+  "examType": "eeg",
+  "version": "1.0.0",
+  "title": "Electroencephalography (EEG)",
+  "changelog": [
+    { "version": "1.0.0", "date": "2026-04-13", "note": "Initial template" }
+  ],
+  "sections": [
+    {
+      "id": "patient",
+      "label": "Patient Information",
+      "fields": [
+        { "id": "patient_id",   "label": "Patient ID",         "type": "text",     "required": true },
+        { "id": "patient_name", "label": "Patient Name",       "type": "text",     "required": true },
+        { "id": "dob",          "label": "Date of Birth",      "type": "date",     "required": true },
+        { "id": "exam_date",    "label": "Exam Date",          "type": "date",     "required": true },
+        { "id": "indication",   "label": "Clinical Indication","type": "textarea", "required": true }
+      ]
+    },
+    {
+      "id": "technical",
+      "label": "Technical Details",
+      "fields": [
+        {
+          "id": "duration_minutes",
+          "label": "Recording Duration (minutes)",
+          "type": "number",
+          "min": 1
+        },
+        {
+          "id": "recording_type",
+          "label": "Recording Type",
+          "type": "select",
+          "choices": ["Routine (20 min)", "Extended (40–60 min)", "Sleep EEG", "Sleep-deprived EEG", "Ambulatory EEG (24h)", "Ambulatory EEG (72h)", "ICU continuous EEG"]
+        },
+        {
+          "id": "montage",
+          "label": "Montage",
+          "type": "select",
+          "choices": ["Standard 10-20 (19 electrodes)", "Reduced montage", "High-density (64+)", "Custom"]
+        },
+        {
+          "id": "level_of_consciousness",
+          "label": "Level of Consciousness During Recording",
+          "type": "select",
+          "choices": ["Alert / awake", "Drowsy", "Asleep (stage 1–2)", "Asleep (stage 3)", "Unresponsive / comatose"]
+        },
+        {
+          "id": "medications",
+          "label": "Current Anti-Seizure Medications",
+          "type": "textarea",
+          "hint": "List all ASMs and other relevant CNS medications"
+        }
+      ]
+    },
+    {
+      "id": "activation",
+      "label": "Activation Procedures",
+      "fields": [
+        { "id": "hyperventilation", "label": "Hyperventilation", "type": "select", "choices": ["Not performed", "Performed — no activation", "Performed — focal slowing", "Performed — generalised slowing", "Performed — epileptiform activation"] },
+        { "id": "photic_stimulation", "label": "Photic Stimulation", "type": "select", "choices": ["Not performed", "Performed — no activation", "Performed — photoparoxysmal response", "Performed — other activation"] },
+        { "id": "sleep_activation", "label": "Sleep Activation", "type": "select", "choices": ["Not achieved", "Stage 1–2 sleep only", "Stage 3 sleep achieved", "N/A"] }
+      ]
+    },
+    {
+      "id": "background",
+      "label": "Background Activity",
+      "fields": [
+        {
+          "id": "posterior_dominant_rhythm",
+          "label": "Posterior Dominant Rhythm (PDR)",
+          "type": "select",
+          "choices": ["Normal (8–13 Hz, well-defined)", "Slow (< 8 Hz)", "Fast (> 13 Hz)", "Absent / poorly organised", "Asymmetric"]
+        },
+        {
+          "id": "PDR_frequency",
+          "label": "PDR Frequency (Hz)",
+          "type": "number",
+          "min": 0,
+          "max": 30
+        },
+        {
+          "id": "background_continuity",
+          "label": "Background Continuity",
+          "type": "select",
+          "choices": ["Continuous", "Nearly continuous", "Discontinuous", "Burst-suppression", "Suppressed / flat"]
+        },
+        {
+          "id": "background_symmetry",
+          "label": "Background Symmetry",
+          "type": "select",
+          "choices": ["Symmetric", "Mild asymmetry", "Moderate asymmetry", "Severe asymmetry"]
+        },
+        {
+          "id": "focal_slowing",
+          "label": "Focal Slowing",
+          "type": "select",
+          "choices": ["None", "Frontal (left)", "Frontal (right)", "Temporal (left)", "Temporal (right)", "Parietal (left)", "Parietal (right)", "Occipital (left)", "Occipital (right)", "Generalised"]
+        },
+        {
+          "id": "excess_beta",
+          "label": "Excess Beta Activity",
+          "type": "select",
+          "choices": ["Absent", "Mild (diffuse)", "Moderate (diffuse)", "Focal"]
+        }
+      ]
+    },
+    {
+      "id": "abnormal",
+      "label": "Abnormal Features",
+      "fields": [
+        {
+          "id": "epileptiform_discharges",
+          "label": "Epileptiform Discharges",
+          "type": "multiselect",
+          "choices": [
+            "None",
+            "Focal spikes — frontal (left)",
+            "Focal spikes — frontal (right)",
+            "Focal spikes — temporal (left)",
+            "Focal spikes — temporal (right)",
+            "Focal spikes — parietal (left)",
+            "Focal spikes — parietal (right)",
+            "Focal spikes — occipital (left)",
+            "Focal spikes — occipital (right)",
+            "Generalised spike-wave (3 Hz — typical absence)",
+            "Generalised spike-wave (< 2.5 Hz — atypical / Lennox-Gastaut)",
+            "Generalised spike-wave (> 3.5 Hz — juvenile patterns)",
+            "Generalised polyspike-wave",
+            "Hypsarrhythmia",
+            "PLED (periodic lateralised epileptiform discharges)",
+            "GPED (generalised periodic epileptiform discharges)"
+          ]
+        },
+        {
+          "id": "seizure_recorded",
+          "label": "Electrographic Seizure Recorded",
+          "type": "select",
+          "choices": ["No", "Yes — focal aware", "Yes — focal impaired awareness", "Yes — focal to bilateral tonic-clonic", "Yes — generalised absence", "Yes — generalised tonic-clonic", "Yes — non-convulsive status epilepticus (NCSE)", "Yes — electrographic status epilepticus"]
+        },
+        {
+          "id": "slow_wave_abnormality",
+          "label": "Generalised Slow-Wave Abnormality",
+          "type": "select",
+          "choices": ["None", "Mild diffuse slowing", "Moderate diffuse slowing", "Severe diffuse slowing", "Triphasic waves"]
+        }
+      ]
+    },
+    {
+      "id": "impression",
+      "label": "Impression",
+      "fields": [
+        {
+          "id": "impression_text",
+          "label": "Impression",
+          "type": "textarea",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "abnormality_rules": [
+    { "field": "epileptiform_discharges", "not_equals": "None", "classify": "Epileptiform Activity" },
+    { "field": "seizure_recorded", "not_equals": "No", "classify": "Electrographic Seizure" },
+    { "field": "seizure_recorded", "contains": "status epilepticus", "classify": "Status Epilepticus" },
+    { "field": "focal_slowing", "not_equals": "None", "classify": "Focal Slowing" },
+    { "field": "posterior_dominant_rhythm", "equals": "Slow (< 8 Hz)", "classify": "Slow PDR (Encephalopathy)" },
+    { "field": "background_continuity", "in": ["Discontinuous", "Burst-suppression", "Suppressed / flat"], "classify": "Severe Background Abnormality" },
+    { "field": "slow_wave_abnormality", "in": ["Moderate diffuse slowing", "Severe diffuse slowing", "Triphasic waves"], "classify": "Moderate-Severe Encephalopathy" },
+    { "field": "photic_stimulation", "equals": "Performed — photoparoxysmal response", "classify": "Photosensitivity" }
+  ]
+}
