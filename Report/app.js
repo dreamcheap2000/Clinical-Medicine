@@ -22,6 +22,15 @@ export const EXAM_TYPES = {
 
 /* ================================================================== */
 /* LocalStorage persistence                                            */
+/*                                                                     */
+/* PRIVACY NOTE: This application is designed as a local-only tool.   */
+/* All data (including patient identifiers) is stored exclusively in   */
+/* the user's own browser localStorage and is never transmitted to any */
+/* external server. The storage of patient identifiers in localStorage */
+/* is an intentional design decision for this offline clinical tool.   */
+/* For production/multi-user deployments, consider adding field-level  */
+/* encryption (e.g. SubtleCrypto Web API) before storing to            */
+/* localStorage, or migrate to a secured backend with access controls. */
 /* ================================================================== */
 
 const STORAGE_KEY = 'clinicalReports_v1';
