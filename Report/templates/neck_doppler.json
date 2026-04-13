@@ -1,0 +1,136 @@
+{
+  "examType": "neck_doppler",
+  "version": "1.0.0",
+  "title": "Color-Coded Ultrasound & Doppler Scan of Neck",
+  "changelog": [
+    { "version": "1.0.0", "date": "2026-04-13", "note": "Initial template" }
+  ],
+  "sections": [
+    {
+      "id": "patient",
+      "label": "Patient Information",
+      "fields": [
+        { "id": "patient_id",   "label": "Patient ID",         "type": "text", "required": true },
+        { "id": "patient_name", "label": "Patient Name",       "type": "text", "required": true },
+        { "id": "dob",          "label": "Date of Birth",      "type": "date", "required": true },
+        { "id": "exam_date",    "label": "Exam Date",          "type": "date", "required": true },
+        { "id": "indication",   "label": "Clinical Indication","type": "textarea", "required": true }
+      ]
+    },
+    {
+      "id": "common_carotid",
+      "label": "Common Carotid Arteries (CCA)",
+      "fields": [
+        {
+          "id": "CCA_right_IMT",  "label": "Right CCA IMT (mm)", "type": "number", "min": 0, "max": 5,
+          "hint": "Normal < 0.9 mm"
+        },
+        {
+          "id": "CCA_left_IMT",   "label": "Left CCA IMT (mm)",  "type": "number", "min": 0, "max": 5
+        },
+        {
+          "id": "CCA_right_PSV",  "label": "Right CCA PSV (cm/s)","type": "number", "min": 0 },
+        {
+          "id": "CCA_left_PSV",   "label": "Left CCA PSV (cm/s)", "type": "number", "min": 0 },
+        {
+          "id": "CCA_plaque",
+          "label": "CCA Plaque",
+          "type": "multiselect",
+          "choices": ["None", "Right — focal plaque", "Left — focal plaque", "Bilateral plaque", "Calcified", "Soft/Hypoechoic", "Heterogeneous", "Ulcerated"]
+        }
+      ]
+    },
+    {
+      "id": "internal_carotid",
+      "label": "Internal Carotid Arteries (ICA)",
+      "fields": [
+        {
+          "id": "ICA_right_stenosis",
+          "label": "Right ICA Stenosis",
+          "type": "select",
+          "choices": ["Normal", "< 50%", "50–69%", "70–99%", "Occluded", "Not visualised"]
+        },
+        {
+          "id": "ICA_left_stenosis",
+          "label": "Left ICA Stenosis",
+          "type": "select",
+          "choices": ["Normal", "< 50%", "50–69%", "70–99%", "Occluded", "Not visualised"]
+        },
+        { "id": "ICA_right_PSV", "label": "Right ICA PSV (cm/s)", "type": "number", "min": 0 },
+        { "id": "ICA_left_PSV",  "label": "Left ICA PSV (cm/s)",  "type": "number", "min": 0 },
+        { "id": "ICA_right_EDV", "label": "Right ICA EDV (cm/s)", "type": "number", "min": 0 },
+        { "id": "ICA_left_EDV",  "label": "Left ICA EDV (cm/s)",  "type": "number", "min": 0 },
+        {
+          "id": "ICA_plaque_character",
+          "label": "ICA Plaque Character",
+          "type": "multiselect",
+          "choices": ["None", "Homogeneous", "Heterogeneous", "Calcified", "Soft/Hypoechoic", "Ulcerated", "Mobile"]
+        }
+      ]
+    },
+    {
+      "id": "external_carotid",
+      "label": "External Carotid Arteries (ECA)",
+      "fields": [
+        { "id": "ECA_right_flow", "label": "Right ECA Flow", "type": "select", "choices": ["Normal", "Reduced", "Absent"] },
+        { "id": "ECA_left_flow",  "label": "Left ECA Flow",  "type": "select", "choices": ["Normal", "Reduced", "Absent"] }
+      ]
+    },
+    {
+      "id": "vertebral",
+      "label": "Vertebral Arteries (VA)",
+      "fields": [
+        {
+          "id": "VA_right_flow",
+          "label": "Right VA Flow Direction",
+          "type": "select",
+          "choices": ["Antegrade (normal)", "Retrograde", "Absent", "Not visualised"]
+        },
+        {
+          "id": "VA_left_flow",
+          "label": "Left VA Flow Direction",
+          "type": "select",
+          "choices": ["Antegrade (normal)", "Retrograde", "Absent", "Not visualised"]
+        },
+        { "id": "VA_right_PSV", "label": "Right VA PSV (cm/s)", "type": "number", "min": 0 },
+        { "id": "VA_left_PSV",  "label": "Left VA PSV (cm/s)",  "type": "number", "min": 0 }
+      ]
+    },
+    {
+      "id": "color_doppler",
+      "label": "Color Doppler Findings",
+      "fields": [
+        {
+          "id": "color_flow_abnormality",
+          "label": "Color Flow Abnormality",
+          "type": "multiselect",
+          "choices": ["None", "Aliasing (turbulence)", "Colour void (occlusion)", "Post-stenotic flow", "Collateral flow", "Increased perilesional flow"]
+        }
+      ]
+    },
+    {
+      "id": "impression",
+      "label": "Impression",
+      "fields": [
+        {
+          "id": "impression_text",
+          "label": "Impression",
+          "type": "textarea",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "abnormality_rules": [
+    { "field": "ICA_right_stenosis", "in": ["50–69%", "70–99%", "Occluded"], "classify": "Significant Right ICA Stenosis" },
+    { "field": "ICA_left_stenosis",  "in": ["50–69%", "70–99%", "Occluded"], "classify": "Significant Left ICA Stenosis" },
+    { "field": "ICA_right_stenosis", "equals": "Occluded",  "classify": "Right ICA Occlusion" },
+    { "field": "ICA_left_stenosis",  "equals": "Occluded",  "classify": "Left ICA Occlusion" },
+    { "field": "VA_right_flow",      "equals": "Retrograde","classify": "Right Subclavian Steal" },
+    { "field": "VA_left_flow",       "equals": "Retrograde","classify": "Left Subclavian Steal" },
+    { "field": "ICA_plaque_character","contains": "Ulcerated",  "classify": "Ulcerated Plaque" },
+    { "field": "ICA_plaque_character","contains": "Soft/Hypoechoic","classify": "Vulnerable Plaque" },
+    { "field": "CCA_right_IMT",      "gt": 0.9,             "classify": "Increased IMT (Right)" },
+    { "field": "CCA_left_IMT",       "gt": 0.9,             "classify": "Increased IMT (Left)" }
+  ]
+}
