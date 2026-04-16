@@ -1,5 +1,8 @@
 # Daily OPD Session Logger
 
+**🌐 Live site:** <https://dreamcheap2000.github.io/Clinical-Medicine/>
+
+
 A **zero-dependency, browser-local web application** for daily outpatient clinic (OPD) logging with self-classifying ICD-10 codes, SOAP templates, and neurologic / musculoskeletal physical exam references.
 
 ---
