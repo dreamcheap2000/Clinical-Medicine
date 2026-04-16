@@ -84,7 +84,7 @@ export function renderSettings() {
           <textarea class="field-input field-textarea" id="fb-config" rows="8"
             placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."}'
             style="font-family:monospace;font-size:.82rem">${esc(fb.apiKey ? JSON.stringify(fb, null, 2) : '')}</textarea>
-          <span class="hint">Stored only in your browser's localStorage.</span>
+          <span class="hint">⚠️ Stored only in your browser's localStorage. Do not share screenshots of this page as they may expose your API keys.</span>
         </div>
         <div class="field-group">
           <label class="settings-toggle">

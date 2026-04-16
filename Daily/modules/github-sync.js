@@ -38,7 +38,8 @@ export async function commitSessionToGithub(session, allSessions) {
   /* Build the file content: all sessions for this date */
   const daySessions = allSessions.filter(s => s.date === date);
   const content     = JSON.stringify({ date, sessions: daySessions, updatedAt: new Date().toISOString() }, null, 2);
-  const encoded     = btoa(unescape(encodeURIComponent(content)));
+  /* Encode UTF-8 content to base64 using TextEncoder (avoids deprecated unescape) */
+  const encoded     = btoa(String.fromCharCode(...new TextEncoder().encode(content)));
 
   const apiBase = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${path}`;
   const headers  = {

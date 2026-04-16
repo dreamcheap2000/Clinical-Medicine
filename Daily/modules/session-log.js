@@ -388,7 +388,7 @@ function wireForm(container, existing) {
     saveSession(session);
     recordIcdUse(session);
     showToast('success', `Entry saved at ${timestamp}.`);
-    saveSessionWithSync(session).catch(() => {/* sync errors already toasted */});
+    saveSessionWithSync(session).catch(err => { console.warn('Sync error (already toasted):', err); });
     navigate('dashboard');
   });
 }
