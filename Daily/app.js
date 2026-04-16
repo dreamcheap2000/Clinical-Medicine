@@ -1,0 +1,297 @@
+/**
+ * Daily/app.js
+ * Core application: routing, localStorage persistence, ICD data loading.
+ * Zero-dependency SPA — open index.html directly in a modern browser.
+ *
+ * PRIVACY NOTE: All data (including patient identifiers) is stored exclusively
+ * in the user's own browser localStorage and is never transmitted to any server.
+ */
+
+import { renderSessionLog }  from './modules/session-log.js';
+import { renderIcdBrowser }  from './modules/icd-browser.js';
+import { renderSoapView }    from './modules/soap-view.js';
+
+/* ============================================================ */
+/* localStorage persistence                                      */
+/* ============================================================ */
+
+const STORAGE_KEY = 'dailyOPD_v1';
+
+export function getSessions() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch { return []; }
+}
+
+export function saveSession(session) {
+  const sessions = getSessions();
+  const idx = sessions.findIndex(s => s.id === session.id);
+  if (idx >= 0) sessions[idx] = session;
+  else sessions.unshift(session);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+}
+
+export function deleteSession(id) {
+  const sessions = getSessions().filter(s => s.id !== id);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+}
+
+export function exportJSON() {
+  const data = { version: '1.0.0', exportedAt: new Date().toISOString(), sessions: getSessions() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  // Filename uses ISO 8601 date (YYYY-MM-DD) which is safe across all operating systems
+  a.download = `daily-opd-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export function importJSON(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data     = JSON.parse(e.target.result);
+        const incoming = Array.isArray(data) ? data : (data.sessions || []);
+        const existing = getSessions();
+        const merged   = [...existing];
+        let added = 0;
+        for (const s of incoming) {
+          if (!merged.find(x => x.id === s.id)) { merged.push(s); added++; }
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+        resolve(added);
+      } catch(err) { reject(err); }
+    };
+    reader.onerror = reject;
+    reader.readAsText(file);
+  });
+}
+
+/* ============================================================ */
+/* ICD data loading                                              */
+/* ============================================================ */
+
+let _icdData = null;
+
+export async function getIcdData() {
+  if (_icdData) return _icdData;
+  const res = await fetch('data/icd_categories.json');
+  if (!res.ok) throw new Error('Failed to load ICD data');
+  _icdData = await res.json();
+  return _icdData;
+}
+
+export function searchCodes(query, icdData, limit = 40) {
+  if (!query || query.length < 2) return [];
+  const q = query.toLowerCase();
+  const results = [];
+  for (const [catId, codes] of Object.entries(icdData.codeLookup)) {
+    for (const c of codes) {
+      if (
+        c.code.toLowerCase().includes(q) ||
+        c.en.toLowerCase().includes(q)   ||
+        c.zh.includes(query)
+      ) {
+        results.push({ ...c, categoryId: catId });
+        if (results.length >= limit) return results;
+      }
+    }
+  }
+  return results;
+}
+
+/* ============================================================ */
+/* Router                                                        */
+/* ============================================================ */
+
+export function navigate(target) {
+  const page = typeof target === 'string' ? target : target.page;
+  updateNav(page);
+  renderPage(target);
+}
+
+function renderPage(target) {
+  const page = typeof target === 'string' ? target : target.page;
+  switch (page) {
+    case 'log':       renderSessionLog(typeof target === 'object' ? target : {}); break;
+    case 'browser':   renderIcdBrowser(typeof target === 'object' ? target : {}); break;
+    case 'soap':      renderSoapView(typeof target === 'object' ? target : {});   break;
+    case 'dashboard': renderDashboard();        break;
+    default:          renderDashboard();
+  }
+}
+
+function updateNav(page) {
+  document.querySelectorAll('#nav-links button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.page === page);
+  });
+}
+
+/* ============================================================ */
+/* Dashboard                                                     */
+/* ============================================================ */
+
+function renderDashboard() {
+  const sessions  = getSessions();
+  const today     = new Date().toISOString().slice(0, 10);
+  const todayList = sessions.filter(s => s.date === today);
+
+  const container = document.getElementById('main-content');
+  container.innerHTML = `
+    <h2 class="page-title">🏥 Daily OPD Session Dashboard</h2>
+    <p class="subtitle">Neuro-musculoskeletal &amp; Neurologic ICD-10 Self-Classification System</p>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value">${todayList.length}</div>
+        <div class="stat-label">Today's Entries</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${sessions.length}</div>
+        <div class="stat-label">Total Entries</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${new Set(sessions.map(s => s.date)).size}</div>
+        <div class="stat-label">Days with Records</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">13</div>
+        <div class="stat-label">ICD Categories</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-title">⚡ Quick Actions</div>
+      <div class="action-grid">
+        <button class="action-btn btn-primary" data-nav="log">📝 New OPD Entry</button>
+        <button class="action-btn" data-nav="browser">🔍 ICD Code Browser</button>
+        <button class="action-btn" data-nav="soap">📋 SOAP Templates</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📅 Today's Entries — ${today}</div>
+      ${todayList.length === 0
+        ? '<p class="no-records">No entries today. Click "New OPD Entry" to start.</p>'
+        : `<div class="entry-list">${todayList.map(s => entryCard(s, true)).join('')}</div>`}
+    </div>
+
+    <div class="card">
+      <div class="card-title">🕐 Recent Entries</div>
+      ${sessions.length === 0
+        ? '<p class="no-records">No entries yet.</p>'
+        : `<div class="entry-list">${sessions.slice(0, 10).map(s => entryCard(s, false)).join('')}</div>`}
+    </div>
+
+    <div class="card">
+      <div class="card-title">💾 Data Management</div>
+      <div class="row-gap">
+        <button class="btn btn-outline" id="btn-export">⬇️ Export JSON</button>
+        <label class="btn btn-outline" style="cursor:pointer">
+          ⬆️ Import JSON
+          <input type="file" id="import-file" accept=".json" style="display:none">
+        </label>
+        <span class="hint">All data stored in browser localStorage only.</span>
+      </div>
+    </div>
+  `;
+
+  container.querySelectorAll('[data-nav]').forEach(el => {
+    el.addEventListener('click', () => navigate(el.dataset.nav));
+  });
+
+  container.querySelectorAll('[data-edit]').forEach(el => {
+    el.addEventListener('click', () => navigate({ page: 'log', editId: el.dataset.edit }));
+  });
+
+  container.querySelectorAll('[data-delete]').forEach(el => {
+    el.addEventListener('click', () => {
+      if (confirm('Delete this entry?')) {
+        deleteSession(el.dataset.delete);
+        renderDashboard();
+        showToast('success', 'Entry deleted.');
+      }
+    });
+  });
+
+  document.getElementById('btn-export').addEventListener('click', exportJSON);
+  document.getElementById('import-file').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      const added = await importJSON(file);
+      showToast('success', `Imported ${added} new entries.`);
+      renderDashboard();
+    } catch(err) { showToast('error', `Import failed: ${err.message}`); }
+  });
+}
+
+function entryCard(s, compact) {
+  return `
+    <div class="entry-card">
+      <div class="entry-header">
+        <span class="entry-ts">${esc(s.timestamp || s.date)}</span>
+        ${s.patientId ? `<span class="tag tag-default">👤 ${esc(s.patientId)}</span>` : ''}
+        ${s.categoryName ? `<span class="tag tag-cat">${esc(s.categoryName)}</span>` : ''}
+        ${s.icdCode ? `<span class="tag tag-code">${esc(s.icdCode)}</span>` : ''}
+        <div class="entry-actions">
+          <button class="btn-sm" data-edit="${esc(s.id)}">✏️</button>
+          <button class="btn-sm btn-danger" data-delete="${esc(s.id)}">🗑️</button>
+        </div>
+      </div>
+      ${s.icdDescription ? `<div class="entry-icd">${esc(s.icdDescription)} ${s.icdZh ? '· '+esc(s.icdZh) : ''}</div>` : ''}
+      ${s.condition ? `<div class="entry-field"><b>Condition:</b> ${esc(s.condition)}</div>` : ''}
+      ${!compact && s.ebm ? `<div class="entry-field"><b>EBM:</b> ${esc(s.ebm.slice(0,120))}${s.ebm.length > 120 ? '…' : ''}</div>` : ''}
+      ${!compact && s.soap ? `<div class="entry-field"><b>SOAP:</b> ${esc((s.soap.s||'').slice(0,100))}${(s.soap.s||'').length > 100 ? '…' : ''}</div>` : ''}
+    </div>`;
+}
+
+/* ============================================================ */
+/* Toast                                                         */
+/* ============================================================ */
+
+export function showToast(type, msg) {
+  const tc = document.getElementById('toast-container');
+  if (!tc) return;
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.textContent = msg;
+  tc.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+}
+
+/* ============================================================ */
+/* Bootstrap                                                     */
+/* ============================================================ */
+
+function boot() {
+  const navLinks = document.getElementById('nav-links');
+  if (navLinks) {
+    const pages = [
+      { page: 'dashboard', label: '🏠 Home'          },
+      { page: 'log',       label: '📝 New Entry'     },
+      { page: 'browser',   label: '🔍 ICD Browser'   },
+      { page: 'soap',      label: '📋 SOAP Templates' },
+    ];
+    navLinks.innerHTML = pages.map(p =>
+      `<button data-page="${p.page}">${p.label}</button>`
+    ).join('');
+    navLinks.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => navigate(btn.dataset.page));
+    });
+  }
+
+  window.addEventListener('navigate', e => navigate(e.detail));
+  window.addEventListener('toast',    e => showToast(e.detail.type, e.detail.msg));
+
+  navigate('dashboard');
+}
+
+document.addEventListener('DOMContentLoaded', boot);
+
+/* ============================================================ */
+export function esc(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
