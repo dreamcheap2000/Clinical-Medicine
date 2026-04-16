@@ -15,7 +15,6 @@ function fmt(date) { return date ? String(date).slice(0, 10) : '—'; }
 function filterByRange(codes, from, to) {
   if (!from && !to) return codes.map(c => ({ ...c }));
   return codes.map(c => {
-    if (!from && !to) return { ...c };
     /* Recalculate count from history within range */
     const hist = (c.history || []).filter(h => {
       if (from && h.date < from) return false;

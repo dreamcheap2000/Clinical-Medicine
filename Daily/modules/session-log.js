@@ -372,7 +372,9 @@ function openTemplatePicker(catObj, catId, form) {
     const selected = { s: [], o: [], a: [], p: [] };
     overlay.querySelectorAll('.picker-cb:checked').forEach(cb => {
       const sec  = cb.dataset.section;
-      /* dataset reads the decoded attribute value, so HTML entities are already resolved */
+      /* dataset automatically decodes HTML entities from the data-text attribute
+         (which was encoded via esc() when building the picker HTML), so the value
+         here is the original unencoded template text. */
       const text = cb.dataset.text;
       if (sec in selected) selected[sec].push(text);
     });
@@ -511,7 +513,7 @@ function buildSoapHtml(cat) {
       ${soapSection('🔎 O — Objective', s.objective)}
       ${soapSection('💡 Assessment Pearls', s.assessment_pearls)}
       ${soapSection('🗂️ Plan Template', s.plan_template)}
-      ${peSection('🩺 Bedside Scales', pe.bedside_scales || pe.bedside_cognitive)}
+      ${peSection('🩺 Bedside Scales / Cognitive Tests', pe.bedside_scales || pe.bedside_cognitive)}
       ${peSection('🔬 Neurologic / Physical Exam', pe.neurologic_exam)}
     </div>`;
 }
