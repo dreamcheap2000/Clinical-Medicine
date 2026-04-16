@@ -10,6 +10,7 @@
 import { renderSessionLog }  from './modules/session-log.js';
 import { renderIcdBrowser }  from './modules/icd-browser.js';
 import { renderSoapView }    from './modules/soap-view.js';
+import { renderIcdStats }    from './modules/icd-stats.js';
 
 /* ============================================================ */
 /* localStorage persistence                                      */
@@ -70,6 +71,68 @@ export function importJSON(file) {
 }
 
 /* ============================================================ */
+/* SOAP template frequency tracking                              */
+/* ============================================================ */
+
+const SOAP_FREQ_KEY = 'soapFreq_v1';
+
+export function getSoapFreq() {
+  try { return JSON.parse(localStorage.getItem(SOAP_FREQ_KEY) || '{}'); }
+  catch { return {}; }
+}
+
+export function recordSoapSelections(catId, items) {
+  if (!catId || !items?.length) return;
+  const freq = getSoapFreq();
+  if (!freq[catId]) freq[catId] = {};
+  for (const item of items) {
+    freq[catId][item] = (freq[catId][item] || 0) + 1;
+  }
+  localStorage.setItem(SOAP_FREQ_KEY, JSON.stringify(freq));
+}
+
+/* ============================================================ */
+/* ICD usage frequency tracking                                  */
+/* ============================================================ */
+
+const ICD_FREQ_KEY = 'icdFreq_v1';
+
+export function getIcdFreq() {
+  try { return JSON.parse(localStorage.getItem(ICD_FREQ_KEY) || '{}'); }
+  catch { return {}; }
+}
+
+export function recordIcdUse(session) {
+  if (!session?.icdCode) return;
+  const freq  = getIcdFreq();
+  const today = new Date().toISOString().slice(0, 10);
+  const key   = session.icdCode;
+  if (!freq[key]) {
+    freq[key] = {
+      code: session.icdCode,
+      en:   session.icdDescription || '',
+      zh:   session.icdZh          || '',
+      categoryId:   session.categoryId   || '',
+      categoryName: session.categoryName || '',
+      count:    0,
+      lastUsed: today,
+      history:  [],
+    };
+  } else {
+    if (session.icdDescription) freq[key].en = session.icdDescription;
+    if (session.icdZh)          freq[key].zh = session.icdZh;
+    if (session.categoryName)   freq[key].categoryName = session.categoryName;
+  }
+  freq[key].count   += 1;
+  freq[key].lastUsed = today;
+  const hist       = freq[key].history;
+  const todayEntry = hist.find(h => h.date === today);
+  if (todayEntry) todayEntry.count += 1;
+  else hist.push({ date: today, count: 1 });
+  localStorage.setItem(ICD_FREQ_KEY, JSON.stringify(freq));
+}
+
+/* ============================================================ */
 /* ICD data loading                                              */
 /* ============================================================ */
 
@@ -118,7 +181,8 @@ function renderPage(target) {
     case 'log':       renderSessionLog(typeof target === 'object' ? target : {}); break;
     case 'browser':   renderIcdBrowser(typeof target === 'object' ? target : {}); break;
     case 'soap':      renderSoapView(typeof target === 'object' ? target : {});   break;
-    case 'dashboard': renderDashboard();        break;
+    case 'stats':     renderIcdStats();  break;
+    case 'dashboard': renderDashboard(); break;
     default:          renderDashboard();
   }
 }
@@ -135,8 +199,15 @@ function updateNav(page) {
 
 function renderDashboard() {
   const sessions  = getSessions();
+  const freq      = getIcdFreq();
   const today     = new Date().toISOString().slice(0, 10);
   const todayList = sessions.filter(s => s.date === today);
+
+  /* Top 5 ICD codes */
+  const topCodes = Object.values(freq)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+  const maxCount = topCodes[0]?.count || 1;
 
   const container = document.getElementById('main-content');
   container.innerHTML = `
@@ -157,8 +228,8 @@ function renderDashboard() {
         <div class="stat-label">Days with Records</div>
       </div>
       <div class="stat-card">
-        <div class="stat-value">13</div>
-        <div class="stat-label">ICD Categories</div>
+        <div class="stat-value">${Object.keys(freq).length}</div>
+        <div class="stat-label">ICD Codes Used</div>
       </div>
     </div>
 
@@ -168,8 +239,24 @@ function renderDashboard() {
         <button class="action-btn btn-primary" data-nav="log">📝 New OPD Entry</button>
         <button class="action-btn" data-nav="browser">🔍 ICD Code Browser</button>
         <button class="action-btn" data-nav="soap">📋 SOAP Templates</button>
+        <button class="action-btn" data-nav="stats">📊 ICD Statistics</button>
       </div>
     </div>
+
+    ${topCodes.length ? `
+    <div class="card" style="margin-bottom:1rem">
+      <div class="card-title">📊 Top ICD Codes <span class="hint" style="font-weight:400;margin-left:.5rem">— <a href="#" data-nav="stats" style="color:var(--color-primary)">View full stats →</a></span></div>
+      <div class="dash-bar-chart">
+        ${topCodes.map(c => `
+          <div class="dash-bar-row">
+            <span class="dash-bar-label"><span class="tag tag-code">${esc(c.code)}</span> ${esc(c.en.slice(0, 35))}${c.en.length > 35 ? '…' : ''}</span>
+            <div class="dash-bar-track">
+              <div class="dash-bar-fill" style="width:${Math.round(c.count / maxCount * 100)}%"></div>
+            </div>
+            <span class="dash-bar-count">${c.count}</span>
+          </div>`).join('')}
+      </div>
+    </div>` : ''}
 
     <div class="card">
       <div class="card-title">📅 Today's Entries — ${today}</div>
@@ -274,6 +361,7 @@ function boot() {
       { page: 'log',       label: '📝 New Entry'     },
       { page: 'browser',   label: '🔍 ICD Browser'   },
       { page: 'soap',      label: '📋 SOAP Templates' },
+      { page: 'stats',     label: '📊 Stats'          },
     ];
     navLinks.innerHTML = pages.map(p =>
       `<button data-page="${p.page}">${p.label}</button>`
