@@ -1,7 +1,7 @@
 /**
  * modules/session-log.js
  * Daily OPD session entry form with ICD-10 auto-search, SOAP template picker,
- * combined SOAP output with copy buttons, and timestamped persistence.
+ * inline SOAP dropdowns, combined SOAP output with copy buttons, and timestamped persistence.
  */
 
 import {
@@ -10,6 +10,7 @@ import {
   getSoapFreq, recordSoapSelections,
   recordIcdUse,
   navigate, showToast, esc,
+  saveSessionWithSync,
 } from '../app.js';
 
 export function renderSessionLog(opts = {}) {
@@ -86,26 +87,42 @@ export function renderSessionLog(opts = {}) {
         <div class="soap-section">
           <div class="soap-header">
             <span>📋 SOAP Note</span>
-            <button type="button" class="btn btn-sm-inline" id="btn-template-picker">📋 Template Items</button>
+            <button type="button" class="btn btn-sm-inline" id="btn-template-picker">📋 All Template Items</button>
           </div>
           <div class="soap-fields">
-            <div class="field-group">
-              <label class="field-label">S — Subjective</label>
+            <div class="field-group soap-field-wrap" data-soap-key="s">
+              <div class="soap-label-row">
+                <label class="field-label">S — Subjective</label>
+                <button type="button" class="btn btn-sm-inline soap-dropdown-btn" data-soap-key="s">▾ Items</button>
+                <div class="soap-inline-dropdown hidden" data-soap-key="s"></div>
+              </div>
               <textarea class="field-input field-textarea soap-textarea" id="f-soap-s" rows="3"
                 placeholder="Patient-reported symptoms, history…">${esc(existing?.soap?.s || '')}</textarea>
             </div>
-            <div class="field-group">
-              <label class="field-label">O — Objective</label>
+            <div class="field-group soap-field-wrap" data-soap-key="o">
+              <div class="soap-label-row">
+                <label class="field-label">O — Objective</label>
+                <button type="button" class="btn btn-sm-inline soap-dropdown-btn" data-soap-key="o">▾ Items</button>
+                <div class="soap-inline-dropdown hidden" data-soap-key="o"></div>
+              </div>
               <textarea class="field-input field-textarea soap-textarea" id="f-soap-o" rows="3"
                 placeholder="Physical exam findings, vitals, test results…">${esc(existing?.soap?.o || '')}</textarea>
             </div>
-            <div class="field-group">
-              <label class="field-label">A — Assessment</label>
+            <div class="field-group soap-field-wrap" data-soap-key="a">
+              <div class="soap-label-row">
+                <label class="field-label">A — Assessment</label>
+                <button type="button" class="btn btn-sm-inline soap-dropdown-btn" data-soap-key="a">▾ Items</button>
+                <div class="soap-inline-dropdown hidden" data-soap-key="a"></div>
+              </div>
               <textarea class="field-input field-textarea soap-textarea" id="f-soap-a" rows="2"
                 placeholder="Diagnosis, severity, clinical impression…">${esc(existing?.soap?.a || '')}</textarea>
             </div>
-            <div class="field-group">
-              <label class="field-label">P — Plan</label>
+            <div class="field-group soap-field-wrap" data-soap-key="p">
+              <div class="soap-label-row">
+                <label class="field-label">P — Plan</label>
+                <button type="button" class="btn btn-sm-inline soap-dropdown-btn" data-soap-key="p">▾ Items</button>
+                <div class="soap-inline-dropdown hidden" data-soap-key="p"></div>
+              </div>
               <textarea class="field-input field-textarea soap-textarea" id="f-soap-p" rows="2"
                 placeholder="Treatment, referrals, follow-up, patient education…">${esc(existing?.soap?.p || '')}</textarea>
             </div>
@@ -203,6 +220,7 @@ function wireForm(container, existing) {
 
     wireViewSoap(badge, cat, _icdData, soapPanel);
     updateCombinedSoap(form);
+    refreshInlineDropdowns(cat);
   });
 
   /* Clear ICD */
@@ -217,7 +235,9 @@ function wireForm(container, existing) {
     badge.innerHTML = '';
     dropdown.classList.add('hidden');
     soapPanel.classList.add('hidden');
+    form.querySelectorAll('.soap-inline-dropdown').forEach(d => d.classList.add('hidden'));
     updateCombinedSoap(form);
+    refreshInlineDropdowns('');
   });
 
   /* View SOAP reference for pre-existing selected code */
@@ -238,6 +258,74 @@ function wireForm(container, existing) {
     openTemplatePicker(catObj, catId, form);
   });
 
+  /* Inline SOAP dropdowns — populate when an ICD category is selected */
+  const SOAP_KEY_MAP = {
+    s: cat => cat.soap?.subjective        || [],
+    o: cat => cat.soap?.objective          || [],
+    a: cat => cat.soap?.assessment_pearls || [],
+    p: cat => cat.soap?.plan_template      || [],
+  };
+
+  function refreshInlineDropdowns(catId) {
+    form.querySelectorAll('.soap-dropdown-btn').forEach(btn => {
+      btn.disabled = !catId;
+    });
+  }
+
+  function populateInlineDropdown(key, catObj) {
+    const dd = form.querySelector(`.soap-inline-dropdown[data-soap-key="${key}"]`);
+    if (!dd) return;
+    const items = SOAP_KEY_MAP[key]?.(catObj) || [];
+    if (!items.length) { dd.innerHTML = '<div class="sid-empty">No items for this category.</div>'; return; }
+    dd.innerHTML = items.map(item => `
+      <label class="sid-item">
+        <input type="checkbox" class="sid-cb" data-key="${key}" data-text="${esc(item)}">
+        <span class="sid-text">${esc(item)}</span>
+      </label>`).join('') +
+      `<div class="sid-footer">
+        <button type="button" class="btn-sid-insert" data-key="${key}">✓ Insert Checked</button>
+      </div>`;
+    dd.querySelector('.btn-sid-insert')?.addEventListener('click', () => {
+      const checked = [...dd.querySelectorAll(`.sid-cb[data-key="${key}"]:checked`)];
+      if (!checked.length) { showToast('info', 'Check some items first.'); return; }
+      const items = checked.map(cb => cb.dataset.text);
+      const ta = form.querySelector(`#f-soap-${key}`);
+      if (ta) {
+        const cur = ta.value.trim();
+        ta.value = cur ? `${cur}\n${items.join('\n')}` : items.join('\n');
+        ta.dispatchEvent(new Event('input'));
+      }
+      recordSoapSelections(form.querySelector('#f-icd-cat').value, items);
+      dd.classList.add('hidden');
+      showToast('success', `Added ${items.length} item${items.length > 1 ? 's' : ''}.`);
+    });
+  }
+
+  /* Wire dropdown toggle buttons */
+  form.querySelectorAll('.soap-dropdown-btn').forEach(btn => {
+    btn.disabled = true;
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const key = btn.dataset.soapKey;
+      const dd  = form.querySelector(`.soap-inline-dropdown[data-soap-key="${key}"]`);
+      if (!dd) return;
+      const isOpen = !dd.classList.contains('hidden');
+      /* close all other dropdowns */
+      form.querySelectorAll('.soap-inline-dropdown').forEach(d => d.classList.add('hidden'));
+      if (!isOpen) {
+        const catId = form.querySelector('#f-icd-cat').value;
+        if (!_icdData) _icdData = await getIcdData();
+        const catObj = (_icdData.categories || []).find(c => c.id === catId);
+        if (catObj) populateInlineDropdown(key, catObj);
+        dd.classList.remove('hidden');
+      }
+    });
+  });
+
+  /* Re-enable dropdown buttons whenever a category is selected (initial state) */
+  const catInput = form.querySelector('#f-icd-cat');
+  if (catInput.value) refreshInlineDropdowns(catInput.value);
+
   /* Combined SOAP — auto-update on every keystroke */
   ['#f-soap-s', '#f-soap-o', '#f-soap-a', '#f-soap-p', '#f-ebm'].forEach(id => {
     form.querySelector(id)?.addEventListener('input', () => updateCombinedSoap(form));
@@ -251,10 +339,13 @@ function wireForm(container, existing) {
     copyText(text, 'Combined SOAP');
   });
 
-  /* Close dropdown on outside click */
+  /* Close ICD dropdown & inline SOAP dropdowns on outside click */
   container.addEventListener('click', e => {
     if (!e.target.closest('#f-icd-search') && !e.target.closest('#icd-dropdown')) {
       dropdown.classList.add('hidden');
+    }
+    if (!e.target.closest('.soap-label-row')) {
+      form.querySelectorAll('.soap-inline-dropdown').forEach(d => d.classList.add('hidden'));
     }
   });
 
@@ -297,6 +388,7 @@ function wireForm(container, existing) {
     saveSession(session);
     recordIcdUse(session);
     showToast('success', `Entry saved at ${timestamp}.`);
+    saveSessionWithSync(session).catch(err => { console.warn('Sync error (already toasted):', err); });
     navigate('dashboard');
   });
 }

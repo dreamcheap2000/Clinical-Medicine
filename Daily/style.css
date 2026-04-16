@@ -482,3 +482,89 @@ body { font-family: var(--font); background: var(--color-bg); color: var(--color
   min-height: 4px; transition: height .2s; }
 .spark-label  { font-size: .68rem; color: var(--color-muted); writing-mode: vertical-rl;
   text-orientation: mixed; height: 32px; overflow: hidden; }
+
+/* ============================================================
+   SOAP view page — checkable items
+   ============================================================ */
+.ref-title-row {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: .35rem; margin-bottom: .35rem;
+}
+.ref-section-actions { display: flex; align-items: center; gap: .35rem; flex-shrink: 0; }
+.btn-ref-action {
+  padding: .15rem .5rem; font-size: .76rem; border-radius: 4px; cursor: pointer;
+  background: transparent; border: 1px solid var(--color-border); color: var(--color-muted);
+  transition: background .12s, color .12s;
+}
+.btn-ref-action:hover { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+
+.soap-view-checklist { display: flex; flex-direction: column; }
+.soap-view-item {
+  display: flex; align-items: flex-start; gap: .5rem;
+  padding: .3rem .4rem; border-radius: var(--radius-sm);
+  cursor: pointer; font-size: .85rem; line-height: 1.5;
+  transition: background .1s;
+}
+.soap-view-item:hover { background: #f0f7ff; }
+.soap-view-cb {
+  flex-shrink: 0; margin-top: .22rem; width: 14px; height: 14px;
+  accent-color: var(--color-primary); cursor: pointer;
+}
+.soap-view-item-text { flex: 1; color: var(--color-text); }
+
+/* ============================================================
+   Session log — inline SOAP dropdown menus
+   ============================================================ */
+.soap-label-row {
+  display: flex; align-items: center; gap: .5rem;
+  position: relative;
+}
+.soap-label-row .field-label { flex: 1; }
+.soap-inline-dropdown {
+  position: absolute; left: 0; right: 0; top: calc(100% + 2px); z-index: 300;
+  background: #fff; border: 1.5px solid var(--color-primary);
+  border-radius: var(--radius-sm); box-shadow: var(--shadow);
+  max-height: 240px; overflow-y: auto;
+}
+.soap-inline-dropdown.hidden { display: none; }
+.sid-item {
+  display: flex; align-items: flex-start; gap: .45rem;
+  padding: .35rem .6rem; cursor: pointer; font-size: .84rem;
+  line-height: 1.45; border-bottom: 1px solid #f0f2f8;
+  transition: background .1s;
+}
+.sid-item:hover { background: #f0f7ff; }
+.sid-item input[type="checkbox"] {
+  flex-shrink: 0; margin-top: .18rem; width: 14px; height: 14px;
+  accent-color: var(--color-primary); cursor: pointer;
+}
+.sid-text { flex: 1; color: var(--color-text); }
+.sid-footer {
+  padding: .4rem .6rem; background: #f8faff;
+  border-top: 1px solid var(--color-border);
+}
+.btn-sid-insert {
+  padding: .25rem .7rem; font-size: .82rem; border-radius: 4px;
+  background: var(--color-primary); color: #fff; border: none;
+  cursor: pointer; font-weight: 600;
+}
+.btn-sid-insert:hover { background: var(--color-primary-h); }
+.sid-empty { padding: .5rem .6rem; color: var(--color-muted); font-size: .84rem; }
+
+/* ============================================================
+   Settings page
+   ============================================================ */
+.settings-card  { margin-bottom: 1rem; }
+.settings-toggle {
+  display: flex; align-items: center; gap: .5rem;
+  font-size: .9rem; cursor: pointer;
+}
+.settings-toggle input[type="checkbox"] {
+  width: 16px; height: 16px; accent-color: var(--color-primary); cursor: pointer;
+}
+.settings-status {
+  font-size: .86rem; font-weight: 600; padding: .2rem .5rem;
+  border-radius: var(--radius-sm);
+}
+.status-ok  { color: var(--color-accent); background: #e6f9f3; }
+.status-err { color: var(--color-danger); background: #fef2f2; }

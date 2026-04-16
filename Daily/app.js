@@ -1,16 +1,19 @@
 /**
  * Daily/app.js
- * Core application: routing, localStorage persistence, ICD data loading.
+ * Core application: routing, localStorage persistence, ICD data loading,
+ * and post-save cloud sync (GitHub + Firebase Firestore).
  * Zero-dependency SPA — open index.html directly in a modern browser.
  *
  * PRIVACY NOTE: All data (including patient identifiers) is stored exclusively
- * in the user's own browser localStorage and is never transmitted to any server.
+ * in the user's own browser localStorage and is never transmitted to any server
+ * unless the user explicitly configures GitHub or Firebase sync in Settings.
  */
 
 import { renderSessionLog }  from './modules/session-log.js';
 import { renderIcdBrowser }  from './modules/icd-browser.js';
 import { renderSoapView }    from './modules/soap-view.js';
 import { renderIcdStats }    from './modules/icd-stats.js';
+import { renderSettings }    from './modules/settings-view.js';
 
 /* ============================================================ */
 /* localStorage persistence                                      */
@@ -34,6 +37,41 @@ export function saveSession(session) {
 export function deleteSession(id) {
   const sessions = getSessions().filter(s => s.id !== id);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+}
+
+/**
+ * saveSessionWithSync — call after saveSession() to push data to GitHub / Firebase.
+ * Import lazily to avoid circular dep; errors are toasted, never thrown.
+ */
+export async function saveSessionWithSync(session) {
+  const all = getSessions();
+  const errors = [];
+
+  try {
+    const { getGithubSettings, commitSessionToGithub } = await import('./modules/github-sync.js');
+    const ghCfg = getGithubSettings();
+    if (ghCfg.enabled) {
+      await commitSessionToGithub(session, all);
+      showToast('success', '☁️ GitHub: session committed.');
+    }
+  } catch(e) {
+    errors.push(`GitHub: ${e.message}`);
+  }
+
+  try {
+    const { getFirebaseSettings, syncSessionToFirestore } = await import('./modules/firebase-sync.js');
+    const fbCfg = getFirebaseSettings();
+    if (fbCfg.enabled) {
+      await syncSessionToFirestore(session);
+      showToast('success', '🔥 Firestore: session synced.');
+    }
+  } catch(e) {
+    errors.push(`Firebase: ${e.message}`);
+  }
+
+  if (errors.length) {
+    showToast('error', `Sync error — ${errors.join('; ')}`);
+  }
 }
 
 export function exportJSON() {
@@ -181,8 +219,9 @@ function renderPage(target) {
     case 'log':       renderSessionLog(typeof target === 'object' ? target : {}); break;
     case 'browser':   renderIcdBrowser(typeof target === 'object' ? target : {}); break;
     case 'soap':      renderSoapView(typeof target === 'object' ? target : {});   break;
-    case 'stats':     renderIcdStats();  break;
-    case 'dashboard': renderDashboard(); break;
+    case 'stats':     renderIcdStats();     break;
+    case 'settings':  renderSettings();     break;
+    case 'dashboard': renderDashboard();    break;
     default:          renderDashboard();
   }
 }
@@ -362,6 +401,7 @@ function boot() {
       { page: 'browser',   label: '🔍 ICD Browser'   },
       { page: 'soap',      label: '📋 SOAP Templates' },
       { page: 'stats',     label: '📊 Stats'          },
+      { page: 'settings',  label: '⚙️ Settings'       },
     ];
     navLinks.innerHTML = pages.map(p =>
       `<button data-page="${p.page}">${p.label}</button>`
