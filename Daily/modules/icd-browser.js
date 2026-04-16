@@ -106,7 +106,8 @@ export async function renderIcdBrowser(opts = {}) {
     showCategory(catId, cats, lookup, hit.dataset.code);
   });
 
-  document.addEventListener('click', e => {
+  /* Close search results on outside click — use container delegation to avoid global listener leaks */
+  container.addEventListener('click', e => {
     if (!e.target.closest('#browser-search') && !e.target.closest('#browser-search-results'))
       searchRes.classList.add('hidden');
   });

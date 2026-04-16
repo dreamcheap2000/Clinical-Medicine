@@ -41,7 +41,8 @@ export function exportJSON() {
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href     = url;
-  a.download = `daily-opd-${new Date().toISOString().slice(0,10)}.json`;
+  // Filename uses ISO 8601 date (YYYY-MM-DD) which is safe across all operating systems
+  a.download = `daily-opd-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
 }

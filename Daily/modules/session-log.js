@@ -227,12 +227,12 @@ function wireForm(container, existing) {
     showToast('success', `Loaded "${catObj.nameEn}" SOAP template. Edit as needed.`);
   });
 
-  /* Close dropdown on outside click */
-  document.addEventListener('click', e => {
+  /* Close dropdown on outside click — use container-level delegation to avoid global listener leaks */
+  container.addEventListener('click', e => {
     if (!e.target.closest('#f-icd-search') && !e.target.closest('#icd-dropdown')) {
       dropdown.classList.add('hidden');
     }
-  }, { once: false });
+  });
 
   /* Cancel */
   container.querySelector('#btn-cancel').addEventListener('click', () => navigate('dashboard'));
@@ -286,6 +286,10 @@ function wireViewSoap(badge, catId, icdData, soapPanel) {
     if (!catObj) return;
     soapPanel.classList.remove('hidden');
     soapPanel.innerHTML = buildSoapHtml(catObj);
+    /* Wire close button after innerHTML update */
+    soapPanel.querySelector('#btn-close-soap')?.addEventListener('click', () => {
+      soapPanel.classList.add('hidden');
+    });
     soapPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 }
@@ -307,12 +311,6 @@ function buildSoapHtml(cat) {
       ${peSection('🩺 Bedside Scales', pe.bedside_scales)}
       ${peSection('🔬 Neurologic / Physical Exam', pe.neurologic_exam)}
     </div>
-
-    <script>
-      document.getElementById('btn-close-soap')?.addEventListener('click', () => {
-        document.getElementById('soap-panel').classList.add('hidden');
-      });
-    <\/script>
   `;
 }
 
