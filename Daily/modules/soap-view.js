@@ -1,9 +1,10 @@
 /**
  * modules/soap-view.js
  * Displays all category SOAP templates and physical exam guides side-by-side.
+ * Items are rendered as checkboxes so users can select and copy them.
  */
 
-import { getIcdData, navigate, esc } from '../app.js';
+import { getIcdData, navigate, esc, showToast } from '../app.js';
 
 export async function renderSoapView(opts = {}) {
   const container = document.getElementById('main-content');
@@ -20,7 +21,7 @@ export async function renderSoapView(opts = {}) {
 
   container.innerHTML = `
     <h2 class="page-title">📋 SOAP &amp; Physical Exam Templates</h2>
-    <p class="subtitle">Category-level templates — select a category to expand</p>
+    <p class="subtitle">Check items to select them, then copy — or click a category to expand</p>
 
     <div class="accordion" id="soap-accordion">
       ${cats.map(c => buildAccordionItem(c)).join('')}
@@ -43,6 +44,30 @@ export async function renderSoapView(opts = {}) {
         body.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
     });
+  });
+
+  /* Copy-checked buttons */
+  container.addEventListener('click', e => {
+    const btn = e.target.closest('.soap-view-copy-btn');
+    if (!btn) return;
+    const section = btn.closest('.ref-section');
+    if (!section) return;
+    const checked = [...section.querySelectorAll('.soap-view-cb:checked')];
+    if (!checked.length) { showToast('info', 'No items checked — tick some items first.'); return; }
+    const text = checked.map(cb => cb.dataset.text).join('\n');
+    _copyText(text);
+  });
+
+  /* Select-all / clear-all toggle */
+  container.addEventListener('click', e => {
+    const btn = e.target.closest('.soap-view-toggle-all');
+    if (!btn) return;
+    const section = btn.closest('.ref-section');
+    if (!section) return;
+    const cbs    = [...section.querySelectorAll('.soap-view-cb')];
+    const allChk = cbs.every(cb => cb.checked);
+    cbs.forEach(cb => { cb.checked = !allChk; });
+    btn.textContent = allChk ? 'Select All' : 'Clear All';
   });
 
   /* Open the first item by default (or requested one) */
@@ -84,7 +109,7 @@ function buildAccordionItem(cat) {
           <!-- Right: Physical Exam -->
           <div class="soap-col">
             <h4 class="col-title">🩺 Physical Exam Reference</h4>
-            ${soapBlock('📊 Bedside Scales / Scores',          pe.bedside_scales)}
+            ${soapBlock('📊 Bedside Scales / Scores',          pe.bedside_scales || pe.bedside_cognitive)}
             ${soapBlock('🔬 Neurologic / Physical Exam Steps', pe.neurologic_exam)}
           </div>
         </div>
@@ -104,10 +129,44 @@ function buildAccordionItem(cat) {
   `;
 }
 
+/** Renders a SOAP/exam section with checkable items and copy controls. */
 function soapBlock(title, items) {
   if (!items?.length) return '';
+  const cbItems = items.map((item, i) => `
+    <label class="soap-view-item">
+      <input type="checkbox" class="soap-view-cb" data-text="${esc(item)}">
+      <span class="soap-view-item-text">${esc(item)}</span>
+    </label>`).join('');
+
   return `<div class="ref-section">
-    <div class="ref-title">${title}</div>
-    <ul class="ref-list">${items.map(i => `<li>${esc(i)}</li>`).join('')}</ul>
+    <div class="ref-title-row">
+      <span class="ref-title">${title}</span>
+      <span class="ref-section-actions">
+        <button type="button" class="soap-view-toggle-all btn-ref-action">Select All</button>
+        <button type="button" class="soap-view-copy-btn btn-ref-action">📋 Copy Checked</button>
+      </span>
+    </div>
+    <div class="soap-view-checklist">${cbItems}</div>
   </div>`;
+}
+
+function _copyText(text) {
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(() => showToast('success', 'Copied to clipboard.'))
+      .catch(() => _fallback(text));
+  } else {
+    _fallback(text);
+  }
+}
+
+function _fallback(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+  document.body.appendChild(ta);
+  ta.select();
+  try   { document.execCommand('copy'); showToast('info', 'Copied.'); }
+  catch { showToast('error', 'Copy failed — please copy manually.'); }
+  document.body.removeChild(ta);
 }
