@@ -23,6 +23,9 @@ export function renderSettings() {
         After every save, the day's sessions are committed to a JSON file in your GitHub repository.
         Requires a <a href="https://github.com/settings/tokens" target="_blank" rel="noopener">Personal Access Token</a>
         with <code>repo</code> (contents write) permission.
+        For enhanced security, enable
+        <a href="https://github.com/settings/security" target="_blank" rel="noopener">Two-Factor Authentication (2FA)</a>
+        on your GitHub account.
       </p>
       <form id="form-github" autocomplete="off">
         <div class="form-row-2">
@@ -57,7 +60,7 @@ export function renderSettings() {
         </div>
         <div class="field-group">
           <label class="settings-toggle">
-            <input type="checkbox" id="gh-enabled" ${gh.enabled ? 'checked' : ''}>
+            <input type="checkbox" id="gh-enabled" ${_githubAutoEnableChecked(gh) ? 'checked' : ''}>
             <span>Enable GitHub auto-commit on save</span>
           </label>
         </div>
@@ -171,4 +174,15 @@ export function renderSettings() {
     statusEl.textContent = message;
     statusEl.className   = `settings-status ${ok ? 'status-ok' : 'status-err'}`;
   });
+}
+
+/**
+ * Returns true if GitHub auto-commit should be checked by default.
+ * Enabled if explicitly saved as enabled, or if a PAT exists but the
+ * `enabled` flag hasn't been set yet (first-time users with a stored token).
+ */
+function _githubAutoEnableChecked(gh) {
+  if (gh.enabled) return true;
+  /* Auto-enable for existing PAT users who haven't explicitly toggled the flag */
+  return !!(gh.token && !('enabled' in gh));
 }
