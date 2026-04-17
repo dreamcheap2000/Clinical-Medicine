@@ -112,7 +112,7 @@ function buildStatsPage(allCodes, sessions, ptFreq) {
     if (!text?.trim()) return;
     const cat  = s.categoryName || s.categoryId || 'General';
     const key  = text.trim();
-    if (!klpMap[key]) klpMap[key] = { text: key, category: cat, sessionId: s.id, count: 0 };
+    if (!klpMap[key]) klpMap[key] = { text: key, category: cat, count: 0 };
     klpMap[key].count += 1;
   });
   const klpList = Object.values(klpMap).sort((a, b) => b.count - a.count);
@@ -273,7 +273,7 @@ function mountInteractivity(container, allCodes, sessions, ptFreq) {
     if (!text?.trim()) return;
     const cat  = s.categoryName || s.categoryId || 'General';
     const key  = text.trim();
-    if (!klpMap[key]) klpMap[key] = { text: key, category: cat, sessionId: s.id, count: 0 };
+    if (!klpMap[key]) klpMap[key] = { text: key, category: cat, count: 0 };
     klpMap[key].count += 1;
   });
   const klpList = Object.values(klpMap).sort((a, b) => b.count - a.count);

@@ -108,7 +108,6 @@ function buildFhirObservation(session) {
     note: session.ebm || session.keyLearning
       ? [{ text: session.ebm || session.keyLearning }]
       : undefined,
-    _opdSessionId: session.id,
   };
 }
 
@@ -141,7 +140,6 @@ function buildFhirCondition(session) {
     note: session.soap?.a
       ? [{ text: session.soap.a }]
       : undefined,
-    _opdSessionId: session.id,
   };
 }
 
@@ -171,7 +169,6 @@ function buildFhirClinicalImpression(session) {
     note: session.ebm || session.keyLearning
       ? [{ text: session.ebm || session.keyLearning }]
       : undefined,
-    _opdSessionId: session.id,
   };
 }
 
@@ -196,7 +193,6 @@ function buildFhirCarePlan(session) {
     addresses: session.icdCode ? [{
       reference: `Condition/${session.id}-cond`,
     }] : undefined,
-    _opdSessionId: session.id,
   };
 }
 

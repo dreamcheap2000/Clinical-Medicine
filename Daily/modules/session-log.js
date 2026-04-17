@@ -334,7 +334,7 @@ function wireForm(container, existing, prefill) {
     const name = prompt('Enter a name for this template:');
     if (!name?.trim()) return;
     const tmpl = {
-      id:        `tmpl-${Date.now()}-${Math.random().toString(36).slice(2,6)}`,
+      id:        `tmpl-${typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : Date.now().toString(36)}`,
       name:      name.trim(),
       text,
       createdAt: new Date().toISOString(),
@@ -386,7 +386,7 @@ function buildSession(form, existing) {
   const soapSplit = splitSoapText(soapText);
 
   return {
-    id:             existing?.id || `opd-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
+    id:             existing?.id || `opd-${typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : `${Date.now()}-${Date.now().toString(36)}`}`,
     date,
     timestamp,
     patientId:      form.querySelector('#f-pid').value.trim()          || null,
