@@ -59,12 +59,16 @@ export function renderSessionLog(opts = {}) {
   } catch { /* ignore */ }
 
   /* Reconstruct combined SOAP text from existing record (backward compat) */
-  const existingSoapText = existing?.soapText ||
+  const baseText = existing?.soapText ||
     [existing?.soap?.s && `S: ${existing.soap.s}`,
      existing?.soap?.o && `O: ${existing.soap.o}`,
      existing?.soap?.a && `A: ${existing.soap.a}`,
      existing?.soap?.p && `P: ${existing.soap.p}`]
-    .filter(Boolean).join('\n\n') || prefillSoapText || '';
+    .filter(Boolean).join('\n\n') || '';
+  /* Append prefill from SOAP Encyclopedia to any existing text */
+  const existingSoapText = baseText && prefillSoapText
+    ? `${baseText}\n\n${prefillSoapText}`
+    : (baseText || prefillSoapText);
 
   container.innerHTML = `
     <h2 class="page-title">📝 ${editId ? 'Edit' : 'New'} OPD Entry</h2>
@@ -452,6 +456,7 @@ function buildGhostContent(catObj, catId) {
   return `
     <div class="ghost-insert-all-row">
       <span class="hint" style="font-size:.8rem">Check items, then click <b>Insert Checked</b></span>
+      <button type="button" class="btn-ref-action ghost-copy-all-btn">📋 Copy All Checked</button>
     </div>
     ${sections.map(sec => {
       const sorted = sec.items
@@ -481,6 +486,14 @@ function buildGhostContent(catObj, catId) {
 
 function wireGhostInsert(ghostBody, form, catId) {
   const ta = form.querySelector('#f-soap-text');
+
+  /* Global copy-all-checked button */
+  ghostBody.querySelector('.ghost-copy-all-btn')?.addEventListener('click', () => {
+    const checked = [...ghostBody.querySelectorAll('.ghost-cb:checked')];
+    if (!checked.length) { showToast('info', 'Check some items first.'); return; }
+    const text = checked.map(cb => cb.dataset.text).join('\n');
+    copyText(text, 'Checked items');
+  });
 
   /* Toggle all in section */
   ghostBody.querySelectorAll('.ghost-toggle-all').forEach(btn => {
