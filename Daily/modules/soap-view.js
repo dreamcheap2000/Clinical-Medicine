@@ -1,7 +1,7 @@
 /**
  * modules/soap-view.js
  * Displays all category SOAP templates and physical exam guides side-by-side.
- * Items are rendered as checkboxes so users can select and copy them.
+ * Items are rendered as checkboxes so users can select, copy, or insert into new entries.
  */
 
 import { getIcdData, navigate, esc, showToast } from '../app.js';
@@ -21,7 +21,13 @@ export async function renderSoapView(opts = {}) {
 
   container.innerHTML = `
     <h2 class="page-title">📋 SOAP &amp; Physical Exam Templates</h2>
-    <p class="subtitle">Check items to select them, then copy — or click a category to expand</p>
+    <p class="subtitle">Check items to select them — then copy or insert directly into a new OPD entry</p>
+
+    <!-- Copy-all-checked across ALL sections -->
+    <div class="soap-view-global-actions">
+      <button class="btn btn-outline" id="soap-view-copy-all-checked">📋 Copy All Checked</button>
+      <button class="btn btn-primary" id="soap-view-insert-all-checked">➕ Insert All Checked to New Entry</button>
+    </div>
 
     <div class="accordion" id="soap-accordion">
       ${cats.map(c => buildAccordionItem(c)).join('')}
@@ -46,7 +52,7 @@ export async function renderSoapView(opts = {}) {
     });
   });
 
-  /* Copy-checked buttons */
+  /* Copy-checked buttons (per section) */
   container.addEventListener('click', e => {
     const btn = e.target.closest('.soap-view-copy-btn');
     if (!btn) return;
@@ -56,6 +62,35 @@ export async function renderSoapView(opts = {}) {
     if (!checked.length) { showToast('info', 'No items checked — tick some items first.'); return; }
     const text = checked.map(cb => cb.dataset.text).join('\n');
     _copyText(text);
+  });
+
+  /* Insert-checked buttons (per section) → prefill new entry */
+  container.addEventListener('click', e => {
+    const btn = e.target.closest('.soap-view-insert-btn');
+    if (!btn) return;
+    const section = btn.closest('.ref-section');
+    if (!section) return;
+    const checked = [...section.querySelectorAll('.soap-view-cb:checked')];
+    if (!checked.length) { showToast('info', 'No items checked — tick some items first.'); return; }
+    const text = checked.map(cb => cb.dataset.text).join('\n');
+    sessionStorage.setItem('prefill_soap_text', text);
+    navigate('log');
+  });
+
+  /* Global copy-all-checked (across all open sections) */
+  container.querySelector('#soap-view-copy-all-checked')?.addEventListener('click', () => {
+    const checked = [...container.querySelectorAll('.soap-view-cb:checked')];
+    if (!checked.length) { showToast('info', 'No items checked anywhere.'); return; }
+    _copyText(checked.map(cb => cb.dataset.text).join('\n'));
+  });
+
+  /* Global insert-all-checked → prefill new entry */
+  container.querySelector('#soap-view-insert-all-checked')?.addEventListener('click', () => {
+    const checked = [...container.querySelectorAll('.soap-view-cb:checked')];
+    if (!checked.length) { showToast('info', 'No items checked anywhere.'); return; }
+    const text = checked.map(cb => cb.dataset.text).join('\n');
+    sessionStorage.setItem('prefill_soap_text', text);
+    navigate('log');
   });
 
   /* Select-all / clear-all toggle */
@@ -129,7 +164,7 @@ function buildAccordionItem(cat) {
   `;
 }
 
-/** Renders a SOAP/exam section with checkable items and copy controls. */
+/** Renders a SOAP/exam section with checkable items and copy + insert controls. */
 function soapBlock(title, items) {
   if (!items?.length) return '';
   const cbItems = items.map((item, i) => `
@@ -143,7 +178,8 @@ function soapBlock(title, items) {
       <span class="ref-title">${title}</span>
       <span class="ref-section-actions">
         <button type="button" class="soap-view-toggle-all btn-ref-action">Select All</button>
-        <button type="button" class="soap-view-copy-btn btn-ref-action">📋 Copy Checked</button>
+        <button type="button" class="soap-view-copy-btn btn-ref-action">📋 Copy</button>
+        <button type="button" class="soap-view-insert-btn btn-ref-action">➕ Insert to Entry</button>
       </span>
     </div>
     <div class="soap-view-checklist">${cbItems}</div>

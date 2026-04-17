@@ -220,11 +220,16 @@ function buildCodeRows(codes, highlightCode) {
 function wireUseButtons(main) {
   main.querySelectorAll('.btn-use').forEach(btn => {
     btn.addEventListener('click', () => {
-      /* Navigate to new entry form pre-filled with this code */
+      /* Navigate to new entry form pre-filled with this code.
+         categoryId is stored so the ghost SOAP panel auto-loads. */
+      const catBtn = main.closest('.browser-main')
+        ? document.querySelector('.cat-btn.active')
+        : null;
       sessionStorage.setItem('prefill_icd', JSON.stringify({
-        code: btn.dataset.code,
-        en:   btn.dataset.en,
-        zh:   btn.dataset.zh,
+        code:       btn.dataset.code,
+        en:         btn.dataset.en,
+        zh:         btn.dataset.zh,
+        categoryId: catBtn?.dataset.cat || '',
       }));
       navigate('log');
     });

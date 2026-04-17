@@ -5,7 +5,7 @@
 
 import { esc, showToast } from '../app.js';
 import { getGithubSettings, saveGithubSettings, testGithubConnection } from './github-sync.js';
-import { getFirebaseSettings, saveFirebaseSettings, testFirebaseConnection } from './firebase-sync.js';
+import { getFirebaseSettings, saveFirebaseSettings, testFirebaseConnection, exportSessionAsFhirBundle } from './firebase-sync.js';
 
 export function renderSettings() {
   const container = document.getElementById('main-content');
@@ -83,7 +83,15 @@ export function renderSettings() {
           <label class="field-label" for="fb-config">Firebase Config JSON <span class="req">*</span></label>
           <textarea class="field-input field-textarea" id="fb-config" rows="8"
             placeholder='{"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."}'
-            style="font-family:monospace;font-size:.82rem">${esc(fb.apiKey ? JSON.stringify(fb, null, 2) : '')}</textarea>
+            style="font-family:monospace;font-size:.82rem">${esc(fb.apiKey ? JSON.stringify(fb, null, 2) : JSON.stringify({
+              apiKey:            fb.apiKey            || 'AIzaSyB5mafJ-B7bgAqmjCzW2ePmfwMKfR9kZJA',
+              authDomain:        fb.authDomain        || 'phcep-94e92.firebaseapp.com',
+              projectId:         fb.projectId         || 'phcep-94e92',
+              storageBucket:     fb.storageBucket     || 'phcep-94e92.firebasestorage.app',
+              messagingSenderId: fb.messagingSenderId || '1003364373709',
+              appId:             fb.appId             || '1:1003364373709:web:aa6fc1d0fcca7bb7690584',
+              measurementId:     fb.measurementId     || 'G-XBEWNC7K1W',
+            }, null, 2))}</textarea>
           <span class="hint">⚠️ Stored only in your browser's localStorage. Do not share screenshots of this page as they may expose your API keys.</span>
         </div>
         <div class="field-group">
