@@ -9,11 +9,11 @@
  * unless the user explicitly configures GitHub or Firebase sync in Settings.
  */
 
-import { renderSessionLog }  from './modules/session-log.js';
-import { renderIcdBrowser }  from './modules/icd-browser.js';
-import { renderSoapView }    from './modules/soap-view.js';
-import { renderIcdStats }    from './modules/icd-stats.js';
-import { renderSettings }    from './modules/settings-view.js';
+import { renderSessionLog }   from './modules/session-log.js';
+import { renderIcdBrowser }   from './modules/icd-browser.js';
+import { renderSoapView }     from './modules/soap-view.js';
+import { renderMedicalStats } from './modules/medical-stats.js';
+import { renderSettings }     from './modules/settings-view.js';
 
 /* ============================================================ */
 /* localStorage persistence                                      */
@@ -109,8 +109,68 @@ export function importJSON(file) {
 }
 
 /* ============================================================ */
-/* SOAP template frequency tracking                              */
+/* Custom SOAP templates (user-saved, named)                     */
 /* ============================================================ */
+
+const SOAP_TMPL_KEY = 'soapTemplates_v1';
+
+export function getSoapTemplates() {
+  try { return JSON.parse(localStorage.getItem(SOAP_TMPL_KEY) || '[]'); }
+  catch { return []; }
+}
+
+export function saveSoapTemplate(tmpl) {
+  const list = getSoapTemplates();
+  const idx  = list.findIndex(t => t.id === tmpl.id);
+  if (idx >= 0) list[idx] = tmpl;
+  else list.unshift(tmpl);
+  localStorage.setItem(SOAP_TMPL_KEY, JSON.stringify(list));
+}
+
+export function deleteSoapTemplate(id) {
+  const list = getSoapTemplates().filter(t => t.id !== id);
+  localStorage.setItem(SOAP_TMPL_KEY, JSON.stringify(list));
+}
+
+/* ============================================================ */
+/* Patient type / special patient tracking                       */
+/* ============================================================ */
+
+const PT_FREQ_KEY = 'patientTypeFreq_v1';
+
+export function getPatientTypeFreq() {
+  try { return JSON.parse(localStorage.getItem(PT_FREQ_KEY) || '{}'); }
+  catch { return {}; }
+}
+
+export function recordPatientType(patientType) {
+  if (!patientType) return;
+  const freq  = getPatientTypeFreq();
+  const today = new Date().toISOString().slice(0, 10);
+  if (!freq[patientType]) freq[patientType] = { count: 0, lastUsed: today };
+  freq[patientType].count   += 1;
+  freq[patientType].lastUsed = today;
+  localStorage.setItem(PT_FREQ_KEY, JSON.stringify(freq));
+}
+
+/* ============================================================ */
+/* EBM / Key Learning star rating                                */
+/* ============================================================ */
+
+const EBM_STARS_KEY = 'ebmStars_v1';
+
+export function getEbmStars() {
+  try { return JSON.parse(localStorage.getItem(EBM_STARS_KEY) || '{}'); }
+  catch { return {}; }
+}
+
+export function setEbmStar(key, rating) {
+  const stars = getEbmStars();
+  stars[key]  = rating;
+  localStorage.setItem(EBM_STARS_KEY, JSON.stringify(stars));
+}
+
+
 
 const SOAP_FREQ_KEY = 'soapFreq_v1';
 
@@ -168,6 +228,8 @@ export function recordIcdUse(session) {
   if (todayEntry) todayEntry.count += 1;
   else hist.push({ date: today, count: 1 });
   localStorage.setItem(ICD_FREQ_KEY, JSON.stringify(freq));
+  /* Also track patient type */
+  if (session.patientType) recordPatientType(session.patientType);
 }
 
 /* ============================================================ */
@@ -219,7 +281,7 @@ function renderPage(target) {
     case 'log':       renderSessionLog(typeof target === 'object' ? target : {}); break;
     case 'browser':   renderIcdBrowser(typeof target === 'object' ? target : {}); break;
     case 'soap':      renderSoapView(typeof target === 'object' ? target : {});   break;
-    case 'stats':     renderIcdStats();     break;
+    case 'stats':     renderMedicalStats(); break;
     case 'settings':  renderSettings();     break;
     case 'dashboard': renderDashboard();    break;
     default:          renderDashboard();
@@ -278,7 +340,7 @@ function renderDashboard() {
         <button class="action-btn btn-primary" data-nav="log">📝 New OPD Entry</button>
         <button class="action-btn" data-nav="browser">🔍 ICD Code Browser</button>
         <button class="action-btn" data-nav="soap">📋 SOAP Templates</button>
-        <button class="action-btn" data-nav="stats">📊 ICD Statistics</button>
+        <button class="action-btn" data-nav="stats">📊 Medical Statistics</button>
       </div>
     </div>
 
@@ -355,13 +417,15 @@ function renderDashboard() {
 }
 
 function entryCard(s, compact) {
+  const soapPreview = s.soapText || s.soap?.s || '';
   return `
     <div class="entry-card">
       <div class="entry-header">
         <span class="entry-ts">${esc(s.timestamp || s.date)}</span>
-        ${s.patientId ? `<span class="tag tag-default">👤 ${esc(s.patientId)}</span>` : ''}
+        ${s.patientId    ? `<span class="tag tag-default">👤 ${esc(s.patientId)}</span>` : ''}
+        ${s.patientType  ? `<span class="tag tag-abnormal">${esc(s.patientType)}</span>` : ''}
         ${s.categoryName ? `<span class="tag tag-cat">${esc(s.categoryName)}</span>` : ''}
-        ${s.icdCode ? `<span class="tag tag-code">${esc(s.icdCode)}</span>` : ''}
+        ${s.icdCode      ? `<span class="tag tag-code">${esc(s.icdCode)}</span>` : ''}
         <div class="entry-actions">
           <button class="btn-sm" data-edit="${esc(s.id)}">✏️</button>
           <button class="btn-sm btn-danger" data-delete="${esc(s.id)}">🗑️</button>
@@ -369,8 +433,8 @@ function entryCard(s, compact) {
       </div>
       ${s.icdDescription ? `<div class="entry-icd">${esc(s.icdDescription)} ${s.icdZh ? '· '+esc(s.icdZh) : ''}</div>` : ''}
       ${s.condition ? `<div class="entry-field"><b>Condition:</b> ${esc(s.condition)}</div>` : ''}
-      ${!compact && s.ebm ? `<div class="entry-field"><b>EBM:</b> ${esc(s.ebm.slice(0,120))}${s.ebm.length > 120 ? '…' : ''}</div>` : ''}
-      ${!compact && s.soap ? `<div class="entry-field"><b>SOAP:</b> ${esc((s.soap.s||'').slice(0,100))}${(s.soap.s||'').length > 100 ? '…' : ''}</div>` : ''}
+      ${!compact && (s.keyLearning || s.ebm) ? `<div class="entry-field"><b>EBM:</b> ${esc((s.keyLearning||s.ebm||'').slice(0,120))}${(s.keyLearning||s.ebm||'').length > 120 ? '…' : ''}</div>` : ''}
+      ${!compact && soapPreview ? `<div class="entry-field"><b>SOAP:</b> ${esc(soapPreview.slice(0,120))}${soapPreview.length > 120 ? '…' : ''}</div>` : ''}
     </div>`;
 }
 
@@ -400,7 +464,7 @@ function boot() {
       { page: 'log',       label: '📝 New Entry'     },
       { page: 'browser',   label: '🔍 ICD Browser'   },
       { page: 'soap',      label: '📋 SOAP Templates' },
-      { page: 'stats',     label: '📊 Stats'          },
+      { page: 'stats',     label: '📊 Medical Stats'   },
       { page: 'settings',  label: '⚙️ Settings'       },
     ];
     navLinks.innerHTML = pages.map(p =>
