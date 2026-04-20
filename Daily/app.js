@@ -201,25 +201,39 @@ export function getIcdFreq() {
 }
 
 export function recordIcdUse(session) {
-  if (!session?.icdCode) return;
+  /* Support both single icdCode (legacy) and icdCodes array (new) */
+  const codes = session.icdCodes?.length
+    ? session.icdCodes
+    : (session.icdCode
+        ? [{ code: session.icdCode, en: session.icdDescription || '', zh: session.icdZh || '',
+             categoryId: session.categoryId || '', categoryName: session.categoryName || '' }]
+        : []);
+  for (const c of codes) {
+    _recordSingleIcd(c, session);
+  }
+  if (session.patientType) recordPatientType(session.patientType);
+}
+
+function _recordSingleIcd(codeObj, session) {
+  if (!codeObj?.code) return;
   const freq  = getIcdFreq();
   const today = new Date().toISOString().slice(0, 10);
-  const key   = session.icdCode;
+  const key   = codeObj.code;
   if (!freq[key]) {
     freq[key] = {
-      code: session.icdCode,
-      en:   session.icdDescription || '',
-      zh:   session.icdZh          || '',
-      categoryId:   session.categoryId   || '',
-      categoryName: session.categoryName || '',
+      code: codeObj.code,
+      en:   codeObj.en          || '',
+      zh:   codeObj.zh          || '',
+      categoryId:   codeObj.categoryId   || '',
+      categoryName: codeObj.categoryName || '',
       count:    0,
       lastUsed: today,
       history:  [],
     };
   } else {
-    if (session.icdDescription) freq[key].en = session.icdDescription;
-    if (session.icdZh)          freq[key].zh = session.icdZh;
-    if (session.categoryName)   freq[key].categoryName = session.categoryName;
+    if (codeObj.en)           freq[key].en = codeObj.en;
+    if (codeObj.zh)           freq[key].zh = codeObj.zh;
+    if (codeObj.categoryName) freq[key].categoryName = codeObj.categoryName;
   }
   freq[key].count   += 1;
   freq[key].lastUsed = today;
@@ -228,8 +242,6 @@ export function recordIcdUse(session) {
   if (todayEntry) todayEntry.count += 1;
   else hist.push({ date: today, count: 1 });
   localStorage.setItem(ICD_FREQ_KEY, JSON.stringify(freq));
-  /* Also track patient type */
-  if (session.patientType) recordPatientType(session.patientType);
 }
 
 /* ============================================================ */
@@ -418,20 +430,27 @@ function renderDashboard() {
 
 function entryCard(s, compact) {
   const soapPreview = s.soapText || s.soap?.s || '';
+  /* Show all ICD codes (new multi-code support) or fall back to single legacy code */
+  const allCodes = s.icdCodes?.length
+    ? s.icdCodes
+    : (s.icdCode ? [{ code: s.icdCode, en: s.icdDescription || '', categoryName: s.categoryName || '' }] : []);
   return `
     <div class="entry-card">
       <div class="entry-header">
         <span class="entry-ts">${esc(s.timestamp || s.date)}</span>
-        ${s.patientId    ? `<span class="tag tag-default">👤 ${esc(s.patientId)}</span>` : ''}
-        ${s.patientType  ? `<span class="tag tag-abnormal">${esc(s.patientType)}</span>` : ''}
-        ${s.categoryName ? `<span class="tag tag-cat">${esc(s.categoryName)}</span>` : ''}
-        ${s.icdCode      ? `<span class="tag tag-code">${esc(s.icdCode)}</span>` : ''}
+        ${s.patientId   ? `<span class="tag tag-default">👤 ${esc(s.patientId)}</span>` : ''}
+        ${s.patientType ? `<span class="tag tag-abnormal">${esc(s.patientType)}</span>` : ''}
+        ${allCodes.length > 0
+          ? allCodes.map(c => `<span class="tag tag-code">${esc(c.code)}</span>`).join('')
+          : ''}
         <div class="entry-actions">
           <button class="btn-sm" data-edit="${esc(s.id)}">✏️</button>
           <button class="btn-sm btn-danger" data-delete="${esc(s.id)}">🗑️</button>
         </div>
       </div>
-      ${s.icdDescription ? `<div class="entry-icd">${esc(s.icdDescription)} ${s.icdZh ? '· '+esc(s.icdZh) : ''}</div>` : ''}
+      ${allCodes.length > 0
+        ? `<div class="entry-icd">${allCodes.map(c => `${esc(c.code)}${c.en ? ' ' + esc(c.en) : ''}`).join(' · ')}</div>`
+        : ''}
       ${s.condition ? `<div class="entry-field"><b>Condition:</b> ${esc(s.condition)}</div>` : ''}
       ${!compact && (s.keyLearning || s.ebm) ? `<div class="entry-field"><b>EBM:</b> ${esc((s.keyLearning||s.ebm||'').slice(0,120))}${(s.keyLearning||s.ebm||'').length > 120 ? '…' : ''}</div>` : ''}
       ${!compact && soapPreview ? `<div class="entry-field"><b>SOAP:</b> ${esc(soapPreview.slice(0,120))}${soapPreview.length > 120 ? '…' : ''}</div>` : ''}

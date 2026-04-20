@@ -36,6 +36,35 @@ const PATIENT_TYPES = [
 ];
 
 /* ============================================================ */
+/* Form draft — preserves form state across navigation           */
+/* ============================================================ */
+
+const DRAFT_KEY = 'opdFormDraft_v1';
+
+function loadFormDraft() {
+  try { return JSON.parse(sessionStorage.getItem(DRAFT_KEY) || 'null'); }
+  catch { return null; }
+}
+
+function clearFormDraft() {
+  sessionStorage.removeItem(DRAFT_KEY);
+}
+
+function saveFormDraft(form, icdCodes) {
+  try {
+    sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
+      date:        form.querySelector('#f-date')?.value      || '',
+      patientId:   form.querySelector('#f-pid')?.value       || '',
+      patientType: form.querySelector('#f-pt')?.value        || '',
+      icdCodes:    Array.isArray(icdCodes) ? icdCodes : [],
+      condition:   form.querySelector('#f-condition')?.value || '',
+      keyLearning: form.querySelector('#f-klp')?.value       || '',
+      soapText:    form.querySelector('#f-soap-text')?.value || '',
+    }));
+  } catch { /* ignore */ }
+}
+
+/* ============================================================ */
 /* Main render                                                    */
 /* ============================================================ */
 
@@ -58,14 +87,48 @@ export function renderSessionLog(opts = {}) {
     if (rawSoap) { prefillSoapText = rawSoap; sessionStorage.removeItem('prefill_soap_text'); }
   } catch { /* ignore */ }
 
-  /* Reconstruct combined SOAP text from existing record (backward compat) */
+  /* Load auto-saved form draft (non-edit mode only) */
+  const draft = !editId ? loadFormDraft() : null;
+  clearFormDraft();
+
+  /* ── Resolve initial ICD codes (multiple per patient) ── */
+  let initIcdCodes;
+  if (existing) {
+    /* Edit mode: restore from saved record */
+    initIcdCodes = existing.icdCodes
+      || (existing.icdCode
+          ? [{ code: existing.icdCode, en: existing.icdDescription || '', zh: existing.icdZh || '',
+               categoryId: existing.categoryId || '', categoryName: existing.categoryName || '' }]
+          : []);
+  } else {
+    /* New entry: start with draft codes */
+    initIcdCodes = draft?.icdCodes || [];
+    /* Add prefill ICD code from ICD browser if not already present */
+    if (prefill?.code) {
+      const alreadyHas = initIcdCodes.some(c => c.code === prefill.code);
+      if (!alreadyHas) {
+        initIcdCodes = [...initIcdCodes,
+          { code: prefill.code, en: prefill.en || '', zh: prefill.zh || '',
+            categoryId: prefill.categoryId || '', categoryName: '' }];
+      }
+    }
+  }
+
+  /* ── Resolve initial form field values (draft > existing > defaults) ── */
+  const initDate        = existing?.date        || draft?.date        || new Date().toISOString().slice(0,10);
+  const initPid         = existing?.patientId   || draft?.patientId   || '';
+  const initPt          = existing?.patientType || draft?.patientType || '';
+  const initCondition   = existing?.condition   || draft?.condition
+    || (prefill && !draft ? (prefill.en || '') : '');
+  const initKlp         = existing?.keyLearning || existing?.ebm || draft?.keyLearning || '';
+
+  /* ── Resolve SOAP text (draft/existing + append prefill_soap_text) ── */
   const baseText = existing?.soapText ||
     [existing?.soap?.s && `S: ${existing.soap.s}`,
      existing?.soap?.o && `O: ${existing.soap.o}`,
      existing?.soap?.a && `A: ${existing.soap.a}`,
      existing?.soap?.p && `P: ${existing.soap.p}`]
-    .filter(Boolean).join('\n\n') || '';
-  /* Append prefill from SOAP Encyclopedia to any existing text */
+    .filter(Boolean).join('\n\n') || draft?.soapText || '';
   const existingSoapText = baseText && prefillSoapText
     ? `${baseText}\n\n${prefillSoapText}`
     : (baseText || prefillSoapText);
@@ -85,12 +148,12 @@ export function renderSessionLog(opts = {}) {
               <div class="field-group">
                 <label class="field-label" for="f-date">Date <span class="req">*</span></label>
                 <input class="field-input" type="date" id="f-date" required
-                  value="${esc(existing?.date || new Date().toISOString().slice(0,10))}">
+                  value="${esc(initDate)}">
               </div>
               <div class="field-group">
                 <label class="field-label" for="f-pid">Patient ID (optional)</label>
                 <input class="field-input" type="text" id="f-pid" placeholder="e.g. 0001"
-                  value="${esc(existing?.patientId || '')}">
+                  value="${esc(initPid)}">
               </div>
             </div>
 
@@ -99,47 +162,45 @@ export function renderSessionLog(opts = {}) {
               <label class="field-label" for="f-pt">Special Patient Type</label>
               <select class="field-input" id="f-pt">
                 ${PATIENT_TYPES.map(t =>
-                  `<option value="${esc(t)}" ${(existing?.patientType || '') === t ? 'selected' : ''}>${esc(t || '— none —')}</option>`
+                  `<option value="${esc(t)}" ${initPt === t ? 'selected' : ''}>${esc(t || '— none —')}</option>`
                 ).join('')}
               </select>
             </div>
 
-            <!-- ICD search -->
+            <!-- ICD codes (multiple) -->
             <div class="field-group" style="position:relative">
-              <label class="field-label" for="f-icd-search">ICD-10 Code Search</label>
+              <label class="field-label" for="f-icd-search">ICD-10 Codes</label>
+              <!-- Selected codes tags -->
+              <div id="icd-codes-list" class="icd-codes-list">
+                ${initIcdCodes.map((c, i) => buildIcdTag(c, i)).join('')}
+              </div>
+              <!-- Search row -->
               <div class="icd-search-row">
                 <input class="field-input" type="text" id="f-icd-search"
-                  placeholder="Type code (e.g. G43) or condition (e.g. migraine / 偏頭痛)…"
-                  value="${esc(existing ? (existing.icdCode + (existing.icdDescription ? ' — ' + existing.icdDescription : '')) : (prefill ? prefill.code + ' — ' + prefill.en : ''))}">
-                <button type="button" class="btn btn-sm-inline" id="btn-clear-icd">✕</button>
+                  placeholder="Search code (e.g. G43) or condition (e.g. migraine / 偏頭痛) — click result to add…">
+                <button type="button" class="btn btn-sm-inline" id="btn-clear-icd" title="Clear search input">✕</button>
               </div>
               <div id="icd-dropdown" class="icd-dropdown hidden"></div>
-              <input type="hidden" id="f-icd-code"    value="${esc(existing?.icdCode        || prefill?.code || '')}">
-              <input type="hidden" id="f-icd-desc"    value="${esc(existing?.icdDescription || prefill?.en   || '')}">
-              <input type="hidden" id="f-icd-zh"      value="${esc(existing?.icdZh          || prefill?.zh   || '')}">
-              <input type="hidden" id="f-icd-cat"     value="${esc(existing?.categoryId     || prefill?.categoryId || '')}">
-              <input type="hidden" id="f-icd-catname" value="${esc(existing?.categoryName   || '')}">
-              ${(existing?.icdCode || prefill) ? `
-                <div class="icd-selected" id="icd-selected-badge">
-                  <span class="tag tag-code">${esc(existing?.icdCode || prefill?.code || '')}</span>
-                  <span>${esc(existing?.icdDescription || prefill?.en || '')} ${(existing?.icdZh || prefill?.zh) ? '· '+esc(existing?.icdZh || prefill?.zh) : ''}</span>
-                  ${existing?.categoryName ? `<span class="tag tag-cat">${esc(existing.categoryName)}</span>` : ''}
-                  <button type="button" class="btn-soap-link" id="btn-show-ghost">📋 SOAP Panel</button>
-                </div>` : '<div class="icd-selected hidden" id="icd-selected-badge"></div>'}
+              <!-- Hidden primary-code fields (backward compat — always = first in icdCodes) -->
+              <input type="hidden" id="f-icd-code"    value="${esc(initIcdCodes[0]?.code         || '')}">
+              <input type="hidden" id="f-icd-desc"    value="${esc(initIcdCodes[0]?.en           || '')}">
+              <input type="hidden" id="f-icd-zh"      value="${esc(initIcdCodes[0]?.zh           || '')}">
+              <input type="hidden" id="f-icd-cat"     value="${esc(initIcdCodes[0]?.categoryId   || '')}">
+              <input type="hidden" id="f-icd-catname" value="${esc(initIcdCodes[0]?.categoryName || '')}">
             </div>
 
             <!-- Patient condition / chief complaint -->
             <div class="field-group">
               <label class="field-label" for="f-condition">Patient Condition / Presentation</label>
               <textarea class="field-input field-textarea" id="f-condition" rows="2"
-                placeholder="Chief complaint, relevant history, clinical context… (optional)">${esc(existing?.condition || (prefill ? (prefill.en || '') : ''))}</textarea>
+                placeholder="Chief complaint, relevant history, clinical context… (optional)">${esc(initCondition)}</textarea>
             </div>
 
             <!-- Key learning / EBM -->
             <div class="field-group">
               <label class="field-label" for="f-klp">Key Learning Point / EBM Statement</label>
               <textarea class="field-input field-textarea" id="f-klp" rows="2"
-                placeholder="Evidence-based statement, guideline reference, clinical pearl…">${esc(existing?.keyLearning || existing?.ebm || '')}</textarea>
+                placeholder="Evidence-based statement, guideline reference, clinical pearl…">${esc(initKlp)}</textarea>
             </div>
 
             <!-- Combined SOAP note -->
@@ -150,7 +211,7 @@ export function renderSessionLog(opts = {}) {
                   <button type="button" class="btn btn-sm-inline" id="btn-tmpl-load">📂 Load Template</button>
                   <button type="button" class="btn btn-sm-inline" id="btn-tmpl-save">💾 Save as Template</button>
                   <button type="button" class="btn btn-sm-inline" id="btn-copy-soap">📋 Copy</button>
-                  ${(existing?.categoryId || prefill?.categoryId) ? `<button type="button" class="btn btn-sm-inline" id="btn-show-ghost-soap">🔍 Template Items</button>` : ''}
+                  <button type="button" class="btn btn-sm-inline" id="btn-show-ghost-soap">🔍 Template Items</button>
                 </div>
               </div>
               <textarea class="field-input field-textarea soap-combined-ta" id="f-soap-text"
@@ -193,21 +254,36 @@ P: NSAIDs, follow up in 2 weeks">${esc(existingSoapText)}</textarea>
     </div><!-- /.entry-layout -->
   `;
 
-  wireForm(container, existing, prefill);
+  wireForm(container, existing, initIcdCodes);
+}
+
+/* ============================================================ */
+/* ICD tag builder (multiple codes display)                      */
+/* ============================================================ */
+
+function buildIcdTag(c, idx) {
+  return `<span class="icd-code-tag" data-idx="${idx}">
+    <span class="tag tag-code">${esc(c.code)}</span>
+    <span class="icd-tag-desc">${esc(c.en)}${c.zh ? ' · ' + esc(c.zh) : ''}</span>
+    <button type="button" class="icd-tag-remove" data-idx="${idx}" title="Remove this code">×</button>
+  </span>`;
 }
 
 /* ============================================================ */
 /* Wire form logic                                               */
 /* ============================================================ */
 
-function wireForm(container, existing, prefill) {
+function wireForm(container, existing, initIcdCodes) {
   const form        = container.querySelector('#opd-form');
   const searchInput = container.querySelector('#f-icd-search');
   const dropdown    = container.querySelector('#icd-dropdown');
-  const badge       = container.querySelector('#icd-selected-badge');
+  const codesList   = container.querySelector('#icd-codes-list');
   const ghostPanel  = container.querySelector('#ghost-panel');
   const ghostBody   = container.querySelector('#ghost-panel-body');
   const ghostCol    = container.querySelector('#ghost-col');
+
+  /* Working array of selected ICD codes */
+  let icdCodes = Array.isArray(initIcdCodes) ? [...initIcdCodes] : [];
 
   let _icdData    = null;
   let _searchTimer = null;
@@ -218,6 +294,43 @@ function wireForm(container, existing, prefill) {
     const catId = form.querySelector('#f-icd-cat').value;
     if (catId) loadGhostPanel(catId, d);
   });
+
+  /* ── Helpers: update hidden primary-code fields + tags DOM ── */
+  function updatePrimaryFields() {
+    const p = icdCodes[0] || {};
+    form.querySelector('#f-icd-code').value    = p.code        || '';
+    form.querySelector('#f-icd-desc').value    = p.en          || '';
+    form.querySelector('#f-icd-zh').value      = p.zh          || '';
+    form.querySelector('#f-icd-cat').value     = p.categoryId  || '';
+    form.querySelector('#f-icd-catname').value = p.categoryName || '';
+  }
+
+  function refreshCodesList() {
+    codesList.innerHTML = icdCodes.map((c, i) => buildIcdTag(c, i)).join('');
+    /* Wire remove buttons */
+    codesList.querySelectorAll('.icd-tag-remove').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const idx = parseInt(btn.dataset.idx, 10);
+        icdCodes.splice(idx, 1);
+        refreshCodesList();
+        updatePrimaryFields();
+        saveDraft();
+        /* Reset ghost panel if no codes left */
+        if (!icdCodes.length) {
+          ghostBody.innerHTML = '<p class="no-records" style="padding:1rem;font-size:.85rem">Select an ICD code to load template items.</p>';
+          container.querySelector('#ghost-panel-title').textContent = '📋 SOAP Reference';
+        }
+      });
+    });
+  }
+
+  /* ── Auto-save draft on any form change ── */
+  function saveDraft() {
+    saveFormDraft(form, icdCodes);
+  }
+  form.addEventListener('input',  saveDraft);
+  form.addEventListener('change', saveDraft);
 
   /* ── ICD search ── */
   searchInput.addEventListener('input', () => {
@@ -250,41 +363,31 @@ function wireForm(container, existing, prefill) {
     const catObj  = (_icdData.categories || []).find(c => c.id === cat);
     const catName = catObj ? catObj.nameEn : cat;
 
-    form.querySelector('#f-icd-code').value    = code;
-    form.querySelector('#f-icd-desc').value    = en;
-    form.querySelector('#f-icd-zh').value      = zh;
-    form.querySelector('#f-icd-cat').value     = cat;
-    form.querySelector('#f-icd-catname').value = catName;
+    /* Add to codes array if not already present */
+    if (!icdCodes.some(c => c.code === code)) {
+      icdCodes.push({ code, en, zh, categoryId: cat, categoryName: catName });
+      refreshCodesList();
+      updatePrimaryFields();
+    }
 
-    searchInput.value = `${code} — ${en}`;
+    searchInput.value = '';
     dropdown.classList.add('hidden');
-
-    badge.innerHTML = `
-      <span class="tag tag-code">${esc(code)}</span>
-      <span>${esc(en)} ${zh ? '· '+esc(zh) : ''}</span>
-      ${catName ? `<span class="tag tag-cat">${esc(catName)}</span>` : ''}
-      <button type="button" class="btn-soap-link" id="btn-show-ghost">📋 SOAP Panel</button>`;
-    badge.classList.remove('hidden');
 
     /* Pre-fill condition field if empty */
     const condField = form.querySelector('#f-condition');
     if (!condField.value.trim()) condField.value = en;
 
-    /* Load ghost panel */
+    /* Load ghost panel for the just-selected code's category */
     if (catObj) loadGhostPanel(cat, _icdData);
+    ghostCol.classList.add('ghost-visible');
 
-    wireShowGhost();
+    saveDraft();
   });
 
-  /* ── Clear ICD ── */
+  /* ── Clear search input only (does not remove selected codes) ── */
   container.querySelector('#btn-clear-icd').addEventListener('click', () => {
     searchInput.value = '';
-    ['#f-icd-code','#f-icd-desc','#f-icd-zh','#f-icd-cat','#f-icd-catname']
-      .forEach(id => { form.querySelector(id).value = ''; });
-    badge.classList.add('hidden');
-    badge.innerHTML = '';
     dropdown.classList.add('hidden');
-    ghostBody.innerHTML = '<p class="no-records" style="padding:1rem;font-size:.85rem">Select an ICD code to load template items.</p>';
   });
 
   /* ── Close ICD dropdown on outside click ── */
@@ -294,13 +397,6 @@ function wireForm(container, existing, prefill) {
   });
 
   /* ── Show/hide ghost panel ── */
-  function wireShowGhost() {
-    container.querySelector('#btn-show-ghost')?.addEventListener('click', () => {
-      ghostCol.classList.toggle('ghost-visible');
-    });
-  }
-  wireShowGhost();
-
   container.querySelector('#btn-show-ghost-soap')?.addEventListener('click', () => {
     ghostCol.classList.add('ghost-visible');
   });
@@ -318,7 +414,7 @@ function wireForm(container, existing, prefill) {
 
   /* ── FHIR Export ── */
   container.querySelector('#btn-fhir-export').addEventListener('click', async () => {
-    const session = buildSession(form, existing);
+    const session = buildSession(form, existing, icdCodes);
     if (!session) return;
     const { exportSessionAsFhirBundle } = await import('./firebase-sync.js');
     exportSessionAsFhirBundle(session);
@@ -347,14 +443,18 @@ function wireForm(container, existing, prefill) {
     showToast('success', `Template "${tmpl.name}" saved.`);
   });
 
-  /* ── Cancel ── */
-  container.querySelector('#btn-cancel').addEventListener('click', () => navigate('dashboard'));
+  /* ── Cancel (clear draft and go home) ── */
+  container.querySelector('#btn-cancel').addEventListener('click', () => {
+    clearFormDraft();
+    navigate('dashboard');
+  });
 
-  /* ── Submit ── */
+  /* ── Submit (clear draft and save) ── */
   form.addEventListener('submit', e => {
     e.preventDefault();
-    const session = buildSession(form, existing);
+    const session = buildSession(form, existing, icdCodes);
     if (!session) return;
+    clearFormDraft();
     saveSession(session);
     recordIcdUse(session);
     showToast('success', `Entry saved at ${session.timestamp}.`);
@@ -362,7 +462,7 @@ function wireForm(container, existing, prefill) {
     navigate('dashboard');
   });
 
-  /* ── Load ghost panel for existing/prefill category ── */
+  /* ── Load ghost panel for a given category ── */
   function loadGhostPanel(catId, icdData) {
     const catObj = (icdData.categories || []).find(c => c.id === catId);
     if (!catObj) return;
@@ -370,7 +470,6 @@ function wireForm(container, existing, prefill) {
       `${catObj.icon || '📋'} ${catObj.nameEn} — Template`;
     ghostBody.innerHTML = buildGhostContent(catObj, catId);
     wireGhostInsert(ghostBody, form, catId);
-    ghostCol.classList.add('ghost-visible');
   }
 }
 
@@ -378,7 +477,7 @@ function wireForm(container, existing, prefill) {
 /* Build session object from form                                */
 /* ============================================================ */
 
-function buildSession(form, existing) {
+function buildSession(form, existing, icdCodes) {
   const date = form.querySelector('#f-date').value.trim();
   if (!date) { showToast('error', 'Date is required.'); return null; }
 
@@ -389,20 +488,27 @@ function buildSession(form, existing) {
   /* Try to split combined text into S/O/A/P sections (best effort) */
   const soapSplit = splitSoapText(soapText);
 
+  /* Use icdCodes array; also expose primary fields for backward compat */
+  const codes   = Array.isArray(icdCodes) && icdCodes.length ? icdCodes : null;
+  const primary = codes?.[0] || null;
+
   return {
     id:             existing?.id || `opd-${typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : `${Date.now()}-${Date.now().toString(36)}`}`,
     date,
     timestamp,
-    patientId:      form.querySelector('#f-pid').value.trim()          || null,
-    patientType:    form.querySelector('#f-pt').value                  || null,
-    icdCode:        form.querySelector('#f-icd-code').value            || null,
-    icdDescription: form.querySelector('#f-icd-desc').value            || null,
-    icdZh:          form.querySelector('#f-icd-zh').value              || null,
-    categoryId:     form.querySelector('#f-icd-cat').value             || null,
-    categoryName:   form.querySelector('#f-icd-catname').value         || null,
-    condition:      form.querySelector('#f-condition').value.trim()    || null,
-    keyLearning:    form.querySelector('#f-klp').value.trim()          || null,
-    ebm:            form.querySelector('#f-klp').value.trim()          || null,
+    patientId:      form.querySelector('#f-pid').value.trim()       || null,
+    patientType:    form.querySelector('#f-pt').value               || null,
+    /* Multiple ICD codes (new) */
+    icdCodes:       codes,
+    /* Primary code fields (backward compat = first in array) */
+    icdCode:        primary?.code         || null,
+    icdDescription: primary?.en           || null,
+    icdZh:          primary?.zh           || null,
+    categoryId:     primary?.categoryId   || null,
+    categoryName:   primary?.categoryName || null,
+    condition:      form.querySelector('#f-condition').value.trim() || null,
+    keyLearning:    form.querySelector('#f-klp').value.trim()       || null,
+    ebm:            form.querySelector('#f-klp').value.trim()       || null,
     soapText,
     soap:           soapSplit,
     createdAt:      existing?.createdAt || new Date().toISOString(),
@@ -455,7 +561,7 @@ function buildGhostContent(catObj, catId) {
 
   return `
     <div class="ghost-insert-all-row">
-      <span class="hint" style="font-size:.8rem">Check items, then click <b>Insert Checked</b></span>
+      <span class="hint" style="font-size:.8rem">Check items then <b>Insert</b> — only the term before <b>":"</b> is inserted</span>
       <button type="button" class="btn-ref-action ghost-copy-all-btn">📋 Copy All Checked</button>
     </div>
     ${sections.map(sec => {
@@ -472,12 +578,21 @@ function buildGhostContent(catObj, catId) {
             </div>
           </div>
           <div class="ghost-items">
-            ${sorted.map(({ text, count }) => `
+            ${sorted.map(({ text, count }) => {
+              /* Split on first ":" to distinguish term from detail */
+              const colonIdx = text.indexOf(':');
+              const term   = colonIdx >= 0 ? text.slice(0, colonIdx).trim() : text;
+              const detail = colonIdx >= 0 ? text.slice(colonIdx + 1).trim() : '';
+              return `
               <label class="ghost-item">
-                <input type="checkbox" class="ghost-cb" data-sec="${esc(sec.key)}" data-text="${esc(text)}">
-                <span class="ghost-item-text">${esc(text)}</span>
+                <input type="checkbox" class="ghost-cb" data-sec="${esc(sec.key)}"
+                  data-text="${esc(text)}" data-term="${esc(term)}">
+                <span class="ghost-item-text">
+                  <b>${esc(term)}</b>${detail ? `<span class="ghost-item-detail">: ${esc(detail)}</span>` : ''}
+                </span>
                 ${count > 0 ? `<span class="freq-badge">×${count}</span>` : ''}
-              </label>`).join('')}
+              </label>`;
+            }).join('')}
           </div>
         </div>`;
     }).join('')}
@@ -487,7 +602,7 @@ function buildGhostContent(catObj, catId) {
 function wireGhostInsert(ghostBody, form, catId) {
   const ta = form.querySelector('#f-soap-text');
 
-  /* Global copy-all-checked button */
+  /* Global copy-all-checked button — copies full text for reference */
   ghostBody.querySelector('.ghost-copy-all-btn')?.addEventListener('click', () => {
     const checked = [...ghostBody.querySelectorAll('.ghost-cb:checked')];
     if (!checked.length) { showToast('info', 'Check some items first.'); return; }
@@ -506,23 +621,26 @@ function wireGhostInsert(ghostBody, form, catId) {
     });
   });
 
-  /* Insert checked items for a section */
+  /* Insert checked items for a section — uses only term before ":" */
   ghostBody.querySelectorAll('.ghost-insert-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const sec     = btn.dataset.sec;
       const checked = [...ghostBody.querySelectorAll(`.ghost-cb[data-sec="${sec}"]:checked`)];
       if (!checked.length) { showToast('info', 'Check some items first.'); return; }
 
-      const items = checked.map(cb => cb.dataset.text);
+      /* Use data-term (part before ":") for insertion; full text is in data-text */
+      const items     = checked.map(cb => cb.dataset.text);
+      const termItems = checked.map(cb => cb.dataset.term || cb.dataset.text);
+
       if (ta) {
-        const cur  = ta.value.trim();
+        const cur   = ta.value.trim();
         const label = sec === 'pe' ? 'PE' : sec.toUpperCase();
-        const toAdd = items.join('\n' + ' '.repeat(label.length + 2));
-        ta.value = cur ? `${cur}\n${label}: ${toAdd}` : `${label}: ${toAdd}`;
+        const toAdd = termItems.map(t => `${t}:`).join('\n');
+        ta.value = cur ? `${cur}\n${toAdd}` : toAdd;
       }
       recordSoapSelections(catId, items);
       checked.forEach(cb => { cb.checked = false; });
-      showToast('success', `Inserted ${items.length} item${items.length > 1 ? 's' : ''}.`);
+      showToast('success', `Inserted ${termItems.length} item${termItems.length > 1 ? 's' : ''}.`);
     });
   });
 }

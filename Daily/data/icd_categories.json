@@ -825,6 +825,194 @@
           "Tinel's sign at tarsal tunnel (medial malleolus): tingling into sole = tarsal tunnel syndrome"
         ]
       }
+    },
+    {
+      "id": "vertigo",
+      "nameEn": "Vertigo & Vestibular Disorders",
+      "nameZh": "眩暈及前庭疾患",
+      "icon": "🌀",
+      "codeRange": "H81–H83, R42",
+      "soap": {
+        "subjective": [
+          "Onset & quality: spinning (true vertigo) vs. lightheadedness vs. unsteadiness",
+          "Duration: seconds (BPPV) vs. minutes (TIA/Meniere's episode) vs. hours (Meniere's) vs. days (neuritis)",
+          "Triggers: head position change (BPPV), loud noise/Valsalva (SCD), standing up (orthostatic)",
+          "Associated symptoms: nausea/vomiting, tinnitus, hearing loss, ear fullness (Meniere's)",
+          "Neurologic symptoms: diplopia, dysphagia, dysarthria, facial numbness, limb weakness (central causes)",
+          "Fall history, prior episodes, head trauma, recent viral illness (neuritis)",
+          "Medications: aminoglycosides, loop diuretics, antiepileptics (ototoxic)"
+        ],
+        "objective": [
+          "Vital signs: orthostatic BP drop (>20/10 mmHg) for orthostatic hypotension",
+          "Nystagmus: direction (horizontal, vertical, torsional), fixation suppression (peripheral vs central)",
+          "HINTS exam: Head Impulse Test (abnormal = peripheral), Nystagmus (direction-changing = central), Test of Skew (skew deviation = central)",
+          "Dix-Hallpike test: positive with latent upbeat-torsional nystagmus = posterior canal BPPV",
+          "Romberg / Fukuda stepping test: peripheral — falls toward lesion side",
+          "Hearing: Weber and Rinne tests (sensorineural vs conductive loss)",
+          "Cerebellar exam: finger-nose, gait, tandem walk"
+        ],
+        "assessment_pearls": [
+          "BPPV (H81.1): most common; Dix-Hallpike positive; treat with Epley maneuver",
+          "Meniere's disease (H81.0): recurrent attacks of vertigo + unilateral SNHL + tinnitus + ear fullness",
+          "Vestibular neuritis (H81.2): acute, prolonged vertigo; HINTS normal HIT; no hearing loss",
+          "Labyrinthitis (H83.0): vestibular neuritis + hearing loss",
+          "BPPV vs central: HINTS exam — normal HIT + direction-changing nystagmus = central alarm",
+          "Posterior fossa stroke (PICA): sudden vertigo + HINTS — normal HIT is danger sign",
+          "Superior canal dehiscence (H83.8): Tullio phenomenon (sound-induced vertigo)"
+        ],
+        "plan_template": [
+          "BPPV: Epley maneuver (posterior canal); Barbecue roll (horizontal canal); reassess in 1 week",
+          "Acute vestibular neuritis: vestibular suppressants (short-term) + early vestibular rehab",
+          "Meniere's: low-sodium diet (<2g/day), diuretics (hydrochlorothiazide), betahistine",
+          "Central vertigo: urgent MRI brain (DWI), neurology/neurosurgery consultation",
+          "Vestibular rehabilitation: canalith repositioning, balance training for chronic unilateral vestibular loss",
+          "Avoid prolonged vestibular suppressants (delay central compensation)"
+        ]
+      },
+      "physicalExam": {
+        "bedside_scales": [
+          "HINTS exam: Head Impulse + Nystagmus + Test of Skew — 100% sensitivity for stroke (if all normal = central)",
+          "Dix-Hallpike: position patient supine, head 45° to side; positive = latent upbeat-torsional nystagmus",
+          "Supine Roll (Barbecue): for horizontal canal BPPV; geotropic vs apogeotropic",
+          "Orthostatic BP: standing 1 min and 3 min after supine; drop >20/10 = orthostatic hypotension",
+          "DHI (Dizziness Handicap Inventory): 0–100; mild <30, moderate 30–60, severe >60"
+        ],
+        "neurologic_exam": [
+          "Spontaneous nystagmus: direction, inhibited by fixation (peripheral) or not (central)",
+          "Head impulse test (VOR): catch-up saccade = peripheral (intact HINTS = central alarm)",
+          "Skew deviation: vertical misalignment of eyes (central sign)",
+          "Gait: wide-based, tendency to fall ipsilateral to lesion (peripheral) vs. ataxic (central)",
+          "Cranial nerves: V, VII (facial), VIII (hearing), IX/X (dysphagia), XII (tongue)",
+          "Cerebellar signs: dysmetria, dysdiadochokinesia, truncal ataxia"
+        ]
+      }
+    },
+    {
+      "id": "neuromuscular",
+      "nameEn": "Neuromuscular Diseases",
+      "nameZh": "神經肌肉疾病",
+      "icon": "💪",
+      "codeRange": "G60–G73",
+      "soap": {
+        "subjective": [
+          "Onset & progression: acute (<4 wks), subacute (4–8 wks), chronic (>8 wks); symmetric vs. asymmetric",
+          "Distribution: distal (length-dependent) vs. proximal (myopathy/NMJ) vs. focal (mononeuropathy/radiculopathy)",
+          "Sensory symptoms: numbness, tingling, burning, loss of proprioception (falls in dark)",
+          "Motor symptoms: weakness — difficulty rising from chair, climbing stairs (proximal); hand dexterity (distal)",
+          "Autonomic symptoms: orthostatic hypotension, hyperhidrosis/anhidrosis, bladder dysfunction",
+          "Fatigability: worsening with repetitive use (NMJ) vs. constant weakness (myopathy)",
+          "Systemic context: diabetes, alcohol, chemotherapy, family history of neuropathy or muscular dystrophy",
+          "Medications: statins (myopathy), isoniazid (B6 deficiency neuropathy), amiodarone"
+        ],
+        "objective": [
+          "Muscle tone: hypotonia (LMN/myopathy) vs. spasticity (UMN)",
+          "Muscle bulk: wasting (chronic denervation/myopathy), hypertrophy (e.g., DMD calves)",
+          "Strength testing (MRC 0–5): proximal (deltoid, iliopsoas) vs. distal (grip, EDB, tibialis anterior)",
+          "Reflexes: diminished or absent (peripheral neuropathy/myopathy) vs. hyperreflexia (UMN overlap)",
+          "Sensory: stocking-glove loss, large-fiber (vibration, proprioception) vs. small-fiber (pin, temp)",
+          "Tinel sign: carpal tunnel, cubital tunnel; nerve percussion tenderness",
+          "Fatigability test: sustained upgaze ptosis (MG); repetitive grip decrement",
+          "Gait: steppage gait (foot drop), Trendelenburg (proximal hip weakness), waddling (myopathy)"
+        ],
+        "assessment_pearls": [
+          "Hereditary neuropathy (G60.0 Charcot-Marie-Tooth): AD/AR; distal wasting; high arches; pes cavus",
+          "Inflammatory neuropathy: GBS (G61.0) — ascending, areflexia, albuminocytologic dissociation; CIDP (G61.81) — chronic",
+          "Diabetic polyneuropathy (E11.42): length-dependent, small + large fiber; screen annually",
+          "Myasthenia gravis (G70.00/01): fatigable ptosis/diplopia/dysarthria; AChR or MuSK Ab; edrophonium test",
+          "Lambert-Eaton (G73.1): proximal weakness improves with repetition; P/Q VGCC Ab; lung cancer association",
+          "Inflammatory myopathy (G72.49/M33): proximal weakness; elevated CK; EMG myopathic; skin rash (DM)",
+          "GBS: treat with IVIG or plasmapheresis; monitor FVC (ventilatory failure risk)"
+        ],
+        "plan_template": [
+          "NCS/EMG: confirm axonal vs. demyelinating; pattern of involvement",
+          "Labs: CBC, CMP, HbA1c, TSH, B12, folate, SPEP (paraprotein), ANA/anti-dsDNA, AChR Ab, anti-MuSK, CPK",
+          "GBS: IVIG 2 g/kg or plasmapheresis; ICU monitoring; DVT prophylaxis",
+          "CIDP: IVIG (maintenance), corticosteroids, plasma exchange",
+          "MG: pyridostigmine (symptom control); immunosuppression (prednisone ± azathioprine); thymectomy if thymoma",
+          "Diabetic neuropathy: optimize glycemic control; pain management (gabapentin/duloxetine/amitriptyline)",
+          "Physiotherapy/OT: foot drop AFO, adaptive equipment, fall prevention"
+        ]
+      },
+      "physicalExam": {
+        "bedside_scales": [
+          "MRC Scale (0–5): 0=no contraction, 1=flicker, 2=no gravity, 3=against gravity, 4=reduced resistance, 5=normal",
+          "ONLS (Overall Neuropathy Limitations Scale): arm 0–5 + leg 0–7",
+          "Quantitative sensory testing: 10g monofilament, vibration with 128 Hz tuning fork, pinprick",
+          "Myasthenia Gravis Foundation Classification (I–V): based on bulbar and respiratory involvement",
+          "Single-fiber EMG: most sensitive test for NMJ disorders (MG, LEMS)",
+          "Ice pack test: ptosis improves with ice (MG) — bedside confirmation"
+        ],
+        "neurologic_exam": [
+          "Cranial nerve exam: ptosis, diplopia, dysarthria, dysphagia (MG/LEMS/myopathy)",
+          "Fatigue test: sustained upgaze 1 min for ptosis; repeated arm raises for fatigable proximal weakness",
+          "Gowers' sign: patient uses hands to climb up legs when rising from floor (proximal hip/quad weakness)",
+          "Calf hypertrophy: pseudohypertrophy in DMD (fatty replacement of muscle)",
+          "Deep tendon reflexes: ankle/knee jerks absent in polyneuropathy; relatively preserved in myopathy",
+          "Sensory dermatomal vs. stocking-glove distribution",
+          "Horner syndrome: ptosis + miosis + anhidrosis (pancoast tumor, lateral medullary syndrome)"
+        ]
+      }
+    },
+    {
+      "id": "sleep",
+      "nameEn": "Sleep Disorders",
+      "nameZh": "睡眠疾患",
+      "icon": "😴",
+      "codeRange": "G47",
+      "soap": {
+        "subjective": [
+          "Chief complaint: insomnia vs. hypersomnia vs. abnormal movements/behaviors during sleep",
+          "Sleep schedule: bedtime, wake time, total sleep time, sleep latency, awakenings",
+          "Insomnia: difficulty initiating vs. maintaining vs. early-morning awakening",
+          "Daytime impairment: Epworth Sleepiness Scale; driving safety",
+          "Snoring, witnessed apneas, gasping/choking (OSA); nocturia",
+          "Restless legs: urge to move legs, worse at rest, evening/night, relieved by movement",
+          "Parasomnias: sleep-walking, sleep terrors, REM sleep behavior disorder (acting out dreams)",
+          "Circadian disruption: shift work, jet lag, delayed sleep phase",
+          "Medications and substances: caffeine, alcohol, hypnotics, stimulants, antidepressants"
+        ],
+        "objective": [
+          "BMI, neck circumference (>40 cm female / >43 cm male = OSA risk), Mallampati score",
+          "Oropharynx: tonsillar hypertrophy, retrognathia, macroglossia",
+          "Cardiovascular: hypertension (OSA association)",
+          "Neurologic: cognitive exam, evidence of narcolepsy (cataplexy trigger), RBD features",
+          "Akathisia vs. RLS: distinguish from medication-induced restlessness"
+        ],
+        "assessment_pearls": [
+          "OSA (G47.33): AHI ≥5 with symptoms or ≥15 regardless; STOP-BANG ≥3 = high risk",
+          "Narcolepsy type 1 (G47.411): EDS + cataplexy; CSF hypocretin low; MSLT: SOREMP ≥2",
+          "REM sleep behavior disorder (G47.52): violent dream enactment; 80% eventually develop synucleinopathy",
+          "Restless legs syndrome (G25.81): URGE criteria — Urge to move, Rest aggravates, Gets better with movement, Evening/night worsens",
+          "Insomnia disorder (G47.00): CBT-I is first-line (stimulus control, sleep restriction, relaxation)",
+          "Delayed sleep phase (G47.21): circadian misalignment; treat with light therapy + melatonin",
+          "Central sleep apnea (G47.31): Cheyne-Stokes in HF; treat underlying cause ± ASV"
+        ],
+        "plan_template": [
+          "OSA: CPAP titration; dental appliance for mild-moderate; positional therapy; weight loss; ENT referral for surgery",
+          "Insomnia: CBT-I first-line; short-term: zolpidem/eszopiclone or low-dose doxepin; sleep hygiene education",
+          "RLS: ferritin >75 mcg/L target; dopamine agonists (pramipexole, ropinirole); pregabalin; avoid augmentation",
+          "Narcolepsy: modafinil/armodafinil (EDS); scheduled naps; sodium oxybate (cataplexy + EDS)",
+          "RBD: clonazepam or melatonin; bedroom safety (padded floor, remove sharp objects); neurodegeneration counseling",
+          "Polysomnography: indicated for OSA, parasomnias, RBD, narcolepsy workup; MSLT for hypersomnia"
+        ]
+      },
+      "physicalExam": {
+        "bedside_scales": [
+          "Epworth Sleepiness Scale (0–24): >10 = excessive daytime sleepiness",
+          "STOP-BANG questionnaire (0–8): score ≥3 = high OSA risk; ≥5 = very high risk",
+          "Insomnia Severity Index (ISI, 0–28): ≥15 = moderate-severe insomnia",
+          "PSQI (Pittsburgh Sleep Quality Index): score >5 indicates poor sleep quality",
+          "RLS severity scale (0–40): mild 1–10, moderate 11–20, severe 21–30, very severe 31–40",
+          "Mallampati score (I–IV): I = full uvula visible; IV = only hard palate"
+        ],
+        "neurologic_exam": [
+          "Cataplexy trigger: tell a joke or ask for funny story; observe for brief muscle weakness/collapse",
+          "Hypnagogic hallucinations: ask about vivid imagery at sleep onset",
+          "Sleep paralysis: unable to move at sleep onset/offset",
+          "RBD: ask bed partner about vocalization, punching, kicking during sleep",
+          "Akathisia vs RLS: RLS is position-dependent (supine/sitting at rest), worse at night, relieved by walking"
+        ]
+      }
     }
   ],
   "codeLookup": {
@@ -12127,6 +12315,657 @@
         "code": "S09.93XS",
         "en": "Unspecified injury of face, sequela",
         "zh": "臉部損傷之後遺症"
+      }
+    ],
+    "vertigo": [
+      {
+        "code": "H81.01",
+        "en": "Meniere's disease, right ear",
+        "zh": "右耳梅尼爾氏病"
+      },
+      {
+        "code": "H81.02",
+        "en": "Meniere's disease, left ear",
+        "zh": "左耳梅尼爾氏病"
+      },
+      {
+        "code": "H81.03",
+        "en": "Meniere's disease, bilateral",
+        "zh": "雙側梅尼爾氏病"
+      },
+      {
+        "code": "H81.09",
+        "en": "Meniere's disease, unspecified ear",
+        "zh": "梅尼爾氏病，耳別未明"
+      },
+      {
+        "code": "H81.10",
+        "en": "Benign paroxysmal vertigo, unspecified ear",
+        "zh": "良性陣發性眩暈，耳別未明"
+      },
+      {
+        "code": "H81.11",
+        "en": "Benign paroxysmal vertigo, right ear",
+        "zh": "右耳良性陣發性眩暈"
+      },
+      {
+        "code": "H81.12",
+        "en": "Benign paroxysmal vertigo, left ear",
+        "zh": "左耳良性陣發性眩暈"
+      },
+      {
+        "code": "H81.13",
+        "en": "Benign paroxysmal vertigo, bilateral",
+        "zh": "雙側良性陣發性眩暈"
+      },
+      {
+        "code": "H81.21",
+        "en": "Vestibular neuronitis, right ear",
+        "zh": "右耳前庭神經炎"
+      },
+      {
+        "code": "H81.22",
+        "en": "Vestibular neuronitis, left ear",
+        "zh": "左耳前庭神經炎"
+      },
+      {
+        "code": "H81.23",
+        "en": "Vestibular neuronitis, bilateral",
+        "zh": "雙側前庭神經炎"
+      },
+      {
+        "code": "H81.29",
+        "en": "Vestibular neuronitis, unspecified ear",
+        "zh": "前庭神經炎，耳別未明"
+      },
+      {
+        "code": "H81.311",
+        "en": "Aural vertigo, right ear",
+        "zh": "耳源性眩暈，右耳"
+      },
+      {
+        "code": "H81.312",
+        "en": "Aural vertigo, left ear",
+        "zh": "耳源性眩暈，左耳"
+      },
+      {
+        "code": "H81.313",
+        "en": "Aural vertigo, bilateral",
+        "zh": "耳源性眩暈，雙側"
+      },
+      {
+        "code": "H81.319",
+        "en": "Aural vertigo, unspecified ear",
+        "zh": "耳源性眩暈，耳別未明"
+      },
+      {
+        "code": "H81.391",
+        "en": "Other peripheral vertigo, right ear",
+        "zh": "其他周邊性眩暈，右耳"
+      },
+      {
+        "code": "H81.392",
+        "en": "Other peripheral vertigo, left ear",
+        "zh": "其他周邊性眩暈，左耳"
+      },
+      {
+        "code": "H81.393",
+        "en": "Other peripheral vertigo, bilateral",
+        "zh": "其他周邊性眩暈，雙側"
+      },
+      {
+        "code": "H81.399",
+        "en": "Other peripheral vertigo, unspecified ear",
+        "zh": "其他周邊性眩暈，耳別未明"
+      },
+      {
+        "code": "H81.41",
+        "en": "Vertigo of central origin, right ear",
+        "zh": "中樞性眩暈，右耳"
+      },
+      {
+        "code": "H81.42",
+        "en": "Vertigo of central origin, left ear",
+        "zh": "中樞性眩暈，左耳"
+      },
+      {
+        "code": "H81.43",
+        "en": "Vertigo of central origin, bilateral",
+        "zh": "中樞性眩暈，雙側"
+      },
+      {
+        "code": "H81.49",
+        "en": "Vertigo of central origin, unspecified ear",
+        "zh": "中樞性眩暈，耳別未明"
+      },
+      {
+        "code": "H81.8X1",
+        "en": "Other disorders of vestibular function, right ear",
+        "zh": "其他前庭功能疾患，右耳"
+      },
+      {
+        "code": "H81.8X2",
+        "en": "Other disorders of vestibular function, left ear",
+        "zh": "其他前庭功能疾患，左耳"
+      },
+      {
+        "code": "H81.8X9",
+        "en": "Other disorders of vestibular function, unspecified ear",
+        "zh": "其他前庭功能疾患，耳別未明"
+      },
+      {
+        "code": "H81.90",
+        "en": "Unspecified disorder of vestibular function, unspecified ear",
+        "zh": "前庭功能疾患，未明"
+      },
+      {
+        "code": "H81.91",
+        "en": "Unspecified disorder of vestibular function, right ear",
+        "zh": "前庭功能疾患，右耳，未明"
+      },
+      {
+        "code": "H81.92",
+        "en": "Unspecified disorder of vestibular function, left ear",
+        "zh": "前庭功能疾患，左耳，未明"
+      },
+      {
+        "code": "H82.1",
+        "en": "Vertiginous syndromes in diseases classified elsewhere, right ear",
+        "zh": "眩暈症候群（右耳）見於他處分類之疾病"
+      },
+      {
+        "code": "H82.2",
+        "en": "Vertiginous syndromes in diseases classified elsewhere, left ear",
+        "zh": "眩暈症候群（左耳）見於他處分類之疾病"
+      },
+      {
+        "code": "H83.01",
+        "en": "Labyrinthitis, right ear",
+        "zh": "迷路炎，右耳"
+      },
+      {
+        "code": "H83.02",
+        "en": "Labyrinthitis, left ear",
+        "zh": "迷路炎，左耳"
+      },
+      {
+        "code": "H83.03",
+        "en": "Labyrinthitis, bilateral",
+        "zh": "迷路炎，雙側"
+      },
+      {
+        "code": "H83.09",
+        "en": "Labyrinthitis, unspecified ear",
+        "zh": "迷路炎，耳別未明"
+      },
+      {
+        "code": "H83.11",
+        "en": "Labyrinthine fistula, right ear",
+        "zh": "迷路廔管，右耳"
+      },
+      {
+        "code": "H83.12",
+        "en": "Labyrinthine fistula, left ear",
+        "zh": "迷路廔管，左耳"
+      },
+      {
+        "code": "H83.2X1",
+        "en": "Labyrinthine dysfunction, right ear",
+        "zh": "迷路功能障礙，右耳"
+      },
+      {
+        "code": "H83.2X2",
+        "en": "Labyrinthine dysfunction, left ear",
+        "zh": "迷路功能障礙，左耳"
+      },
+      {
+        "code": "H83.8X1",
+        "en": "Other specified disorders of inner ear, right ear",
+        "zh": "其他內耳疾患，右耳"
+      },
+      {
+        "code": "H83.8X2",
+        "en": "Other specified disorders of inner ear, left ear",
+        "zh": "其他內耳疾患，左耳"
+      },
+      {
+        "code": "R42",
+        "en": "Dizziness and giddiness",
+        "zh": "頭暈及暈眩"
+      }
+    ],
+    "neuromuscular": [
+      {
+        "code": "G60.0",
+        "en": "Hereditary motor and sensory neuropathy (Charcot-Marie-Tooth)",
+        "zh": "遺傳性運動感覺神經病變（夏馬杜三氏症）"
+      },
+      {
+        "code": "G60.1",
+        "en": "Refsum's disease",
+        "zh": "雷夫蘇姆氏病"
+      },
+      {
+        "code": "G60.2",
+        "en": "Neuropathy in association with hereditary ataxia",
+        "zh": "遺傳性共濟失調相關神經病變"
+      },
+      {
+        "code": "G60.3",
+        "en": "Idiopathic progressive neuropathy",
+        "zh": "特發性進行性神經病變"
+      },
+      {
+        "code": "G60.8",
+        "en": "Other hereditary and idiopathic neuropathies",
+        "zh": "其他遺傳性及特發性神經病變"
+      },
+      {
+        "code": "G60.9",
+        "en": "Hereditary and idiopathic neuropathy, unspecified",
+        "zh": "遺傳性及特發性神經病變，未明"
+      },
+      {
+        "code": "G61.0",
+        "en": "Guillain-Barre syndrome",
+        "zh": "吉巴氏症候群"
+      },
+      {
+        "code": "G61.1",
+        "en": "Serum neuropathy",
+        "zh": "血清神經病變"
+      },
+      {
+        "code": "G61.81",
+        "en": "Chronic inflammatory demyelinating polyneuritis (CIDP)",
+        "zh": "慢性發炎性脫髓鞘多發性神經炎"
+      },
+      {
+        "code": "G61.89",
+        "en": "Other inflammatory polyneuropathies",
+        "zh": "其他發炎性多發性神經病變"
+      },
+      {
+        "code": "G61.9",
+        "en": "Inflammatory polyneuropathy, unspecified",
+        "zh": "發炎性多發性神經病變，未明"
+      },
+      {
+        "code": "G62.0",
+        "en": "Drug-induced polyneuropathy",
+        "zh": "藥物誘發性多發性神經病變"
+      },
+      {
+        "code": "G62.1",
+        "en": "Alcoholic polyneuropathy",
+        "zh": "酒精性多發性神經病變"
+      },
+      {
+        "code": "G62.2",
+        "en": "Polyneuropathy due to other toxic agents",
+        "zh": "其他毒素引起之多發性神經病變"
+      },
+      {
+        "code": "G62.81",
+        "en": "Critical illness polyneuropathy",
+        "zh": "重症病患多發性神經病變"
+      },
+      {
+        "code": "G62.82",
+        "en": "Radiation-induced polyneuropathy",
+        "zh": "放射線引起之多發性神經病變"
+      },
+      {
+        "code": "G62.89",
+        "en": "Other specified polyneuropathies",
+        "zh": "其他特定多發性神經病變"
+      },
+      {
+        "code": "G62.9",
+        "en": "Polyneuropathy, unspecified",
+        "zh": "多發性神經病變，未明"
+      },
+      {
+        "code": "G63",
+        "en": "Polyneuropathy in diseases classified elsewhere",
+        "zh": "他處分類疾病之多發性神經病變"
+      },
+      {
+        "code": "G70.00",
+        "en": "Myasthenia gravis without (acute) exacerbation",
+        "zh": "重症肌無力（無急性惡化）"
+      },
+      {
+        "code": "G70.01",
+        "en": "Myasthenia gravis with (acute) exacerbation",
+        "zh": "重症肌無力（伴急性惡化）"
+      },
+      {
+        "code": "G70.1",
+        "en": "Toxic myoneural disorders",
+        "zh": "毒性神經肌肉疾患"
+      },
+      {
+        "code": "G70.2",
+        "en": "Congenital and developmental myasthenia",
+        "zh": "先天性及發育性肌無力"
+      },
+      {
+        "code": "G70.80",
+        "en": "Lambert-Eaton syndrome, unspecified",
+        "zh": "蘭伯特–伊頓症候群，未明"
+      },
+      {
+        "code": "G70.81",
+        "en": "Lambert-Eaton syndrome in disease classified elsewhere",
+        "zh": "蘭伯特–伊頓症候群（他處分類疾病）"
+      },
+      {
+        "code": "G71.00",
+        "en": "Duchenne or Becker muscular dystrophy, unspecified",
+        "zh": "杜氏或貝氏肌肉失養症，未明"
+      },
+      {
+        "code": "G71.01",
+        "en": "Duchenne muscular dystrophy",
+        "zh": "杜氏肌肉失養症"
+      },
+      {
+        "code": "G71.02",
+        "en": "Becker muscular dystrophy",
+        "zh": "貝氏肌肉失養症"
+      },
+      {
+        "code": "G71.11",
+        "en": "Myotonic muscular dystrophy (Steinert)",
+        "zh": "肌強直性肌肉失養症（史坦納特氏病）"
+      },
+      {
+        "code": "G71.19",
+        "en": "Other myotonic disorders",
+        "zh": "其他肌強直性疾患"
+      },
+      {
+        "code": "G71.2",
+        "en": "Congenital myopathies",
+        "zh": "先天性肌肉病變"
+      },
+      {
+        "code": "G71.3",
+        "en": "Mitochondrial myopathy, NEC",
+        "zh": "粒線體肌肉病變"
+      },
+      {
+        "code": "G72.0",
+        "en": "Drug-induced myopathy",
+        "zh": "藥物誘發性肌肉病變"
+      },
+      {
+        "code": "G72.1",
+        "en": "Alcoholic myopathy",
+        "zh": "酒精性肌肉病變"
+      },
+      {
+        "code": "G72.2",
+        "en": "Myopathy due to other toxic agents",
+        "zh": "其他毒素引起之肌肉病變"
+      },
+      {
+        "code": "G72.3",
+        "en": "Periodic paralysis",
+        "zh": "週期性麻痺"
+      },
+      {
+        "code": "G72.41",
+        "en": "Inclusion body myositis (IBM)",
+        "zh": "包涵體肌炎"
+      },
+      {
+        "code": "G72.49",
+        "en": "Other inflammatory and immune myopathies, NEC",
+        "zh": "其他發炎性及免疫性肌肉病變"
+      },
+      {
+        "code": "G72.81",
+        "en": "Critical illness myopathy",
+        "zh": "重症病患肌肉病變"
+      },
+      {
+        "code": "G72.89",
+        "en": "Other specified myopathies",
+        "zh": "其他特定肌肉病變"
+      },
+      {
+        "code": "G72.9",
+        "en": "Myopathy, unspecified",
+        "zh": "肌肉病變，未明"
+      },
+      {
+        "code": "G73.1",
+        "en": "Lambert-Eaton syndrome in neoplastic disease",
+        "zh": "蘭伯特–伊頓症候群（腫瘤性疾病）"
+      },
+      {
+        "code": "G73.3",
+        "en": "Myasthenic syndromes in other diseases classified elsewhere",
+        "zh": "他處分類疾病之肌無力症候群"
+      },
+      {
+        "code": "G73.7",
+        "en": "Myopathy in diseases classified elsewhere",
+        "zh": "他處分類疾病之肌肉病變"
+      }
+    ],
+    "sleep": [
+      {
+        "code": "G47.00",
+        "en": "Insomnia, unspecified",
+        "zh": "失眠症，未明"
+      },
+      {
+        "code": "G47.01",
+        "en": "Insomnia due to medical condition",
+        "zh": "因醫學狀況所致失眠"
+      },
+      {
+        "code": "G47.09",
+        "en": "Other insomnia",
+        "zh": "其他失眠症"
+      },
+      {
+        "code": "G47.10",
+        "en": "Hypersomnia, unspecified",
+        "zh": "嗜睡症，未明"
+      },
+      {
+        "code": "G47.11",
+        "en": "Idiopathic hypersomnia with long sleep time",
+        "zh": "特發性嗜睡症（長睡時間）"
+      },
+      {
+        "code": "G47.12",
+        "en": "Idiopathic hypersomnia without long sleep time",
+        "zh": "特發性嗜睡症（無長睡時間）"
+      },
+      {
+        "code": "G47.13",
+        "en": "Recurrent hypersomnia (Kleine-Levin)",
+        "zh": "復發性嗜睡症（克萊尼–萊文症候群）"
+      },
+      {
+        "code": "G47.14",
+        "en": "Hypersomnia due to medical condition",
+        "zh": "因醫學狀況所致嗜睡症"
+      },
+      {
+        "code": "G47.19",
+        "en": "Other hypersomnia",
+        "zh": "其他嗜睡症"
+      },
+      {
+        "code": "G47.20",
+        "en": "Circadian rhythm sleep disorder, unspecified type",
+        "zh": "晝夜節律睡眠障礙，未明"
+      },
+      {
+        "code": "G47.21",
+        "en": "Circadian rhythm sleep disorder, delayed sleep phase type",
+        "zh": "晝夜節律睡眠障礙，睡眠相位延遲型"
+      },
+      {
+        "code": "G47.22",
+        "en": "Circadian rhythm sleep disorder, advanced sleep phase type",
+        "zh": "晝夜節律睡眠障礙，睡眠相位超前型"
+      },
+      {
+        "code": "G47.23",
+        "en": "Circadian rhythm sleep disorder, irregular sleep wake type",
+        "zh": "晝夜節律睡眠障礙，不規則睡眠清醒型"
+      },
+      {
+        "code": "G47.24",
+        "en": "Circadian rhythm sleep disorder, free running type",
+        "zh": "晝夜節律睡眠障礙，自由運行型"
+      },
+      {
+        "code": "G47.25",
+        "en": "Circadian rhythm sleep disorder, jet lag type",
+        "zh": "晝夜節律睡眠障礙，時差型"
+      },
+      {
+        "code": "G47.26",
+        "en": "Circadian rhythm sleep disorder, shift work type",
+        "zh": "晝夜節律睡眠障礙，輪班型"
+      },
+      {
+        "code": "G47.27",
+        "en": "Circadian rhythm sleep disorder in conditions classified elsewhere",
+        "zh": "晝夜節律睡眠障礙（他處分類疾病）"
+      },
+      {
+        "code": "G47.29",
+        "en": "Other circadian rhythm sleep disorder",
+        "zh": "其他晝夜節律睡眠障礙"
+      },
+      {
+        "code": "G47.30",
+        "en": "Sleep apnea, unspecified",
+        "zh": "睡眠呼吸中止症，未明"
+      },
+      {
+        "code": "G47.31",
+        "en": "Primary central sleep apnea",
+        "zh": "原發性中樞型睡眠呼吸中止症"
+      },
+      {
+        "code": "G47.32",
+        "en": "High altitude periodic breathing",
+        "zh": "高海拔週期性呼吸"
+      },
+      {
+        "code": "G47.33",
+        "en": "Obstructive sleep apnea (adult)",
+        "zh": "阻塞型睡眠呼吸中止症（成人）"
+      },
+      {
+        "code": "G47.34",
+        "en": "Idiopathic sleep related nonobstructive alveolar hypoventilation",
+        "zh": "特發性睡眠相關非阻塞性肺泡換氣不足"
+      },
+      {
+        "code": "G47.35",
+        "en": "Congenital central alveolar hypoventilation syndrome",
+        "zh": "先天性中樞性肺泡換氣不足症候群"
+      },
+      {
+        "code": "G47.36",
+        "en": "Sleep related hypoventilation in conditions classified elsewhere",
+        "zh": "睡眠相關換氣不足（他處分類疾病）"
+      },
+      {
+        "code": "G47.37",
+        "en": "Central sleep apnea in conditions classified elsewhere",
+        "zh": "中樞型睡眠呼吸中止症（他處分類疾病）"
+      },
+      {
+        "code": "G47.39",
+        "en": "Other sleep apnea",
+        "zh": "其他睡眠呼吸中止症"
+      },
+      {
+        "code": "G47.411",
+        "en": "Narcolepsy with cataplexy",
+        "zh": "猝睡症伴猝倒"
+      },
+      {
+        "code": "G47.419",
+        "en": "Narcolepsy without cataplexy",
+        "zh": "猝睡症不伴猝倒"
+      },
+      {
+        "code": "G47.421",
+        "en": "Narcolepsy in conditions classified elsewhere, with cataplexy",
+        "zh": "猝睡症（他處分類疾病）伴猝倒"
+      },
+      {
+        "code": "G47.429",
+        "en": "Narcolepsy in conditions classified elsewhere, without cataplexy",
+        "zh": "猝睡症（他處分類疾病）不伴猝倒"
+      },
+      {
+        "code": "G47.50",
+        "en": "Parasomnia, unspecified",
+        "zh": "異睡症，未明"
+      },
+      {
+        "code": "G47.51",
+        "en": "Confusional arousals",
+        "zh": "混亂性覺醒"
+      },
+      {
+        "code": "G47.52",
+        "en": "REM sleep behavior disorder",
+        "zh": "快速動眼期睡眠行為障礙"
+      },
+      {
+        "code": "G47.53",
+        "en": "Recurrent isolated sleep paralysis",
+        "zh": "反覆發作之孤立性睡眠麻痺"
+      },
+      {
+        "code": "G47.54",
+        "en": "Parasomnia in conditions classified elsewhere",
+        "zh": "異睡症（他處分類疾病）"
+      },
+      {
+        "code": "G47.59",
+        "en": "Other parasomnias",
+        "zh": "其他異睡症"
+      },
+      {
+        "code": "G47.61",
+        "en": "Periodic limb movement disorder",
+        "zh": "週期性肢體動作疾患"
+      },
+      {
+        "code": "G47.63",
+        "en": "Sleep related bruxism",
+        "zh": "睡眠相關磨牙症"
+      },
+      {
+        "code": "G47.69",
+        "en": "Other sleep related movement disorders",
+        "zh": "其他睡眠相關動作疾患"
+      },
+      {
+        "code": "G47.8",
+        "en": "Other sleep disorders",
+        "zh": "其他睡眠疾患"
+      },
+      {
+        "code": "G47.9",
+        "en": "Sleep disorder, unspecified",
+        "zh": "睡眠疾患，未明"
       }
     ]
   }
