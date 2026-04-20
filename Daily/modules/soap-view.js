@@ -77,10 +77,7 @@ export async function renderSoapView(opts = {}) {
     const checked = [...section.querySelectorAll('.soap-view-cb:checked')];
     if (!checked.length) { showToast('info', 'No items checked — tick some items first.'); return; }
     /* Insert only term before ":" (data-term), fall back to full text */
-    const text = checked.map(cb => {
-      const term = cb.dataset.term || cb.dataset.text;
-      return `${term}:`;
-    }).join('\n');
+    const text = checked.map(cb => _termWithColon(cb.dataset.term || cb.dataset.text)).join('\n');
     const prev = sessionStorage.getItem('prefill_soap_text') || '';
     sessionStorage.setItem('prefill_soap_text', prev ? `${prev}\n${text}` : text);
     navigate('log');
@@ -97,10 +94,7 @@ export async function renderSoapView(opts = {}) {
   container.querySelector('#soap-view-insert-all-checked')?.addEventListener('click', () => {
     const checked = [...container.querySelectorAll('.soap-view-cb:checked')];
     if (!checked.length) { showToast('info', 'No items checked anywhere.'); return; }
-    const text = checked.map(cb => {
-      const term = cb.dataset.term || cb.dataset.text;
-      return `${term}:`;
-    }).join('\n');
+    const text = checked.map(cb => _termWithColon(cb.dataset.term || cb.dataset.text)).join('\n');
     const prev = sessionStorage.getItem('prefill_soap_text') || '';
     sessionStorage.setItem('prefill_soap_text', prev ? `${prev}\n${text}` : text);
     navigate('log');
@@ -302,4 +296,9 @@ function _fallback(text) {
   try   { document.execCommand('copy'); showToast('info', 'Copied.'); }
   catch { showToast('error', 'Copy failed — please copy manually.'); }
   document.body.removeChild(ta);
+}
+
+/** Returns the term with exactly one trailing colon (avoids double-colon). */
+function _termWithColon(term) {
+  return term.endsWith(':') ? term : `${term}:`;
 }

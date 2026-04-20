@@ -599,6 +599,14 @@ function buildGhostContent(catObj, catId) {
   `;
 }
 
+/**
+ * Returns the term with exactly one trailing colon.
+ * Avoids double-colon if the term already ends with ":".
+ */
+function termWithColon(term) {
+  return term.endsWith(':') ? term : `${term}:`;
+}
+
 function wireGhostInsert(ghostBody, form, catId) {
   const ta = form.querySelector('#f-soap-text');
 
@@ -628,17 +636,16 @@ function wireGhostInsert(ghostBody, form, catId) {
       const checked = [...ghostBody.querySelectorAll(`.ghost-cb[data-sec="${sec}"]:checked`)];
       if (!checked.length) { showToast('info', 'Check some items first.'); return; }
 
-      /* Use data-term (part before ":") for insertion; full text is in data-text */
-      const items     = checked.map(cb => cb.dataset.text);
-      const termItems = checked.map(cb => cb.dataset.term || cb.dataset.text);
+      /* Use data-term (part before ":") for insertion; full text is in data-text for recording */
+      const fullTextItems = checked.map(cb => cb.dataset.text);
+      const termItems     = checked.map(cb => cb.dataset.term || cb.dataset.text);
 
       if (ta) {
         const cur   = ta.value.trim();
-        const label = sec === 'pe' ? 'PE' : sec.toUpperCase();
-        const toAdd = termItems.map(t => `${t}:`).join('\n');
+        const toAdd = termItems.map(termWithColon).join('\n');
         ta.value = cur ? `${cur}\n${toAdd}` : toAdd;
       }
-      recordSoapSelections(catId, items);
+      recordSoapSelections(catId, fullTextItems);
       checked.forEach(cb => { cb.checked = false; });
       showToast('success', `Inserted ${termItems.length} item${termItems.length > 1 ? 's' : ''}.`);
     });
