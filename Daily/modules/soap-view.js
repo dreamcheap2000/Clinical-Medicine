@@ -196,6 +196,16 @@ function buildAccordionItem(cat) {
   const s  = cat.soap || {};
   const pe = cat.physicalExam || {};
 
+  /* Merge SOAP Objective + Neurologic/Physical Exam + Bedside Scales into one
+     Objective section; deduplicate and sort alphabetically to group similar items */
+  const _objRaw = [
+    ...(s.objective          || []),
+    ...(pe.neurologic_exam   || []),
+    ...(pe.bedside_scales    || pe.bedside_cognitive || []),
+  ];
+  const combinedObjective = [...new Set(_objRaw)]
+    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+
   return `
     <div class="accordion-item">
       <button class="accordion-header" data-cat="${esc(cat.id)}" type="button">
@@ -209,23 +219,12 @@ function buildAccordionItem(cat) {
       </button>
 
       <div class="accordion-body hidden">
-        <div class="soap-two-col">
-
-          <!-- Left: SOAP -->
-          <div class="soap-col">
-            <h4 class="col-title">📋 SOAP Template</h4>
-            ${soapBlock('🗣️ S — Subjective', s.subjective)}
-            ${soapBlock('🔎 O — Objective',   s.objective)}
-            ${soapBlock('💡 Assessment Pearls', s.assessment_pearls)}
-            ${soapBlock('🗂️ Plan Template',    s.plan_template)}
-          </div>
-
-          <!-- Right: Physical Exam -->
-          <div class="soap-col">
-            <h4 class="col-title">🩺 Physical Exam Reference</h4>
-            ${soapBlock('📊 Bedside Scales / Scores',          pe.bedside_scales || pe.bedside_cognitive)}
-            ${soapBlock('🔬 Neurologic / Physical Exam Steps', pe.neurologic_exam)}
-          </div>
+        <div class="soap-col">
+          <h4 class="col-title">📋 SOAP Template</h4>
+          ${soapBlock('🗣️ S — Subjective', s.subjective)}
+          ${soapBlock('🔎 O — Objective',   combinedObjective)}
+          ${soapBlock('💡 Assessment Pearls', s.assessment_pearls)}
+          ${soapBlock('🗂️ Plan Template',    s.plan_template)}
         </div>
 
         <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--color-border)">

@@ -331,6 +331,9 @@ function wireForm(container, existing, initIcdCodes) {
   }
   form.addEventListener('input',  saveDraft);
   form.addEventListener('change', saveDraft);
+  /* Save immediately so prefill data (from ICD browser / SOAP templates) is
+     persisted before the user navigates away again without touching any field */
+  saveDraft();
 
   /* ── ICD search ── */
   searchInput.addEventListener('input', () => {
@@ -545,12 +548,21 @@ function buildGhostContent(catObj, catId) {
   const s  = catObj.soap || {};
   const pe = catObj.physicalExam || {};
 
+  /* Merge SOAP Objective + Neurologic/Physical Exam + Bedside Scales into one
+     Objective section; deduplicate and sort alphabetically to group similar items */
+  const _objRaw = [
+    ...(s.objective          || []),
+    ...(pe.neurologic_exam   || []),
+    ...(pe.bedside_scales    || pe.bedside_cognitive || []),
+  ];
+  const combinedObjective = [...new Set(_objRaw)]
+    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+
   const sections = [
-    { key: 's', label: '🗣️ Subjective',    items: s.subjective        || [] },
-    { key: 'o', label: '🔎 Objective',      items: s.objective          || [] },
-    { key: 'a', label: '💡 Assessment',     items: s.assessment_pearls || [] },
-    { key: 'p', label: '🗂️ Plan',           items: s.plan_template      || [] },
-    { key: 'pe', label: '🩺 Physical Exam', items: (pe.neurologic_exam || []).concat(pe.bedside_scales || pe.bedside_cognitive || []) },
+    { key: 's', label: '🗣️ Subjective',  items: s.subjective        || [] },
+    { key: 'o', label: '🔎 Objective',    items: combinedObjective },
+    { key: 'a', label: '💡 Assessment',   items: s.assessment_pearls || [] },
+    { key: 'p', label: '🗂️ Plan',         items: s.plan_template      || [] },
   ].filter(sec => sec.items.length > 0);
 
   if (!sections.length) {
