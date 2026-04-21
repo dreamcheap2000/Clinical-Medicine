@@ -1,20 +1,71 @@
 /**
  * modules/settings-view.js
- * Settings page — configure GitHub auto-commit and Firebase Firestore sync.
+ * Settings page — configure GitHub auto-commit, Firebase Firestore sync,
+ * and keyboard shortcut keys.
  */
 
 import { esc, showToast } from '../app.js';
 import { getGithubSettings, saveGithubSettings, testGithubConnection } from './github-sync.js';
 import { getFirebaseSettings, saveFirebaseSettings, testFirebaseConnection, exportSessionAsFhirBundle } from './firebase-sync.js';
+import { getShortcutKeys, saveShortcutKeys, DEFAULT_SHORTCUTS } from '../app.js';
 
 export function renderSettings() {
   const container = document.getElementById('main-content');
   const gh  = getGithubSettings();
   const fb  = getFirebaseSettings();
+  const sc  = getShortcutKeys();
 
   container.innerHTML = `
     <h2 class="page-title">⚙️ Sync Settings</h2>
     <p class="subtitle">Configure cloud backup — GitHub auto-commit and Google Firebase Firestore</p>
+
+    <!-- Shortcut Keys -->
+    <div class="card settings-card" id="card-shortcuts">
+      <div class="card-title">⌨️ Shortcut Keys</div>
+      <p class="hint" style="margin-bottom:.75rem">
+        Customise the keyboard shortcuts used throughout the app. Use format like
+        <code>Shift+C</code>, <code>C</code>, <code>Ctrl+S</code> etc.
+        Keys are case-insensitive. Changes take effect immediately on save.
+      </p>
+      <form id="form-shortcuts" autocomplete="off">
+        <div class="form-row-2">
+          <div class="field-group">
+            <label class="field-label" for="sc-insert-soap">SOAP Ghost Panel — Insert All</label>
+            <input class="field-input" type="text" id="sc-insert-soap"
+              placeholder="${esc(DEFAULT_SHORTCUTS.insertSoap)}"
+              value="${esc(sc.insertSoap)}">
+            <span class="hint">Inserts all checked items in the SOAP reference panel (entry form)</span>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="sc-insert-soap-all">SOAP Templates Page — Insert All</label>
+            <input class="field-input" type="text" id="sc-insert-soap-all"
+              placeholder="${esc(DEFAULT_SHORTCUTS.insertSoapAll)}"
+              value="${esc(sc.insertSoapAll)}">
+            <span class="hint">Inserts all checked items on the SOAP Templates page</span>
+          </div>
+        </div>
+        <div class="form-row-2">
+          <div class="field-group">
+            <label class="field-label" for="sc-insert-icd">ICD Browser — Insert Selected</label>
+            <input class="field-input" type="text" id="sc-insert-icd"
+              placeholder="${esc(DEFAULT_SHORTCUTS.insertIcd)}"
+              value="${esc(sc.insertIcd)}">
+            <span class="hint">Inserts selected ICD codes from the recent-50 panel</span>
+          </div>
+          <div class="field-group">
+            <label class="field-label" for="sc-insert-all">Insert All (global)</label>
+            <input class="field-input" type="text" id="sc-insert-all"
+              placeholder="${esc(DEFAULT_SHORTCUTS.insertAll)}"
+              value="${esc(sc.insertAll)}">
+            <span class="hint">Inserts all selected items on the currently active page</span>
+          </div>
+        </div>
+        <div class="row-gap">
+          <button type="submit" class="btn btn-primary">💾 Save Shortcuts</button>
+          <button type="button" class="btn btn-outline" id="btn-reset-shortcuts">↩ Reset to Defaults</button>
+        </div>
+      </form>
+    </div>
 
     <!-- GitHub -->
     <div class="card settings-card" id="card-github">
@@ -173,6 +224,29 @@ export function renderSettings() {
     const { ok, message } = await testFirebaseConnection();
     statusEl.textContent = message;
     statusEl.className   = `settings-status ${ok ? 'status-ok' : 'status-err'}`;
+  });
+
+  /* Shortcut keys form */
+  const scForm = container.querySelector('#form-shortcuts');
+  scForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const keys = {
+      insertSoap:    container.querySelector('#sc-insert-soap').value.trim()     || DEFAULT_SHORTCUTS.insertSoap,
+      insertSoapAll: container.querySelector('#sc-insert-soap-all').value.trim() || DEFAULT_SHORTCUTS.insertSoapAll,
+      insertIcd:     container.querySelector('#sc-insert-icd').value.trim()      || DEFAULT_SHORTCUTS.insertIcd,
+      insertAll:     container.querySelector('#sc-insert-all').value.trim()      || DEFAULT_SHORTCUTS.insertAll,
+    };
+    saveShortcutKeys(keys);
+    showToast('success', 'Shortcut keys saved.');
+  });
+
+  container.querySelector('#btn-reset-shortcuts').addEventListener('click', () => {
+    container.querySelector('#sc-insert-soap').value     = DEFAULT_SHORTCUTS.insertSoap;
+    container.querySelector('#sc-insert-soap-all').value = DEFAULT_SHORTCUTS.insertSoapAll;
+    container.querySelector('#sc-insert-icd').value      = DEFAULT_SHORTCUTS.insertIcd;
+    container.querySelector('#sc-insert-all').value      = DEFAULT_SHORTCUTS.insertAll;
+    saveShortcutKeys({ ...DEFAULT_SHORTCUTS });
+    showToast('success', 'Shortcuts reset to defaults.');
   });
 }
 

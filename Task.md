@@ -76,6 +76,72 @@ Total codes added: **129**
 
 ---
 
+## Modification 2 — SOAP/ICD UX Overhaul & Shortcut Keys (2026-04-21)
+
+### Fix: No More Duplicate Inserts from SOAP Templates
+
+**Problem:** Each SOAP sub-section (S, O, A, P) had its own "Insert to Entry" button.
+Clicking multiple section buttons caused duplicate text in the SOAP note.
+
+**Solution:**
+- Removed all per-section "Insert to Entry" buttons from the SOAP Templates page (`soap-view.js`).
+- Removed per-section "✓ Insert" buttons from the ghost SOAP panel in the New Entry form (`session-log.js`).
+- **Single "Insert All Checked" button** at the top of the SOAP Templates page inserts every checked item across all S/O/A/P sections in one click, navigating to the New Entry form exactly once.
+- Ghost panel now has a single "✓ Insert" button in its header that inserts all checked items into the SOAP textarea in-place (no navigation away).
+- Files changed: `Daily/modules/soap-view.js`, `Daily/modules/session-log.js`
+
+---
+
+### Feature: SOAP Templates — 3-Column Layout with Recent Terms Center Panel
+
+**Problem:** The SOAP Templates page showed all 4 sections stacked vertically.
+
+**Solution:**
+- New 3-column layout inside each category accordion body:
+  - **Left column** — S (Subjective) + O (Objective) sections
+  - **Center column** — "Recently Used Terms" panel (top 100 terms, stratified by S/O/A/P section)
+  - **Right column** — A (Assessment Pearls) + P (Plan) sections
+- The center panel shows the user's most-used SOAP terms with frequency badge (×N).
+- All items in all three columns are checkable; the single global "Insert All Checked" button inserts everything selected.
+- Section-aware usage tracking: each inserted term now records its S/O/A/P section for better stratification.
+- Files changed: `Daily/modules/soap-view.js`, `Daily/app.js`, `Daily/style.css`
+
+---
+
+### Feature: ICD Browser — 3-Column Layout with Recent 50 Codes Center Panel
+
+**Problem:** The ICD browser had a left category sidebar and a main content area only.
+
+**Solution:**
+- New 3-column layout:
+  - **Left column** — first half of categories
+  - **Center column** — "Recently Used ICD Codes" panel (top 50, with checkboxes + freq badge)
+  - **Right column** — second half of categories
+- Clicking a category from either column shows the full code table + SOAP tab in a detail panel below.
+- The "Insert Selected" button in the center panel inserts all checked recent codes into the New Entry form (supporting multi-code selection).
+- Extra selected codes beyond the first are passed as `prefill_icd_extra` to the New Entry form.
+- Files changed: `Daily/modules/icd-browser.js`, `Daily/modules/session-log.js`, `Daily/style.css`
+
+---
+
+### Feature: Shortcut Keys — Configurable in Settings
+
+**New shortcuts (defaults):**
+
+| Action | Default Key |
+|---|---|
+| Insert all checked — SOAP ghost panel (entry form) | Shift+C |
+| Insert all checked — SOAP Templates page | Shift+I |
+| Insert selected — ICD Browser recent panel | Shift+S |
+| Insert all selected (global, any page) | Shift+A |
+
+- Shortcuts are checked per-page via a `matchShortcut(event, shortcutStr)` helper.
+- All four shortcut keys are **configurable in Settings** (new "⌨️ Shortcut Keys" card).
+- Settings page allows typing any combo like `Shift+C`, `C`, `Ctrl+S`. Saved to `localStorage`.
+- Files changed: `Daily/modules/settings-view.js`, `Daily/modules/soap-view.js`, `Daily/modules/icd-browser.js`, `Daily/modules/session-log.js`, `Daily/app.js`
+
+---
+
 ## Pending / Future Work
 
 - [ ] Continue expanding ICD-10-CM 2023 中文版 coverage:
