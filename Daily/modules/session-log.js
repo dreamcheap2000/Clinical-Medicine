@@ -19,11 +19,13 @@ import {
   getSessions, saveSession,
   getIcdData, searchCodes,
   getSoapFreq, recordSoapSelections,
+  recordSoapItemWithSection,
   getSoapTemplates, saveSoapTemplate, deleteSoapTemplate,
   recordIcdUse,
   navigate, showToast, esc,
   saveSessionWithSync,
   buildCombinedObjective,
+  getShortcutKeys, matchShortcut,
 } from '../app.js';
 
 /* ============================================================ */
@@ -81,6 +83,13 @@ export function renderSessionLog(opts = {}) {
     if (raw) { prefill = JSON.parse(raw); sessionStorage.removeItem('prefill_icd'); }
   } catch { /* ignore */ }
 
+  /* Pick up extra ICD codes from ICD browser multi-select */
+  let prefillIcdExtra = [];
+  try {
+    const rawExtra = sessionStorage.getItem('prefill_icd_extra');
+    if (rawExtra) { prefillIcdExtra = JSON.parse(rawExtra); sessionStorage.removeItem('prefill_icd_extra'); }
+  } catch { /* ignore */ }
+
   /* Pick up SOAP text inserted from SOAP Templates page */
   let prefillSoapText = '';
   try {
@@ -113,6 +122,14 @@ export function renderSessionLog(opts = {}) {
             categoryId: prefill.categoryId || '', categoryName: '' }];
       }
     }
+    /* Add any extra codes from ICD browser multi-select */
+    for (const extra of (prefillIcdExtra || [])) {
+      if (extra?.code && !initIcdCodes.some(c => c.code === extra.code)) {
+        initIcdCodes = [...initIcdCodes,
+          { code: extra.code, en: extra.en || '', zh: extra.zh || '',
+            categoryId: extra.categoryId || '', categoryName: '' }];
+      }
+    }
   }
 
   /* ── Resolve initial form field values (draft > existing > defaults) ── */
@@ -122,6 +139,9 @@ export function renderSessionLog(opts = {}) {
   const initCondition   = existing?.condition   || draft?.condition
     || (prefill && !draft ? (prefill.en || '') : '');
   const initKlp         = existing?.keyLearning || existing?.ebm || draft?.keyLearning || '';
+
+  /* Shortcut key for ghost insert label */
+  const ghostInsertKey  = getShortcutKeys().insertSoap;
 
   /* ── Resolve SOAP text (draft/existing + append prefill_soap_text) ── */
   const baseText = existing?.soapText ||
@@ -241,7 +261,11 @@ P: NSAIDs, follow up in 2 weeks">${esc(existingSoapText)}</textarea>
         <div id="ghost-panel" class="ghost-panel">
           <div class="ghost-panel-header">
             <span id="ghost-panel-title">📋 SOAP Reference</span>
-            <button type="button" class="btn btn-sm-inline" id="btn-ghost-close">✕</button>
+            <div style="display:flex;gap:.35rem;align-items:center;flex-shrink:0">
+              <button type="button" class="btn btn-sm-inline ghost-insert-all-header-btn" id="btn-ghost-insert-all"
+                title="Insert all checked items (${esc(ghostInsertKey)})">✓ Insert <kbd>${esc(ghostInsertKey)}</kbd></button>
+              <button type="button" class="btn btn-sm-inline" id="btn-ghost-close">✕</button>
+            </div>
           </div>
           <div id="ghost-panel-body" class="ghost-panel-body">
             <p class="no-records" style="padding:1rem;font-size:.85rem">
@@ -409,6 +433,48 @@ function wireForm(container, existing, initIcdCodes) {
     ghostCol.classList.remove('ghost-visible');
   });
 
+  /* ── Ghost Insert All (header button) — inserts all checked items ── */
+  function doGhostInsertAll() {
+    const ta = form.querySelector('#f-soap-text');
+    const checked = [...ghostBody.querySelectorAll('.ghost-cb:checked')];
+    if (!checked.length) { showToast('info', 'Check some items in the SOAP reference panel first.'); return; }
+    const termItems     = checked.map(cb => cb.dataset.term || cb.dataset.text);
+    const fullTextItems = checked.map(cb => cb.dataset.text);
+    const sections      = [...new Set(checked.map(cb => cb.dataset.sec || 's'))];
+    if (ta) {
+      const cur   = ta.value.trim();
+      const toAdd = termItems.map(termWithColon).join('\n');
+      ta.value = cur ? `${cur}\n${toAdd}` : toAdd;
+      ta.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    /* Record section-aware usage */
+    checked.forEach(cb => {
+      recordSoapItemWithSection(cb.dataset.text, cb.dataset.sec || 's');
+    });
+    const catId = ghostBody.dataset.catId || '';
+    if (catId) recordSoapSelections(catId, fullTextItems);
+    checked.forEach(cb => { cb.checked = false; });
+    showToast('success', `Inserted ${termItems.length} item${termItems.length > 1 ? 's' : ''}.`);
+  }
+
+  container.querySelector('#btn-ghost-insert-all')?.addEventListener('click', doGhostInsertAll);
+
+  /* ── Keyboard shortcut for ghost insert all ── */
+  function onGhostKey(e) {
+    /* Only act when ghost panel is visible */
+    if (!ghostCol.classList.contains('ghost-visible')) return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    const sc = getShortcutKeys();
+    if (matchShortcut(e, sc.insertSoap) || matchShortcut(e, sc.insertAll)) {
+      e.preventDefault();
+      doGhostInsertAll();
+    }
+  }
+  window.addEventListener('keydown', onGhostKey);
+  const _prevGhost = window._ghostPanelNavCleanup;
+  if (_prevGhost) window.removeEventListener('keydown', _prevGhost);
+  window._ghostPanelNavCleanup = onGhostKey;
+
   /* ── Copy SOAP ── */
   container.querySelector('#btn-copy-soap').addEventListener('click', () => {
     const ta = form.querySelector('#f-soap-text');
@@ -472,8 +538,9 @@ function wireForm(container, existing, initIcdCodes) {
     if (!catObj) return;
     container.querySelector('#ghost-panel-title').textContent =
       `${catObj.icon || '📋'} ${catObj.nameEn} — Template`;
+    ghostBody.dataset.catId = catId;
     ghostBody.innerHTML = buildGhostContent(catObj, catId);
-    wireGhostInsert(ghostBody, form, catId);
+    wireGhostToggleAll(ghostBody);
   }
 }
 
@@ -549,8 +616,6 @@ function buildGhostContent(catObj, catId) {
   const s  = catObj.soap || {};
   const pe = catObj.physicalExam || {};
 
-  /* Merge SOAP Objective + Neurologic/Physical Exam + Bedside Scales into one
-     Objective section; deduplicate and sort alphabetically to group similar items */
   const combinedObjective = buildCombinedObjective(s, pe);
 
   const sections = [
@@ -565,11 +630,12 @@ function buildGhostContent(catObj, catId) {
   }
 
   const catFreq = getSoapFreq()[catId] || {};
+  const sc = getShortcutKeys();
 
   return `
     <div class="ghost-insert-all-row">
-      <span class="hint" style="font-size:.8rem">Check items then <b>Insert</b> — only the term before <b>":"</b> is inserted</span>
-      <button type="button" class="btn-ref-action ghost-copy-all-btn">📋 Copy All Checked</button>
+      <span class="hint" style="font-size:.78rem">Check items → <b>Insert</b> (${esc(sc.insertSoap)}) — term before ":" only</span>
+      <button type="button" class="btn-ref-action ghost-copy-all-btn">📋 Copy</button>
     </div>
     ${sections.map(sec => {
       const sorted = sec.items
@@ -581,12 +647,10 @@ function buildGhostContent(catObj, catId) {
             <span class="ghost-sec-title">${sec.label}</span>
             <div class="ghost-sec-actions">
               <button type="button" class="btn-ref-action ghost-toggle-all" data-sec="${esc(sec.key)}">All</button>
-              <button type="button" class="btn-ref-action ghost-insert-btn" data-sec="${esc(sec.key)}">✓ Insert</button>
             </div>
           </div>
           <div class="ghost-items">
             ${sorted.map(({ text, count }) => {
-              /* Split on first ":" to distinguish term from detail */
               const colonIdx = text.indexOf(':');
               const term   = colonIdx >= 0 ? text.slice(0, colonIdx).trim() : text;
               const detail = colonIdx >= 0 ? text.slice(colonIdx + 1).trim() : '';
@@ -614,9 +678,9 @@ function termWithColon(term) {
   return term.endsWith(':') ? term : `${term}:`;
 }
 
-function wireGhostInsert(ghostBody, form, catId) {
-  const ta = form.querySelector('#f-soap-text');
-
+/** Wires only the toggle-all (section select/deselect) buttons in the ghost panel.
+ *  The single Insert All button is wired in wireForm() on the header element. */
+function wireGhostToggleAll(ghostBody) {
   /* Global copy-all-checked button — copies full text for reference */
   ghostBody.querySelector('.ghost-copy-all-btn')?.addEventListener('click', () => {
     const checked = [...ghostBody.querySelectorAll('.ghost-cb:checked')];
@@ -633,31 +697,6 @@ function wireGhostInsert(ghostBody, form, catId) {
       const allC = cbs.every(cb => cb.checked);
       cbs.forEach(cb => { cb.checked = !allC; });
       btn.textContent = allC ? 'All' : 'None';
-    });
-  });
-
-  /* Insert checked items for a section — uses only term before ":" */
-  ghostBody.querySelectorAll('.ghost-insert-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const sec     = btn.dataset.sec;
-      const checked = [...ghostBody.querySelectorAll(`.ghost-cb[data-sec="${sec}"]:checked`)];
-      if (!checked.length) { showToast('info', 'Check some items first.'); return; }
-
-      /* Use data-term (part before ":") for insertion; full text is in data-text for recording */
-      const fullTextItems = checked.map(cb => cb.dataset.text);
-      const termItems     = checked.map(cb => cb.dataset.term || cb.dataset.text);
-
-      if (ta) {
-        const cur   = ta.value.trim();
-        const toAdd = termItems.map(termWithColon).join('\n');
-        ta.value = cur ? `${cur}\n${toAdd}` : toAdd;
-        /* Programmatic value assignment doesn't fire 'input', so dispatch it manually
-           so the auto-save draft captures the newly inserted text before any navigation */
-        ta.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-      recordSoapSelections(catId, fullTextItems);
-      checked.forEach(cb => { cb.checked = false; });
-      showToast('success', `Inserted ${termItems.length} item${termItems.length > 1 ? 's' : ''}.`);
     });
   });
 }

@@ -1,10 +1,16 @@
 /**
  * modules/soap-view.js
- * Displays all category SOAP templates and physical exam guides side-by-side.
- * Items are rendered as checkboxes so users can select, copy, or insert into new entries.
+ * Displays all category SOAP templates and physical exam guides.
+ * Layout per category: S+O left | recent 100 terms center | A+P right
+ * Single global Insert All Checked button (Shift+I shortcut).
  */
 
-import { getIcdData, getSoapTemplates, deleteSoapTemplate, navigate, esc, showToast, buildCombinedObjective } from '../app.js';
+import {
+  getIcdData, getSoapTemplates, deleteSoapTemplate,
+  navigate, esc, showToast, buildCombinedObjective,
+  getRecentSoapTerms, recordSoapItemWithSection,
+  getShortcutKeys, matchShortcut,
+} from '../app.js';
 
 export async function renderSoapView(opts = {}) {
   const container = document.getElementById('main-content');
@@ -17,17 +23,19 @@ export async function renderSoapView(opts = {}) {
     return;
   }
 
-  const cats = icdData.categories || [];
+  const cats          = icdData.categories || [];
   const userTemplates = getSoapTemplates();
+  const shortcuts     = getShortcutKeys();
 
   container.innerHTML = `
     <h2 class="page-title">📋 SOAP &amp; Physical Exam Templates</h2>
-    <p class="subtitle">Check items to select them — then copy or insert directly into a new OPD entry</p>
+    <p class="subtitle">Check items to select them — one <b>Insert All Checked</b> button inserts everything selected across S, O, A, P
+      <span class="hint">(shortcut: ${esc(shortcuts.insertSoapAll)})</span></p>
 
-    <!-- Copy-all-checked across ALL sections -->
+    <!-- Single global Insert All Checked button -->
     <div class="soap-view-global-actions">
       <button class="btn btn-outline" id="soap-view-copy-all-checked">📋 Copy All Checked</button>
-      <button class="btn btn-primary" id="soap-view-insert-all-checked">➕ Insert All Checked to New Entry</button>
+      <button class="btn btn-primary" id="soap-view-insert-all-checked">➕ Insert All Checked to New Entry <kbd>${esc(shortcuts.insertSoapAll)}</kbd></button>
     </div>
 
     <!-- My Saved Templates -->
@@ -68,21 +76,6 @@ export async function renderSoapView(opts = {}) {
     _copyText(text);
   });
 
-  /* Insert-checked buttons (per section) — inserts term before ":", appends to existing SOAP */
-  container.addEventListener('click', e => {
-    const btn = e.target.closest('.soap-view-insert-btn');
-    if (!btn) return;
-    const section = btn.closest('.ref-section');
-    if (!section) return;
-    const checked = [...section.querySelectorAll('.soap-view-cb:checked')];
-    if (!checked.length) { showToast('info', 'No items checked — tick some items first.'); return; }
-    /* Insert only term before ":" (data-term), fall back to full text */
-    const text = checked.map(cb => _termWithColon(cb.dataset.term || cb.dataset.text)).join('\n');
-    const prev = sessionStorage.getItem('prefill_soap_text') || '';
-    sessionStorage.setItem('prefill_soap_text', prev ? `${prev}\n${text}` : text);
-    navigate('log');
-  });
-
   /* Global copy-all-checked (across all open sections) */
   container.querySelector('#soap-view-copy-all-checked')?.addEventListener('click', () => {
     const checked = [...container.querySelectorAll('.soap-view-cb:checked')];
@@ -90,17 +83,38 @@ export async function renderSoapView(opts = {}) {
     _copyText(checked.map(cb => cb.dataset.text).join('\n'));
   });
 
-  /* Global insert-all-checked — inserts term before ":", appends to existing SOAP */
-  container.querySelector('#soap-view-insert-all-checked')?.addEventListener('click', () => {
+  /* Global insert-all-checked — single insert button */
+  function doInsertAllChecked() {
     const checked = [...container.querySelectorAll('.soap-view-cb:checked')];
     if (!checked.length) { showToast('info', 'No items checked anywhere.'); return; }
     const text = checked.map(cb => _termWithColon(cb.dataset.term || cb.dataset.text)).join('\n');
+    /* Record usage with section info */
+    checked.forEach(cb => {
+      recordSoapItemWithSection(cb.dataset.text, cb.dataset.seckey || 's');
+    });
     const prev = sessionStorage.getItem('prefill_soap_text') || '';
     sessionStorage.setItem('prefill_soap_text', prev ? `${prev}\n${text}` : text);
     navigate('log');
-  });
+  }
 
-  /* Select-all / clear-all toggle */
+  container.querySelector('#soap-view-insert-all-checked')?.addEventListener('click', doInsertAllChecked);
+
+  /* Keyboard shortcut for insert all */
+  function onKey(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    const sc = getShortcutKeys();
+    if (matchShortcut(e, sc.insertSoapAll) || matchShortcut(e, sc.insertAll)) {
+      e.preventDefault();
+      doInsertAllChecked();
+    }
+  }
+  window.addEventListener('keydown', onKey);
+  /* Clean up on navigate away */
+  const _origNav = window._soapViewNavCleanup;
+  if (_origNav) window.removeEventListener('keydown', _origNav);
+  window._soapViewNavCleanup = onKey;
+
+  /* Select-all / clear-all toggle per section */
   container.addEventListener('click', e => {
     const btn = e.target.closest('.soap-view-toggle-all');
     if (!btn) return;
@@ -135,11 +149,9 @@ export async function renderSoapView(opts = {}) {
 
 /* ------------------------------------------------------------------ */
 
-/** Shared placeholder shown when there are no saved user templates. */
 const NO_USER_TEMPLATES_MSG =
   '<p class="no-records" style="padding:.75rem;font-size:.85rem">No saved templates yet. Create one from the SOAP note form.</p>';
 
-/** Builds the "My Saved Templates" collapsible block with checkable lines. */
 function buildUserTemplatesAccordion(templates) {
   const bodyContent = !templates.length
     ? NO_USER_TEMPLATES_MSG
@@ -152,7 +164,7 @@ function buildUserTemplatesAccordion(templates) {
           return `
           <label class="soap-view-item">
             <input type="checkbox" class="soap-view-cb"
-              data-text="${esc(line)}" data-term="${esc(term)}">
+              data-text="${esc(line)}" data-term="${esc(term)}" data-seckey="s">
             <span class="soap-view-item-text">
               <b>${esc(term)}</b>${detail ? `<span class="soap-view-item-detail">: ${esc(detail)}</span>` : ''}
             </span>
@@ -165,7 +177,6 @@ function buildUserTemplatesAccordion(templates) {
               <span class="ref-section-actions">
                 <button type="button" class="soap-view-toggle-all btn-ref-action">Select All</button>
                 <button type="button" class="soap-view-copy-btn btn-ref-action">📋 Copy</button>
-                <button type="button" class="soap-view-insert-btn btn-ref-action">➕ Insert to Entry</button>
                 <button type="button" class="user-tmpl-delete-btn btn-ref-action" data-id="${esc(t.id)}" title="Delete template">🗑️</button>
               </span>
             </div>
@@ -195,7 +206,6 @@ function buildUserTemplatesAccordion(templates) {
 function buildAccordionItem(cat) {
   const s  = cat.soap || {};
   const pe = cat.physicalExam || {};
-
   const combinedObjective = buildCombinedObjective(s, pe);
 
   return `
@@ -211,12 +221,26 @@ function buildAccordionItem(cat) {
       </button>
 
       <div class="accordion-body hidden">
-        <div class="soap-col">
-          <h4 class="col-title">📋 SOAP Template</h4>
-          ${soapBlock('🗣️ S — Subjective', s.subjective)}
-          ${soapBlock('🔎 O — Objective',   combinedObjective)}
-          ${soapBlock('💡 Assessment Pearls', s.assessment_pearls)}
-          ${soapBlock('🗂️ Plan Template',    s.plan_template)}
+        <!-- 3-column layout: S+O | recent 100 | A+P -->
+        <div class="soap-3col">
+
+          <!-- Left: S + O -->
+          <div class="soap-3col-side soap-3col-left">
+            ${soapBlock('🗣️ S — Subjective', s.subjective, 's')}
+            ${soapBlock('🔎 O — Objective',   combinedObjective, 'o')}
+          </div>
+
+          <!-- Center: recently used terms -->
+          <div class="soap-3col-center">
+            ${buildRecentTermsPanel()}
+          </div>
+
+          <!-- Right: A + P -->
+          <div class="soap-3col-side soap-3col-right">
+            ${soapBlock('💡 Assessment Pearls', s.assessment_pearls, 'a')}
+            ${soapBlock('🗂️ Plan Template',     s.plan_template,     'p')}
+          </div>
+
         </div>
 
         <div style="margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--color-border)">
@@ -234,18 +258,76 @@ function buildAccordionItem(cat) {
   `;
 }
 
-/** Renders a SOAP/exam section with checkable items and copy + insert controls. */
-function soapBlock(title, items) {
+/* ------------------------------------------------------------------ */
+
+/** Builds the center panel of recently used SOAP terms (top 100), stratified by section. */
+function buildRecentTermsPanel() {
+  const terms = getRecentSoapTerms(100);
+
+  const bySection = { s: [], o: [], a: [], p: [] };
+  for (const t of terms) {
+    const sec = t.section in bySection ? t.section : 's';
+    bySection[sec].push(t);
+  }
+
+  const sectionMeta = [
+    { key: 's', label: '🗣️ S — Subjective' },
+    { key: 'o', label: '🔎 O — Objective'   },
+    { key: 'a', label: '💡 Assessment'       },
+    { key: 'p', label: '🗂️ Plan'            },
+  ];
+
+  const total = terms.length;
+  if (!total) {
+    return `
+      <div class="recent-panel-header">📊 Recently Used Terms</div>
+      <p class="no-records" style="font-size:.8rem;padding:.5rem">
+        No terms used yet. Insert items from the S/O/A/P sections to start building your history.
+      </p>`;
+  }
+
+  return `
+    <div class="recent-panel-header">
+      📊 Recently Used Terms <span class="hint" style="font-size:.75rem">(top ${total})</span>
+    </div>
+    ${sectionMeta.map(sm => {
+      const items = bySection[sm.key];
+      if (!items.length) return '';
+      return `
+        <div class="recent-section">
+          <div class="recent-section-title">${sm.label}</div>
+          ${items.map(t => {
+            const colonIdx = t.term.indexOf(':');
+            const termText   = colonIdx >= 0 ? t.term.slice(0, colonIdx).trim() : t.term;
+            const detail     = colonIdx >= 0 ? t.term.slice(colonIdx + 1).trim() : '';
+            return `
+            <label class="soap-view-item">
+              <input type="checkbox" class="soap-view-cb"
+                data-text="${esc(t.term)}" data-term="${esc(termText)}" data-seckey="${esc(sm.key)}">
+              <span class="soap-view-item-text">
+                <b>${esc(termText)}</b>${detail ? `<span class="soap-view-item-detail">: ${esc(detail)}</span>` : ''}
+              </span>
+              ${t.count > 0 ? `<span class="freq-badge">×${t.count}</span>` : ''}
+            </label>`;
+          }).join('')}
+        </div>`;
+    }).join('')}
+  `;
+}
+
+/* ------------------------------------------------------------------ */
+
+/** Renders a SOAP/exam section with checkable items and copy control only (no per-section insert). */
+function soapBlock(title, items, sectionKey = 's') {
   if (!items?.length) return '';
   const cbItems = items.map((item) => {
-    /* Split on first ":" to show term vs. detail */
     const colonIdx = item.indexOf(':');
     const term   = colonIdx >= 0 ? item.slice(0, colonIdx).trim() : item;
     const detail = colonIdx >= 0 ? item.slice(colonIdx + 1).trim() : '';
     return `
     <label class="soap-view-item">
       <input type="checkbox" class="soap-view-cb"
-        data-text="${esc(item)}" data-term="${esc(term)}">
+        data-text="${esc(item)}" data-term="${esc(term)}" data-seckey="${esc(sectionKey)}">
       <span class="soap-view-item-text">
         <b>${esc(term)}</b>${detail ? `<span class="soap-view-item-detail">: ${esc(detail)}</span>` : ''}
       </span>
@@ -258,11 +340,7 @@ function soapBlock(title, items) {
       <span class="ref-section-actions">
         <button type="button" class="soap-view-toggle-all btn-ref-action">Select All</button>
         <button type="button" class="soap-view-copy-btn btn-ref-action">📋 Copy</button>
-        <button type="button" class="soap-view-insert-btn btn-ref-action">➕ Insert to Entry</button>
       </span>
-    </div>
-    <div class="hint" style="font-size:.75rem;padding:.15rem .3rem;margin-bottom:.2rem;color:#7a8ea8">
-      Insert adds only the term before ":" — full text shown here for reference
     </div>
     <div class="soap-view-checklist">${cbItems}</div>
   </div>`;
@@ -289,7 +367,6 @@ function _fallback(text) {
   document.body.removeChild(ta);
 }
 
-/** Returns the term with exactly one trailing colon (avoids double-colon). */
 function _termWithColon(term) {
   return term.endsWith(':') ? term : `${term}:`;
 }

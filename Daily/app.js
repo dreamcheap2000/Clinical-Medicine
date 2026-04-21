@@ -190,6 +190,95 @@ export function recordSoapSelections(catId, items) {
 }
 
 /* ============================================================ */
+/* SOAP section-aware frequency tracking                         */
+/* ============================================================ */
+
+const SOAP_SECTION_FREQ_KEY = 'soapSectionFreq_v1';
+
+export function getSoapSectionFreq() {
+  try { return JSON.parse(localStorage.getItem(SOAP_SECTION_FREQ_KEY) || '{}'); }
+  catch { return {}; }
+}
+
+/**
+ * Records a single SOAP term with its section ('s' | 'o' | 'a' | 'p').
+ */
+export function recordSoapItemWithSection(term, section) {
+  if (!term) return;
+  const freq  = getSoapSectionFreq();
+  const today = new Date().toISOString().slice(0, 10);
+  if (!freq[term]) {
+    freq[term] = { section: section || 's', count: 0, lastUsed: today };
+  }
+  freq[term].count   += 1;
+  freq[term].lastUsed = today;
+  /* Keep the first recorded section (most authoritative) */
+  if (section && !freq[term].section) freq[term].section = section;
+  localStorage.setItem(SOAP_SECTION_FREQ_KEY, JSON.stringify(freq));
+}
+
+/**
+ * Returns the top N most-used SOAP terms, sorted by count desc then lastUsed desc.
+ * Each entry: { term, section, count, lastUsed }
+ */
+export function getRecentSoapTerms(n = 100) {
+  const freq = getSoapSectionFreq();
+  return Object.entries(freq)
+    .map(([term, d]) => ({
+      term,
+      section:  d.section  || 's',
+      count:    d.count    || 0,
+      lastUsed: d.lastUsed || '',
+    }))
+    .sort((a, b) => b.count - a.count || b.lastUsed.localeCompare(a.lastUsed))
+    .slice(0, n);
+}
+
+/* ============================================================ */
+/* Shortcut key settings                                         */
+/* ============================================================ */
+
+const SHORTCUT_KEYS_KEY = 'shortcutKeys_v1';
+
+export const DEFAULT_SHORTCUTS = {
+  insertSoap:    'Shift+C',  /* Insert selected in SOAP ghost window */
+  insertSoapAll: 'Shift+I',  /* Insert all selected on SOAP templates page */
+  insertIcd:     'Shift+S',  /* Insert selected ICD codes */
+  insertAll:     'Shift+A',  /* Insert all selected (ICD + SOAP) */
+};
+
+export function getShortcutKeys() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SHORTCUT_KEYS_KEY) || 'null');
+    return saved ? { ...DEFAULT_SHORTCUTS, ...saved } : { ...DEFAULT_SHORTCUTS };
+  } catch { return { ...DEFAULT_SHORTCUTS }; }
+}
+
+export function saveShortcutKeys(keys) {
+  localStorage.setItem(SHORTCUT_KEYS_KEY, JSON.stringify({ ...DEFAULT_SHORTCUTS, ...keys }));
+}
+
+/**
+ * Returns true when a KeyboardEvent matches a shortcut string like "Shift+C".
+ */
+export function matchShortcut(event, shortcutStr) {
+  if (!shortcutStr) return false;
+  const parts = shortcutStr.split('+').map(s => s.trim().toLowerCase());
+  const key   = parts[parts.length - 1];
+  const shift = parts.includes('shift');
+  const ctrl  = parts.includes('ctrl') || parts.includes('control');
+  const alt   = parts.includes('alt');
+  const meta  = parts.includes('meta');
+  return (
+    event.key.toLowerCase() === key &&
+    event.shiftKey === shift &&
+    event.ctrlKey  === ctrl  &&
+    event.altKey   === alt   &&
+    event.metaKey  === meta
+  );
+}
+
+/* ============================================================ */
 /* ICD usage frequency tracking                                  */
 /* ============================================================ */
 
