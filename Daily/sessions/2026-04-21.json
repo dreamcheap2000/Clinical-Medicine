@@ -2,6 +2,31 @@
   "date": "2026-04-21",
   "sessions": [
     {
+      "id": "opd-1c7ff827-df3c-4374-80e5-16b93a7018d7",
+      "date": "2026-04-21",
+      "timestamp": "2026-04-21 15:45",
+      "patientId": null,
+      "patientType": null,
+      "icdCodes": null,
+      "icdCode": null,
+      "icdDescription": null,
+      "icdZh": null,
+      "categoryId": null,
+      "categoryName": null,
+      "condition": null,
+      "keyLearning": null,
+      "ebm": null,
+      "soapText": "",
+      "soap": {
+        "s": null,
+        "o": null,
+        "a": null,
+        "p": null
+      },
+      "createdAt": "2026-04-21T07:45:42.042Z",
+      "updatedAt": "2026-04-21T07:45:42.042Z"
+    },
+    {
       "id": "opd-000114df-06e1-473d-a16a-1a062feb3e9e",
       "date": "2026-04-21",
       "timestamp": "2026-04-21 15:45",
@@ -35,5 +60,5 @@
       "updatedAt": "2026-04-21T07:45:27.196Z"
     }
   ],
-  "updatedAt": "2026-04-21T07:45:27.209Z"
+  "updatedAt": "2026-04-21T07:45:42.048Z"
 }
