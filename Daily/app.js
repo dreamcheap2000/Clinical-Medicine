@@ -498,6 +498,7 @@ function renderDashboard() {
           ⬆️ Import JSON
           <input type="file" id="import-file" accept=".json" style="display:none">
         </label>
+        <button class="btn btn-outline" id="btn-restore-repo">📂 Restore from Repo</button>
         <span class="hint">All data stored in browser localStorage only.</span>
       </div>
     </div>
@@ -530,6 +531,17 @@ function renderDashboard() {
       showToast('success', `Imported ${added} new entries.`);
       renderDashboard();
     } catch(err) { showToast('error', `Import failed: ${err.message}`); }
+  });
+  document.getElementById('btn-restore-repo')?.addEventListener('click', async () => {
+    /* Reset the "done" flag so restoreSessionsFromRepo will run again */
+    localStorage.removeItem(SESSION_RESTORE_KEY);
+    const added = await restoreSessionsFromRepo();
+    if (added > 0) {
+      showToast('success', `📂 Restored ${added} entries from repo.`);
+      renderDashboard();
+    } else {
+      showToast('info', 'No new entries found in repo session files.');
+    }
   });
 }
 
@@ -577,10 +589,174 @@ export function showToast(type, msg) {
 }
 
 /* ============================================================ */
+/* Floating panel position persistence                           */
+/* ============================================================ */
+
+const FLOAT_POS_KEY = 'floatPositions_v1';
+
+export function getFloatPositions() {
+  try { return JSON.parse(localStorage.getItem(FLOAT_POS_KEY) || '{}'); }
+  catch { return {}; }
+}
+
+export function saveFloatPosition(key, data) {
+  const all = getFloatPositions();
+  all[key]  = data;
+  localStorage.setItem(FLOAT_POS_KEY, JSON.stringify(all));
+}
+
+let _zTop = 1100;
+
+/**
+ * Make a fixed-position floating panel draggable and size-persistent.
+ * el must have a .float-drag-handle child (or uses its own top area as handle).
+ */
+export function initFloatPanel(el, storageKey, defaults = {}) {
+  const saved  = getFloatPositions()[storageKey];
+  el.style.position = 'fixed';
+  el.style.left   = (saved?.x ?? defaults.x ?? 100) + 'px';
+  el.style.top    = (saved?.y ?? defaults.y ?? 100) + 'px';
+  if (saved?.w)   el.style.width  = saved.w + 'px';
+  if (saved?.h)   el.style.height = saved.h + 'px';
+  el.style.zIndex = ++_zTop;
+
+  const handle = el.querySelector('.float-drag-handle') || el;
+  let dragging = false, sx, sy, ox, oy;
+
+  handle.addEventListener('mousedown', e => {
+    const tag = e.target.tagName;
+    if (tag === 'INPUT' || tag === 'BUTTON' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    dragging = true;
+    el.style.zIndex = ++_zTop;
+    sx = e.clientX; sy = e.clientY;
+    ox = parseInt(el.style.left) || 0;
+    oy = parseInt(el.style.top)  || 0;
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    el.style.left = (ox + e.clientX - sx) + 'px';
+    el.style.top  = (oy + e.clientY - sy) + 'px';
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (dragging) {
+      dragging = false;
+      _persistPanel(el, storageKey);
+    }
+  });
+
+  el.addEventListener('mousedown', () => { el.style.zIndex = ++_zTop; });
+
+  if (window.ResizeObserver && storageKey) {
+    new ResizeObserver(() => _persistPanel(el, storageKey)).observe(el);
+  }
+}
+
+function _persistPanel(el, key) {
+  if (!key) return;
+  saveFloatPosition(key, {
+    x: parseInt(el.style.left) || 0,
+    y: parseInt(el.style.top)  || 0,
+    w: el.offsetWidth,
+    h: el.offsetHeight,
+  });
+}
+
+/**
+ * Make an element draggable inside a relative container.
+ * Returns a predicate hasBeenDragged() so click handlers can ignore drag-ends.
+ */
+export function initDraggableInContainer(el, storageKey, defaultPos = {}) {
+  const saved = getFloatPositions()[storageKey];
+  el.style.position = 'absolute';
+  el.style.left = (saved?.x ?? defaultPos.x ?? 0) + 'px';
+  el.style.top  = (saved?.y ?? defaultPos.y ?? 0) + 'px';
+  el.style.zIndex = ++_zTop;
+
+  let dragging = false, moved = false, sx, sy, ox, oy;
+
+  el.addEventListener('mousedown', e => {
+    dragging = true; moved = false;
+    el.style.zIndex = ++_zTop;
+    sx = e.clientX; sy = e.clientY;
+    ox = parseInt(el.style.left) || 0;
+    oy = parseInt(el.style.top)  || 0;
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const dx = e.clientX - sx, dy = e.clientY - sy;
+    if (Math.abs(dx) + Math.abs(dy) > 4) moved = true;
+    if (!moved) return;
+    el.style.left = Math.max(0, ox + dx) + 'px';
+    el.style.top  = Math.max(0, oy + dy) + 'px';
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    if (moved && storageKey) {
+      el.dataset.dragged = '1';
+      saveFloatPosition(storageKey, {
+        x: parseInt(el.style.left) || 0,
+        y: parseInt(el.style.top)  || 0,
+      });
+    }
+    if (!moved) delete el.dataset.dragged;
+  });
+
+  /* after mouseup, browser fires click — clear dragged flag in next tick */
+  el.addEventListener('click', () => {
+    setTimeout(() => { delete el.dataset.dragged; }, 0);
+  });
+}
+
+/* ============================================================ */
+/* Session restore from repo JSON files                         */
+/* ============================================================ */
+
+const SESSION_RESTORE_KEY = 'sessionRestoreDone_v1';
+
+export async function restoreSessionsFromRepo() {
+  /* Only run once per browser (skip if already done or data exists) */
+  if (localStorage.getItem(SESSION_RESTORE_KEY)) return 0;
+
+  let indexData;
+  try {
+    const res = await fetch('./sessions/index.json');
+    if (!res.ok) { localStorage.setItem(SESSION_RESTORE_KEY, '1'); return 0; }
+    indexData = await res.json();
+  } catch { localStorage.setItem(SESSION_RESTORE_KEY, '1'); return 0; }
+
+  const files   = indexData.files || [];
+  const existing = getSessions();
+  const merged   = [...existing];
+  let added = 0;
+
+  for (const fname of files) {
+    try {
+      const res = await fetch(`./sessions/${fname}`);
+      if (!res.ok) continue;
+      const data = await res.json();
+      for (const s of (data.sessions || [])) {
+        if (!merged.find(x => x.id === s.id)) { merged.push(s); added++; }
+      }
+    } catch { /* skip individual file errors */ }
+  }
+
+  if (added > 0) localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+  localStorage.setItem(SESSION_RESTORE_KEY, '1');
+  return added;
+}
+
+/* ============================================================ */
 /* Bootstrap                                                     */
 /* ============================================================ */
 
-function boot() {
+async function boot() {
   const navLinks = document.getElementById('nav-links');
   if (navLinks) {
     const pages = [
@@ -603,6 +779,13 @@ function boot() {
   window.addEventListener('toast',    e => showToast(e.detail.type, e.detail.msg));
 
   navigate('dashboard');
+
+  /* Restore saved entries from repo session files (runs once) */
+  const restored = await restoreSessionsFromRepo();
+  if (restored > 0) {
+    showToast('success', `📂 Restored ${restored} saved entries from repo.`);
+    renderDashboard();
+  }
 }
 
 document.addEventListener('DOMContentLoaded', boot);

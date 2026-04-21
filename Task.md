@@ -142,6 +142,105 @@ Clicking multiple section buttons caused duplicate text in the SOAP note.
 
 ---
 
+---
+
+## Modification 3 — Dark Theme, Floating Panels, Resizable Sections (2026-04-21)
+
+### Task 1 — Retrieve Saved Entries from Repo Session Files
+
+**Problem:** Previously saved OPD sessions and SOAP-related data stored in the repo (e.g., `Daily/sessions/2026-04-21.json`) were not auto-loaded into the browser localStorage on a fresh visit.
+
+**Solution:**
+- Added `Daily/sessions/index.json` manifest listing all daily session JSON files.
+- `app.js` now includes `restoreSessionsFromRepo()` which fetches `./sessions/index.json` on first load. If localStorage is empty (or not yet seeded), it fetches each listed `*.json` file and merges all sessions into localStorage, skipping duplicates by `id`.
+- This runs automatically once on `boot()`. Restored count is displayed as a toast.
+- A **📂 Restore from Repo** button is added to the Dashboard "Data Management" card, allowing manual re-import at any time.
+- Files changed: `Daily/app.js`, `Daily/sessions/index.json` (new)
+
+---
+
+### Task 2 — Single Combined Copy Button Below Insert All Checked
+
+**Problem:** Each S/O/A/P segment had its own "Copy" button, leading to multiple per-section toasts and fragmented copying workflow.
+
+**Solution:**
+- Removed all per-section copy buttons from the SOAP templates page.
+- Added **one global "📋 Copy All Checked (full text)"** button placed immediately after (below) the "➕ Insert All Checked" button in the global actions bar.
+- This button copies the **full text** of every checked item — including words after ":" — to the clipboard in one operation.
+- A single "📋 Copied to clipboard" toast is shown once per Copy All action.
+- Files changed: `Daily/modules/soap-view.js`
+
+---
+
+### Task 3 — Dark Theme (Black Background, White Text)
+
+**Problem:** All pages used a light (#f4f6fb) background with dark text.
+
+**Solution:**
+- Updated all CSS design tokens in `:root` to a dark palette:
+  - `--color-bg: #0d0d0d`, `--color-surface: #1a1a1a`, `--color-border: #2e2e2e`
+  - `--color-text: #dde1ea`, `--color-heading: #ffffff`
+  - Tags, buttons, cards, tables all use dark equivalents
+- Replaced all hardcoded light-mode hex colors (`#f0f7ff`, `#f8faff`, `#fff`, etc.) with dark equivalents or CSS variables.
+- Files changed: `Daily/style.css`
+
+---
+
+### Task 4 — SOAP Templates: Floating Categories, Resizable Panels
+
+**Problem:** SOAP categories were in an accordion. The center panel was a fixed 220px column. S/O/A/P sections had no adjustable size.
+
+**Solution:**
+- **Categories → Floating Buttons:** Each SOAP category is now rendered as a draggable `position:absolute` button inside a `position:relative` floating area container.
+  - Default positions are arranged in a 4-column grid.
+  - Dragging a button repositions it; clicking (without drag) opens the category detail.
+  - Overlap is managed by z-index: clicked button rises to the top.
+- **Center "Recently Used Terms" → Floating Panel:** Extracted from the 3-column grid into a `position:fixed` draggable and CSS `resize: both` panel.
+  - Default width is **2/3 of viewport width**.
+  - Has a drag handle at the top; panel body is scrollable.
+  - Toggle with the "📊 Recent Terms" button in the global action bar.
+- **S/O/A/P Sections Resizable:** Each `.ref-section` element has CSS `resize: vertical; overflow: auto` so the user can drag the bottom edge to adjust height.
+- **Center panel in 3-col layout:** Changed from `1fr 220px 1fr` to `1fr 4fr 1fr` to give center column ~2/3 of available width. Also `resize: both` on `.soap-3col-center`.
+- Files changed: `Daily/modules/soap-view.js`, `Daily/style.css`, `Daily/app.js`
+
+---
+
+### Task 5 — ICD Browser: Floating Categories, Floating Recent Codes Panel
+
+**Problem:** ICD categories were split into fixed left/right columns; the recent codes panel was a static center column.
+
+**Solution:**
+- **Categories → Floating Buttons:** Same draggable floating-button pattern as SOAP templates. 16 categories rendered as draggable buttons in a relative container.
+- **"Recently Used ICD Codes" → Floating Panel:** `position:fixed`, CSS `resize: both`, drag handle, default width 2/3 of viewport.
+  - "Insert Selected" button inside the panel for quick code insertion.
+  - "✕" button to hide; can be reopened via "📊 Recent Codes" toggle button.
+- Files changed: `Daily/modules/icd-browser.js`, `Daily/style.css`
+
+---
+
+### Task 6 — Memorize Floating Window Positions Automatically
+
+**Problem:** Floating panel / button positions were not saved.
+
+**Solution:**
+- `saveFloatPosition(key, {x, y, w, h})` stores each panel's position and size to `localStorage` under `floatPositions_v1`.
+- `initFloatPanel()` restores saved `x`, `y`, `w`, `h` on re-render.
+- `initDraggableInContainer()` restores saved `x`, `y` for category buttons.
+- A `ResizeObserver` fires `saveFloatPosition` whenever a floating panel is resized.
+- Files changed: `Daily/app.js`
+
+---
+
+### Task 7 — "Copied" Toast: Single Notification After Copy All
+
+**Problem:** Per-section copy buttons each fired a separate "Copied" toast.
+
+**Solution:**
+- Per-section copy buttons are removed (see Task 2). The single global "Copy All Checked" button shows one "📋 Copied to clipboard." toast after the entire copy operation.
+- Files changed: `Daily/modules/soap-view.js`
+
+---
+
 ## Pending / Future Work
 
 - [ ] Continue expanding ICD-10-CM 2023 中文版 coverage:
@@ -152,3 +251,4 @@ Clicking multiple section buttons caused duplicate text in the SOAP note.
   - Infection-related neurological conditions (A81–A89)
 - [ ] Add patient-level record linking (multiple visits per patient ID)
 - [ ] Export to standard clinical formats (PDF summary, CSV)
+
