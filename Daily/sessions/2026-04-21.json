@@ -1,0 +1,39 @@
+{
+  "date": "2026-04-21",
+  "sessions": [
+    {
+      "id": "opd-000114df-06e1-473d-a16a-1a062feb3e9e",
+      "date": "2026-04-21",
+      "timestamp": "2026-04-21 15:45",
+      "patientId": null,
+      "patientType": null,
+      "icdCodes": [
+        {
+          "code": "G43.001",
+          "en": "Migraine without aura, not intractable, with status migrainosus",
+          "zh": "無預兆偏頭痛，非頑固性，伴有偏頭痛重積狀態",
+          "categoryId": "headache",
+          "categoryName": "Headache / Pain"
+        }
+      ],
+      "icdCode": "G43.001",
+      "icdDescription": "Migraine without aura, not intractable, with status migrainosus",
+      "icdZh": "無預兆偏頭痛，非頑固性，伴有偏頭痛重積狀態",
+      "categoryId": "headache",
+      "categoryName": "Headache / Pain",
+      "condition": "Migraine without aura, not intractable, with status migrainosus",
+      "keyLearning": null,
+      "ebm": null,
+      "soapText": "Severity:\nDuration:",
+      "soap": {
+        "s": "Severity:\nDuration:",
+        "o": null,
+        "a": null,
+        "p": null
+      },
+      "createdAt": "2026-04-21T07:45:27.196Z",
+      "updatedAt": "2026-04-21T07:45:27.196Z"
+    }
+  ],
+  "updatedAt": "2026-04-21T07:45:27.209Z"
+}
