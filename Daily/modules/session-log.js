@@ -459,9 +459,10 @@ function wireForm(container, existing, initIcdCodes) {
 
   container.querySelector('#btn-ghost-insert-all')?.addEventListener('click', doGhostInsertAll);
 
-  /* ── Keyboard shortcut for ghost insert all ── */
-  function onGhostKey(e) {
-    /* Only act when ghost panel is visible */
+  /* ── Keyboard shortcut for ghost insert all — AbortController for clean teardown ── */
+  if (window._ghostPanelAbort) window._ghostPanelAbort.abort();
+  window._ghostPanelAbort = new AbortController();
+  window.addEventListener('keydown', e => {
     if (!ghostCol.classList.contains('ghost-visible')) return;
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     const sc = getShortcutKeys();
@@ -469,11 +470,7 @@ function wireForm(container, existing, initIcdCodes) {
       e.preventDefault();
       doGhostInsertAll();
     }
-  }
-  window.addEventListener('keydown', onGhostKey);
-  const _prevGhost = window._ghostPanelNavCleanup;
-  if (_prevGhost) window.removeEventListener('keydown', _prevGhost);
-  window._ghostPanelNavCleanup = onGhostKey;
+  }, { signal: window._ghostPanelAbort.signal });
 
   /* ── Copy SOAP ── */
   container.querySelector('#btn-copy-soap').addEventListener('click', () => {

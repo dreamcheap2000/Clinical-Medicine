@@ -99,20 +99,17 @@ export async function renderSoapView(opts = {}) {
 
   container.querySelector('#soap-view-insert-all-checked')?.addEventListener('click', doInsertAllChecked);
 
-  /* Keyboard shortcut for insert all */
-  function onKey(e) {
+  /* Keyboard shortcut for insert all — use AbortController so cleanup is automatic on re-render */
+  if (window._soapViewAbort) window._soapViewAbort.abort();
+  window._soapViewAbort = new AbortController();
+  window.addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     const sc = getShortcutKeys();
     if (matchShortcut(e, sc.insertSoapAll) || matchShortcut(e, sc.insertAll)) {
       e.preventDefault();
       doInsertAllChecked();
     }
-  }
-  window.addEventListener('keydown', onKey);
-  /* Clean up on navigate away */
-  const _origNav = window._soapViewNavCleanup;
-  if (_origNav) window.removeEventListener('keydown', _origNav);
-  window._soapViewNavCleanup = onKey;
+  }, { signal: window._soapViewAbort.signal });
 
   /* Select-all / clear-all toggle per section */
   container.addEventListener('click', e => {

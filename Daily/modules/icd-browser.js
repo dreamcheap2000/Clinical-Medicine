@@ -125,19 +125,17 @@ export async function renderIcdBrowser(opts = {}) {
 
   container.querySelector('#icd-insert-recent')?.addEventListener('click', doInsertSelectedIcd);
 
-  /* Keyboard shortcut */
-  function onKey(e) {
+  /* Keyboard shortcut — use AbortController for clean teardown on re-render */
+  if (window._icdBrowserAbort) window._icdBrowserAbort.abort();
+  window._icdBrowserAbort = new AbortController();
+  window.addEventListener('keydown', e => {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
     const sc = getShortcutKeys();
     if (matchShortcut(e, sc.insertIcd) || matchShortcut(e, sc.insertAll)) {
       e.preventDefault();
       doInsertSelectedIcd();
     }
-  }
-  window.addEventListener('keydown', onKey);
-  const _prev = window._icdBrowserNavCleanup;
-  if (_prev) window.removeEventListener('keydown', _prev);
-  window._icdBrowserNavCleanup = onKey;
+  }, { signal: window._icdBrowserAbort.signal });
 
   /* Global search */
   const searchEl  = container.querySelector('#browser-search');
