@@ -68,7 +68,7 @@ export async function renderSoapView(opts = {}) {
     _copyText(text);
   });
 
-  /* Insert-checked buttons (per section) → prefill new entry (appends to any existing prefill) */
+  /* Insert-checked buttons (per section) — inserts term before ":", appends to existing SOAP */
   container.addEventListener('click', e => {
     const btn = e.target.closest('.soap-view-insert-btn');
     if (!btn) return;
@@ -76,9 +76,10 @@ export async function renderSoapView(opts = {}) {
     if (!section) return;
     const checked = [...section.querySelectorAll('.soap-view-cb:checked')];
     if (!checked.length) { showToast('info', 'No items checked — tick some items first.'); return; }
-    const text = checked.map(cb => cb.dataset.text).join('\n');
+    /* Insert only term before ":" (data-term), fall back to full text */
+    const text = checked.map(cb => _termWithColon(cb.dataset.term || cb.dataset.text)).join('\n');
     const prev = sessionStorage.getItem('prefill_soap_text') || '';
-    sessionStorage.setItem('prefill_soap_text', prev ? `${prev}\n\n${text}` : text);
+    sessionStorage.setItem('prefill_soap_text', prev ? `${prev}\n${text}` : text);
     navigate('log');
   });
 
@@ -89,13 +90,13 @@ export async function renderSoapView(opts = {}) {
     _copyText(checked.map(cb => cb.dataset.text).join('\n'));
   });
 
-  /* Global insert-all-checked → prefill new entry (appends to any existing prefill) */
+  /* Global insert-all-checked — inserts term before ":", appends to existing SOAP */
   container.querySelector('#soap-view-insert-all-checked')?.addEventListener('click', () => {
     const checked = [...container.querySelectorAll('.soap-view-cb:checked')];
     if (!checked.length) { showToast('info', 'No items checked anywhere.'); return; }
-    const text = checked.map(cb => cb.dataset.text).join('\n');
+    const text = checked.map(cb => _termWithColon(cb.dataset.term || cb.dataset.text)).join('\n');
     const prev = sessionStorage.getItem('prefill_soap_text') || '';
-    sessionStorage.setItem('prefill_soap_text', prev ? `${prev}\n\n${text}` : text);
+    sessionStorage.setItem('prefill_soap_text', prev ? `${prev}\n${text}` : text);
     navigate('log');
   });
 
@@ -144,11 +145,19 @@ function buildUserTemplatesAccordion(templates) {
     ? NO_USER_TEMPLATES_MSG
     : templates.map(t => {
         const lines = t.text.split('\n').filter(l => l.trim());
-        const cbItems = lines.map(line => `
+        const cbItems = lines.map(line => {
+          const colonIdx = line.indexOf(':');
+          const term   = colonIdx >= 0 ? line.slice(0, colonIdx).trim() : line;
+          const detail = colonIdx >= 0 ? line.slice(colonIdx + 1).trim() : '';
+          return `
           <label class="soap-view-item">
-            <input type="checkbox" class="soap-view-cb" data-text="${esc(line)}">
-            <span class="soap-view-item-text">${esc(line)}</span>
-          </label>`).join('');
+            <input type="checkbox" class="soap-view-cb"
+              data-text="${esc(line)}" data-term="${esc(term)}">
+            <span class="soap-view-item-text">
+              <b>${esc(term)}</b>${detail ? `<span class="soap-view-item-detail">: ${esc(detail)}</span>` : ''}
+            </span>
+          </label>`;
+        }).join('');
         return `
           <div class="ref-section" data-tmpl-id="${esc(t.id)}">
             <div class="ref-title-row">
@@ -237,11 +246,20 @@ function buildAccordionItem(cat) {
 /** Renders a SOAP/exam section with checkable items and copy + insert controls. */
 function soapBlock(title, items) {
   if (!items?.length) return '';
-  const cbItems = items.map((item, i) => `
+  const cbItems = items.map((item) => {
+    /* Split on first ":" to show term vs. detail */
+    const colonIdx = item.indexOf(':');
+    const term   = colonIdx >= 0 ? item.slice(0, colonIdx).trim() : item;
+    const detail = colonIdx >= 0 ? item.slice(colonIdx + 1).trim() : '';
+    return `
     <label class="soap-view-item">
-      <input type="checkbox" class="soap-view-cb" data-text="${esc(item)}">
-      <span class="soap-view-item-text">${esc(item)}</span>
-    </label>`).join('');
+      <input type="checkbox" class="soap-view-cb"
+        data-text="${esc(item)}" data-term="${esc(term)}">
+      <span class="soap-view-item-text">
+        <b>${esc(term)}</b>${detail ? `<span class="soap-view-item-detail">: ${esc(detail)}</span>` : ''}
+      </span>
+    </label>`;
+  }).join('');
 
   return `<div class="ref-section">
     <div class="ref-title-row">
@@ -251,6 +269,9 @@ function soapBlock(title, items) {
         <button type="button" class="soap-view-copy-btn btn-ref-action">📋 Copy</button>
         <button type="button" class="soap-view-insert-btn btn-ref-action">➕ Insert to Entry</button>
       </span>
+    </div>
+    <div class="hint" style="font-size:.75rem;padding:.15rem .3rem;margin-bottom:.2rem;color:#7a8ea8">
+      Insert adds only the term before ":" — full text shown here for reference
     </div>
     <div class="soap-view-checklist">${cbItems}</div>
   </div>`;
@@ -275,4 +296,9 @@ function _fallback(text) {
   try   { document.execCommand('copy'); showToast('info', 'Copied.'); }
   catch { showToast('error', 'Copy failed — please copy manually.'); }
   document.body.removeChild(ta);
+}
+
+/** Returns the term with exactly one trailing colon (avoids double-colon). */
+function _termWithColon(term) {
+  return term.endsWith(':') ? term : `${term}:`;
 }
