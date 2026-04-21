@@ -2,6 +2,46 @@
   "date": "2026-04-21",
   "sessions": [
     {
+      "id": "opd-1c3970c0-4cd0-4aa3-98f4-d5a07eeed048",
+      "date": "2026-04-21",
+      "timestamp": "2026-04-21 20:15",
+      "patientId": null,
+      "patientType": null,
+      "icdCodes": [
+        {
+          "code": "F01.50",
+          "en": "Vascular dementia, unspecified severity, without behavioral disturbance, psychotic disturbance, mood disturbance, and anxiety",
+          "zh": "血管性失智症，未明示嚴重度，無行為困擾",
+          "categoryId": "dementia",
+          "categoryName": ""
+        },
+        {
+          "code": "G56.02",
+          "en": "Carpal tunnel syndrome, left upper limb",
+          "zh": "左側腕隧道症候群",
+          "categoryId": "peripheral_nerve",
+          "categoryName": ""
+        }
+      ],
+      "icdCode": "F01.50",
+      "icdDescription": "Vascular dementia, unspecified severity, without behavioral disturbance, psychotic disturbance, mood disturbance, and anxiety",
+      "icdZh": "血管性失智症，未明示嚴重度，無行為困擾",
+      "categoryId": "dementia",
+      "categoryName": null,
+      "condition": "Vascular dementia, unspecified severity, without behavioral disturbance, psychotic disturbance, mood disturbance, and anxiety",
+      "keyLearning": null,
+      "ebm": null,
+      "soapText": "Safety:\n\nHIT-6 (Headache Impact Test):\n\nHIT-6 (Headache Impact Test):\n\nBPSD:\n\nBPSD:\n\nBPSD:\n\nOnset & course:\nCognitive domains affected:\n\nOnset & course:\nCognitive domains affected:\n\nOnset & course:\nCognitive domains affected:\n\nOnset & course:\nCognitive domains affected:\n\nFunctional decline:\n\nFunctional decline:\n\nFunctional decline:\n\nFunctional decline:\n\nFunctional decline:",
+      "soap": {
+        "s": "Safety:\n\nHIT-6 (Headache Impact Test):\n\nHIT-6 (Headache Impact Test):\n\nBPSD:\n\nBPSD:\n\nBPSD:\n\nOnset & course:\nCognitive domains affected:\n\nOnset & course:\nCognitive domains affected:\n\nOnset & course:\nCognitive domains affected:\n\nOnset & course:\nCognitive domains affected:\n\nFunctional decline:\n\nFunctional decline:\n\nFunctional decline:\n\nFunctional decline:\n\nFunctional decline:",
+        "o": null,
+        "a": null,
+        "p": null
+      },
+      "createdAt": "2026-04-21T12:15:36.699Z",
+      "updatedAt": "2026-04-21T12:15:36.699Z"
+    },
+    {
       "id": "opd-a0577236-8c82-4408-b6c4-249dc8547141",
       "date": "2026-04-21",
       "timestamp": "2026-04-21 15:46",
@@ -107,5 +147,5 @@
       "updatedAt": "2026-04-21T07:45:27.196Z"
     }
   ],
-  "updatedAt": "2026-04-21T07:46:47.113Z"
+  "updatedAt": "2026-04-21T12:15:36.707Z"
 }
