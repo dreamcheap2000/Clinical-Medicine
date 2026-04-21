@@ -4,7 +4,7 @@
  * organized by category, with SOAP + exam detail panel.
  */
 
-import { getIcdData, searchCodes, navigate, esc } from '../app.js';
+import { getIcdData, searchCodes, navigate, esc, buildCombinedObjective } from '../app.js';
 
 export async function renderIcdBrowser(opts = {}) {
   const container = document.getElementById('main-content');
@@ -126,15 +126,7 @@ function showCategory(catId, cats, lookup, highlightCode = null) {
   const soap = catObj.soap || {};
   const pe   = catObj.physicalExam || {};
 
-  /* Merge SOAP Objective + Neurologic/Physical Exam + Bedside Scales into one
-     Objective section; deduplicate and sort alphabetically to group similar items */
-  const _objRaw = [
-    ...(soap.objective        || []),
-    ...(pe.neurologic_exam    || []),
-    ...(pe.bedside_scales     || pe.bedside_cognitive || []),
-  ];
-  const combinedObjective = [...new Set(_objRaw)]
-    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  const combinedObjective = buildCombinedObjective(soap, pe);
 
   main.innerHTML = `
     <div class="browser-cat-header">

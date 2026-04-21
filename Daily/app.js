@@ -277,6 +277,22 @@ export function searchCodes(query, icdData, limit = 40) {
   return results;
 }
 
+/**
+ * Builds a deduplicated, alphabetically-sorted combined Objective array by
+ * merging a category's SOAP objective items with its physical exam items.
+ * @param {object} soap - cat.soap (may be undefined)
+ * @param {object} pe   - cat.physicalExam (may be undefined)
+ * @returns {string[]}
+ */
+export function buildCombinedObjective(soap = {}, pe = {}) {
+  const raw = [
+    ...(soap.objective       || []),
+    ...(pe.neurologic_exam   || []),
+    ...(pe.bedside_scales    || pe.bedside_cognitive || []),
+  ];
+  return [...new Set(raw)].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+}
+
 /* ============================================================ */
 /* Router                                                        */
 /* ============================================================ */

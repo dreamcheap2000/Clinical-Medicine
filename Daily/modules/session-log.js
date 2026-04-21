@@ -23,6 +23,7 @@ import {
   recordIcdUse,
   navigate, showToast, esc,
   saveSessionWithSync,
+  buildCombinedObjective,
 } from '../app.js';
 
 /* ============================================================ */
@@ -550,13 +551,7 @@ function buildGhostContent(catObj, catId) {
 
   /* Merge SOAP Objective + Neurologic/Physical Exam + Bedside Scales into one
      Objective section; deduplicate and sort alphabetically to group similar items */
-  const _objRaw = [
-    ...(s.objective          || []),
-    ...(pe.neurologic_exam   || []),
-    ...(pe.bedside_scales    || pe.bedside_cognitive || []),
-  ];
-  const combinedObjective = [...new Set(_objRaw)]
-    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  const combinedObjective = buildCombinedObjective(s, pe);
 
   const sections = [
     { key: 's', label: '🗣️ Subjective',  items: s.subjective        || [] },

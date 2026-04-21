@@ -4,7 +4,7 @@
  * Items are rendered as checkboxes so users can select, copy, or insert into new entries.
  */
 
-import { getIcdData, getSoapTemplates, deleteSoapTemplate, navigate, esc, showToast } from '../app.js';
+import { getIcdData, getSoapTemplates, deleteSoapTemplate, navigate, esc, showToast, buildCombinedObjective } from '../app.js';
 
 export async function renderSoapView(opts = {}) {
   const container = document.getElementById('main-content');
@@ -196,15 +196,7 @@ function buildAccordionItem(cat) {
   const s  = cat.soap || {};
   const pe = cat.physicalExam || {};
 
-  /* Merge SOAP Objective + Neurologic/Physical Exam + Bedside Scales into one
-     Objective section; deduplicate and sort alphabetically to group similar items */
-  const _objRaw = [
-    ...(s.objective          || []),
-    ...(pe.neurologic_exam   || []),
-    ...(pe.bedside_scales    || pe.bedside_cognitive || []),
-  ];
-  const combinedObjective = [...new Set(_objRaw)]
-    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+  const combinedObjective = buildCombinedObjective(s, pe);
 
   return `
     <div class="accordion-item">
