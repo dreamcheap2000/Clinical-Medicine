@@ -4,7 +4,7 @@
  * organized by category, with SOAP + exam detail panel.
  */
 
-import { getIcdData, searchCodes, navigate, esc } from '../app.js';
+import { getIcdData, searchCodes, navigate, esc, buildCombinedObjective } from '../app.js';
 
 export async function renderIcdBrowser(opts = {}) {
   const container = document.getElementById('main-content');
@@ -126,6 +126,8 @@ function showCategory(catId, cats, lookup, highlightCode = null) {
   const soap = catObj.soap || {};
   const pe   = catObj.physicalExam || {};
 
+  const combinedObjective = buildCombinedObjective(soap, pe);
+
   main.innerHTML = `
     <div class="browser-cat-header">
       <span class="browser-cat-icon">${catObj.icon || ''}</span>
@@ -139,7 +141,6 @@ function showCategory(catId, cats, lookup, highlightCode = null) {
     <div class="tab-bar" id="tab-bar">
       <button class="tab-btn active" data-tab="codes">📄 Codes (${codes.length})</button>
       <button class="tab-btn" data-tab="soap">📋 SOAP Template</button>
-      <button class="tab-btn" data-tab="exam">🩺 Physical Exam</button>
     </div>
 
     <!-- Codes tab -->
@@ -158,18 +159,12 @@ function showCategory(catId, cats, lookup, highlightCode = null) {
       </div>
     </div>
 
-    <!-- SOAP tab -->
+    <!-- SOAP tab (Objective includes Physical Exam items) -->
     <div class="tab-panel hidden" id="tab-soap">
       ${soapBlock('🗣️ S — Subjective (template)', soap.subjective)}
-      ${soapBlock('🔎 O — Objective (template)',   soap.objective)}
+      ${soapBlock('🔎 O — Objective (template)',   combinedObjective)}
       ${soapBlock('💡 Assessment Pearls',           soap.assessment_pearls)}
       ${soapBlock('🗂️ Plan Template',              soap.plan_template)}
-    </div>
-
-    <!-- Exam tab -->
-    <div class="tab-panel hidden" id="tab-exam">
-      ${soapBlock('📊 Bedside Scales / Scores',        pe.bedside_scales)}
-      ${soapBlock('🔬 Neurologic / Physical Exam Steps', pe.neurologic_exam)}
     </div>
   `;
 
