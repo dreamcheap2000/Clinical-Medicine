@@ -2,6 +2,53 @@
   "date": "2026-04-21",
   "sessions": [
     {
+      "id": "opd-a0577236-8c82-4408-b6c4-249dc8547141",
+      "date": "2026-04-21",
+      "timestamp": "2026-04-21 15:46",
+      "patientId": null,
+      "patientType": null,
+      "icdCodes": [
+        {
+          "code": "G43.C0",
+          "en": "Periodic headache syndromes in child or adult, not intractable",
+          "zh": "兒童或成人週期性頭痛症候群，非頑固性",
+          "categoryId": "headache",
+          "categoryName": "Headache / Pain"
+        },
+        {
+          "code": "G56.11",
+          "en": "Other lesions of median nerve, right upper limb",
+          "zh": "右側正中神經之其他病灶",
+          "categoryId": "peripheral_nerve",
+          "categoryName": "Peripheral Neuropathy / Entrapment"
+        },
+        {
+          "code": "I67.81",
+          "en": "Acute cerebrovascular insufficiency",
+          "zh": "急性腦血管功能不全",
+          "categoryId": "stroke",
+          "categoryName": "Stroke / Cerebrovascular"
+        }
+      ],
+      "icdCode": "G43.C0",
+      "icdDescription": "Periodic headache syndromes in child or adult, not intractable",
+      "icdZh": "兒童或成人週期性頭痛症候群，非頑固性",
+      "categoryId": "headache",
+      "categoryName": "Headache / Pain",
+      "condition": "Periodic headache syndromes in child or adult, not intractable",
+      "keyLearning": null,
+      "ebm": null,
+      "soapText": "Triggers:\nAssociated symptoms:",
+      "soap": {
+        "s": "Triggers:\nAssociated symptoms:",
+        "o": null,
+        "a": null,
+        "p": null
+      },
+      "createdAt": "2026-04-21T07:46:47.108Z",
+      "updatedAt": "2026-04-21T07:46:47.108Z"
+    },
+    {
       "id": "opd-1c7ff827-df3c-4374-80e5-16b93a7018d7",
       "date": "2026-04-21",
       "timestamp": "2026-04-21 15:45",
@@ -60,5 +107,5 @@
       "updatedAt": "2026-04-21T07:45:27.196Z"
     }
   ],
-  "updatedAt": "2026-04-21T07:45:42.048Z"
+  "updatedAt": "2026-04-21T07:46:47.113Z"
 }
