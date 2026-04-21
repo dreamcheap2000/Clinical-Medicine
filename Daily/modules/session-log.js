@@ -651,6 +651,9 @@ function wireGhostInsert(ghostBody, form, catId) {
         const cur   = ta.value.trim();
         const toAdd = termItems.map(termWithColon).join('\n');
         ta.value = cur ? `${cur}\n${toAdd}` : toAdd;
+        /* Programmatic value assignment doesn't fire 'input', so dispatch it manually
+           so the auto-save draft captures the newly inserted text before any navigation */
+        ta.dispatchEvent(new Event('input', { bubbles: true }));
       }
       recordSoapSelections(catId, fullTextItems);
       checked.forEach(cb => { cb.checked = false; });
@@ -734,6 +737,7 @@ function openTemplateLoader(form) {
       if (!t || !ta) return;
       const cur = ta.value.trim();
       ta.value = cur ? `${cur}\n\n${t.text}` : t.text;
+      ta.dispatchEvent(new Event('input', { bubbles: true }));
       overlay.remove();
       showToast('success', `Template "${t.name}" inserted.`);
     });
@@ -808,7 +812,10 @@ function openLinePicker(template, ta) {
       .filter(Boolean);
     if (!selected.length) { showToast('info', 'No lines selected.'); return; }
     const cur = ta?.value.trim() || '';
-    if (ta) ta.value = cur ? `${cur}\n${selected.join('\n')}` : selected.join('\n');
+    if (ta) {
+      ta.value = cur ? `${cur}\n${selected.join('\n')}` : selected.join('\n');
+      ta.dispatchEvent(new Event('input', { bubbles: true }));
+    }
     overlay.remove();
     showToast('success', `Inserted ${selected.length} line${selected.length > 1 ? 's' : ''}.`);
   });
