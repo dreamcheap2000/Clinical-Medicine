@@ -18,7 +18,7 @@ import {
   navigate, esc, showToast, buildCombinedObjective,
   getRecentSoapTerms, recordSoapItemWithSection,
   getShortcutKeys, matchShortcut,
-  getFloatPositions, saveFloatPosition, initFloatPanel, initDraggableInContainer,
+  getFloatPositions, initFloatPanel, initDraggableInContainer,
 } from '../app.js';
 
 const CATS_AREA_HEIGHT_KEY = 'soap_cats_area_h';

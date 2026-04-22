@@ -12,7 +12,7 @@ import {
   getIcdData, searchCodes, getIcdFreq,
   navigate, esc, buildCombinedObjective,
   getShortcutKeys, matchShortcut, showToast,
-  getFloatPositions, saveFloatPosition, initFloatPanel, initDraggableInContainer,
+  getFloatPositions, initFloatPanel, initDraggableInContainer,
 } from '../app.js';
 
 export async function renderIcdBrowser(opts = {}) {
