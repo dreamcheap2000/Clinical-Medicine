@@ -885,6 +885,9 @@ body { font-family: var(--font); background: var(--color-bg); color: var(--color
   z-index: 1100;
 }
 .float-panel-hidden { display: none !important; }
+/* Issue 1 — minimized: only show the drag handle header */
+.float-panel-minimized { min-height: 0 !important; resize: horizontal; }
+.float-panel-minimized .float-panel-body { display: none !important; }
 .float-drag-handle {
   display: flex; align-items: center; justify-content: space-between;
   background: var(--color-primary);
@@ -906,6 +909,8 @@ body { font-family: var(--font); background: var(--color-bg); color: var(--color
   font-size: .8rem; font-weight: 600;
 }
 .float-panel-toggle:hover { background: rgba(255,255,255,.3); }
+/* Issue 1 — active state for toggle buttons */
+.btn-active { background: var(--color-primary) !important; color: #fff !important; border-color: var(--color-primary) !important; }
 
 /* ============================================================
    ICD Browser — 3-column layout (cats | recent-50 | cats)
@@ -991,6 +996,7 @@ body { font-family: var(--font); background: var(--color-bg); color: var(--color
   }
 }
 
+
 /* kbd styling for shortcut hints */
 kbd {
   display: inline-block;
@@ -1004,3 +1010,124 @@ kbd {
   box-shadow: 0 1px 0 #333;
   white-space: nowrap;
 }
+
+/* ============================================================
+   Issue 5 — Quad View (4-quadrant dashboard)
+   ============================================================ */
+.quad-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: calc(50vh - var(--nav-height) / 2 - .65rem)
+                      calc(50vh - var(--nav-height) / 2 - .65rem);
+  gap: .6rem;
+  padding: .5rem;
+  height: calc(100vh - var(--nav-height));
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.quad-panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: transform .22s ease, box-shadow .22s ease, z-index 0s;
+  position: relative;
+  z-index: 1;
+  min-height: 0;
+  will-change: transform;
+}
+.quad-panel:hover {
+  z-index: 20;
+  box-shadow: 0 10px 48px rgba(0,0,0,.65);
+  transform: scale(1.55);
+}
+.quad-panel[data-quad="tl"]:hover { transform-origin: top left; }
+.quad-panel[data-quad="tr"]:hover { transform-origin: top right; }
+.quad-panel[data-quad="bl"]:hover { transform-origin: bottom left; }
+.quad-panel[data-quad="br"]:hover { transform-origin: bottom right; }
+/* Maximized panel covers the whole page area below navbar */
+.quad-panel.quad-maximized {
+  position: fixed !important;
+  top: var(--nav-height) !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  z-index: 2000 !important;
+  border-radius: 0 !important;
+  transform: none !important;
+  transition: none !important;
+}
+/* Suppress hover scale on maximized panel */
+.quad-panel.quad-maximized:hover { transform: none !important; box-shadow: none !important; }
+.quad-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-primary);
+  color: #fff;
+  padding: .38rem .65rem;
+  font-weight: 700;
+  font-size: .82rem;
+  flex-shrink: 0;
+  user-select: none;
+}
+.quad-panel-title { flex: 1; }
+.quad-panel-actions { display: flex; gap: .3rem; align-items: center; }
+.quad-panel-btn {
+  background: rgba(255,255,255,.18);
+  border: none;
+  color: #fff;
+  border-radius: 4px;
+  padding: .12rem .42rem;
+  cursor: pointer;
+  font-size: .8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.quad-panel-btn:hover { background: rgba(255,255,255,.32); }
+.quad-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: .55rem .65rem;
+  min-height: 0;
+  font-size: .82rem;
+}
+/* Compact overrides inside quad panels */
+.quad-panel-body .page-title { font-size: .9rem; margin: 0 0 .3rem; }
+.quad-panel-body .subtitle { font-size: .74rem; margin-bottom: .45rem; }
+.quad-panel-body .stats-grid { grid-template-columns: repeat(2, 1fr); gap: .35rem; margin-bottom: .5rem; }
+.quad-panel-body .stat-card { padding: .45rem .5rem; }
+.quad-panel-body .stat-value { font-size: 1.3rem; }
+.quad-panel-body .stat-label { font-size: .7rem; }
+.quad-panel-body .action-grid { grid-template-columns: 1fr 1fr; gap: .35rem; }
+.quad-panel-body .action-btn { padding: .35rem .45rem; font-size: .76rem; }
+.quad-panel-body .card { margin-bottom: .55rem; padding: .55rem .65rem; }
+.quad-panel-body .card-title { font-size: .82rem; margin-bottom: .35rem; }
+.quad-panel-body .field-label { font-size: .78rem; }
+.quad-panel-body .field-input { font-size: .8rem; padding: .28rem .45rem; }
+.quad-panel-body .float-cats-area { min-height: 80px !important; }
+.quad-panel-body .float-cat-btn { width: 130px; height: 48px; font-size: .72rem; }
+.quad-panel-body .browser-search-wrap { margin-bottom: .45rem; }
+.quad-panel-body .entry-list { max-height: 160px; overflow-y: auto; }
+.quad-icd-recent { margin-top: .5rem; }
+.quad-icd-recent-title { font-size: .78rem; font-weight: 700; color: var(--color-muted); margin-bottom: .25rem; }
+.quad-icd-recent-item { display: flex; align-items: center; gap: .35rem; padding: .2rem 0; font-size: .78rem; cursor: pointer; }
+.quad-icd-recent-item:hover { color: var(--color-primary); }
+.quad-soap-term { font-size: .78rem; padding: .18rem 0; display: flex; align-items: center; gap: .3rem; }
+.quad-open-btn {
+  display: inline-block;
+  margin-top: .5rem;
+  padding: .3rem .65rem;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: .79rem;
+  font-weight: 600;
+}
+.quad-open-btn:hover { opacity: .88; }

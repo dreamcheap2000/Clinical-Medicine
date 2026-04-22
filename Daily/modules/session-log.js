@@ -25,7 +25,7 @@ import {
   navigate, showToast, esc,
   saveSessionWithSync,
   buildCombinedObjective,
-  getShortcutKeys, matchShortcut,
+  getShortcutKeys, matchShortcut, isTypingInput,
 } from '../app.js';
 
 /* ============================================================ */
@@ -97,6 +97,12 @@ export function renderSessionLog(opts = {}) {
     if (rawSoap) { prefillSoapText = rawSoap; sessionStorage.removeItem('prefill_soap_text'); }
   } catch { /* ignore */ }
 
+  /* Pick up date/pid from quad view quick-start */
+  const prefillDate = sessionStorage.getItem('prefill_date') || '';
+  const prefillPid  = sessionStorage.getItem('prefill_pid')  || '';
+  if (prefillDate) sessionStorage.removeItem('prefill_date');
+  if (prefillPid)  sessionStorage.removeItem('prefill_pid');
+
   /* Load auto-saved form draft (non-edit mode only) */
   const draft = !editId ? loadFormDraft() : null;
   clearFormDraft();
@@ -133,8 +139,8 @@ export function renderSessionLog(opts = {}) {
   }
 
   /* ── Resolve initial form field values (draft > existing > defaults) ── */
-  const initDate        = existing?.date        || draft?.date        || new Date().toISOString().slice(0,10);
-  const initPid         = existing?.patientId   || draft?.patientId   || '';
+  const initDate        = existing?.date        || draft?.date        || prefillDate || new Date().toISOString().slice(0,10);
+  const initPid         = existing?.patientId   || draft?.patientId   || prefillPid  || '';
   const initPt          = existing?.patientType || draft?.patientType || '';
   const initCondition   = existing?.condition   || draft?.condition
     || (prefill && !draft ? (prefill.en || '') : '');
@@ -464,7 +470,7 @@ function wireForm(container, existing, initIcdCodes) {
   window._ghostPanelAbort = new AbortController();
   window.addEventListener('keydown', e => {
     if (!ghostCol.classList.contains('ghost-visible')) return;
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (isTypingInput(e.target)) return;
     const sc = getShortcutKeys();
     if (matchShortcut(e, sc.insertSoap) || matchShortcut(e, sc.insertAll)) {
       e.preventDefault();
