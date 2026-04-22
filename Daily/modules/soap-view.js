@@ -17,8 +17,9 @@ import {
   getIcdData, getSoapTemplates, deleteSoapTemplate,
   navigate, esc, showToast, buildCombinedObjective,
   getRecentSoapTerms, recordSoapItemWithSection,
-  getShortcutKeys, matchShortcut,
+  getShortcutKeys, matchShortcut, isTypingInput,
   getFloatPositions, initFloatPanel, initDraggableInContainer,
+  saveFloatPanelState, getFloatPanelState,
 } from '../app.js';
 
 const CATS_AREA_HEIGHT_KEY = 'soap_cats_area_h';
@@ -43,6 +44,9 @@ export async function renderSoapView(opts = {}) {
   const catsAreaH = parseInt(getFloatPositions()[CATS_AREA_HEIGHT_KEY]) ||
     (Math.ceil(cats.length / COLS) * (BTN_H + GAP) + GAP + 30);
 
+  /* Issue 1: restore panel state before rendering */
+  const panelState = getFloatPanelState('soap_recent_panel');
+
   container.innerHTML = `
     <h2 class="page-title">📋 SOAP &amp; Physical Exam Templates</h2>
     <p class="subtitle">Drag category buttons to reposition • Check items then use the buttons below</p>
@@ -52,8 +56,9 @@ export async function renderSoapView(opts = {}) {
       <button class="btn btn-primary" id="soap-view-insert-all-checked">➕ Insert All Checked to New Entry
         <kbd>${esc(shortcuts.insertSoapAll)}</kbd></button>
       <button class="btn btn-outline" id="soap-view-copy-all-checked">📋 Copy All Checked (full text)</button>
-      <button class="btn btn-outline btn-sm-inline" id="soap-view-toggle-recent"
-        title="Toggle Recently Used Terms panel">📊 Recent Terms</button>
+      <button class="btn btn-outline btn-sm-inline ${panelState.hidden ? '' : 'btn-active'}"
+        id="soap-view-toggle-recent"
+        title="Toggle Recently Used Terms panel">📊 Recent Terms${panelState.hidden ? '' : ' ✓'}</button>
     </div>
 
     <!-- Floating category buttons area -->
@@ -124,9 +129,39 @@ export async function renderSoapView(opts = {}) {
     recentPanel.style.height = '420px';
   }
 
-  /* Toggle button for recent panel */
-  container.querySelector('#soap-view-toggle-recent')?.addEventListener('click', () => {
+  /* Issue 1: restore visibility / minimize state */
+  if (panelState.hidden)    recentPanel.classList.add('float-panel-hidden');
+  if (panelState.minimized) recentPanel.classList.add('float-panel-minimized');
+
+  /* Issue 1: Toggle button — persist state and update label */
+  const soapToggleBtn = container.querySelector('#soap-view-toggle-recent');
+  function _updateSoapToggleBtn() {
+    const isHidden = recentPanel.classList.contains('float-panel-hidden');
+    soapToggleBtn.textContent = isHidden ? '📊 Recent Terms' : '📊 Recent Terms ✓';
+    soapToggleBtn.classList.toggle('btn-active', !isHidden);
+  }
+  soapToggleBtn?.addEventListener('click', () => {
+    const wasHidden = recentPanel.classList.contains('float-panel-hidden');
     recentPanel.classList.toggle('float-panel-hidden');
+    if (!wasHidden) recentPanel.classList.remove('float-panel-minimized');
+    saveFloatPanelState('soap_recent_panel', { hidden: !wasHidden, minimized: false });
+    _updateSoapToggleBtn();
+  });
+  _updateSoapToggleBtn();
+
+  /* Issue 1: Minimize button inside the panel */
+  recentPanel.querySelector('#soap-recent-minimize-btn')?.addEventListener('click', () => {
+    const isMin = recentPanel.classList.toggle('float-panel-minimized');
+    recentPanel.querySelector('#soap-recent-minimize-btn').textContent = isMin ? '⬆' : '⬇';
+    saveFloatPanelState('soap_recent_panel', { minimized: isMin });
+  });
+
+  /* Close button */
+  recentPanel.querySelector('#soap-recent-close-btn')?.addEventListener('click', () => {
+    recentPanel.classList.add('float-panel-hidden');
+    recentPanel.classList.remove('float-panel-minimized');
+    saveFloatPanelState('soap_recent_panel', { hidden: true, minimized: false });
+    _updateSoapToggleBtn();
   });
 
   /* ── Insert All Checked ── */
@@ -154,7 +189,7 @@ export async function renderSoapView(opts = {}) {
   if (window._soapViewAbort) window._soapViewAbort.abort();
   window._soapViewAbort = new AbortController();
   window.addEventListener('keydown', e => {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (isTypingInput(e.target)) return;
     const sc = getShortcutKeys();
     if (matchShortcut(e, sc.insertSoapAll) || matchShortcut(e, sc.insertAll)) {
       e.preventDefault();
@@ -207,6 +242,7 @@ function _buildRecentPanel(shortcuts) {
   panel.className = 'float-panel';
   panel.id = 'soap-recent-float-panel';
 
+  const savedState = getFloatPanelState('soap_recent_panel');
   const terms = getRecentSoapTerms(100);
   const bySection = { s: [], o: [], a: [], p: [] };
   for (const t of terms) {
@@ -252,8 +288,12 @@ function _buildRecentPanel(shortcuts) {
   panel.innerHTML = `
     <div class="float-drag-handle">
       <span>📊 Recently Used SOAP Terms (top ${terms.length})</span>
-      <button type="button" class="float-panel-toggle" id="soap-recent-close-btn"
-        title="Hide panel">✕</button>
+      <div style="display:flex;gap:.4rem;align-items:center">
+        <button type="button" class="float-panel-toggle" id="soap-recent-minimize-btn"
+          title="Minimize / restore panel">${savedState.minimized ? '⬆' : '⬇'}</button>
+        <button type="button" class="float-panel-toggle" id="soap-recent-close-btn"
+          title="Hide panel">✕</button>
+      </div>
     </div>
     <div class="float-panel-body">
       <div class="recent-panel-header">
@@ -261,10 +301,6 @@ function _buildRecentPanel(shortcuts) {
       </div>
       ${bodyHtml}
     </div>`;
-
-  panel.querySelector('#soap-recent-close-btn')?.addEventListener('click', () => {
-    panel.classList.add('float-panel-hidden');
-  });
 
   return panel;
 }

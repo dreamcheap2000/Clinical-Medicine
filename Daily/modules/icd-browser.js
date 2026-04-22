@@ -4,16 +4,22 @@
  *
  * Layout:
  *   - Floating draggable category buttons in a relative container
- *   - "Recently Used ICD Codes" is a fixed-position floating panel (draggable, resizable)
+ *   - "Recently Used ICD Codes" is a fixed-position floating panel (draggable, resizable,
+ *     minimizable — state is persisted across visits)
  *   - Category detail panel appears below the floating buttons area
+ *   - Last viewed category is remembered across visits (Issue 4)
  */
 
 import {
   getIcdData, searchCodes, getIcdFreq,
   navigate, esc, buildCombinedObjective,
-  getShortcutKeys, matchShortcut, showToast,
+  getShortcutKeys, matchShortcut, showToast, isTypingInput,
   getFloatPositions, initFloatPanel, initDraggableInContainer,
+  saveFloatPanelState, getFloatPanelState,
 } from '../app.js';
+
+/* Issue 4 — remember last viewed category */
+const ICD_LAST_CAT_KEY = 'icdLastCat_v1';
 
 export async function renderIcdBrowser(opts = {}) {
   const container = document.getElementById('main-content');
@@ -30,11 +36,15 @@ export async function renderIcdBrowser(opts = {}) {
   const lookup    = icdData.codeLookup || {};
   const shortcuts = getShortcutKeys();
 
-  const initCat = opts.categoryId || cats[0]?.id || '';
+  /* Issue 4: restore last-viewed category instead of always showing the first one */
+  const initCat = opts.categoryId || localStorage.getItem(ICD_LAST_CAT_KEY) || '';
 
   /* Calculate default floating button positions */
   const BTN_W = 158, BTN_H = 56, GAP = 8, COLS = 4;
   const catsAreaH = Math.ceil(cats.length / COLS) * (BTN_H + GAP) + GAP + 30;
+
+  /* Issue 1: restore panel visibility state before building HTML */
+  const panelState = getFloatPanelState('icd_recent_panel');
 
   container.innerHTML = `
     <h2 class="page-title">🔍 ICD-10 Code Browser</h2>
@@ -52,8 +62,9 @@ export async function renderIcdBrowser(opts = {}) {
       <button class="btn btn-primary btn-sm-inline" id="icd-insert-recent"
         title="${esc(shortcuts.insertIcd)}">➕ Insert Selected
         <kbd>${esc(shortcuts.insertIcd)}</kbd></button>
-      <button class="btn btn-outline btn-sm-inline" id="icd-toggle-recent">
-        📊 Recent Codes</button>
+      <button class="btn btn-outline btn-sm-inline ${panelState.hidden ? '' : 'btn-active'}"
+        id="icd-toggle-recent" title="Show/hide recently used ICD codes panel">
+        📊 Recent Codes${panelState.hidden ? '' : ' ✓'}</button>
     </div>
 
     <!-- Floating category buttons area -->
@@ -101,6 +112,7 @@ export async function renderIcdBrowser(opts = {}) {
         showCategory(cat.id, cats, lookup, null, container);
       } else {
         container.querySelector('#icd-cat-detail').innerHTML = '';
+        localStorage.removeItem(ICD_LAST_CAT_KEY);
       }
     });
   });
@@ -119,9 +131,42 @@ export async function renderIcdBrowser(opts = {}) {
     recentPanel.style.height = '380px';
   }
 
-  /* Toggle recent panel */
-  container.querySelector('#icd-toggle-recent')?.addEventListener('click', () => {
+  /* Issue 1: restore panel visibility / minimize state */
+  if (panelState.hidden)    recentPanel.classList.add('float-panel-hidden');
+  if (panelState.minimized) recentPanel.classList.add('float-panel-minimized');
+
+  /* Issue 1: Toggle recent panel — persist state, update button label */
+  const toggleBtn = container.querySelector('#icd-toggle-recent');
+  function _updateToggleBtn() {
+    const isHidden = recentPanel.classList.contains('float-panel-hidden');
+    toggleBtn.textContent = isHidden ? '📊 Recent Codes' : '📊 Recent Codes ✓';
+    toggleBtn.classList.toggle('btn-active', !isHidden);
+  }
+  toggleBtn?.addEventListener('click', () => {
+    const wasHidden = recentPanel.classList.contains('float-panel-hidden');
     recentPanel.classList.toggle('float-panel-hidden');
+    if (!wasHidden) {
+      /* hiding — also clear minimized so next show is clean */
+      recentPanel.classList.remove('float-panel-minimized');
+    }
+    saveFloatPanelState('icd_recent_panel', { hidden: !wasHidden, minimized: false });
+    _updateToggleBtn();
+  });
+  _updateToggleBtn();
+
+  /* Issue 1: Minimize button inside the panel */
+  recentPanel.querySelector('#icd-recent-minimize')?.addEventListener('click', () => {
+    const isMin = recentPanel.classList.toggle('float-panel-minimized');
+    recentPanel.querySelector('#icd-recent-minimize').textContent = isMin ? '⬆' : '⬇';
+    saveFloatPanelState('icd_recent_panel', { minimized: isMin });
+  });
+
+  /* Close button — hides entirely */
+  recentPanel.querySelector('#icd-recent-close')?.addEventListener('click', () => {
+    recentPanel.classList.add('float-panel-hidden');
+    recentPanel.classList.remove('float-panel-minimized');
+    saveFloatPanelState('icd_recent_panel', { hidden: true, minimized: false });
+    _updateToggleBtn();
   });
 
   /* ── Insert selected recent ICD codes ── */
@@ -147,12 +192,13 @@ export async function renderIcdBrowser(opts = {}) {
   }
 
   container.querySelector('#icd-insert-recent')?.addEventListener('click', doInsertSelectedIcd);
+  recentPanel.querySelector('#icd-insert-recent-panel')?.addEventListener('click', doInsertSelectedIcd);
 
-  /* Keyboard shortcut */
+  /* Issue 7: Keyboard shortcut — use isTypingInput() so hotkeys work even when checkbox/button has focus */
   if (window._icdBrowserAbort) window._icdBrowserAbort.abort();
   window._icdBrowserAbort = new AbortController();
   window.addEventListener('keydown', e => {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (isTypingInput(e.target)) return;
     const sc = getShortcutKeys();
     if (matchShortcut(e, sc.insertIcd) || matchShortcut(e, sc.insertAll)) {
       e.preventDefault();
@@ -210,7 +256,7 @@ export async function renderIcdBrowser(opts = {}) {
       searchRes.classList.add('hidden');
   });
 
-  /* Open initial category */
+  /* Issue 4: Open last-viewed category (or opts.categoryId) */
   if (initCat) {
     const btn = container.querySelector(`.float-cat-btn[data-cat="${initCat}"]`);
     if (btn) { btn.classList.add('active'); showCategory(initCat, cats, lookup, null, container); }
@@ -225,22 +271,31 @@ function _buildRecentPanel(shortcuts) {
     .sort((a, b) => b.count - a.count || b.lastUsed.localeCompare(a.lastUsed))
     .slice(0, 50);
 
+  /* Issue 1: get current minimized state for button label */
+  const savedState = getFloatPanelState('icd_recent_panel');
+
+  /* Issue 6: Show only the primary term (before first comma or colon) in the label,
+     to accommodate many more entries in the same panel space.
+     Full data-en attribute retains the complete description for insertion. */
   const bodyHtml = !top50.length
     ? `<p class="no-records" style="font-size:.8rem;padding:.5rem">
         No codes used yet. Browse categories and click "Use →" to start building your history.
        </p>`
-    : top50.map(c => `
+    : top50.map(c => {
+        const shortEn = c.en.split(/[,:]/, 1)[0].trim();
+        return `
       <label class="icd-recent-item">
         <input type="checkbox" class="icd-recent-cb"
           data-code="${esc(c.code)}" data-en="${esc(c.en)}" data-zh="${esc(c.zh)}"
           data-cat="${esc(c.categoryId)}">
         <span class="icd-recent-text">
           <span class="tag tag-code">${esc(c.code)}</span>
-          <span class="icd-recent-en">${esc(c.en)}</span>
+          <span class="icd-recent-en" title="${esc(c.en)}">${esc(shortEn)}</span>
           <span class="icd-recent-zh">${esc(c.zh)}</span>
         </span>
         <span class="freq-badge">×${c.count}</span>
-      </label>`).join('');
+      </label>`;
+      }).join('');
 
   const panel = document.createElement('div');
   panel.className = 'float-panel';
@@ -251,36 +306,15 @@ function _buildRecentPanel(shortcuts) {
       <div style="display:flex;gap:.4rem;align-items:center">
         <button type="button" class="float-panel-toggle" id="icd-insert-recent-panel"
           title="${esc(shortcuts.insertIcd)}">➕ Insert Sel.</button>
+        <button type="button" class="float-panel-toggle" id="icd-recent-minimize"
+          title="Minimize / restore panel">${savedState.minimized ? '⬆' : '⬇'}</button>
         <button type="button" class="float-panel-toggle" id="icd-recent-close"
-          title="Hide">✕</button>
+          title="Hide panel">✕</button>
       </div>
     </div>
     <div class="float-panel-body">
       ${bodyHtml}
     </div>`;
-
-  panel.querySelector('#icd-recent-close')?.addEventListener('click', () => {
-    panel.classList.add('float-panel-hidden');
-  });
-
-  panel.querySelector('#icd-insert-recent-panel')?.addEventListener('click', () => {
-    const checked = [...panel.querySelectorAll('.icd-recent-cb:checked')];
-    if (!checked.length) { showToast('info', 'No recent ICD codes selected.'); return; }
-    const first = checked[0];
-    sessionStorage.setItem('prefill_icd', JSON.stringify({
-      code: first.dataset.code, en: first.dataset.en,
-      zh: first.dataset.zh, categoryId: first.dataset.cat || '',
-    }));
-    if (checked.length > 1) {
-      sessionStorage.setItem('prefill_icd_extra', JSON.stringify(
-        checked.slice(1).map(cb => ({
-          code: cb.dataset.code, en: cb.dataset.en,
-          zh: cb.dataset.zh, categoryId: cb.dataset.cat,
-        }))
-      ));
-    } else { sessionStorage.removeItem('prefill_icd_extra'); }
-    navigate('log');
-  });
 
   return panel;
 }
@@ -288,6 +322,9 @@ function _buildRecentPanel(shortcuts) {
 /* ------------------------------------------------------------------ */
 
 function showCategory(catId, cats, lookup, highlightCode = null, container) {
+  /* Issue 4: Remember last viewed category */
+  if (catId) localStorage.setItem(ICD_LAST_CAT_KEY, catId);
+
   const detail = document.getElementById('icd-cat-detail');
   if (!detail) return;
   const catObj = cats.find(c => c.id === catId);
