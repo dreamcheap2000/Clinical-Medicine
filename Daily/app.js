@@ -388,6 +388,9 @@ export function buildCombinedObjective(soap = {}, pe = {}) {
 
 export function navigate(target) {
   const page = typeof target === 'string' ? target : target.page;
+  /* Tear down floating panels from previous page before rendering the new one */
+  if (page !== 'soap'    && window._soapViewAbort)    { window._soapViewAbort.abort();    window._soapViewAbort    = null; }
+  if (page !== 'browser' && window._icdBrowserAbort)  { window._icdBrowserAbort.abort();  window._icdBrowserAbort  = null; }
   updateNav(page);
   renderPage(target);
 }
@@ -498,6 +501,7 @@ function renderDashboard() {
           ⬆️ Import JSON
           <input type="file" id="import-file" accept=".json" style="display:none">
         </label>
+        <button class="btn btn-outline" id="btn-restore-repo">📂 Restore from Repo</button>
         <span class="hint">All data stored in browser localStorage only.</span>
       </div>
     </div>
@@ -530,6 +534,17 @@ function renderDashboard() {
       showToast('success', `Imported ${added} new entries.`);
       renderDashboard();
     } catch(err) { showToast('error', `Import failed: ${err.message}`); }
+  });
+  document.getElementById('btn-restore-repo')?.addEventListener('click', async () => {
+    /* Reset the "done" flag so restoreSessionsFromRepo will run again */
+    localStorage.removeItem(SESSION_RESTORE_KEY);
+    const added = await restoreSessionsFromRepo();
+    if (added > 0) {
+      showToast('success', `📂 Restored ${added} entries from repo.`);
+      renderDashboard();
+    } else {
+      showToast('info', 'No new entries found in repo session files.');
+    }
   });
 }
 
@@ -577,10 +592,181 @@ export function showToast(type, msg) {
 }
 
 /* ============================================================ */
+/* Floating panel position persistence                           */
+/* ============================================================ */
+
+const FLOAT_POS_KEY = 'floatPositions_v1';
+
+export function getFloatPositions() {
+  try { return JSON.parse(localStorage.getItem(FLOAT_POS_KEY) || '{}'); }
+  catch { return {}; }
+}
+
+export function saveFloatPosition(key, data) {
+  const all = getFloatPositions();
+  all[key]  = data;
+  localStorage.setItem(FLOAT_POS_KEY, JSON.stringify(all));
+}
+
+let _zTop = 1100;
+
+/* ── Shared drag infrastructure (single set of global handlers) ────────── */
+/* Avoids N×2 document event listeners when there are N draggable elements. */
+
+let _dragCtx = null;   /* { el, ox, oy, sx, sy, moved, storageKey, isPanel } | null */
+
+function _ensureDragHandlers() {
+  if (_ensureDragHandlers._installed) return;
+  _ensureDragHandlers._installed = true;
+
+  document.addEventListener('mousemove', e => {
+    if (!_dragCtx) return;
+    const { el, ox, oy, sx, sy, isPanel } = _dragCtx;
+    const dx = e.clientX - sx;
+    const dy = e.clientY - sy;
+    if (!_dragCtx.moved && Math.abs(dx) + Math.abs(dy) > 4) _dragCtx.moved = true;
+    if (!_dragCtx.moved && !isPanel) return;  /* containers need threshold; panels always */
+    if (isPanel) {
+      el.style.left = (ox + dx) + 'px';
+      el.style.top  = (oy + dy) + 'px';
+    } else {
+      el.style.left = Math.max(0, ox + dx) + 'px';
+      el.style.top  = Math.max(0, oy + dy) + 'px';
+    }
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (!_dragCtx) return;
+    const { el, moved, storageKey, isPanel } = _dragCtx;
+    if (moved || isPanel) _persistPanel(el, storageKey, isPanel);
+    if (!isPanel) {
+      if (moved)   el.dataset.dragged = '1';
+      else         delete el.dataset.dragged;
+    }
+    _dragCtx = null;
+  });
+}
+
+/**
+ * Make a fixed-position floating panel draggable and size-persistent.
+ * el must have a .float-drag-handle child (or uses its own top area as handle).
+ */
+export function initFloatPanel(el, storageKey, defaults = {}) {
+  const saved  = getFloatPositions()[storageKey];
+  el.style.position = 'fixed';
+  el.style.left   = (saved?.x ?? defaults.x ?? 100) + 'px';
+  el.style.top    = (saved?.y ?? defaults.y ?? 100) + 'px';
+  if (saved?.w)   el.style.width  = saved.w + 'px';
+  if (saved?.h)   el.style.height = saved.h + 'px';
+  el.style.zIndex = ++_zTop;
+
+  const handle = el.querySelector('.float-drag-handle') || el;
+
+  handle.addEventListener('mousedown', e => {
+    const tag = e.target.tagName;
+    if (tag === 'INPUT' || tag === 'BUTTON' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    el.style.zIndex = ++_zTop;
+    _dragCtx = {
+      el, isPanel: true, storageKey, moved: true,
+      sx: e.clientX, sy: e.clientY,
+      ox: parseInt(el.style.left) || 0,
+      oy: parseInt(el.style.top)  || 0,
+    };
+    e.preventDefault();
+  });
+
+  el.addEventListener('mousedown', () => { el.style.zIndex = ++_zTop; });
+
+  if (window.ResizeObserver && storageKey) {
+    new ResizeObserver(() => _persistPanel(el, storageKey, true)).observe(el);
+  }
+
+  _ensureDragHandlers();
+}
+
+function _persistPanel(el, key, saveSize = true) {
+  if (!key) return;
+  const data = {
+    x: parseInt(el.style.left) || 0,
+    y: parseInt(el.style.top)  || 0,
+  };
+  if (saveSize) { data.w = el.offsetWidth; data.h = el.offsetHeight; }
+  saveFloatPosition(key, data);
+}
+
+/**
+ * Make an element draggable inside a relative container.
+ * On drag-end, sets el.dataset.dragged = '1' briefly so click handlers can ignore drag-ends.
+ */
+export function initDraggableInContainer(el, storageKey, defaultPos = {}) {
+  const saved = getFloatPositions()[storageKey];
+  el.style.position = 'absolute';
+  el.style.left = (saved?.x ?? defaultPos.x ?? 0) + 'px';
+  el.style.top  = (saved?.y ?? defaultPos.y ?? 0) + 'px';
+  el.style.zIndex = ++_zTop;
+
+  el.addEventListener('mousedown', e => {
+    el.style.zIndex = ++_zTop;
+    _dragCtx = {
+      el, isPanel: false, storageKey, moved: false,
+      sx: e.clientX, sy: e.clientY,
+      ox: parseInt(el.style.left) || 0,
+      oy: parseInt(el.style.top)  || 0,
+    };
+    e.preventDefault();
+  });
+
+  /* Clear dragged flag in next tick so click handler runs first */
+  el.addEventListener('click', () => {
+    setTimeout(() => { delete el.dataset.dragged; }, 0);
+  });
+
+  _ensureDragHandlers();
+}
+
+/* ============================================================ */
+/* Session restore from repo JSON files                         */
+/* ============================================================ */
+
+const SESSION_RESTORE_KEY = 'sessionRestoreDone_v1';
+
+export async function restoreSessionsFromRepo() {
+  /* Only run once per browser (skip if already done or data exists) */
+  if (localStorage.getItem(SESSION_RESTORE_KEY)) return 0;
+
+  let indexData;
+  try {
+    const res = await fetch('./sessions/index.json');
+    if (!res.ok) { localStorage.setItem(SESSION_RESTORE_KEY, '1'); return 0; }
+    indexData = await res.json();
+  } catch { localStorage.setItem(SESSION_RESTORE_KEY, '1'); return 0; }
+
+  const files   = indexData.files || [];
+  const existing = getSessions();
+  const merged   = [...existing];
+  let added = 0;
+
+  for (const fname of files) {
+    try {
+      const res = await fetch(`./sessions/${fname}`);
+      if (!res.ok) continue;
+      const data = await res.json();
+      for (const s of (data.sessions || [])) {
+        if (!merged.find(x => x.id === s.id)) { merged.push(s); added++; }
+      }
+    } catch { /* skip individual file errors */ }
+  }
+
+  if (added > 0) localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+  localStorage.setItem(SESSION_RESTORE_KEY, '1');
+  return added;
+}
+
+/* ============================================================ */
 /* Bootstrap                                                     */
 /* ============================================================ */
 
-function boot() {
+async function boot() {
   const navLinks = document.getElementById('nav-links');
   if (navLinks) {
     const pages = [
@@ -603,6 +789,13 @@ function boot() {
   window.addEventListener('toast',    e => showToast(e.detail.type, e.detail.msg));
 
   navigate('dashboard');
+
+  /* Restore saved entries from repo session files (runs once) */
+  const restored = await restoreSessionsFromRepo();
+  if (restored > 0) {
+    showToast('success', `📂 Restored ${restored} saved entries from repo.`);
+    renderDashboard();
+  }
 }
 
 document.addEventListener('DOMContentLoaded', boot);
