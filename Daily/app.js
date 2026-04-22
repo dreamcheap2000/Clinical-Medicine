@@ -278,6 +278,21 @@ export function matchShortcut(event, shortcutStr) {
   );
 }
 
+/**
+ * Returns true if the element is a text-entry input (where shortcut keys should be suppressed).
+ * Checkboxes, radios, buttons, and selects are NOT considered typing inputs.
+ */
+export function isTypingInput(el) {
+  if (!el) return false;
+  if (el.tagName === 'TEXTAREA') return true;
+  if (el.tagName === 'INPUT') {
+    const t = (el.type || 'text').toLowerCase();
+    return ['text','search','email','password','number','tel','url',
+            'color','date','time','datetime-local','month','week'].includes(t);
+  }
+  return false;
+}
+
 /* ============================================================ */
 /* ICD usage frequency tracking                                  */
 /* ============================================================ */
@@ -391,6 +406,7 @@ export function navigate(target) {
   /* Tear down floating panels from previous page before rendering the new one */
   if (page !== 'soap'    && window._soapViewAbort)    { window._soapViewAbort.abort();    window._soapViewAbort    = null; }
   if (page !== 'browser' && window._icdBrowserAbort)  { window._icdBrowserAbort.abort();  window._icdBrowserAbort  = null; }
+  if (page !== 'log'     && window._ghostPanelAbort)  { window._ghostPanelAbort.abort();  window._ghostPanelAbort  = null; }
   updateNav(page);
   renderPage(target);
 }
@@ -650,6 +666,7 @@ function _ensureDragHandlers() {
 /**
  * Make a fixed-position floating panel draggable and size-persistent.
  * el must have a .float-drag-handle child (or uses its own top area as handle).
+ * Persists position, size, visibility (hidden/shown), and minimize state.
  */
 export function initFloatPanel(el, storageKey, defaults = {}) {
   const saved  = getFloatPositions()[storageKey];
@@ -659,6 +676,9 @@ export function initFloatPanel(el, storageKey, defaults = {}) {
   if (saved?.w)   el.style.width  = saved.w + 'px';
   if (saved?.h)   el.style.height = saved.h + 'px';
   el.style.zIndex = ++_zTop;
+
+  /* Restore minimized state */
+  if (saved?.minimized) el.classList.add('float-panel-minimized');
 
   const handle = el.querySelector('.float-drag-handle') || el;
 
@@ -686,12 +706,38 @@ export function initFloatPanel(el, storageKey, defaults = {}) {
 
 function _persistPanel(el, key, saveSize = true) {
   if (!key) return;
+  const existing = getFloatPositions()[key] || {};
   const data = {
     x: parseInt(el.style.left) || 0,
     y: parseInt(el.style.top)  || 0,
   };
   if (saveSize) { data.w = el.offsetWidth; data.h = el.offsetHeight; }
+  /* Preserve visibility / minimize state from existing saved data */
+  if ('hidden'    in existing) data.hidden    = existing.hidden;
+  if ('minimized' in existing) data.minimized = existing.minimized;
   saveFloatPosition(key, data);
+}
+
+/**
+ * Save the visibility state (hidden/shown) and minimized state of a float panel.
+ * Call this whenever the panel visibility or minimize state changes.
+ */
+export function saveFloatPanelState(storageKey, { hidden, minimized } = {}) {
+  const all = getFloatPositions();
+  const existing = all[storageKey] || {};
+  all[storageKey] = Object.assign({}, existing, {
+    ...(hidden    !== undefined ? { hidden    } : {}),
+    ...(minimized !== undefined ? { minimized } : {}),
+  });
+  localStorage.setItem(FLOAT_POS_KEY, JSON.stringify(all));
+}
+
+/**
+ * Get the saved visibility/minimize state for a float panel.
+ */
+export function getFloatPanelState(storageKey) {
+  const saved = getFloatPositions()[storageKey] || {};
+  return { hidden: !!saved.hidden, minimized: !!saved.minimized };
 }
 
 /**

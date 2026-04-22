@@ -11,8 +11,9 @@
 import {
   getIcdData, searchCodes, getIcdFreq,
   navigate, esc, buildCombinedObjective,
-  getShortcutKeys, matchShortcut, showToast,
+  getShortcutKeys, matchShortcut, showToast, isTypingInput,
   getFloatPositions, initFloatPanel, initDraggableInContainer,
+  saveFloatPanelState, getFloatPanelState,
 } from '../app.js';
 
 export async function renderIcdBrowser(opts = {}) {
