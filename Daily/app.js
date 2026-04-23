@@ -1115,7 +1115,21 @@ async function boot() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', boot);
+document.addEventListener('DOMContentLoaded', () => {
+  boot().catch(err => {
+    console.error('Boot error:', err);
+    const c = document.getElementById('main-content');
+    if (c) {
+      const msg = String(err?.message || err);
+      c.innerHTML = `<div style="padding:2rem;color:#ff5252">
+        <b>⚠️ Application failed to start.</b><br>
+        <code style="font-size:.85rem">${esc(msg)}</code><br>
+        <button id="btn-boot-reload" style="margin-top:1rem;padding:.4rem 1rem;cursor:pointer">🔄 Reload</button>
+      </div>`;
+      c.querySelector('#btn-boot-reload').addEventListener('click', () => location.reload());
+    }
+  });
+});
 
 /* ============================================================ */
 export function esc(str) {
