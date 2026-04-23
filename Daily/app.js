@@ -809,8 +809,6 @@ export async function restoreSessionsFromRepo() {
   return added;
 }
 
-}
-
 /* ============================================================ */
 /* Quad View — 4-quadrant integrated dashboard (Issue 5)        */
 /* ============================================================ */
