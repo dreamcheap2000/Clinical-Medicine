@@ -20,7 +20,6 @@ import {
 
 /* Issue 4 — remember last viewed category */
 const ICD_LAST_CAT_KEY = 'icdLastCat_v1';
-const ICD_VIEW_SCROLL_KEY = 'icdBrowserScrollY_v1';
 
 export async function renderIcdBrowser(opts = {}) {
   const container = document.getElementById('main-content');
@@ -36,7 +35,6 @@ export async function renderIcdBrowser(opts = {}) {
   const cats      = icdData.categories || [];
   const lookup    = icdData.codeLookup || {};
   const shortcuts = getShortcutKeys();
-  const selectedCodes = new Map();
 
   /* Issue 4: restore last-viewed category instead of always showing the first one */
   const initCat = opts.categoryId || localStorage.getItem(ICD_LAST_CAT_KEY) || '';
@@ -111,7 +109,7 @@ export async function renderIcdBrowser(opts = {}) {
       container.querySelectorAll('.float-cat-btn').forEach(b => b.classList.remove('active'));
       if (!alreadyActive) {
         btn.classList.add('active');
-        showCategory(cat.id, cats, lookup, null, container, selectedCodes);
+        showCategory(cat.id, cats, lookup, null, container);
       } else {
         container.querySelector('#icd-cat-detail').innerHTML = '';
         localStorage.removeItem(ICD_LAST_CAT_KEY);
@@ -156,9 +154,10 @@ export async function renderIcdBrowser(opts = {}) {
   });
   _updateToggleBtn();
 
-  /* Minimize/restore is now controlled by double-click on panel header */
-  recentPanel.querySelector('.float-drag-handle')?.addEventListener('dblclick', () => {
+  /* Issue 1: Minimize button inside the panel */
+  recentPanel.querySelector('#icd-recent-minimize')?.addEventListener('click', () => {
     const isMin = recentPanel.classList.toggle('float-panel-minimized');
+    recentPanel.querySelector('#icd-recent-minimize').textContent = isMin ? '⬆' : '⬇';
     saveFloatPanelState('icd_recent_panel', { minimized: isMin });
   });
 
@@ -249,7 +248,7 @@ export async function renderIcdBrowser(opts = {}) {
     container.querySelectorAll('.float-cat-btn').forEach(b => b.classList.remove('active'));
     const catBtn = container.querySelector(`.float-cat-btn[data-cat="${catId}"]`);
     if (catBtn) catBtn.classList.add('active');
-    showCategory(catId, cats, lookup, hit.dataset.code, container, selectedCodes);
+    showCategory(catId, cats, lookup, hit.dataset.code, container);
   });
 
   container.addEventListener('click', e => {
@@ -260,14 +259,8 @@ export async function renderIcdBrowser(opts = {}) {
   /* Issue 4: Open last-viewed category (or opts.categoryId) */
   if (initCat) {
     const btn = container.querySelector(`.float-cat-btn[data-cat="${initCat}"]`);
-    if (btn) { btn.classList.add('active'); showCategory(initCat, cats, lookup, null, container, selectedCodes); }
+    if (btn) { btn.classList.add('active'); showCategory(initCat, cats, lookup, null, container); }
   }
-
-  const savedY = parseInt(localStorage.getItem(ICD_VIEW_SCROLL_KEY) || '0', 10);
-  if (savedY > 0) setTimeout(() => window.scrollTo({ top: savedY, behavior: 'auto' }), 60);
-  window.addEventListener('scroll', () => {
-    localStorage.setItem(ICD_VIEW_SCROLL_KEY, String(Math.max(0, Math.round(window.scrollY))));
-  }, { signal: window._icdBrowserAbort.signal });
 }
 
 /* ------------------------------------------------------------------ */
@@ -286,7 +279,7 @@ function _buildRecentPanel(shortcuts) {
      Full data-en attribute retains the complete description for insertion. */
   const bodyHtml = !top50.length
     ? `<p class="no-records" style="font-size:.8rem;padding:.5rem">
-        No codes used yet. Save entries to start building recent history.
+        No codes used yet. Browse categories and click "Use →" to start building your history.
        </p>`
     : top50.map(c => {
         const shortEn = c.en.split(/[,:]/, 1)[0].trim();
@@ -313,6 +306,8 @@ function _buildRecentPanel(shortcuts) {
       <div style="display:flex;gap:.4rem;align-items:center">
         <button type="button" class="float-panel-toggle" id="icd-insert-recent-panel"
           title="${esc(shortcuts.insertIcd)}">➕ Insert Sel.</button>
+        <button type="button" class="float-panel-toggle" id="icd-recent-minimize"
+          title="Minimize / restore panel">${savedState.minimized ? '⬆' : '⬇'}</button>
         <button type="button" class="float-panel-toggle" id="icd-recent-close"
           title="Hide panel">✕</button>
       </div>
@@ -326,7 +321,7 @@ function _buildRecentPanel(shortcuts) {
 
 /* ------------------------------------------------------------------ */
 
-function showCategory(catId, cats, lookup, highlightCode = null, container, selectedCodes) {
+function showCategory(catId, cats, lookup, highlightCode = null, container) {
   /* Issue 4: Remember last viewed category */
   if (catId) localStorage.setItem(ICD_LAST_CAT_KEY, catId);
 
@@ -357,15 +352,13 @@ function showCategory(catId, cats, lookup, highlightCode = null, container, sele
 
       <div class="tab-panel" id="tab-codes">
         <div class="code-filter-wrap">
-          <button class="btn btn-primary btn-sm-inline" id="cat-insert-checked"
-            title="${esc(getShortcutKeys().insertIcd)}">➕ Insert Checked</button>
           <input class="field-input code-filter" id="code-filter" type="text"
             placeholder="Filter codes in this category…">
         </div>
         <div class="code-table-wrap">
           <table class="code-table">
-            <thead><tr><th></th><th>Code</th><th>English Name</th><th>中文名稱</th></tr></thead>
-            <tbody id="code-tbody">${buildCodeRows(codes, highlightCode, selectedCodes, catId)}</tbody>
+            <thead><tr><th>Code</th><th>English Name</th><th>中文名稱</th><th></th></tr></thead>
+            <tbody id="code-tbody">${buildCodeRows(codes, highlightCode)}</tbody>
           </table>
         </div>
       </div>
@@ -393,22 +386,11 @@ function showCategory(catId, cats, lookup, highlightCode = null, container, sele
     const filtered = codes.filter(c =>
       c.code.toLowerCase().includes(q) || c.en.toLowerCase().includes(q) || c.zh.includes(e.target.value)
     );
-    detail.querySelector('#code-tbody').innerHTML = buildCodeRows(filtered, null, selectedCodes, catId);
-    wireCategoryCheckboxes(detail, selectedCodes);
+    detail.querySelector('#code-tbody').innerHTML = buildCodeRows(filtered, null);
+    wireUseButtons(detail);
   });
 
-  wireCategoryCheckboxes(detail, selectedCodes);
-  detail.querySelector('#cat-insert-checked')?.addEventListener('click', () => {
-    const list = [...selectedCodes.values()];
-    if (!list.length) {
-      showToast('info', 'No category ICD codes checked.');
-      return;
-    }
-    sessionStorage.setItem('prefill_icd', JSON.stringify(list[0]));
-    if (list.length > 1) sessionStorage.setItem('prefill_icd_extra', JSON.stringify(list.slice(1)));
-    else sessionStorage.removeItem('prefill_icd_extra');
-    navigate('log');
-  });
+  wireUseButtons(detail);
 
   if (highlightCode) {
     const row = detail.querySelector(`[data-code="${highlightCode}"]`);
@@ -417,30 +399,32 @@ function showCategory(catId, cats, lookup, highlightCode = null, container, sele
       setTimeout(() => row.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
     }
   }
+
+  setTimeout(() => detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 80);
 }
 
-function buildCodeRows(codes, highlightCode, selectedCodes, catId) {
+function buildCodeRows(codes, highlightCode) {
   return codes.map(c => `
     <tr data-code="${esc(c.code)}" ${c.code === highlightCode ? 'class="highlight-row"' : ''}>
-      <td><input type="checkbox" class="icd-cat-cb" data-code="${esc(c.code)}" data-en="${esc(c.en)}"
-        data-zh="${esc(c.zh)}" data-cat="${esc(catId || '')}" ${selectedCodes?.has(c.code) ? 'checked' : ''}></td>
       <td><span class="tag tag-code">${esc(c.code)}</span></td>
       <td class="code-en">${esc(c.en)}</td>
       <td class="code-zh">${esc(c.zh)}</td>
+      <td><button class="btn-use" data-code="${esc(c.code)}" data-en="${esc(c.en)}"
+          data-zh="${esc(c.zh)}">Use →</button></td>
     </tr>`).join('');
 }
 
-function wireCategoryCheckboxes(panel, selectedCodes) {
-  panel.querySelectorAll('.icd-cat-cb').forEach(cb => {
-    cb.addEventListener('change', () => {
-      const item = {
-        code: cb.dataset.code,
-        en: cb.dataset.en || '',
-        zh: cb.dataset.zh || '',
-        categoryId: cb.dataset.cat || '',
-      };
-      if (cb.checked) selectedCodes.set(item.code, item);
-      else selectedCodes.delete(item.code);
+function wireUseButtons(panel) {
+  panel.querySelectorAll('.btn-use').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const catBtn = document.querySelector('.float-cat-btn.active');
+      sessionStorage.setItem('prefill_icd', JSON.stringify({
+        code:       btn.dataset.code,
+        en:         btn.dataset.en,
+        zh:         btn.dataset.zh,
+        categoryId: catBtn?.dataset.cat || '',
+      }));
+      navigate('log');
     });
   });
 }

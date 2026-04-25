@@ -15,7 +15,7 @@
 
 import {
   getIcdData, getSoapTemplates, deleteSoapTemplate,
-  navigate, esc, showToast, buildCombinedObjective, buildSectionedSoapInsert,
+  navigate, esc, showToast, buildCombinedObjective,
   getRecentSoapTerms, recordSoapItemWithSection,
   getShortcutKeys, matchShortcut, isTypingInput,
   getFloatPositions, initFloatPanel, initDraggableInContainer,
@@ -149,9 +149,10 @@ export async function renderSoapView(opts = {}) {
   });
   _updateSoapToggleBtn();
 
-  /* Minimize/restore is now controlled by double-click on panel header */
-  recentPanel.querySelector('.float-drag-handle')?.addEventListener('dblclick', () => {
+  /* Issue 1: Minimize button inside the panel */
+  recentPanel.querySelector('#soap-recent-minimize-btn')?.addEventListener('click', () => {
     const isMin = recentPanel.classList.toggle('float-panel-minimized');
+    recentPanel.querySelector('#soap-recent-minimize-btn').textContent = isMin ? '⬆' : '⬇';
     saveFloatPanelState('soap_recent_panel', { minimized: isMin });
   });
 
@@ -168,10 +169,7 @@ export async function renderSoapView(opts = {}) {
     const checked = [...container.querySelectorAll('.soap-view-cb:checked'),
                      ...recentPanel.querySelectorAll('.soap-view-cb:checked')];
     if (!checked.length) { showToast('info', 'No items checked — tick some items first.'); return; }
-    const text = buildSectionedSoapInsert(checked.map(cb => ({
-      section: cb.dataset.seckey || 's',
-      term: cb.dataset.term || cb.dataset.text,
-    })));
+    const text = checked.map(cb => _termWithColon(cb.dataset.term || cb.dataset.text)).join('\n');
     checked.forEach(cb => recordSoapItemWithSection(cb.dataset.text, cb.dataset.seckey || 's'));
     const prev = sessionStorage.getItem('prefill_soap_text') || '';
     sessionStorage.setItem('prefill_soap_text', prev ? `${prev}\n${text}` : text);
@@ -291,6 +289,8 @@ function _buildRecentPanel(shortcuts) {
     <div class="float-drag-handle">
       <span>📊 Recently Used SOAP Terms (top ${terms.length})</span>
       <div style="display:flex;gap:.4rem;align-items:center">
+        <button type="button" class="float-panel-toggle" id="soap-recent-minimize-btn"
+          title="Minimize / restore panel">${savedState.minimized ? '⬆' : '⬇'}</button>
         <button type="button" class="float-panel-toggle" id="soap-recent-close-btn"
           title="Hide panel">✕</button>
       </div>
@@ -449,3 +449,6 @@ function _fallback(text) {
   document.body.removeChild(ta);
 }
 
+function _termWithColon(term) {
+  return term.endsWith(':') ? term : `${term}:`;
+}

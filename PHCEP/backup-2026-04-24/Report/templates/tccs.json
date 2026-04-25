@@ -1,0 +1,151 @@
+{
+  "examType": "tccs",
+  "version": "1.0.0",
+  "title": "Transcranial Color-Coded Sonography (TCCS)",
+  "changelog": [
+    { "version": "1.0.0", "date": "2026-04-13", "note": "Initial template" }
+  ],
+  "sections": [
+    {
+      "id": "patient",
+      "label": "Patient Information",
+      "fields": [
+        { "id": "patient_id",   "label": "Patient ID",         "type": "text",     "required": true },
+        { "id": "patient_name", "label": "Patient Name",       "type": "text",     "required": true },
+        { "id": "dob",          "label": "Date of Birth",      "type": "date",     "required": true },
+        { "id": "exam_date",    "label": "Exam Date",          "type": "date",     "required": true },
+        { "id": "indication",   "label": "Clinical Indication","type": "textarea", "required": true }
+      ]
+    },
+    {
+      "id": "acoustic_window",
+      "label": "Acoustic Window",
+      "fields": [
+        {
+          "id": "temporal_window_right",
+          "label": "Right Temporal Window",
+          "type": "select",
+          "choices": ["Good", "Fair", "Poor", "Absent (bone)")
+        },
+        {
+          "id": "temporal_window_left",
+          "label": "Left Temporal Window",
+          "type": "select",
+          "choices": ["Good", "Fair", "Poor", "Absent (bone)"]
+        },
+        {
+          "id": "suboccipital_window",
+          "label": "Suboccipital (Foramen Magnum) Window",
+          "type": "select",
+          "choices": ["Good", "Fair", "Poor", "Not attempted"]
+        }
+      ]
+    },
+    {
+      "id": "mca",
+      "label": "Middle Cerebral Artery (MCA)",
+      "fields": [
+        { "id": "MCA_right_MFV", "label": "Right MCA Mean Flow Velocity (cm/s)", "type": "number", "min": 0, "hint": "Normal: 50–80 cm/s" },
+        { "id": "MCA_left_MFV",  "label": "Left MCA Mean Flow Velocity (cm/s)",  "type": "number", "min": 0 },
+        { "id": "MCA_right_PSV", "label": "Right MCA PSV (cm/s)",  "type": "number", "min": 0 },
+        { "id": "MCA_left_PSV",  "label": "Left MCA PSV (cm/s)",   "type": "number", "min": 0 },
+        { "id": "MCA_right_PI",  "label": "Right MCA Pulsatility Index (PI)", "type": "number", "min": 0, "hint": "Normal: 0.6–1.1" },
+        { "id": "MCA_left_PI",   "label": "Left MCA Pulsatility Index (PI)",  "type": "number", "min": 0 }
+      ]
+    },
+    {
+      "id": "aca",
+      "label": "Anterior Cerebral Artery (ACA)",
+      "fields": [
+        { "id": "ACA_right_MFV", "label": "Right ACA Mean Flow Velocity (cm/s)", "type": "number", "min": 0, "hint": "Normal: 40–60 cm/s" },
+        { "id": "ACA_left_MFV",  "label": "Left ACA Mean Flow Velocity (cm/s)",  "type": "number", "min": 0 }
+      ]
+    },
+    {
+      "id": "pca",
+      "label": "Posterior Cerebral Artery (PCA)",
+      "fields": [
+        { "id": "PCA_right_MFV", "label": "Right PCA Mean Flow Velocity (cm/s)", "type": "number", "min": 0, "hint": "Normal: 30–50 cm/s" },
+        { "id": "PCA_left_MFV",  "label": "Left PCA Mean Flow Velocity (cm/s)",  "type": "number", "min": 0 }
+      ]
+    },
+    {
+      "id": "basilar",
+      "label": "Basilar Artery (BA)",
+      "fields": [
+        { "id": "BA_MFV", "label": "Basilar Artery MFV (cm/s)", "type": "number", "min": 0, "hint": "Normal: 30–60 cm/s" },
+        { "id": "BA_PI",  "label": "Basilar Artery PI",         "type": "number", "min": 0 }
+      ]
+    },
+    {
+      "id": "advanced",
+      "label": "Advanced Findings",
+      "fields": [
+        {
+          "id": "MCA_asymmetry_index",
+          "label": "MCA Asymmetry Index (%)",
+          "type": "number",
+          "min": 0,
+          "hint": "Significant if > 30%"
+        },
+        {
+          "id": "emboli_detection",
+          "label": "Embolic Signals (HITS)",
+          "type": "select",
+          "choices": ["None detected", "Occasional HITS (< 10/hour)", "Frequent HITS (≥ 10/hour)", "Shower emboli"]
+        },
+        {
+          "id": "vasomotor_reactivity",
+          "label": "Vasomotor Reactivity (BHI)",
+          "type": "select",
+          "choices": ["Normal (≥ 0.69)", "Impaired (< 0.69)", "Exhausted (< 0)", "Not performed"]
+        },
+        {
+          "id": "midline_shift",
+          "label": "Midline Shift (mm)",
+          "type": "number",
+          "min": 0,
+          "hint": "Significant if > 5 mm"
+        },
+        {
+          "id": "ventricular_echo",
+          "label": "Ventricular / Parenchymal Echo",
+          "type": "select",
+          "choices": ["Normal", "Hyperechoic lesion", "Hypoechoic lesion", "Haematoma", "Midline shift noted"]
+        },
+        {
+          "id": "SN_echogenicity",
+          "label": "Substantia Nigra Echogenicity",
+          "type": "select",
+          "choices": ["Normal", "Hyperechogenic (unilateral)", "Hyperechogenic (bilateral)", "Not assessed"]
+        }
+      ]
+    },
+    {
+      "id": "impression",
+      "label": "Impression",
+      "fields": [
+        {
+          "id": "impression_text",
+          "label": "Impression",
+          "type": "textarea",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "abnormality_rules": [
+    { "field": "MCA_right_MFV", "gt": 120,  "classify": "MCA Right Vasospasm / Stenosis" },
+    { "field": "MCA_left_MFV",  "gt": 120,  "classify": "MCA Left Vasospasm / Stenosis" },
+    { "field": "MCA_right_MFV", "lt": 30,   "classify": "MCA Right Low Flow (Hypoperfusion)" },
+    { "field": "MCA_left_MFV",  "lt": 30,   "classify": "MCA Left Low Flow (Hypoperfusion)" },
+    { "field": "MCA_right_PI",  "gt": 1.2,  "classify": "Elevated PI Right MCA (Raised ICP / Distal Resistance)" },
+    { "field": "MCA_left_PI",   "gt": 1.2,  "classify": "Elevated PI Left MCA (Raised ICP / Distal Resistance)" },
+    { "field": "MCA_asymmetry_index", "gt": 30, "classify": "Significant MCA Asymmetry" },
+    { "field": "emboli_detection", "in": ["Occasional HITS (< 10/hour)", "Frequent HITS (≥ 10/hour)", "Shower emboli"], "classify": "Embolic Signals Detected" },
+    { "field": "midline_shift", "gt": 5,    "classify": "Significant Midline Shift" },
+    { "field": "SN_echogenicity", "in": ["Hyperechogenic (unilateral)", "Hyperechogenic (bilateral)"], "classify": "Substantia Nigra Hyperechogenicity" },
+    { "field": "temporal_window_right", "equals": "Absent (bone)", "classify": "Inadequate Right Temporal Window" },
+    { "field": "temporal_window_left",  "equals": "Absent (bone)", "classify": "Inadequate Left Temporal Window" }
+  ]
+}
