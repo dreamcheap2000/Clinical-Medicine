@@ -756,8 +756,8 @@ export function saveFloatPanelState(storageKey, { hidden, minimized } = {}) {
   const all = getFloatPositions();
   const existing = all[storageKey] || {};
   all[storageKey] = Object.assign({}, existing, {
-    ...(hidden    !== undefined ? { hidden    } : {}),
-    ...(minimized !== undefined ? { minimized } : {}),
+    ...(hidden    !== null ? { hidden    } : {}),
+    ...(minimized !== null ? { minimized } : {}),
   });
   localStorage.setItem(FLOAT_POS_KEY, JSON.stringify(all));
 }
@@ -902,7 +902,7 @@ async function renderQuadView() {
     if (composedSoap) sessionStorage.setItem('prefill_soap_text', composedSoap);
     if (ebm) sessionStorage.setItem('prefill_key_learning', ebm);
     navigate('log');
-  };;;
+  }
 
   container.querySelectorAll('#quad-new-entry-btn,#quad-new-entry-from-ebm').forEach(btn => {
     btn.addEventListener('click', buildFromQuad);
