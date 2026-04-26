@@ -878,12 +878,10 @@ async function renderQuadView() {
   _renderQuadIcd(container.querySelector('#quad-icd'), icdData);
   _renderQuadSoap(container.querySelector('#quad-soap'), icdData);
 
+  
   const buildFromQuad = () => {
-    // FIX: Grab current values directly from DOM instead of relying only on sessionStorage
     const ebm = (document.getElementById('quad-ebm-input')?.value || '').trim();
     const soap = (document.getElementById('quad-soap-input')?.value || '').trim();
-
-    // ... rest of the existing logic to handle checkboxes and navigate ...
     const icdJson = sessionStorage.getItem('quad_icd_checked') || '[]';
     const soapCheckedJson = sessionStorage.getItem('quad_soap_checked') || '[]';
     let icdChecked = [];
@@ -904,7 +902,7 @@ async function renderQuadView() {
     if (composedSoap) sessionStorage.setItem('prefill_soap_text', composedSoap);
     if (ebm) sessionStorage.setItem('prefill_key_learning', ebm);
     navigate('log');
-};;;
+  };
 
   container.querySelectorAll('#quad-new-entry-btn,#quad-new-entry-from-ebm').forEach(btn => {
     btn.addEventListener('click', buildFromQuad);
