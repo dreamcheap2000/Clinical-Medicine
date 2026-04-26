@@ -24,7 +24,9 @@ import {
 
 const CATS_AREA_HEIGHT_KEY = 'soap_cats_area_h';
 
-export async function renderSoapView(opts = {}) {
+export async function renderSoapView(opts = {
+  setupImmediateInsertion();
+}) {
   const container = document.getElementById('main-content');
   container.innerHTML = `<p style="padding:2rem;color:#888">Loading templates…</p>`;
 
@@ -236,7 +238,6 @@ export async function renderSoapView(opts = {}) {
     if (btn) { btn.classList.add('active'); showSoapCategory(initCat, container); }
   }
 
-  setupImmediateInsertion(); // <--- ADDED BY COLAB
 }
 
 /* ================================================================ */
@@ -452,14 +453,12 @@ function _fallback(text) {
 }
 
 // 1. In modules/soap-view.js: Add immediate insertion logic
-function setupImmediateInsertion() {
     const container = document.getElementById('quad-container');
     if (!container) return;
 
     container.addEventListener('change', (e) => {
         if (e.target.classList.contains('soap-view-cb') && e.target.checked) {
             const term = e.target.dataset.term; // Assuming data-term attribute exists
-            const soapTextarea = document.getElementById('quad-soap-input');
             if (soapTextarea && term) {
                 const separator = soapTextarea.value ? '\n' : '';
                 soapTextarea.value += separator + term;
@@ -470,14 +469,12 @@ function setupImmediateInsertion() {
     });
 }
 
-function setupImmediateInsertion() {
     const container = document.getElementById('quad-container');
     if (!container) return;
 
     container.addEventListener('change', (e) => {
         if (e.target.classList.contains('soap-view-cb') && e.target.checked) {
             const term = e.target.dataset.term; // Assuming data-term attribute exists
-            const soapTextarea = document.getElementById('quad-soap-input');
             if (soapTextarea && term) {
                 const separator = soapTextarea.value ? '
 ' : '';
@@ -489,14 +486,12 @@ function setupImmediateInsertion() {
     });
 }
 
-function setupImmediateInsertion() {
     const container = document.getElementById('quad-container');
     if (!container) return;
 
     container.addEventListener('change', (e) => {
         if (e.target.classList.contains('soap-view-cb') && e.target.checked) {
             const term = e.target.dataset.term; // Assuming data-term attribute exists
-            const soapTextarea = document.getElementById('quad-soap-input');
             if (soapTextarea && term) {
                 const separator = soapTextarea.value ? '
 ' : '';
@@ -507,3 +502,22 @@ function setupImmediateInsertion() {
         }
     });
 }
+
+
+function setupImmediateInsertion() {
+    const container = document.getElementById('quad-container');
+    if (!container) return;
+
+    container.addEventListener('change', (e) => {
+        if (e.target.classList.contains('soap-view-cb') && e.target.checked) {
+            const term = e.target.dataset.term;
+            const soapTextarea = document.getElementById('quad-soap-input');
+            if (soapTextarea && term) {
+                const separator = soapTextarea.value ? '\n' : '';
+                soapTextarea.value += separator + term;
+                sessionStorage.setItem('quad_soap_note', soapTextarea.value);
+            }
+        }
+    });
+}
+
