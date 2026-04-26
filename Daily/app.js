@@ -245,36 +245,7 @@ export const DEFAULT_SHORTCUTS = {
   insertSoapAll: 'Shift+I',  /* Insert all selected on SOAP templates page */
   insertIcd:     'Shift+S',  /* Insert selected ICD codes */
   insertAll:     'Shift+A',  /* Insert all selected (ICD + SOAP) */
-  quadView:      'Shift+Q',  /* Jump to quad view */
-  quadNewEntry:  'Shift+N',  /* Build new entry from quad view */
 };
-
-const SOAP_SECTION_ORDER = ['s', 'o', 'a', 'p'];
-const SOAP_SECTION_LABEL = { s: 'S', o: 'O', a: 'A', p: 'P' };
-
-function _normalizeSoapTerm(term) {
-  const t = String(term || '').trim();
-  if (!t) return '';
-  const head = t.includes(':') ? t.slice(0, t.indexOf(':')).trim() : t;
-  return head.endsWith(':') ? head : `${head}:`;
-}
-
-export function buildSectionedSoapInsert(items = []) {
-  const grouped = { s: [], o: [], a: [], p: [] };
-  for (const item of items) {
-    const section = SOAP_SECTION_ORDER.includes(item?.section) ? item.section : 's';
-    const term = _normalizeSoapTerm(item?.term);
-    if (!term) continue;
-    grouped[section].push(term);
-  }
-  const blocks = [];
-  for (const section of SOAP_SECTION_ORDER) {
-    if (!grouped[section].length) continue;
-    const dedup = [...new Set(grouped[section])];
-    blocks.push(`${SOAP_SECTION_LABEL[section]}:\n${dedup.join('\n')}`);
-  }
-  return blocks.join('\n\n');
-}
 
 export function getShortcutKeys() {
   try {
@@ -756,8 +727,8 @@ export function saveFloatPanelState(storageKey, { hidden, minimized } = {}) {
   const all = getFloatPositions();
   const existing = all[storageKey] || {};
   all[storageKey] = Object.assign({}, existing, {
-    ...(hidden    !== null ? { hidden    } : {}),
-    ...(minimized !== null ? { minimized } : {}),
+    ...(hidden    !== undefined ? { hidden    } : {}),
+    ...(minimized !== undefined ? { minimized } : {}),
   });
   localStorage.setItem(FLOAT_POS_KEY, JSON.stringify(all));
 }
@@ -851,14 +822,20 @@ async function renderQuadView() {
   /* Skeleton first — load ICD data in background */
   container.innerHTML = `
     <div class="quad-container" id="quad-container">
-      ${_quadPanel('tl','💡 Key Learning Point / EBM Statement', 'quad-home',  'dashboard')}
-      ${_quadPanel('tr','📝 SOAP Note', 'quad-entry', 'log')}
-      ${_quadPanel('bl','🔍 ICD Browser','quad-icd',   'browser')}
-      ${_quadPanel('br','📋 SOAP Templates','quad-soap','soap')}
+      ${_quadPanel('tl','🏥 Home',       'quad-home',  '🏠')}
+      ${_quadPanel('tr','📝 New Entry',  'quad-entry', '📝')}
+      ${_quadPanel('bl','🔍 ICD Browser','quad-icd',   '🔍')}
+      ${_quadPanel('br','📋 SOAP Templates','quad-soap','📋')}
     </div>`;
 
-  /* Wire up header interactions */
+  /* Wire up maximize buttons */
   container.querySelectorAll('.quad-panel').forEach(panel => {
+    const maxBtn = panel.querySelector('.quad-max-btn');
+    maxBtn?.addEventListener('click', e => {
+      e.stopPropagation();
+      const isMax = panel.classList.toggle('quad-maximized');
+      maxBtn.textContent = isMax ? '⬜ Restore' : '⛶ Maximize';
+    });
     /* Navigate to full page on double-click on header */
     panel.querySelector('.quad-panel-header')?.addEventListener('dblclick', () => {
       const page = panel.dataset.navPage;
@@ -878,58 +855,9 @@ async function renderQuadView() {
   _renderQuadIcd(container.querySelector('#quad-icd'), icdData);
   _renderQuadSoap(container.querySelector('#quad-soap'), icdData);
 
-  
-  
-  
-  const buildFromQuad = () => {
-    const ebm = (document.getElementById('quad-ebm-input')?.value || '').trim();
-    const soap = (document.getElementById('quad-soap-input')?.value || '').trim();
-    const icdJson = sessionStorage.getItem('quad_icd_checked') || '[]';
-    const soapCheckedJson = sessionStorage.getItem('quad_soap_checked') || '[]';
-    let icdChecked = [];
-    let soapChecked = [];
-    try { icdChecked = JSON.parse(icdJson); } catch { icdChecked = []; }
-    try { soapChecked = JSON.parse(soapCheckedJson); } catch { soapChecked = []; }
-
-    if (icdChecked.length) {
-      sessionStorage.setItem('prefill_icd', JSON.stringify(icdChecked[0]));
-      if (icdChecked.length > 1) sessionStorage.setItem('prefill_icd_extra', JSON.stringify(icdChecked.slice(1)));
-      else sessionStorage.removeItem('prefill_icd_extra');
-    }
-
-    const groupedSoap = buildSectionedSoapInsert(soapChecked.map(x => ({ section: x.section, term: x.term })));
-    const composedSoap = [soap, groupedSoap].filter(Boolean).join('\n\n').trim();
-    if (composedSoap) sessionStorage.setItem('prefill_soap_text', composedSoap);
-    if (ebm) sessionStorage.setItem('prefill_key_learning', ebm);
-    navigate('log');
-  }
-
-  container.querySelectorAll('#quad-new-entry-btn,#quad-new-entry-from-ebm').forEach(btn => {
-    btn.addEventListener('click', buildFromQuad);
-  });
-
-  if (window._quadKeyAbort) window._quadKeyAbort.abort();
-  window._quadKeyAbort = new AbortController();
-  window.addEventListener('keydown', e => {
-    if (isTypingInput(e.target)) return;
-    if (matchShortcut(e, getShortcutKeys().quadNewEntry)) {
-      e.preventDefault();
-      buildFromQuad();
-    }
-  }, { signal: window._quadKeyAbort.signal });
-
-  const _quadAutosaveTimer = setInterval(() => {
-    const ebmText = container.querySelector('#quad-ebm-input')?.value || '';
-    const soapText = container.querySelector('#quad-soap-input')?.value || '';
-    sessionStorage.setItem('quad_ebm_statement', ebmText);
-    sessionStorage.setItem('quad_soap_note', soapText);
-  }, 20000);
-
   /* Cleanup padding on navigate away */
   const origPad = '';
   const _restoreStyle = () => {
-    clearInterval(_quadAutosaveTimer);
-    if (window._quadKeyAbort) { window._quadKeyAbort.abort(); window._quadKeyAbort = null; }
     container.style.padding  = origPad;
     container.style.overflow = '';
   };
@@ -944,6 +872,7 @@ function _quadPanel(pos, title, bodyId, navPage) {
       <div class="quad-panel-header">
         <span class="quad-panel-title">${title}</span>
         <span class="quad-panel-actions">
+          <button class="quad-panel-btn quad-max-btn" title="Maximize / restore">⛶ Maximize</button>
           <button class="quad-panel-btn quad-goto-btn"
             onclick="window.dispatchEvent(new CustomEvent('navigate',{detail:'${esc(navPage)}'}))"
             title="Open full page">↗ Full</button>
@@ -957,59 +886,87 @@ function _quadPanel(pos, title, bodyId, navPage) {
 
 function _renderQuadHome(el) {
   if (!el) return;
-  const ebm = sessionStorage.getItem('quad_ebm_statement') || '';
+  const sessions  = getSessions();
+  const freq      = getIcdFreq();
+  const today     = new Date().toISOString().slice(0, 10);
+  const todayList = sessions.filter(s => s.date === today);
+  const topCodes  = Object.values(freq).sort((a, b) => b.count - a.count).slice(0, 5);
+  const maxCount  = topCodes[0]?.count || 1;
 
   el.innerHTML = `
-    <p class="hint" style="margin-bottom:.45rem">Auto-saved every 20 seconds.</p>
-    <textarea class="field-input field-textarea" id="quad-ebm-input" rows="16"
-      placeholder="Key learning points / EBM statement...">${esc(ebm)}</textarea>
-    <div style="margin-top:.45rem;display:flex;gap:.35rem;align-items:center;flex-wrap:wrap">
-      <button class="quad-open-btn" id="quad-new-entry-from-ebm">📝 New Entry (Shift+N)</button>
-      <span class="hint">This content is passed into the New Entry form.</span>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-value">${todayList.length}</div><div class="stat-label">Today</div></div>
+      <div class="stat-card"><div class="stat-value">${sessions.length}</div><div class="stat-label">Total</div></div>
+      <div class="stat-card"><div class="stat-value">${new Set(sessions.map(s => s.date)).size}</div><div class="stat-label">Days</div></div>
+      <div class="stat-card"><div class="stat-value">${Object.keys(freq).length}</div><div class="stat-label">ICD Used</div></div>
+    </div>
+    <div class="action-grid" style="margin-bottom:.5rem">
+      <button class="action-btn btn-primary" data-nav="log">📝 New Entry</button>
+      <button class="action-btn" data-nav="browser">🔍 ICD Browser</button>
+      <button class="action-btn" data-nav="soap">📋 SOAP</button>
+      <button class="action-btn" data-nav="stats">📊 Stats</button>
+    </div>
+    ${topCodes.length ? `
+      <div class="card">
+        <div class="card-title">📊 Top ICD Codes</div>
+        <div class="dash-bar-chart">
+          ${topCodes.map(c => `
+            <div class="dash-bar-row">
+              <span class="dash-bar-label"><span class="tag tag-code">${esc(c.code)}</span>
+                ${esc(c.en.split(/[,:]/, 1)[0].slice(0, 28))}</span>
+              <div class="dash-bar-track">
+                <div class="dash-bar-fill" style="width:${Math.round(c.count / maxCount * 100)}%"></div>
+              </div>
+              <span class="dash-bar-count">${c.count}</span>
+            </div>`).join('')}
+        </div>
+      </div>` : ''}
+    <div class="card">
+      <div class="card-title">📅 Today — ${today}</div>
+      ${todayList.length === 0
+        ? '<p class="no-records">No entries today.</p>'
+        : `<div class="entry-list">${todayList.slice(0, 5).map(s => `
+          <div class="entry-card" style="cursor:pointer" data-edit="${esc(s.id)}">
+            <div class="entry-header">
+              <span class="entry-ts">${esc(s.timestamp || s.date)}</span>
+              ${s.patientId ? `<span class="tag tag-default">${esc(s.patientId)}</span>` : ''}
+              ${(s.icdCodes || []).map(c => `<span class="tag tag-code">${esc(c.code)}</span>`).join('')}
+            </div>
+          </div>`).join('')}</div>`}
     </div>`;
 
-  const ta = el.querySelector('#quad-ebm-input');
-  ta?.addEventListener('input', () => sessionStorage.setItem('quad_ebm_statement', ta.value));
+  el.querySelectorAll('[data-nav]').forEach(b => b.addEventListener('click', () => navigate(b.dataset.nav)));
+  el.querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', () => navigate({ page: 'log', editId: b.dataset.edit })));
 }
 
 function _renderQuadEntry(el) {
   if (!el) return;
-  const soap = sessionStorage.getItem('quad_soap_note') || '';
+  const today = new Date().toISOString().slice(0, 10);
   el.innerHTML = `
-    <p class="hint" style="margin-bottom:.45rem">Editable SOAP note with template save/load.</p>
-    <textarea class="field-input field-textarea" id="quad-soap-input" rows="12"
-      placeholder="SOAP note...">${esc(soap)}</textarea>
-    <div style="margin-top:.45rem;display:flex;gap:.35rem;flex-wrap:wrap;align-items:center">
-      <button class="btn btn-outline" id="quad-save-soap-template">💾 Save Template</button>
-      <button class="btn btn-outline" id="quad-load-soap-template">📂 Load Template</button>
-      <button class="quad-open-btn" id="quad-new-entry-btn">📝 New Entry (Shift+N)</button>
+    <p style="font-size:.8rem;color:var(--color-muted);margin-bottom:.5rem">
+      Quick-start a new entry or open the full form.
+    </p>
+    <div style="display:flex;flex-direction:column;gap:.4rem;margin-bottom:.6rem">
+      <div>
+        <label class="field-label">Date</label>
+        <input class="field-input" id="quad-date" type="date" value="${today}" style="width:100%">
+      </div>
+      <div>
+        <label class="field-label">Patient ID</label>
+        <input class="field-input" id="quad-pid" type="text" placeholder="Optional patient ID" style="width:100%">
+      </div>
+    </div>
+    <button class="quad-open-btn" id="quad-new-entry-btn">📝 Open Full New Entry Form →</button>
+    <div style="margin-top:.6rem;font-size:.78rem;color:var(--color-muted)">
+      Double-click the panel header to open the full form.
     </div>`;
 
-  const ta = el.querySelector('#quad-soap-input');
-  ta?.addEventListener('input', () => sessionStorage.setItem('quad_soap_note', ta.value));
-
-  el.querySelector('#quad-save-soap-template')?.addEventListener('click', () => {
-    const text = (ta?.value || '').trim();
-    if (!text) { showToast('info', 'SOAP note is empty.'); return; }
-    const name = prompt('Template name:');
-    if (!name?.trim()) return;
-    saveSoapTemplate({
-      id: `tmpl-${typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : Date.now().toString(36)}`,
-      name: name.trim(),
-      text,
-      createdAt: new Date().toISOString(),
-    });
-    showToast('success', 'Template saved.');
-  });
-
-  el.querySelector('#quad-load-soap-template')?.addEventListener('click', () => {
-    const templates = getSoapTemplates();
-    if (!templates.length) { showToast('info', 'No saved templates yet.'); return; }
-    const input = prompt(`Choose template number:\n${templates.map((t, i) => `${i + 1}. ${t.name}`).join('\n')}`);
-    const idx = Number(input) - 1;
-    if (!Number.isInteger(idx) || idx < 0 || idx >= templates.length) return;
-    ta.value = templates[idx].text || '';
-    sessionStorage.setItem('quad_soap_note', ta.value);
+  el.querySelector('#quad-new-entry-btn')?.addEventListener('click', () => {
+    const date = el.querySelector('#quad-date')?.value || today;
+    const pid  = el.querySelector('#quad-pid')?.value  || '';
+    if (date) sessionStorage.setItem('prefill_date', date);
+    if (pid)  sessionStorage.setItem('prefill_pid', pid);
+    navigate('log');
   });
 }
 
@@ -1017,99 +974,30 @@ function _renderQuadIcd(el, icdData) {
   if (!el) return;
   const freq  = getIcdFreq();
   const top10 = Object.values(freq).sort((a, b) => b.count - a.count).slice(0, 10);
-  const selected = new Map();
-  try {
-    for (const item of JSON.parse(sessionStorage.getItem('quad_icd_checked') || '[]')) {
-      if (item?.code) selected.set(item.code, item);
-    }
-  } catch { /* ignore */ }
 
   if (!icdData) {
     el.innerHTML = `<p style="color:red;font-size:.8rem">⚠ ICD data failed to load.</p>`;
     return;
   }
 
-  const allCats = icdData.categories || [];
-  let shownCats = allCats.slice(0, 10);
-  try {
-    const saved = JSON.parse(localStorage.getItem('quad_icd_categories') || 'null');
-    if (Array.isArray(saved) && saved.length) {
-      shownCats = allCats.filter(c => saved.includes(c.id)).slice(0, 10);
-    }
-  } catch { /* ignore */ }
-
-  function persistSelected() {
-    sessionStorage.setItem('quad_icd_checked', JSON.stringify([...selected.values()]));
-  }
-
-  function renderCatCodes(catId) {
-    const codes = (icdData.codeLookup?.[catId] || []).slice(0, 300);
-    const listEl = el.querySelector('#quad-icd-codes-list');
-    if (!listEl) return;
-    listEl.innerHTML = codes.map(c => `
-      <label class="quad-soap-term">
-        <input type="checkbox" class="quad-icd-check" data-code="${esc(c.code)}" data-en="${esc(c.en)}" data-zh="${esc(c.zh)}" data-cat="${esc(catId)}"
-          ${selected.has(c.code) ? 'checked' : ''}>
-        <span class="tag tag-code">${esc(c.code)}</span>
-        <span>${esc(c.en)}</span>
-      </label>
-    `).join('') || '<p class="hint">No category codes.</p>';
-
-    listEl.querySelectorAll('.quad-icd-check').forEach(cb => {
-      cb.addEventListener('change', () => {
-        const item = { code: cb.dataset.code, en: cb.dataset.en || '', zh: cb.dataset.zh || '', categoryId: cb.dataset.cat || '' };
-        if (cb.checked) selected.set(item.code, item);
-        else selected.delete(item.code);
-        persistSelected();
-      });
-    });
-  }
-
   el.innerHTML = `
-    <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.45rem">
-      ${shownCats.map(c => `<button class="btn btn-outline quad-icd-cat" data-cat="${esc(c.id)}">${c.icon || ''} ${esc(c.nameEn.slice(0, 12))}</button>`).join('')}
-      <button class="btn btn-sm-inline" id="quad-icd-cats-edit">⚙️ Edit</button>
-    </div>
     <div class="browser-search-wrap" style="margin-bottom:.5rem">
       <input class="field-input" id="quad-icd-search" type="text" style="width:100%"
         placeholder="Search ICD code or name…">
       <div id="quad-icd-results" class="browser-search-results hidden"></div>
     </div>
     <div class="quad-icd-recent">
-      <div class="quad-icd-recent-title">⏱ Recently Used (checkable)</div>
+      <div class="quad-icd-recent-title">⏱ Recently Used (click to browse)</div>
       ${top10.length === 0
         ? '<p style="font-size:.78rem;color:#888">No history yet.</p>'
         : top10.map(c => `
-          <label class="quad-icd-recent-item" data-cat="${esc(c.categoryId)}" data-code="${esc(c.code)}">
-            <input type="checkbox" class="quad-icd-check" data-code="${esc(c.code)}" data-en="${esc(c.en)}" data-zh="${esc(c.zh)}" data-cat="${esc(c.categoryId)}"
-              ${selected.has(c.code) ? 'checked' : ''}>
+          <div class="quad-icd-recent-item" data-cat="${esc(c.categoryId)}" data-code="${esc(c.code)}">
             <span class="tag tag-code">${esc(c.code)}</span>
             <span>${esc(c.en.split(/[,:]/, 1)[0].slice(0, 36))}</span>
             <span class="freq-badge" style="margin-left:auto">×${c.count}</span>
-          </label>`).join('')}
+          </div>`).join('')}
     </div>
-    <div id="quad-icd-codes-list" style="max-height:160px;overflow:auto;border:1px solid var(--color-border);border-radius:6px;padding:.3rem;margin-top:.45rem"></div>
     <button class="quad-open-btn" style="margin-top:.5rem" data-nav="browser">🔍 Open Full ICD Browser →</button>`;
-
-  el.querySelectorAll('.quad-icd-cat').forEach(btn => {
-    btn.addEventListener('click', () => {
-      el.querySelectorAll('.quad-icd-cat').forEach(b => b.classList.remove('btn-active'));
-      btn.classList.add('btn-active');
-      renderCatCodes(btn.dataset.cat);
-    });
-  });
-  if (shownCats[0]) {
-    el.querySelector(`.quad-icd-cat[data-cat="${shownCats[0].id}"]`)?.classList.add('btn-active');
-    renderCatCodes(shownCats[0].id);
-  }
-
-  el.querySelector('#quad-icd-cats-edit')?.addEventListener('click', () => {
-    const ids = prompt('Enter up to 10 category IDs (comma separated):', shownCats.map(c => c.id).join(','));
-    if (!ids) return;
-    const picked = ids.split(',').map(x => x.trim()).filter(Boolean).slice(0, 10);
-    localStorage.setItem('quad_icd_categories', JSON.stringify(picked));
-    _renderQuadIcd(el, icdData);
-  });
 
   /* Live search */
   const searchEl  = el.querySelector('#quad-icd-search');
@@ -1140,23 +1028,16 @@ function _renderQuadIcd(el, icdData) {
   searchRes?.addEventListener('click', e => {
     const hit = e.target.closest('.browser-hit');
     if (!hit) return;
-    const item = { code: hit.dataset.code, en: hit.querySelector('.dd-en')?.textContent || '', zh: '', categoryId: hit.dataset.cat || '' };
-    selected.set(item.code, item);
-    persistSelected();
-    showToast('success', `Added ${item.code}`);
+    navigate({ page: 'browser', categoryId: hit.dataset.cat });
   });
   el.addEventListener('click', e => {
     if (!e.target.closest('#quad-icd-search') && !e.target.closest('#quad-icd-results'))
       searchRes?.classList.add('hidden');
   });
 
-  el.querySelectorAll('.quad-icd-check').forEach(cb => {
-    cb.addEventListener('change', () => {
-      const item = { code: cb.dataset.code, en: cb.dataset.en || '', zh: cb.dataset.zh || '', categoryId: cb.dataset.cat || '' };
-      if (cb.checked) selected.set(item.code, item);
-      else selected.delete(item.code);
-      persistSelected();
-    });
+  /* Recently used items — navigate to browser with that category */
+  el.querySelectorAll('.quad-icd-recent-item').forEach(item => {
+    item.addEventListener('click', () => navigate({ page: 'browser', categoryId: item.dataset.cat }));
   });
   el.querySelector('[data-nav]')?.addEventListener('click', () => navigate('browser'));
 }
@@ -1164,101 +1045,36 @@ function _renderQuadIcd(el, icdData) {
 function _renderQuadSoap(el, icdData) {
   if (!el) return;
   const cats = icdData?.categories || [];
-  const recentTerms = getRecentSoapTerms ? getRecentSoapTerms(20) : [];
-  const selected = new Map();
-  try {
-    for (const item of JSON.parse(sessionStorage.getItem('quad_soap_checked') || '[]')) {
-      if (item?.section && item?.term) selected.set(`${item.section}|${item.term}`, item);
-    }
-  } catch { /* ignore */ }
-
-  let shownCats = cats.slice(0, 10);
-  try {
-    const saved = JSON.parse(localStorage.getItem('quad_soap_categories') || 'null');
-    if (Array.isArray(saved) && saved.length) shownCats = cats.filter(c => saved.includes(c.id)).slice(0, 10);
-  } catch { /* ignore */ }
-
-  function persistSelected() {
-    sessionStorage.setItem('quad_soap_checked', JSON.stringify([...selected.values()]));
-  }
-
-  function renderCatTerms(catId) {
-    const cat = cats.find(c => c.id === catId);
-    const soap = cat?.soap || {};
-    const pe = cat?.physicalExam || {};
-    const terms = [
-      ...(soap.subjective || []).map(t => ({ section: 's', term: t })),
-      ...buildCombinedObjective(soap, pe).map(t => ({ section: 'o', term: t })),
-      ...(soap.assessment_pearls || []).map(t => ({ section: 'a', term: t })),
-      ...(soap.plan_template || []).map(t => ({ section: 'p', term: t })),
-    ];
-    const list = el.querySelector('#quad-soap-terms-list');
-    if (!list) return;
-    list.innerHTML = terms.map(t => {
-      const key = `${t.section}|${t.term}`;
-      const label = t.term.split(':')[0].trim();
-      return `<label class="quad-soap-term"><input type="checkbox" class="quad-soap-check" data-sec="${esc(t.section)}" data-term="${esc(t.term)}" ${selected.has(key) ? 'checked' : ''}><span class="tag tag-default" style="font-size:.7rem">${esc(t.section.toUpperCase())}</span><span>${esc(label)}</span></label>`;
-    }).join('') || '<p class="hint">No terms in this category.</p>';
-    list.querySelectorAll('.quad-soap-check').forEach(cb => {
-      cb.addEventListener('change', () => {
-        const item = { section: cb.dataset.sec || 's', term: cb.dataset.term || '' };
-        const key = `${item.section}|${item.term}`;
-        if (cb.checked) selected.set(key, item);
-        else selected.delete(key);
-        persistSelected();
-      });
-    });
-  }
+  const recentTerms = getRecentSoapTerms ? getRecentSoapTerms(12) : [];
 
   el.innerHTML = `
+    <div style="font-size:.78rem;color:var(--color-muted);margin-bottom:.4rem">
+      Click a category to open SOAP templates, or see recent terms below.
+    </div>
     <div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.5rem">
-      ${shownCats.map(c => `
-        <button class="btn btn-outline quad-soap-cat" style="font-size:.72rem;padding:.22rem .45rem"
+      ${cats.slice(0, 8).map(c => `
+        <button class="btn btn-outline" style="font-size:.72rem;padding:.22rem .45rem"
           data-cat="${esc(c.id)}" title="${esc(c.nameEn)} / ${esc(c.nameZh)}">
           ${c.icon || ''} ${esc(c.nameEn.split('/')[0].slice(0, 14))}
         </button>`).join('')}
-      <button class="btn btn-sm-inline" id="quad-soap-cats-edit">⚙️ Edit</button>
     </div>
-    ${recentTerms.length ? `<div class="card"><div class="card-title">📊 Recent SOAP Terms (checkable)</div>
-      ${recentTerms.map(t => {
-        const key = `${t.section}|${t.term}`;
-        const termText = t.term.split(':')[0].trim();
-        return `<label class="quad-soap-term"><input type="checkbox" class="quad-soap-check" data-sec="${esc(t.section)}" data-term="${esc(t.term)}" ${selected.has(key) ? 'checked' : ''}><span class="tag tag-default" style="font-size:.7rem">${esc(t.section.toUpperCase())}</span><span>${esc(termText)}</span>${t.count > 0 ? `<span class="freq-badge" style="margin-left:auto">×${t.count}</span>` : ''}</label>`;
-      }).join('')}
-    </div>` : '<p style="font-size:.78rem;color:#888">No SOAP history yet.</p>'}
-    <div id="quad-soap-terms-list" style="max-height:160px;overflow:auto;border:1px solid var(--color-border);border-radius:6px;padding:.3rem"></div>
+    ${recentTerms.length ? `
+      <div class="card">
+        <div class="card-title">📊 Recent SOAP Terms</div>
+        ${recentTerms.map(t => {
+          const termText = t.term.split(':')[0].trim();
+          return `<div class="quad-soap-term">
+            <span class="tag tag-default" style="font-size:.7rem">${esc(t.section.toUpperCase())}</span>
+            <span>${esc(termText)}</span>
+            ${t.count > 0 ? `<span class="freq-badge" style="margin-left:auto">×${t.count}</span>` : ''}
+          </div>`;
+        }).join('')}
+      </div>` : '<p style="font-size:.78rem;color:#888">No SOAP history yet.</p>'}
     <button class="quad-open-btn" style="margin-top:.5rem">📋 Open Full SOAP Templates →</button>`;
 
-  el.querySelectorAll('.quad-soap-cat').forEach(btn => {
-    btn.addEventListener('click', () => {
-      el.querySelectorAll('.quad-soap-cat').forEach(b => b.classList.remove('btn-active'));
-      btn.classList.add('btn-active');
-      renderCatTerms(btn.dataset.cat);
-    });
+  el.querySelectorAll('[data-cat]').forEach(btn => {
+    btn.addEventListener('click', () => navigate({ page: 'soap', categoryId: btn.dataset.cat }));
   });
-  if (shownCats[0]) {
-    el.querySelector(`.quad-soap-cat[data-cat="${shownCats[0].id}"]`)?.classList.add('btn-active');
-    renderCatTerms(shownCats[0].id);
-  }
-
-  el.querySelector('#quad-soap-cats-edit')?.addEventListener('click', () => {
-    const ids = prompt('Enter up to 10 category IDs (comma separated):', shownCats.map(c => c.id).join(','));
-    if (!ids) return;
-    const picked = ids.split(',').map(x => x.trim()).filter(Boolean).slice(0, 10);
-    localStorage.setItem('quad_soap_categories', JSON.stringify(picked));
-    _renderQuadSoap(el, icdData);
-  });
-
-  el.querySelectorAll('.quad-soap-check').forEach(cb => {
-    cb.addEventListener('change', () => {
-      const item = { section: cb.dataset.sec || 's', term: cb.dataset.term || '' };
-      const key = `${item.section}|${item.term}`;
-      if (cb.checked) selected.set(key, item);
-      else selected.delete(key);
-      persistSelected();
-    });
-  });
-
   el.querySelector('.quad-open-btn')?.addEventListener('click', () => navigate('soap'));
 }
 
@@ -1288,13 +1104,6 @@ async function boot() {
 
   window.addEventListener('navigate', e => navigate(e.detail));
   window.addEventListener('toast',    e => showToast(e.detail.type, e.detail.msg));
-  window.addEventListener('keydown', e => {
-    if (isTypingInput(e.target)) return;
-    if (matchShortcut(e, getShortcutKeys().quadView)) {
-      e.preventDefault();
-      navigate('quad');
-    }
-  });
 
   navigate('dashboard');
 
