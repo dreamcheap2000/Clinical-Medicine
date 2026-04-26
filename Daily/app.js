@@ -849,31 +849,42 @@ async function renderQuadView() {
   container.style.padding  = '0';
   container.style.overflow = 'hidden';
 
+  /* Create AbortController early so all event listeners (incl. dropdown handlers
+     in sub-functions) can be cleaned up via the signal when navigating away */
+  if (window._quadKeyAbort) window._quadKeyAbort.abort();
+  window._quadKeyAbort = new AbortController();
+
   /* Load external panel config */
   let extPanel = null;
   try { extPanel = JSON.parse(localStorage.getItem('quad_ext_panel') || 'null'); } catch { extPanel = null; }
 
   const WEB_PANEL_URLS = [
-    { label: '🔬 UpToDate', url: 'https://www.uptodate.com/contents/search' },
-    { label: '🔍 Google', url: 'https://www.google.com/' },
+    { label: '🔬 UpToDate',     url: 'https://www.uptodate.com/contents/search' },
+    { label: '🔍 Google',       url: 'https://www.google.com/' },
     { label: '🧬 OpenEvidence', url: 'https://www.openevidence.com/' },
   ];
 
+  /* Allowed embed URLs (whitelist to mitigate open-redirect in iframe) */
+  const ALLOWED_EMBED_URLS = new Set(WEB_PANEL_URLS.map(u => u.url));
+
   /* Build a panel: either standard _quadPanel or an iframe panel */
   function buildPanelBody(pos, defaultTitle, bodyId, navPage) {
-    if (extPanel?.pos === pos && extPanel?.url) {
-      const hostLabel = esc(extPanel.url.replace(/^https?:\/\//, '').split('/')[0]);
+    if (extPanel?.pos === pos && extPanel?.url && ALLOWED_EMBED_URLS.has(extPanel.url)) {
+      const urlObj   = new URL(extPanel.url);
+      const hostLabel = esc(urlObj.hostname);
+      const urlLabel  = WEB_PANEL_URLS.find(u => u.url === extPanel.url)?.label || hostLabel;
       return `
         <div class="quad-panel" data-quad="${esc(pos)}" data-nav-page="${esc(navPage)}">
           <div class="quad-panel-header">
-            <span class="quad-panel-title">🌐 ${hostLabel}</span>
+            <span class="quad-panel-title">🌐 ${esc(urlLabel)}</span>
             <span class="quad-panel-actions">
               <button class="quad-panel-btn" id="quad-ext-restore-${esc(pos)}" title="Restore original panel">✕ Restore</button>
             </span>
           </div>
           <div class="quad-panel-body" id="${esc(bodyId)}" style="padding:0;display:flex;flex-direction:column">
-            <iframe src="${esc(extPanel.url)}" sandbox="allow-scripts allow-same-origin allow-forms"
-              style="width:100%;flex:1;border:none;display:block" title="External panel"></iframe>
+            <iframe src="${esc(extPanel.url)}" sandbox="allow-scripts allow-forms"
+              style="width:100%;flex:1;border:none;display:block"
+              title="${esc(urlLabel)} — embedded reference panel"></iframe>
             <p style="font-size:.68rem;color:#888;padding:.15rem .5rem;background:var(--color-surface);margin:0;flex-shrink:0">
               ⚠ Some sites may block embedding due to X-Frame-Options restrictions.
             </p>
@@ -960,7 +971,7 @@ async function renderQuadView() {
       if (webPanelPopover) webPanelPopover.style.display = 'none';
       document.removeEventListener('click', _closeWebPopover);
     }
-  });
+  }, { signal: window._quadKeyAbort.signal });
 
   /* Render panel bodies (skip positions occupied by external iframe) */
   if (extPanel?.pos !== 'tl') _renderQuadHome(container.querySelector('#quad-home'));
@@ -1022,8 +1033,7 @@ async function renderQuadView() {
   });
   container.querySelector('#quad-save-entry-btn')?.addEventListener('click', saveFromQuad);
 
-  if (window._quadKeyAbort) window._quadKeyAbort.abort();
-  window._quadKeyAbort = new AbortController();
+  /* AbortController was created at the top of renderQuadView — reuse it for keydown */
   window.addEventListener('keydown', e => {
     if (isTypingInput(e.target)) return;
     if (matchShortcut(e, getShortcutKeys().quadNewEntry)) {
@@ -1283,7 +1293,7 @@ function _renderQuadIcd(el, icdData) {
       if (icdDropdown) icdDropdown.style.display = 'none';
       document.removeEventListener('click', _closeIcdDropdown);
     }
-  });
+  }, { signal: window._quadKeyAbort?.signal });
 
   /* Live search */
   const searchEl  = el.querySelector('#quad-icd-search');
@@ -1498,7 +1508,7 @@ function _renderQuadSoap(el, icdData) {
       if (soapDropdown) soapDropdown.style.display = 'none';
       document.removeEventListener('click', _closeSoapDropdown);
     }
-  });
+  }, { signal: window._quadKeyAbort?.signal });
 
   /* Recent-tab checkboxes */
   el.querySelectorAll('.quad-soap-check').forEach(cb => {

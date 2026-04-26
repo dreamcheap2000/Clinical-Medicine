@@ -58,9 +58,7 @@ function saveFormDraft(form, icdCodes) {
     sessionStorage.setItem(DRAFT_KEY, JSON.stringify({
       date:        form.querySelector('#f-date')?.value      || '',
       patientId:   form.querySelector('#f-pid')?.value       || '',
-      patientType: form.querySelector('#f-pt')?.value        || '',
       icdCodes:    Array.isArray(icdCodes) ? icdCodes : [],
-      condition:   form.querySelector('#f-condition')?.value || '',
       keyLearning: form.querySelector('#f-klp')?.value       || '',
       soapText:    form.querySelector('#f-soap-text')?.value || '',
     }));
@@ -143,9 +141,6 @@ export function renderSessionLog(opts = {}) {
   /* ── Resolve initial form field values (draft > existing > defaults) ── */
   const initDate        = existing?.date        || draft?.date        || prefillDate || new Date().toISOString().slice(0,10);
   const initPid         = existing?.patientId   || draft?.patientId   || prefillPid  || '';
-  const initPt          = existing?.patientType || draft?.patientType || '';
-  const initCondition   = existing?.condition   || draft?.condition
-    || (prefill && !draft ? (prefill.en || '') : '');
   const initKlp         = existing?.keyLearning || existing?.ebm || draft?.keyLearning || prefillKlp || '';
 
   /* Shortcut key for ghost insert label */
@@ -186,16 +181,6 @@ export function renderSessionLog(opts = {}) {
               </div>
             </div>
 
-            <!-- Patient type -->
-            <div class="field-group">
-              <label class="field-label" for="f-pt">Special Patient Type</label>
-              <select class="field-input" id="f-pt">
-                ${PATIENT_TYPES.map(t =>
-                  `<option value="${esc(t)}" ${initPt === t ? 'selected' : ''}>${esc(t || '— none —')}</option>`
-                ).join('')}
-              </select>
-            </div>
-
             <!-- ICD codes (multiple) -->
             <div class="field-group" style="position:relative">
               <label class="field-label" for="f-icd-search">ICD-10 Codes</label>
@@ -216,13 +201,6 @@ export function renderSessionLog(opts = {}) {
               <input type="hidden" id="f-icd-zh"      value="${esc(initIcdCodes[0]?.zh           || '')}">
               <input type="hidden" id="f-icd-cat"     value="${esc(initIcdCodes[0]?.categoryId   || '')}">
               <input type="hidden" id="f-icd-catname" value="${esc(initIcdCodes[0]?.categoryName || '')}">
-            </div>
-
-            <!-- Patient condition / chief complaint -->
-            <div class="field-group">
-              <label class="field-label" for="f-condition">Patient Condition / Presentation</label>
-              <textarea class="field-input field-textarea" id="f-condition" rows="2"
-                placeholder="Chief complaint, relevant history, clinical context… (optional)">${esc(initCondition)}</textarea>
             </div>
 
             <!-- Key learning / EBM -->
@@ -409,10 +387,6 @@ function wireForm(container, existing, initIcdCodes) {
     searchInput.value = '';
     dropdown.classList.add('hidden');
 
-    /* Pre-fill condition field if empty */
-    const condField = form.querySelector('#f-condition');
-    if (!condField.value.trim()) condField.value = en;
-
     /* Load ghost panel for the just-selected code's category */
     if (catObj) loadGhostPanel(cat, _icdData);
     ghostCol.classList.add('ghost-visible');
@@ -576,7 +550,6 @@ function buildSession(form, existing, icdCodes) {
     date,
     timestamp,
     patientId:      form.querySelector('#f-pid').value.trim()       || null,
-    patientType:    form.querySelector('#f-pt').value               || null,
     /* Multiple ICD codes (new) */
     icdCodes:       codes,
     /* Primary code fields (backward compat = first in array) */
@@ -585,7 +558,6 @@ function buildSession(form, existing, icdCodes) {
     icdZh:          primary?.zh           || null,
     categoryId:     primary?.categoryId   || null,
     categoryName:   primary?.categoryName || null,
-    condition:      form.querySelector('#f-condition').value.trim() || null,
     keyLearning:    form.querySelector('#f-klp').value.trim()       || null,
     ebm:            form.querySelector('#f-klp').value.trim()       || null,
     soapText,
