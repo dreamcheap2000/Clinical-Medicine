@@ -1370,9 +1370,14 @@ function _renderQuadSoap(el, icdData) {
 
   function persistSelected() {
     sessionStorage.setItem('quad_soap_checked', JSON.stringify([...selected.values()]));
+    /* Sync checked SOAP terms into the SOAP note textarea (TR panel) */
+    const soapTa = document.querySelector('#quad-soap-input');
+    if (soapTa) {
+      const grouped = buildSectionedSoapInsert([...selected.values()].map(x => ({ section: x.section, term: x.term })));
+      sessionStorage.setItem('quad_soap_note', grouped);
+      soapTa.value = grouped;
+    }
   }
-
-  function renderCatTerms(catId) {
     const cat  = cats.find(c => c.id === catId);
     const soap = cat?.soap || {};
     const pe   = cat?.physicalExam || {};

@@ -60,6 +60,15 @@ export function renderSettings() {
             <span class="hint">Inserts all selected items on the currently active page</span>
           </div>
         </div>
+        <div class="form-row-2">
+          <div class="field-group">
+            <label class="field-label" for="sc-save-quad">Quad View — Save New Entry</label>
+            <input class="field-input" type="text" id="sc-save-quad"
+              placeholder="${esc(DEFAULT_SHORTCUTS.saveNewEntryFromQuad)}"
+              value="${esc(sc.saveNewEntryFromQuad || DEFAULT_SHORTCUTS.saveNewEntryFromQuad)}">
+            <span class="hint">Saves entry directly from quad view and clears panels (default: Shift+R)</span>
+          </div>
+        </div>
         <div class="row-gap">
           <button type="submit" class="btn btn-primary">💾 Save Shortcuts</button>
           <button type="button" class="btn btn-outline" id="btn-reset-shortcuts">↩ Reset to Defaults</button>
@@ -231,10 +240,11 @@ export function renderSettings() {
   scForm.addEventListener('submit', e => {
     e.preventDefault();
     const keys = {
-      insertSoap:    container.querySelector('#sc-insert-soap').value.trim()     || DEFAULT_SHORTCUTS.insertSoap,
-      insertSoapAll: container.querySelector('#sc-insert-soap-all').value.trim() || DEFAULT_SHORTCUTS.insertSoapAll,
-      insertIcd:     container.querySelector('#sc-insert-icd').value.trim()      || DEFAULT_SHORTCUTS.insertIcd,
-      insertAll:     container.querySelector('#sc-insert-all').value.trim()      || DEFAULT_SHORTCUTS.insertAll,
+      insertSoap:           container.querySelector('#sc-insert-soap').value.trim()     || DEFAULT_SHORTCUTS.insertSoap,
+      insertSoapAll:        container.querySelector('#sc-insert-soap-all').value.trim() || DEFAULT_SHORTCUTS.insertSoapAll,
+      insertIcd:            container.querySelector('#sc-insert-icd').value.trim()      || DEFAULT_SHORTCUTS.insertIcd,
+      insertAll:            container.querySelector('#sc-insert-all').value.trim()      || DEFAULT_SHORTCUTS.insertAll,
+      saveNewEntryFromQuad: container.querySelector('#sc-save-quad').value.trim()       || DEFAULT_SHORTCUTS.saveNewEntryFromQuad,
     };
     saveShortcutKeys(keys);
     showToast('success', 'Shortcut keys saved.');
@@ -245,6 +255,7 @@ export function renderSettings() {
     container.querySelector('#sc-insert-soap-all').value = DEFAULT_SHORTCUTS.insertSoapAll;
     container.querySelector('#sc-insert-icd').value      = DEFAULT_SHORTCUTS.insertIcd;
     container.querySelector('#sc-insert-all').value      = DEFAULT_SHORTCUTS.insertAll;
+    container.querySelector('#sc-save-quad').value       = DEFAULT_SHORTCUTS.saveNewEntryFromQuad;
     saveShortcutKeys({ ...DEFAULT_SHORTCUTS });
     showToast('success', 'Shortcuts reset to defaults.');
   });
