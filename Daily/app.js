@@ -880,6 +880,7 @@ async function renderQuadView() {
 
   
   
+  
   const buildFromQuad = () => {
     const ebm = (document.getElementById('quad-ebm-input')?.value || '').trim();
     const soap = (document.getElementById('quad-soap-input')?.value || '').trim();
@@ -901,7 +902,7 @@ async function renderQuadView() {
     if (composedSoap) sessionStorage.setItem('prefill_soap_text', composedSoap);
     if (ebm) sessionStorage.setItem('prefill_key_learning', ebm);
     navigate('log');
-  };;
+  };;;
 
   container.querySelectorAll('#quad-new-entry-btn,#quad-new-entry-from-ebm').forEach(btn => {
     btn.addEventListener('click', buildFromQuad);
