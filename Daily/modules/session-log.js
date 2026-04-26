@@ -24,7 +24,7 @@ import {
   recordIcdUse,
   navigate, showToast, esc,
   saveSessionWithSync,
-  buildCombinedObjective,
+  buildCombinedObjective, buildSectionedSoapInsert,
   getShortcutKeys, matchShortcut, isTypingInput,
 } from '../app.js';
 
@@ -100,8 +100,10 @@ export function renderSessionLog(opts = {}) {
   /* Pick up date/pid from quad view quick-start */
   const prefillDate = sessionStorage.getItem('prefill_date') || '';
   const prefillPid  = sessionStorage.getItem('prefill_pid')  || '';
+  const prefillKlp  = sessionStorage.getItem('prefill_key_learning') || '';
   if (prefillDate) sessionStorage.removeItem('prefill_date');
   if (prefillPid)  sessionStorage.removeItem('prefill_pid');
+  if (prefillKlp)  sessionStorage.removeItem('prefill_key_learning');
 
   /* Load auto-saved form draft (non-edit mode only) */
   const draft = !editId ? loadFormDraft() : null;
@@ -144,7 +146,7 @@ export function renderSessionLog(opts = {}) {
   const initPt          = existing?.patientType || draft?.patientType || '';
   const initCondition   = existing?.condition   || draft?.condition
     || (prefill && !draft ? (prefill.en || '') : '');
-  const initKlp         = existing?.keyLearning || existing?.ebm || draft?.keyLearning || '';
+  const initKlp         = existing?.keyLearning || existing?.ebm || draft?.keyLearning || prefillKlp || '';
 
   /* Shortcut key for ghost insert label */
   const ghostInsertKey  = getShortcutKeys().insertSoap;
@@ -446,10 +448,13 @@ function wireForm(container, existing, initIcdCodes) {
     if (!checked.length) { showToast('info', 'Check some items in the SOAP reference panel first.'); return; }
     const termItems     = checked.map(cb => cb.dataset.term || cb.dataset.text);
     const fullTextItems = checked.map(cb => cb.dataset.text);
-    const sections      = [...new Set(checked.map(cb => cb.dataset.sec || 's'))];
+    const groupedInsert = buildSectionedSoapInsert(checked.map(cb => ({
+      section: cb.dataset.sec || 's',
+      term: cb.dataset.term || cb.dataset.text,
+    })));
     if (ta) {
       const cur   = ta.value.trim();
-      const toAdd = termItems.map(termWithColon).join('\n');
+      const toAdd = groupedInsert;
       ta.value = cur ? `${cur}\n${toAdd}` : toAdd;
       ta.dispatchEvent(new Event('input', { bubbles: true }));
     }
@@ -671,14 +676,6 @@ function buildGhostContent(catObj, catId) {
         </div>`;
     }).join('')}
   `;
-}
-
-/**
- * Returns the term with exactly one trailing colon.
- * Avoids double-colon if the term already ends with ":".
- */
-function termWithColon(term) {
-  return term.endsWith(':') ? term : `${term}:`;
 }
 
 /** Wires only the toggle-all (section select/deselect) buttons in the ghost panel.

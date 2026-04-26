@@ -33,7 +33,7 @@ body { font-family: var(--font); background: var(--color-bg); color: var(--color
 
 /* ---------- Navbar ---------- */
 #navbar {
-  position: sticky; top: 0; z-index: 100;
+  position: sticky; top: 0; z-index: 12000;
   display: flex; align-items: center; gap: 1rem;
   height: var(--nav-height);
   background: var(--color-primary); color: #fff;
@@ -294,7 +294,12 @@ body { font-family: var(--font); background: var(--color-bg); color: var(--color
 .tab-panel.hidden { display: none; }
 
 /* Code table */
-.code-filter-wrap { margin-bottom: .6rem; }
+.code-filter-wrap {
+  margin-bottom: .6rem;
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+}
 .code-filter { font-size: .88rem; }
 .code-table-wrap { overflow-x: auto; max-height: 55vh; overflow-y: auto; }
 .code-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
@@ -882,12 +887,24 @@ body { font-family: var(--font); background: var(--color-bg); color: var(--color
   display: flex; flex-direction: column;
   min-width: 220px; min-height: 120px;
   resize: both; overflow: auto;
-  z-index: 1100;
+  z-index: 9000 !important;
 }
 .float-panel-hidden { display: none !important; }
-/* Issue 1 — minimized: only show the drag handle header */
-.float-panel-minimized { min-height: 0 !important; resize: horizontal; }
-.float-panel-minimized .float-panel-body { display: none !important; }
+/* Minimized panels collapse to category-button-like chips when not hovered. */
+.float-panel-minimized:not(:hover) {
+  width: 164px !important;
+  height: 56px !important;
+  min-width: 164px !important;
+  min-height: 56px !important;
+  resize: none !important;
+  overflow: hidden !important;
+}
+.float-panel-minimized:not(:hover) .float-panel-body { display: none !important; }
+.float-panel-minimized:not(:hover) .float-drag-handle {
+  border-radius: var(--radius-sm);
+  font-size: .74rem;
+  padding: .5rem .55rem;
+}
 .float-drag-handle {
   display: flex; align-items: center; justify-content: space-between;
   background: var(--color-primary);
