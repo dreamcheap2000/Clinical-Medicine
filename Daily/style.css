@@ -1090,21 +1090,14 @@ kbd {
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius);
   overflow: hidden;
-  transition: transform .22s ease, box-shadow .22s ease, z-index 0s;
+  transition: box-shadow .22s ease;
   position: relative;
   z-index: 1;
   min-height: 0;
-  will-change: transform;
 }
 .quad-panel:hover {
-  z-index: 20;
-  box-shadow: 0 10px 48px rgba(0,0,0,.65);
-  transform: scale(1.55);
+  box-shadow: 0 4px 18px rgba(0,0,0,.45);
 }
-.quad-panel[data-quad="tl"]:hover { transform-origin: top left; }
-.quad-panel[data-quad="tr"]:hover { transform-origin: top right; }
-.quad-panel[data-quad="bl"]:hover { transform-origin: bottom left; }
-.quad-panel[data-quad="br"]:hover { transform-origin: bottom right; }
 /* Maximized panel covers the whole page area below navbar */
 .quad-panel.quad-maximized {
   position: fixed !important;
@@ -1119,8 +1112,6 @@ kbd {
   transform: none !important;
   transition: none !important;
 }
-/* Suppress hover scale on maximized panel */
-.quad-panel.quad-maximized:hover { transform: none !important; box-shadow: none !important; }
 .quad-panel-header {
   display: flex;
   align-items: center;
