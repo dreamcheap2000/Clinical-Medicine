@@ -378,9 +378,10 @@ async function showCategoryAsync(catId, cats, soapData, highlightCode = null, co
     codes = await loadCategoryCodes(catId);
   }
 
-  /* For display, use the known total count (from metadata codeCount or loaded length) */
+  /* For display, use the known total count from metadata codeCount (all categories
+     now have this field); fall back to loaded array length for non-others categories */
   const displayCount = catId === 'others'
-    ? (catObj.codeCount != null ? catObj.codeCount.toLocaleString() : '65,517')
+    ? (catObj.codeCount ?? 0).toLocaleString()
     : codes.length;
 
   /* Look up SOAP template from the 22-cat SOAP data */

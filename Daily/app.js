@@ -1100,7 +1100,7 @@ function _renderQuadHome(el) {
   const ebm = sessionStorage.getItem('quad_ebm_statement') || '';
 
   el.innerHTML = `
-    <p class="hint" style="margin-bottom:.45rem">Saved instantly on input.</p>
+    <p class="hint" style="margin-bottom:.45rem">Auto-saved every second.</p>
     <textarea class="field-input field-textarea" id="quad-ebm-input" rows="16"
       placeholder="Key learning points / EBM statement...">${esc(ebm)}</textarea>
     <div style="margin-top:.45rem;display:flex;gap:.35rem;align-items:center;flex-wrap:wrap">
