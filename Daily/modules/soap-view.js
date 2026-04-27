@@ -39,8 +39,8 @@ export async function renderSoapView(opts = {}) {
   const userTemplates = getSoapTemplates();
   const shortcuts     = getShortcutKeys();
 
-  /* ── Calculate default positions for category buttons (grid) ── */
-  const BTN_W = 158, BTN_H = 56, GAP = 8, COLS = 4;
+  /* ── Calculate default positions for category buttons (icon-only grid) ── */
+  const BTN_W = 60, BTN_H = 60, GAP = 8, COLS = 12;
   const catsAreaH = parseInt(getFloatPositions()[CATS_AREA_HEIGHT_KEY]) ||
     (Math.ceil(cats.length / COLS) * (BTN_H + GAP) + GAP + 30);
 
@@ -87,13 +87,12 @@ export async function renderSoapView(opts = {}) {
     const saved = positions[`soap_cat_${cat.id}`];
 
     const btn = document.createElement('button');
-    btn.className   = 'float-cat-btn';
+    btn.className   = 'float-cat-btn float-cat-icon-only';
     btn.dataset.cat = cat.id;
     btn.title       = `${cat.nameEn} / ${cat.nameZh}`;
     btn.innerHTML   = `
-      <span class="float-cat-icon">${cat.icon || ''}</span>
-      <span class="float-cat-name">${esc(cat.nameEn)}</span>
-      <span class="float-cat-zh">${esc(cat.nameZh)}</span>`;
+      <span class="float-cat-icon">${cat.icon || '📋'}</span>
+      <span class="float-cat-hover-label">${esc(cat.nameEn)}<br><small>${esc(cat.nameZh)}</small></span>`;
     btn.style.left  = (saved?.x ?? defX) + 'px';
     btn.style.top   = (saved?.y ?? defY) + 'px';
 
@@ -168,11 +167,14 @@ export async function renderSoapView(opts = {}) {
     const checked = [...container.querySelectorAll('.soap-view-cb:checked'),
                      ...recentPanel.querySelectorAll('.soap-view-cb:checked')];
     if (!checked.length) { showToast('info', 'No items checked — tick some items first.'); return; }
-    const text = buildSectionedSoapInsert(checked.map(cb => ({
+    const items = checked.map(cb => ({
       section: cb.dataset.seckey || 's',
       term: cb.dataset.term || cb.dataset.text,
-    })));
+    }));
+    const text = buildSectionedSoapInsert(items);
     checked.forEach(cb => recordSoapItemWithSection(cb.dataset.text, cb.dataset.seckey || 's'));
+    /* Sync to quad_soap_checked so Quad View stays in sync */
+    _syncCheckedToQuadSoap(items);
     const prev = sessionStorage.getItem('prefill_soap_text') || '';
     sessionStorage.setItem('prefill_soap_text', prev ? `${prev}\n${text}` : text);
     navigate('log');
@@ -235,6 +237,20 @@ export async function renderSoapView(opts = {}) {
     const btn = container.querySelector(`.float-cat-btn[data-cat="${initCat.id}"]`);
     if (btn) { btn.classList.add('active'); showSoapCategory(initCat, container); }
   }
+}
+
+/* ================================================================ */
+/* Sync helper — keep quad_soap_checked in sessionStorage up to date  */
+/* ================================================================ */
+
+function _syncCheckedToQuadSoap(newItems) {
+  let existing = [];
+  try { existing = JSON.parse(sessionStorage.getItem('quad_soap_checked') || '[]'); } catch { existing = []; }
+  const map = new Map(existing.map(x => [`${x.section}|${x.term}`, x]));
+  for (const item of newItems) {
+    if (item?.section && item?.term) map.set(`${item.section}|${item.term}`, item);
+  }
+  sessionStorage.setItem('quad_soap_checked', JSON.stringify([...map.values()]));
 }
 
 /* ================================================================ */

@@ -17,7 +17,7 @@
 
 import {
   getSessions, saveSession,
-  getIcdData, searchCodes,
+  getIcdData, searchCodes, searchAllCodes,
   getSoapFreq, recordSoapSelections,
   recordSoapItemWithSection,
   getSoapTemplates, saveSoapTemplate, deleteSoapTemplate,
@@ -352,14 +352,19 @@ function wireForm(container, existing, initIcdCodes) {
     const q = searchInput.value.trim();
     if (q.length < 2) { dropdown.classList.add('hidden'); return; }
     _searchTimer = setTimeout(async () => {
-      if (!_icdData) _icdData = await getIcdData();
-      const results = searchCodes(q, _icdData);
+      /* Use searchAllCodes (searches preloaded specialty codes) for real-time results;
+         fall back to legacy searchCodes against the SOAP template data */
+      let results = searchAllCodes(q, 40);
+      if (!results.length) {
+        if (!_icdData) _icdData = await getIcdData();
+        results = searchCodes(q, _icdData);
+      }
       if (!results.length) { dropdown.classList.add('hidden'); return; }
       dropdown.innerHTML = results.map(r => `
-        <div class="dropdown-item" data-code="${esc(r.code)}" data-en="${esc(r.en)}" data-zh="${esc(r.zh)}" data-cat="${esc(r.categoryId)}">
+        <div class="dropdown-item" data-code="${esc(r.code)}" data-en="${esc(r.en)}" data-zh="${esc(r.zh || '')}" data-cat="${esc(r.categoryId)}">
           <span class="tag tag-code">${esc(r.code)}</span>
           <span class="dd-en">${esc(r.en)}</span>
-          <span class="dd-zh">${esc(r.zh)}</span>
+          <span class="dd-zh">${esc(r.zh || '')}</span>
         </div>`).join('');
       dropdown.classList.remove('hidden');
     }, 200);

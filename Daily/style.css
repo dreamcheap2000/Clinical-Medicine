@@ -877,6 +877,47 @@ body { font-family: var(--font); background: var(--color-bg); color: var(--color
 .float-cat-zh   { font-size: .7rem; color: var(--color-muted); line-height: 1.2; }
 .float-cat-btn.active .float-cat-zh { color: rgba(255,255,255,.75); }
 
+/* Icon-only mode — shows just the emoji, tooltip on hover */
+.float-cat-btn.float-cat-icon-only {
+  width: 56px;
+  min-height: 56px;
+  padding: .4rem;
+  border-radius: 50%;
+  overflow: visible;
+}
+.float-cat-btn.float-cat-icon-only .float-cat-icon { font-size: 1.6rem; }
+.float-cat-hover-label {
+  display: none;
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: .3rem .55rem;
+  font-size: .72rem;
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+  box-shadow: 0 3px 12px rgba(0,0,0,.4);
+  z-index: 9999;
+  pointer-events: none;
+  text-align: center;
+  line-height: 1.3;
+}
+.float-cat-btn.float-cat-icon-only:hover .float-cat-hover-label { display: block; }
+.float-cat-btn.float-cat-icon-only.active {
+  background: var(--color-primary);
+  border-radius: 50%;
+}
+
+/* Quad view icon-only category buttons (smaller) */
+.quad-cat-icon-btn {
+  font-size: .8rem;
+  padding: .2rem .4rem;
+}
+
 /* Floating recently-used panel (fixed overlay) */
 .float-panel {
   position: fixed;

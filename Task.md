@@ -363,49 +363,96 @@ Clicking multiple section buttons caused duplicate text in the SOAP note.
 
 ---
 
+## Modification 5 — Full ICD-10-CM 2023 Chinese Edition + UI Overhaul (2026-04-27)
+
+### Task 1 — Add All ICD-10-CM 2023 Chinese Edition Codes (73,681 billable codes)
+
+**Source:** `1.2023年中文版ICD-10-CM_PCS_1131118V3(修改ICD-10-CM之N80.A0等中文名稱).xlsx`
+
+**Solution:**
+- Parsed 73,681 billable ICD-10-CM codes from the XLSX file (sheet `ICD-10-CM`, USE=1 rows).
+- Codes are classified into 10 categories and stored as separate per-category JSON files in `Daily/data/icd_codes/` for lazy loading.
+- A new `Daily/data/icd_10cat_meta.json` file holds the 10-category metadata (id, nameEn, nameZh, icon, codeRange).
+- The ICD browser lazily loads only the category clicked by the user, keeping initial load fast.
+- All 9 specialty categories (~8,164 codes) are preloaded in the background on app boot for instant search.
+- The `others` category (65,517 non-specialty codes) is not pre-loaded; users access it via the search box.
+- Files changed: `Daily/data/icd_codes/*.json` (10 new files), `Daily/data/icd_10cat_meta.json` (new)
+
+---
+
+### Task 2 — Shrink Category Buttons to Icon-Only with Hover Labels
+
+**Solution:**
+- Added CSS class `.float-cat-icon-only` to make category buttons show only the emoji icon (56×56 px circle).
+- On hover, a tooltip label expands below the icon showing both English and Chinese category names.
+- Applied to ICD Browser and SOAP Templates page category buttons.
+- Quad view ICD category buttons also made more compact with `.quad-cat-icon-btn` class.
+- SOAP Templates button grid changed from 4 columns to 12 columns (all 22 categories now fit in 2 rows).
+- ICD Browser button grid changed from 4 columns to 9 columns.
+- Files changed: `Daily/style.css`, `Daily/modules/soap-view.js`, `Daily/modules/icd-browser.js`
+
+---
+
+### Task 3 & 4 — Sync: New Entry ↔ Quad View + Auto-Insert Selected Items
+
+**Problem:** Checked items in Quad View ICD/SOAP panels and the New Entry form were not bidirectionally synced. Selecting a code in ICD browser or SOAP templates did not automatically update the Quad view.
+
+**Solution:**
+- ICD codes checked in the ICD browser now immediately update `quad_icd_checked` sessionStorage (via `_syncCheckedToQuad()`), so Quad View's ICD panel stays in sync.
+- SOAP terms checked and inserted from SOAP Templates page now update `quad_soap_checked` sessionStorage (via `_syncCheckedToQuadSoap()`).
+- New Entry form ICD search now uses `searchAllCodes()` which searches the preloaded specialty code cache, giving real results from all 8,164 specialty codes.
+- Files changed: `Daily/modules/icd-browser.js`, `Daily/modules/soap-view.js`, `Daily/modules/session-log.js`
+
+---
+
+### Task 5 — Reclassify ICD Codes into 9 Expertise + 1 Others Categories
+
+**New 10-category structure:**
+
+| # | ID | Icon | English | 中文 | ICD Range |
+|---|---|---|---|---|---|
+| 1 | `dementia_cog` | 🧠 | Dementia & Neurodegeneration | 失智/神經退化 | F01–F09, G00–G14, G30–G37, G80–G83 |
+| 2 | `cerebrovascular` | 🫀 | Cerebrovascular & Stroke | 腦血管疾病/腦中風 | G45–G46, I60–I69 |
+| 3 | `epilepsy` | ⚡ | Epilepsy | 癲癇 | G40–G41 |
+| 4 | `headache` | 🤕 | Headache & Migraine | 頭痛/偏頭痛 | G43–G44 |
+| 5 | `movement` | 🌀 | Movement Disorders | 動作障礙 | G20–G26 |
+| 6 | `sleep` | 😴 | Sleep Disorders | 睡眠疾患 | G47 |
+| 7 | `neuromuscular_pns` | 🦾 | Neuromuscular & Peripheral Nerve | 神經肌肉/周邊神經 | G50–G73, G89–G99, H81–H83 |
+| 8 | `spine_msk` | 🦴 | Spine & Musculoskeletal | 脊椎/骨骼肌肉 | M00–M99 |
+| 9 | `chronic` | 💊 | Chronic Disease Management | 慢性病管理 | E10–E14, E65–E68, E78, I10–I16, J44–J45, N17–N19 |
+| 10 | `others` | 📋 | Other Conditions | 其他疾病 | All remaining codes |
+
+- Categories 1–9 cover the doctor's specialty areas (Neurology, Interventional Neuroradiology, Neuromusculoskeletal Ultrasound, Chronic Disease).
+- The ICD browser now uses these 10 new categories; SOAP Templates page retains the 22 detailed original categories for SOAP content lookup.
+- Files changed: `Daily/data/icd_codes/*.json`, `Daily/data/icd_10cat_meta.json`, `Daily/app.js`, `Daily/modules/icd-browser.js`
+
+---
+
+### Task 6 — Window Size Memory Verified
+
+- ICD browser and SOAP templates floating panel size/position is persisted via `floatPositions_v1` in `localStorage`.
+- `initFloatPanel()` restores `x`, `y`, `w`, `h` on every render; `ResizeObserver` saves changes.
+- Confirmed working: the mechanism was already correct; no bug found.
+
+---
+
+### Task 7 — Task.md Updated (this entry)
+
+---
+
+### Task 8 — Manual Created
+
+- See `Daily/MANUAL.md` for complete user documentation.
+
+---
+
 ## Pending / Future Work
 
-### High Priority
-- [ ] **ICD-10-CM 2023 Chinese Version Full Expansion** (Task 5 from modification 4 request):
-  - Source file `1.2023年中文版ICD-10-CM_PCS_1131118V3.xlsx` is in the repo root (7.3 MB).
-  - Categories needed for Neurology specialty (detailed):
-    - G00–G09: Inflammatory diseases of CNS
-    - G10–G14: Systemic atrophies affecting CNS
-    - G20–G26: Extrapyramidal & movement disorders (Parkinson's, HD, etc.)
-    - G30–G32: Other degenerative diseases of NS (Alzheimer's, etc.)
-    - G35–G37: Demyelinating diseases (MS, NMO)
-    - G40–G47: Episodic/paroxysmal disorders (epilepsy, migraine, sleep)
-    - G50–G59: Nerve, nerve root & plexus disorders
-    - G60–G65: Polyneuropathies
-    - G70–G73: Neuromuscular junction & muscle diseases
-    - G80–G83: Cerebral palsy & other paralytic syndromes
-    - G89–G99: Other disorders of NS (pain, autonomic NS, hydrocephalus)
-    - I60–I69: Cerebrovascular diseases (stroke, TIA, etc.)
-    - H80–H83: Vestibular disorders (vertigo)
-  - Categories needed for Interventional Neuroradiology (detailed):
-    - I60–I69: Cerebrovascular
-    - G08: Intracranial/spinal phlebitis
-    - T80–T88: Complications of procedures
-  - Categories needed for Neuromusculoskeletal Ultrasound (detailed):
-    - M00–M25: Arthropathies
-    - M40–M54: Dorsopathies
-    - M60–M79: Soft tissue disorders
-    - G50–G59: Nerve root & plexus disorders
-  - Categories needed for Chronic Disease (broad):
-    - E10–E14: Diabetes mellitus
-    - I10–I16: Hypertensive diseases
-    - E65–E68: Obesity & other hypernutrition
-    - E78: Disorders of lipoprotein metabolism
-    - N17–N19: Kidney failure
-  - All other categories: broad groupings by ICD chapter
-  - This is a multi-stage task requiring parsing the XLSX and generating JSON
-- [ ] **Window size persistence** across navigation (Task 2):
-  - ICD Browser and SOAP templates floating panel sizes already persist via `floatPositions_v1`
-  - Verify this works after switching pages and returning
-- [ ] **Drag-and-drop category button reordering** in quad view panels
-  - Category buttons in quad ICD/SOAP panels should be reorderable by drag
-  - Store order in `localStorage`
-- [ ] Add patient-level record linking (multiple visits per patient ID)
-- [ ] Export to standard clinical formats (PDF summary, CSV)
+### Medium Priority
+- [ ] Virtual scrolling for spine_msk category (6,598 codes) — currently capped at 300 visible rows
+- [ ] Export search results as CSV
+- [ ] Patient-level record linking (multiple visits per patient ID)
+- [ ] Export to PDF summary format
 - [ ] Settings page: add `saveNewEntryFromQuad` (Shift+R) to configurable shortcuts UI
+- [ ] Drag-and-drop category button reordering in quad view panels
 

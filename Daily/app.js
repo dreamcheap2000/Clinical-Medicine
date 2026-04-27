@@ -389,6 +389,8 @@ export async function getIcdData() {
   const res = await fetch('data/icd_categories.json');
   if (!res.ok) throw new Error('Failed to load ICD data');
   _icdData = await res.json();
+  /* Ensure codeLookup exists (may be empty on old builds) */
+  if (!_icdData.codeLookup) _icdData.codeLookup = {};
   return _icdData;
 }
 
@@ -396,7 +398,80 @@ export function searchCodes(query, icdData, limit = 40) {
   if (!query || query.length < 2) return [];
   const q = query.toLowerCase();
   const results = [];
-  for (const [catId, codes] of Object.entries(icdData.codeLookup)) {
+  for (const [catId, codes] of Object.entries(icdData.codeLookup || {})) {
+    for (const c of codes) {
+      if (
+        c.code.toLowerCase().includes(q) ||
+        c.en.toLowerCase().includes(q)   ||
+        c.zh.includes(query)
+      ) {
+        results.push({ ...c, categoryId: catId });
+        if (results.length >= limit) return results;
+      }
+    }
+  }
+  return results;
+}
+
+/* ============================================================ */
+/* ICD Browser — 10-category data (2023 Chinese version full)    */
+/* ============================================================ */
+
+let _icdBrowserMeta = null;
+const _icdCodeCache = {};   /* catId → [{code, en, zh}] */
+
+/**
+ * Load the 10-category metadata for the ICD browser.
+ * Separate from getIcdData() which loads the 22-category SOAP templates.
+ */
+export async function getIcdBrowserMeta() {
+  if (_icdBrowserMeta) return _icdBrowserMeta;
+  const res = await fetch('data/icd_10cat_meta.json');
+  if (!res.ok) throw new Error('Failed to load ICD browser metadata');
+  _icdBrowserMeta = await res.json();
+  return _icdBrowserMeta;
+}
+
+/**
+ * Lazy-load ICD codes for a single category.
+ * The "others" category (65k+ codes) is not loaded to keep the app fast;
+ * callers receive an empty array for it.
+ */
+export async function loadCategoryCodes(catId) {
+  if (_icdCodeCache[catId] !== undefined) return _icdCodeCache[catId];
+  if (catId === 'others') { _icdCodeCache.others = []; return []; }
+  try {
+    const res = await fetch(`data/icd_codes/${catId}.json`);
+    if (!res.ok) { _icdCodeCache[catId] = []; return []; }
+    const data = await res.json();
+    _icdCodeCache[catId] = data.codes || [];
+  } catch {
+    _icdCodeCache[catId] = [];
+  }
+  return _icdCodeCache[catId];
+}
+
+/**
+ * Preload all specialty (non-"others") categories in the background.
+ * Called once on boot so that the global code search is populated.
+ */
+export async function preloadSpecialtyCodes() {
+  const meta = await getIcdBrowserMeta().catch(() => []);
+  const cats  = Array.isArray(meta) ? meta : [];
+  await Promise.all(
+    cats.filter(c => c.id !== 'others').map(c => loadCategoryCodes(c.id))
+  );
+}
+
+/**
+ * Search across ALL currently-loaded ICD code caches.
+ * After preloadSpecialtyCodes() runs, all specialty categories are searchable.
+ */
+export function searchAllCodes(query, limit = 60) {
+  if (!query || query.length < 2) return [];
+  const q = query.toLowerCase();
+  const results = [];
+  for (const [catId, codes] of Object.entries(_icdCodeCache)) {
     for (const c of codes) {
       if (
         c.code.toLowerCase().includes(q) ||
@@ -977,10 +1052,13 @@ async function renderQuadView() {
   if (extPanel?.pos !== 'tl') _renderQuadHome(container.querySelector('#quad-home'));
   if (extPanel?.pos !== 'tr') _renderQuadEntry(container.querySelector('#quad-entry'));
 
-  let icdData = null;
-  try { icdData = await getIcdData(); } catch { /* handled inline */ }
-  if (extPanel?.pos !== 'bl') _renderQuadIcd(container.querySelector('#quad-icd'), icdData);
-  if (extPanel?.pos !== 'br') _renderQuadSoap(container.querySelector('#quad-soap'), icdData);
+  /* ICD panel uses new 10-cat browser data; SOAP panel uses 22-cat SOAP templates */
+  let icdBrowserCats = null;
+  let soapData = null;
+  try { icdBrowserCats = await getIcdBrowserMeta(); } catch { /* handled inline */ }
+  try { soapData = await getIcdData(); } catch { /* handled inline */ }
+  if (extPanel?.pos !== 'bl') _renderQuadIcd(container.querySelector('#quad-icd'), icdBrowserCats);
+  if (extPanel?.pos !== 'br') _renderQuadSoap(container.querySelector('#quad-soap'), soapData);
 
   const buildFromQuad = () => {
     const ebm  = (sessionStorage.getItem('quad_ebm_statement') || '').trim();
@@ -1141,7 +1219,7 @@ function _renderQuadEntry(el) {
   });
 }
 
-function _renderQuadIcd(el, icdData) {
+function _renderQuadIcd(el, browserCats) {
   if (!el) return;
   const freq  = getIcdFreq();
   const top10 = Object.values(freq).sort((a, b) => b.count - a.count).slice(0, 10);
@@ -1152,17 +1230,19 @@ function _renderQuadIcd(el, icdData) {
     }
   } catch { /* ignore */ }
 
-  if (!icdData) {
+  /* browserCats is the raw array from icd_10cat_meta.json */
+  const allCats = Array.isArray(browserCats) ? browserCats : (browserCats?.categories || []);
+
+  if (!allCats.length) {
     el.innerHTML = `<p style="color:red;font-size:.8rem">⚠ ICD data failed to load.</p>`;
     return;
   }
 
-  const allCats = icdData.categories || [];
-  let shownCats = allCats.slice(0, 10);
+  let shownCats = allCats.filter(c => c.id !== 'others').slice(0, 10);
   try {
     const saved = JSON.parse(localStorage.getItem('quad_icd_categories') || 'null');
     if (Array.isArray(saved) && saved.length) {
-      shownCats = allCats.filter(c => saved.includes(c.id)).slice(0, 10);
+      shownCats = allCats.filter(c => saved.includes(c.id) && c.id !== 'others').slice(0, 10);
     }
   } catch { /* ignore */ }
 
@@ -1173,24 +1253,31 @@ function _renderQuadIcd(el, icdData) {
   }
 
   function renderCatCodes(catId) {
-    const codes  = (icdData.codeLookup?.[catId] || []).slice(0, 300);
     const listEl = el.querySelector('#quad-icd-codes-list');
     if (!listEl) return;
-    listEl.innerHTML = codes.map(c => `
-      <label class="quad-soap-term">
-        <input type="checkbox" class="quad-icd-check" data-code="${esc(c.code)}" data-en="${esc(c.en)}" data-zh="${esc(c.zh)}" data-cat="${esc(catId)}"
-          ${selected.has(c.code) ? 'checked' : ''}>
-        <span class="tag tag-code">${esc(c.code)}</span>
-        <span>${esc(c.en)}</span>
-      </label>
-    `).join('') || '<p class="hint">No category codes.</p>';
+    listEl.innerHTML = `<p class="hint" style="padding:.3rem">Loading…</p>`;
+    loadCategoryCodes(catId).then(codes => {
+      const slice = codes.slice(0, 300);
+      if (!slice.length) {
+        listEl.innerHTML = '<p class="hint" style="padding:.3rem">No codes in this category.</p>';
+        return;
+      }
+      listEl.innerHTML = slice.map(c => `
+        <label class="quad-soap-term">
+          <input type="checkbox" class="quad-icd-check" data-code="${esc(c.code)}" data-en="${esc(c.en)}" data-zh="${esc(c.zh || '')}" data-cat="${esc(catId)}"
+            ${selected.has(c.code) ? 'checked' : ''}>
+          <span class="tag tag-code">${esc(c.code)}</span>
+          <span>${esc(c.en)}</span>
+        </label>
+      `).join('');
 
-    listEl.querySelectorAll('.quad-icd-check').forEach(cb => {
-      cb.addEventListener('change', () => {
-        const item = { code: cb.dataset.code, en: cb.dataset.en || '', zh: cb.dataset.zh || '', categoryId: cb.dataset.cat || '' };
-        if (cb.checked) selected.set(item.code, item);
-        else selected.delete(item.code);
-        persistSelected();
+      listEl.querySelectorAll('.quad-icd-check').forEach(cb => {
+        cb.addEventListener('change', () => {
+          const item = { code: cb.dataset.code, en: cb.dataset.en || '', zh: cb.dataset.zh || '', categoryId: cb.dataset.cat || '' };
+          if (cb.checked) selected.set(item.code, item);
+          else selected.delete(item.code);
+          persistSelected();
+        });
       });
     });
   }
@@ -1214,11 +1301,11 @@ function _renderQuadIcd(el, icdData) {
     <!-- Categories tab -->
     <div id="quad-icd-tab-cats"${activeTab !== 'categories' ? ' style="display:none"' : ''}>
       <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.45rem;position:relative">
-        ${shownCats.map(c => `<button class="btn btn-outline quad-icd-cat" data-cat="${esc(c.id)}">${c.icon || ''} ${esc(c.nameEn.slice(0, 12))}</button>`).join('')}
+        ${shownCats.map(c => `<button class="btn btn-outline quad-icd-cat quad-cat-icon-btn" data-cat="${esc(c.id)}" title="${esc(c.nameEn)} / ${esc(c.nameZh)}">${c.icon || ''} <span class="cat-label">${esc(c.nameEn.slice(0, 12))}</span></button>`).join('')}
         <button class="btn btn-sm-inline" id="quad-icd-cats-edit">⚙️ Edit</button>
         <div id="quad-icd-cats-dropdown" style="display:none;position:absolute;top:100%;left:0;z-index:200;background:var(--color-surface);border:1px solid var(--color-border);border-radius:6px;padding:.5rem;max-height:260px;overflow:auto;min-width:230px;box-shadow:0 4px 16px rgba(0,0,0,.18)">
           <div style="font-size:.73rem;color:#888;margin-bottom:.3rem">Check up to 10 categories:</div>
-          ${allCats.map(c => `<label style="display:flex;align-items:center;gap:.35rem;font-size:.77rem;padding:.15rem 0;cursor:pointer">
+          ${allCats.filter(c => c.id !== 'others').map(c => `<label style="display:flex;align-items:center;gap:.35rem;font-size:.77rem;padding:.15rem 0;cursor:pointer">
             <input type="checkbox" class="icd-cat-pick" data-id="${esc(c.id)}" ${shownCats.find(s => s.id === c.id) ? 'checked' : ''}>
             ${c.icon || ''} ${esc(c.nameEn)}
           </label>`).join('')}
@@ -1286,7 +1373,7 @@ function _renderQuadIcd(el, icdData) {
       return;
     }
     localStorage.setItem('quad_icd_categories', JSON.stringify(checked.map(cb => cb.dataset.id)));
-    _renderQuadIcd(el, icdData);
+    _renderQuadIcd(el, browserCats);
   });
   document.addEventListener('click', function _closeIcdDropdown(e) {
     if (!icdDropdown?.contains(e.target) && e.target !== icdEditBtn) {
@@ -1295,7 +1382,7 @@ function _renderQuadIcd(el, icdData) {
     }
   }, { signal: window._quadKeyAbort?.signal });
 
-  /* Live search */
+  /* Live search using global code cache */
   const searchEl  = el.querySelector('#quad-icd-search');
   const searchRes = el.querySelector('#quad-icd-results');
   let _t = null;
@@ -1304,14 +1391,13 @@ function _renderQuadIcd(el, icdData) {
     const q = searchEl.value.trim();
     if (q.length < 2) { searchRes.classList.add('hidden'); return; }
     _t = setTimeout(() => {
-      const cats    = icdData.categories || [];
-      const results = searchCodes(q, icdData, 20);
+      const results = searchAllCodes(q, 20);
       if (!results.length) {
         searchRes.innerHTML = '<div style="padding:.4rem .8rem;font-size:.8rem;color:#888">No results.</div>';
       } else {
         searchRes.innerHTML = results.map(r => {
-          const cat = cats.find(c => c.id === r.categoryId);
-          return `<div class="browser-hit" data-cat="${esc(r.categoryId)}" data-code="${esc(r.code)}">
+          const cat = allCats.find(c => c.id === r.categoryId);
+          return `<div class="browser-hit" data-cat="${esc(r.categoryId)}" data-code="${esc(r.code)}" data-en="${esc(r.en)}" data-zh="${esc(r.zh || '')}">
             <span class="tag tag-code">${esc(r.code)}</span>
             <span class="dd-en">${esc(r.en)}</span>
             ${cat ? `<span class="tag tag-cat">${cat.icon || ''} ${esc(cat.nameEn)}</span>` : ''}
@@ -1324,10 +1410,12 @@ function _renderQuadIcd(el, icdData) {
   searchRes?.addEventListener('click', e => {
     const hit = e.target.closest('.browser-hit');
     if (!hit) return;
-    const item = { code: hit.dataset.code, en: hit.querySelector('.dd-en')?.textContent || '', zh: '', categoryId: hit.dataset.cat || '' };
+    const item = { code: hit.dataset.code, en: hit.dataset.en || hit.querySelector('.dd-en')?.textContent || '', zh: hit.dataset.zh || '', categoryId: hit.dataset.cat || '' };
     selected.set(item.code, item);
     persistSelected();
     showToast('success', `Added ${item.code}`);
+    searchRes.classList.add('hidden');
+    searchEl.value = '';
   });
   el.addEventListener('click', e => {
     if (!e.target.closest('#quad-icd-search') && !e.target.closest('#quad-icd-results'))
@@ -1571,6 +1659,9 @@ async function boot() {
     showToast('success', `📂 Restored ${restored} saved entries from repo.`);
     renderDashboard();
   }
+
+  /* Preload specialty ICD codes in the background for instant search */
+  preloadSpecialtyCodes().catch(() => { /* non-critical */ });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
