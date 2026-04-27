@@ -44,6 +44,14 @@ export async function renderIcdBrowser(opts = {}) {
   const shortcuts = getShortcutKeys();
   const selectedCodes = new Map();
 
+  /* Restore checked ICD codes from shared sessionStorage so Quad View selections
+     are reflected here and vice-versa */
+  try {
+    for (const item of JSON.parse(sessionStorage.getItem('quad_icd_checked') || '[]')) {
+      if (item?.code) selectedCodes.set(item.code, item);
+    }
+  } catch { /* ignore */ }
+
   /* Issue 4: restore last-viewed category instead of always showing the first one */
   const initCat = opts.categoryId || localStorage.getItem(ICD_LAST_CAT_KEY) || '';
 
@@ -370,6 +378,12 @@ async function showCategoryAsync(catId, cats, soapData, highlightCode = null, co
     codes = await loadCategoryCodes(catId);
   }
 
+  /* For display, use the known total count from metadata codeCount (all categories
+     now have this field); fall back to loaded array length for non-others categories */
+  const displayCount = catId === 'others'
+    ? (catObj.codeCount ?? 0).toLocaleString()
+    : codes.length;
+
   /* Look up SOAP template from the 22-cat SOAP data */
   const soapCatMap = {
     dementia_cog: ['dementia','inflammatory_cns','demyelinating','tbi','cerebral_palsy'],
@@ -400,7 +414,7 @@ async function showCategoryAsync(catId, cats, soapData, highlightCode = null, co
 
   const othersNote = catId === 'others'
     ? `<div style="padding:1rem;background:var(--color-surface);border-radius:var(--radius);border:1px solid var(--color-border)">
-        <p style="color:#888;font-size:.9rem">📋 The <b>Other Conditions</b> category contains 65,000+ non-specialty ICD-10-CM codes.</p>
+        <p style="color:#888;font-size:.9rem">📋 The <b>Other Conditions</b> category contains <b>${displayCount}</b> non-specialty ICD-10-CM codes.</p>
         <p style="color:#888;font-size:.85rem;margin-top:.5rem">Use the <b>search box above</b> to find specific codes by code number, English name, or Chinese name.</p>
        </div>`
     : '';
@@ -416,7 +430,7 @@ async function showCategoryAsync(catId, cats, soapData, highlightCode = null, co
       </div>
 
       <div class="tab-bar" id="tab-bar">
-        <button class="tab-btn active" data-tab="codes">📄 Codes (${codes.length})</button>
+        <button class="tab-btn active" data-tab="codes">📄 Codes (${displayCount})</button>
         <button class="tab-btn" data-tab="soap">📋 SOAP Template</button>
       </div>
 

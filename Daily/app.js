@@ -924,76 +924,22 @@ async function renderQuadView() {
   container.style.padding  = '0';
   container.style.overflow = 'hidden';
 
-  /* Create AbortController early so all event listeners (incl. dropdown handlers
-     in sub-functions) can be cleaned up via the signal when navigating away */
+  /* Create AbortController early so all event listeners can be cleaned up
+     via the signal when navigating away */
   if (window._quadKeyAbort) window._quadKeyAbort.abort();
   window._quadKeyAbort = new AbortController();
-
-  /* Load external panel config */
-  let extPanel = null;
-  try { extPanel = JSON.parse(localStorage.getItem('quad_ext_panel') || 'null'); } catch { extPanel = null; }
-
-  const WEB_PANEL_URLS = [
-    { label: '🔬 UpToDate',     url: 'https://www.uptodate.com/contents/search' },
-    { label: '🔍 Google',       url: 'https://www.google.com/' },
-    { label: '🧬 OpenEvidence', url: 'https://www.openevidence.com/' },
-  ];
-
-  /* Allowed embed URLs (whitelist to mitigate open-redirect in iframe) */
-  const ALLOWED_EMBED_URLS = new Set(WEB_PANEL_URLS.map(u => u.url));
-
-  /* Build a panel: either standard _quadPanel or an iframe panel */
-  function buildPanelBody(pos, defaultTitle, bodyId, navPage) {
-    if (extPanel?.pos === pos && extPanel?.url && ALLOWED_EMBED_URLS.has(extPanel.url)) {
-      const urlObj   = new URL(extPanel.url);
-      const hostLabel = esc(urlObj.hostname);
-      const urlLabel  = WEB_PANEL_URLS.find(u => u.url === extPanel.url)?.label || hostLabel;
-      return `
-        <div class="quad-panel" data-quad="${esc(pos)}" data-nav-page="${esc(navPage)}">
-          <div class="quad-panel-header">
-            <span class="quad-panel-title">🌐 ${esc(urlLabel)}</span>
-            <span class="quad-panel-actions">
-              <button class="quad-panel-btn" id="quad-ext-restore-${esc(pos)}" title="Restore original panel">✕ Restore</button>
-            </span>
-          </div>
-          <div class="quad-panel-body" id="${esc(bodyId)}" style="padding:0;display:flex;flex-direction:column">
-            <iframe src="${esc(extPanel.url)}" sandbox="allow-scripts allow-forms"
-              style="width:100%;flex:1;border:none;display:block"
-              title="${esc(urlLabel)} — embedded reference panel"></iframe>
-            <p style="font-size:.68rem;color:#888;padding:.15rem .5rem;background:var(--color-surface);margin:0;flex-shrink:0">
-              ⚠ Some sites may block embedding due to X-Frame-Options restrictions.
-            </p>
-          </div>
-        </div>`;
-    }
-    return _quadPanel(pos, defaultTitle, bodyId, navPage);
-  }
 
   container.innerHTML = `
     <div id="quad-wrapper" style="display:flex;flex-direction:column;height:100%">
       <div id="quad-toolbar" style="display:flex;gap:.4rem;align-items:center;padding:.3rem .55rem;background:var(--color-surface);border-bottom:1px solid var(--color-border);flex-shrink:0;position:relative;z-index:50">
         <button class="btn btn-primary" style="font-size:.76rem;padding:.18rem .5rem" id="quad-save-entry-btn">💾 Save New Entry <kbd style="font-size:.68rem;opacity:.8;background:rgba(255,255,255,.2);border-radius:3px;padding:0 .25rem">Shift+R</kbd></button>
-        <button class="btn btn-outline" style="font-size:.76rem;padding:.18rem .5rem" id="quad-web-panel-btn">🌐 Web Panel ▾</button>
-        <div id="quad-web-panel-popover" style="display:none;position:absolute;top:calc(100% + 4px);left:.55rem;z-index:300;background:var(--color-surface);border:1px solid var(--color-border);border-radius:8px;padding:.75rem;min-width:300px;box-shadow:0 4px 20px rgba(0,0,0,.22)">
-          <div style="font-size:.8rem;font-weight:600;margin-bottom:.4rem">🌐 External Web Panel</div>
-          <div style="font-size:.73rem;color:#888;margin-bottom:.3rem">Choose panel position:</div>
-          <div style="display:flex;gap:.3rem;margin-bottom:.5rem">
-            ${['tl','tr','bl','br'].map(p => `<button class="btn btn-outline web-panel-pos${extPanel?.pos === p ? ' btn-active' : ''}" style="font-size:.72rem;padding:.15rem .4rem" data-pos="${p}">${p.toUpperCase()}</button>`).join('')}
-          </div>
-          <div style="font-size:.73rem;color:#888;margin-bottom:.3rem">Choose URL to embed:</div>
-          <div style="display:flex;flex-direction:column;gap:.22rem;margin-bottom:.45rem">
-            ${WEB_PANEL_URLS.map(u => `<button class="btn btn-outline web-panel-url" style="font-size:.73rem;text-align:left;padding:.18rem .45rem" data-url="${esc(u.url)}">${esc(u.label)}</button>`).join('')}
-          </div>
-          <button class="btn btn-outline" style="font-size:.73rem;width:100%;color:var(--color-danger,#d9534f)" id="quad-ext-panel-remove">✕ Restore All Original Panels</button>
-          <p style="font-size:.67rem;color:#888;margin:.35rem 0 0">⚠ Some sites may block embedding due to X-Frame-Options restrictions.</p>
-        </div>
         <span class="hint" style="margin-left:auto;font-size:.71rem">Shift+Q: Quad · Shift+N: New Entry form · Shift+R: Save entry</span>
       </div>
       <div class="quad-container" id="quad-container" style="flex:1;min-height:0">
-        ${buildPanelBody('tl','💡 Key Learning Point / EBM Statement', 'quad-home',  'dashboard')}
-        ${buildPanelBody('tr','📝 SOAP Note',                           'quad-entry', 'log')}
-        ${buildPanelBody('bl','🔍 ICD Browser',                         'quad-icd',   'browser')}
-        ${buildPanelBody('br','📋 SOAP Templates',                      'quad-soap',  'soap')}
+        ${_quadPanel('tl','💡 Key Learning Point / EBM Statement', 'quad-home',  'dashboard')}
+        ${_quadPanel('tr','📝 SOAP Note',                           'quad-entry', 'log')}
+        ${_quadPanel('bl','🔍 ICD Browser',                         'quad-icd',   'browser')}
+        ${_quadPanel('br','📋 SOAP Templates',                      'quad-soap',  'soap')}
       </div>
     </div>`;
 
@@ -1005,64 +951,28 @@ async function renderQuadView() {
     });
   });
 
-  /* Restore-original buttons inside iframe panels */
-  container.querySelectorAll('[id^="quad-ext-restore-"]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      localStorage.removeItem('quad_ext_panel');
-      renderQuadView();
-    });
-  });
-
-  /* Web Panel popover */
-  const webPanelBtn     = container.querySelector('#quad-web-panel-btn');
-  const webPanelPopover = container.querySelector('#quad-web-panel-popover');
-  let selectedPos = extPanel?.pos || 'bl';
-
-  webPanelBtn?.addEventListener('click', e => {
-    e.stopPropagation();
-    webPanelPopover.style.display = webPanelPopover.style.display === 'none' ? '' : 'none';
-  });
-  container.querySelectorAll('.web-panel-pos').forEach(btn => {
-    btn.addEventListener('click', () => {
-      selectedPos = btn.dataset.pos;
-      container.querySelectorAll('.web-panel-pos').forEach(b => b.classList.remove('btn-active'));
-      btn.classList.add('btn-active');
-    });
-  });
-  container.querySelectorAll('.web-panel-url').forEach(btn => {
-    btn.addEventListener('click', () => {
-      localStorage.setItem('quad_ext_panel', JSON.stringify({ pos: selectedPos, url: btn.dataset.url }));
-      webPanelPopover.style.display = 'none';
-      renderQuadView();
-    });
-  });
-  container.querySelector('#quad-ext-panel-remove')?.addEventListener('click', () => {
-    localStorage.removeItem('quad_ext_panel');
-    webPanelPopover.style.display = 'none';
-    renderQuadView();
-  });
-  document.addEventListener('click', function _closeWebPopover(e) {
-    if (!webPanelPopover?.contains(e.target) && e.target !== webPanelBtn) {
-      if (webPanelPopover) webPanelPopover.style.display = 'none';
-      document.removeEventListener('click', _closeWebPopover);
-    }
-  }, { signal: window._quadKeyAbort.signal });
-
-  /* Render panel bodies (skip positions occupied by external iframe) */
-  if (extPanel?.pos !== 'tl') _renderQuadHome(container.querySelector('#quad-home'));
-  if (extPanel?.pos !== 'tr') _renderQuadEntry(container.querySelector('#quad-entry'));
+  /* Render panel bodies */
+  _renderQuadHome(container.querySelector('#quad-home'));
+  _renderQuadEntry(container.querySelector('#quad-entry'));
 
   /* ICD panel uses new 10-cat browser data; SOAP panel uses 22-cat SOAP templates */
   let icdBrowserCats = null;
   let soapData = null;
   try { icdBrowserCats = await getIcdBrowserMeta(); } catch { /* handled inline */ }
   try { soapData = await getIcdData(); } catch { /* handled inline */ }
-  if (extPanel?.pos !== 'bl') _renderQuadIcd(container.querySelector('#quad-icd'), icdBrowserCats);
-  if (extPanel?.pos !== 'br') _renderQuadSoap(container.querySelector('#quad-soap'), soapData);
+  _renderQuadIcd(container.querySelector('#quad-icd'), icdBrowserCats);
+  _renderQuadSoap(container.querySelector('#quad-soap'), soapData);
 
   const buildFromQuad = () => {
-    const ebm  = (sessionStorage.getItem('quad_ebm_statement') || '').trim();
-    const soap = (sessionStorage.getItem('quad_soap_note')     || '').trim();
+    /* Read directly from DOM first (most up-to-date), fall back to sessionStorage */
+    const ebmTa  = container.querySelector('#quad-ebm-input');
+    const soapTa = container.querySelector('#quad-soap-input');
+    const ebm  = (ebmTa  ? ebmTa.value  : (sessionStorage.getItem('quad_ebm_statement') || '')).trim();
+    const soap = (soapTa ? soapTa.value : (sessionStorage.getItem('quad_soap_note')     || '')).trim();
+    /* Persist current values so downstream reads are consistent */
+    sessionStorage.setItem('quad_ebm_statement', ebm);
+    sessionStorage.setItem('quad_soap_note',     soap);
+
     const icdJson        = sessionStorage.getItem('quad_icd_checked')  || '[]';
     const soapCheckedJson = sessionStorage.getItem('quad_soap_checked') || '[]';
     let icdChecked = [], soapChecked = [];
@@ -1082,8 +992,10 @@ async function renderQuadView() {
   };
 
   const saveFromQuad = () => {
-    const ebm      = (sessionStorage.getItem('quad_ebm_statement') || '').trim();
-    const soapText = (sessionStorage.getItem('quad_soap_note')     || '').trim();
+    const ebmTa  = container.querySelector('#quad-ebm-input');
+    const soapTa = container.querySelector('#quad-soap-input');
+    const ebm      = (ebmTa  ? ebmTa.value  : (sessionStorage.getItem('quad_ebm_statement') || '')).trim();
+    const soapText = (soapTa ? soapTa.value : (sessionStorage.getItem('quad_soap_note')     || '')).trim();
     let icdChecked = [];
     try { icdChecked = JSON.parse(sessionStorage.getItem('quad_icd_checked') || '[]'); } catch { icdChecked = []; }
     const session = {
@@ -1130,7 +1042,30 @@ async function renderQuadView() {
     const soapText = container.querySelector('#quad-soap-input')?.value || '';
     sessionStorage.setItem('quad_ebm_statement', ebmText);
     sessionStorage.setItem('quad_soap_note',     soapText);
-  }, 2000);
+  }, 1000);
+
+  /* Wire "↗ Full" buttons — TL/TR save textarea content before navigating */
+  container.querySelectorAll('.quad-goto-btn').forEach(btn => {
+    const panel = btn.closest('.quad-panel');
+    const quad  = panel?.dataset.quad;
+    btn.addEventListener('click', () => {
+      if (quad === 'tr') {
+        /* TR = SOAP Note → open New Entry with current content pre-filled */
+        buildFromQuad();
+      } else if (quad === 'tl') {
+        /* TL = EBM Statement → save to sessionStorage then go to dashboard */
+        const ebmTa = container.querySelector('#quad-ebm-input');
+        if (ebmTa) {
+          const ebm = ebmTa.value.trim();
+          sessionStorage.setItem('quad_ebm_statement', ebm);
+          if (ebm) sessionStorage.setItem('prefill_key_learning', ebm);
+        }
+        navigate('dashboard');
+      } else {
+        navigate(btn.dataset.nav || panel?.dataset.navPage);
+      }
+    });
+  });
 
   /* Cleanup on navigate away */
   const origPad = '';
@@ -1150,8 +1085,7 @@ function _quadPanel(pos, title, bodyId, navPage) {
       <div class="quad-panel-header">
         <span class="quad-panel-title">${title}</span>
         <span class="quad-panel-actions">
-          <button class="quad-panel-btn quad-goto-btn"
-            onclick="window.dispatchEvent(new CustomEvent('navigate',{detail:'${esc(navPage)}'}))"
+          <button class="quad-panel-btn quad-goto-btn" data-nav="${esc(navPage)}"
             title="Open full page">↗ Full</button>
         </span>
       </div>
@@ -1166,7 +1100,7 @@ function _renderQuadHome(el) {
   const ebm = sessionStorage.getItem('quad_ebm_statement') || '';
 
   el.innerHTML = `
-    <p class="hint" style="margin-bottom:.45rem">Auto-saved every 2 seconds.</p>
+    <p class="hint" style="margin-bottom:.45rem">Auto-saved every second.</p>
     <textarea class="field-input field-textarea" id="quad-ebm-input" rows="16"
       placeholder="Key learning points / EBM statement...">${esc(ebm)}</textarea>
     <div style="margin-top:.45rem;display:flex;gap:.35rem;align-items:center;flex-wrap:wrap">
