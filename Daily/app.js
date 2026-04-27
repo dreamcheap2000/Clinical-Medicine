@@ -1378,6 +1378,8 @@ function _renderQuadSoap(el, icdData) {
       soapTa.value = grouped;
     }
   }
+
+  function renderCatTerms(catId) {
     const cat  = cats.find(c => c.id === catId);
     const soap = cat?.soap || {};
     const pe   = cat?.physicalExam || {};
