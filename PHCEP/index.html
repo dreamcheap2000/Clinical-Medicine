@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PHCEP — Taiwan Core IG ICD-10 Viewer</title>
+  <title>PHCEP — Taiwan Core IG ICD-10 &amp; NHI Viewer</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -36,6 +36,7 @@
   <!-- Tab bar -->
   <nav class="tab-bar">
     <button class="tab-btn active" data-tab="cm" onclick="switchTab('cm')">ICD-10-CM (診斷)</button>
+    <button class="tab-btn" data-tab="nhi" onclick="switchTab('nhi')">💰 NHI支付標準</button>
     <button class="tab-btn" data-tab="pcs" onclick="switchTab('pcs')">ICD-10-PCS (處置)</button>
     <button class="tab-btn" data-tab="search" onclick="switchTab('search')">🔍 全文搜尋</button>
     <button class="tab-btn" data-tab="about" onclick="switchTab('about')">ℹ️ About</button>
@@ -53,6 +54,45 @@
     </div>
     <div class="cat-grid" id="cm-cat-grid"></div>
     <div id="cm-detail" class="detail-panel hidden"></div>
+  </div>
+
+  <!-- NHI Payment Standard Tab -->
+  <div id="tab-nhi" class="tab-content">
+    <div class="section-header">
+      <h2>💰 NHI 支付標準代碼 — 第181版 (115.04.01)</h2>
+      <p class="section-desc">依醫師專科（朱展麟 醫師）相關性篩選之健保支付標準代碼，含支付點數及申報規範。格式符合
+        <a href="https://twcore.mohw.gov.tw/ig/twcore/" target="_blank" rel="noopener">TW Core IG</a> Procedure / ServiceRequest / Encounter 規範。
+      </p>
+    </div>
+    <div class="nhi-toolbar">
+      <input id="nhi-search" type="text" class="nhi-search-input"
+             placeholder="搜尋代碼或名稱（中英文）…"
+             oninput="nhiSearch(this.value)" autocomplete="off" />
+      <select id="nhi-cat-sel" class="nhi-cat-sel" onchange="nhiSelectCat(this.value)">
+        <option value="">— 選擇分類 —</option>
+      </select>
+      <label class="nhi-toggle-label">
+        <input type="checkbox" id="nhi-show-note" onchange="nhiRender()" checked />
+        顯示申報規範（註）
+      </label>
+    </div>
+    <div id="nhi-cat-grid" class="nhi-cat-grid"></div>
+    <div id="nhi-table-wrap" class="nhi-table-wrap hidden">
+      <div class="nhi-table-header" id="nhi-table-header"></div>
+      <div id="nhi-fhir-banner" class="nhi-fhir-banner hidden"></div>
+      <table class="nhi-table" id="nhi-table">
+        <thead>
+          <tr>
+            <th class="col-code">代碼</th>
+            <th class="col-name">診療項目</th>
+            <th class="col-pts">支付點數</th>
+            <th class="col-avail">適用層級</th>
+          </tr>
+        </thead>
+        <tbody id="nhi-tbody"></tbody>
+      </table>
+      <p id="nhi-no-results" class="nhi-no-results hidden">無符合條件的代碼。</p>
+    </div>
   </div>
 
   <!-- PCS Tab -->

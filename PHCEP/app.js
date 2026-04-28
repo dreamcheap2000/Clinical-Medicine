@@ -36,6 +36,7 @@ async function boot() {
     initEbmTab();
     initSoapTab();
     initEduTab();
+    initNhiTab();
   } catch (e) {
     console.error('Boot failed:', e);
     toast('⚠️ 載入 meta.json 失敗，請確認部署路徑');
@@ -92,6 +93,7 @@ function switchTab(name) {
   document.querySelectorAll('.tab-content').forEach(c =>
     c.classList.toggle('active', c.id === 'tab-' + name));
   if (name === 'history') renderHistory();
+  if (name === 'nhi') nhiOnTabShow();
 }
 
 // ---------------------------------------------------------------------------
@@ -788,3 +790,204 @@ function deleteHistoryEntry(type, id) {
   renderHistory();
   toast('🗑️ 已刪除');
 }
+
+// ===========================================================================
+// NHI Payment Standard Tab
+// ---------------------------------------------------------------------------
+// State
+let NHI_DATA = null;       // Full JSON from data/nhi/nhi.json
+let nhiActiveCat = null;   // Currently selected category id
+let nhiSearchQ = '';       // Current search query
+
+async function initNhiTab() {
+  try {
+    NHI_DATA = await fetchJson(BASE + 'data/nhi/nhi.json');
+    renderNhiCatGrid();
+    populateNhiCatSelect();
+  } catch (e) {
+    console.error('NHI load failed:', e);
+    document.getElementById('nhi-cat-grid').innerHTML =
+      '<p class="nhi-load-error">⚠️ 無法載入 NHI 支付標準資料：' + escHtml(String(e)) + '</p>';
+  }
+}
+
+function nhiOnTabShow() {
+  if (!NHI_DATA) initNhiTab();
+}
+
+// Render the category card grid (landing view)
+function renderNhiCatGrid() {
+  if (!NHI_DATA) return;
+  const grid = document.getElementById('nhi-cat-grid');
+  grid.innerHTML = NHI_DATA.categories.map(cat => {
+    const total = cat.codes.length;
+    return '<div class="nhi-cat-card" onclick="nhiOpenCat(\'' + cat.id + '\')">' +
+      '<div class="nhi-cat-icon">' + escHtml(cat.icon) + '</div>' +
+      '<div class="nhi-cat-name-zh">' + escHtml(cat.nameZh) + '</div>' +
+      '<div class="nhi-cat-name-en">' + escHtml(cat.nameEn) + '</div>' +
+      '<div class="nhi-cat-section">' + escHtml(cat.section) + '</div>' +
+      '<div class="nhi-cat-count">' + total + ' 項</div>' +
+      '<div class="nhi-cat-resource">' + escHtml(cat.fhir_resource) + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+function populateNhiCatSelect() {
+  if (!NHI_DATA) return;
+  const sel = document.getElementById('nhi-cat-sel');
+  sel.innerHTML = '<option value="">— 選擇分類 —</option>' +
+    NHI_DATA.categories.map(c =>
+      '<option value="' + escHtml(c.id) + '">' + escHtml(c.icon) + ' ' + escHtml(c.nameZh) + '</option>'
+    ).join('');
+}
+
+function nhiSelectCat(id) {
+  if (!id) {
+    nhiActiveCat = null;
+    nhiSearchQ = '';
+    document.getElementById('nhi-search').value = '';
+    document.getElementById('nhi-cat-grid').classList.remove('hidden');
+    document.getElementById('nhi-table-wrap').classList.add('hidden');
+    return;
+  }
+  nhiOpenCat(id);
+  document.getElementById('nhi-cat-sel').value = id;
+}
+
+function nhiOpenCat(id) {
+  if (!NHI_DATA) return;
+  nhiActiveCat = id;
+  nhiSearchQ = document.getElementById('nhi-search').value.trim();
+  document.getElementById('nhi-cat-sel').value = id;
+  document.getElementById('nhi-cat-grid').classList.add('hidden');
+  document.getElementById('nhi-table-wrap').classList.remove('hidden');
+  nhiRender();
+}
+
+function nhiSearch(q) {
+  nhiSearchQ = q.trim();
+  if (nhiSearchQ) {
+    if (!nhiActiveCat) {
+      document.getElementById('nhi-cat-grid').classList.add('hidden');
+      document.getElementById('nhi-table-wrap').classList.remove('hidden');
+    }
+  } else if (!nhiActiveCat) {
+    document.getElementById('nhi-cat-grid').classList.remove('hidden');
+    document.getElementById('nhi-table-wrap').classList.add('hidden');
+    return;
+  }
+  nhiRender();
+}
+
+function nhiRender() {
+  if (!NHI_DATA) return;
+
+  const q = nhiSearchQ.toLowerCase();
+  const showNote = document.getElementById('nhi-show-note').checked;
+
+  var codes = [];
+  var headerText = '';
+  var fhirProfile = '';
+  var fhirResource = '';
+  var fhirSystem = NHI_DATA.twCoreIG.nhi_system;
+
+  if (nhiActiveCat) {
+    var cat = NHI_DATA.categories.find(function(c) { return c.id === nhiActiveCat; });
+    if (!cat) return;
+    codes = cat.codes.slice();
+    headerText = escHtml(cat.icon) + ' ' + escHtml(cat.nameZh) +
+      ' <span class="nhi-header-en">' + escHtml(cat.nameEn) + '</span>' +
+      ' <span class="nhi-header-section">' + escHtml(cat.section) + '</span>';
+    fhirProfile = cat.fhir_profile;
+    fhirResource = cat.fhir_resource;
+  } else {
+    headerText = '🔍 全分類搜尋：「' + escHtml(nhiSearchQ) + '」';
+    fhirResource = 'Multiple';
+    NHI_DATA.categories.forEach(function(cat) {
+      cat.codes.forEach(function(c) {
+        codes.push(Object.assign({}, c, {_cat: cat.nameZh}));
+      });
+    });
+  }
+
+  if (q) {
+    codes = codes.filter(function(r) {
+      return r.code.toLowerCase().includes(q) ||
+        (r.nameZh || '').toLowerCase().includes(q) ||
+        (r.nameEn || '').toLowerCase().includes(q) ||
+        (r.note || '').toLowerCase().includes(q);
+    });
+  }
+
+  document.getElementById('nhi-table-header').innerHTML =
+    '<div class="nhi-th-left">' + headerText + '</div>' +
+    '<div class="nhi-th-right">' +
+    (nhiActiveCat ? '<button class="btn-nhi-back" onclick="nhiBackToGrid()">← 返回分類</button>' : '') +
+    '<span class="nhi-count-badge">' + codes.length + ' 項</span>' +
+    '</div>';
+
+  var banner = document.getElementById('nhi-fhir-banner');
+  if (nhiActiveCat && fhirProfile) {
+    banner.classList.remove('hidden');
+    banner.innerHTML =
+      '<span class="nhi-fhir-label">TW Core IG FHIR:</span>' +
+      '<a href="' + escHtml(fhirProfile) + '" target="_blank" rel="noopener" class="nhi-fhir-link">' + escHtml(fhirResource) + '</a>' +
+      '<span class="nhi-fhir-sep">|</span>' +
+      '<a href="' + escHtml(fhirSystem) + '" target="_blank" rel="noopener" class="nhi-fhir-link">NHI Code System</a>' +
+      '<span class="nhi-fhir-sep">|</span>' +
+      '<span class="nhi-fhir-source">' + escHtml(NHI_DATA.source.title) + ' ' + escHtml(NHI_DATA.source.edition) + '</span>';
+  } else {
+    banner.classList.add('hidden');
+  }
+
+  var tbody = document.getElementById('nhi-tbody');
+  var noRes = document.getElementById('nhi-no-results');
+
+  if (codes.length === 0) {
+    tbody.innerHTML = '';
+    noRes.classList.remove('hidden');
+    return;
+  }
+  noRes.classList.add('hidden');
+
+  function availBadges(avail) {
+    if (!avail) return '';
+    var labels = [['基層院所','基'],['地區醫院','地'],['區域醫院','區'],['醫學中心','醫']];
+    return labels.map(function(pair) {
+      return '<span class="avail-badge ' + (avail[pair[0]] ? 'avail-yes' : 'avail-no') + '">' + pair[1] + '</span>';
+    }).join('');
+  }
+
+  tbody.innerHTML = codes.map(function(r) {
+    var noteHtml = (showNote && r.note)
+      ? '<tr class="nhi-note-row"><td colspan="4"><div class="nhi-note">' + escHtml(r.note) + '</div></td></tr>'
+      : '';
+    var catBadge = r._cat
+      ? '<span class="nhi-cat-inline">' + escHtml(r._cat) + '</span> ' : '';
+    return '<tr class="nhi-code-row" onclick="nhiToggleNote(this)">' +
+      '<td class="col-code"><code class="nhi-code">' + escHtml(r.code) + '</code></td>' +
+      '<td class="col-name">' + catBadge + escHtml(r.nameZh) +
+        (r.nameEn ? '<br><span class="nhi-en">' + escHtml(r.nameEn) + '</span>' : '') +
+        '</td>' +
+      '<td class="col-pts"><span class="pts-badge">' + (escHtml(r.points) || '—') + '</span></td>' +
+      '<td class="col-avail">' + availBadges(r.available) + '</td>' +
+      '</tr>' + noteHtml;
+  }).join('');
+}
+
+function nhiToggleNote(row) {
+  var next = row.nextElementSibling;
+  if (next && next.classList.contains('nhi-note-row')) {
+    next.classList.toggle('hidden');
+  }
+}
+
+function nhiBackToGrid() {
+  nhiActiveCat = null;
+  nhiSearchQ = '';
+  document.getElementById('nhi-search').value = '';
+  document.getElementById('nhi-cat-sel').value = '';
+  document.getElementById('nhi-cat-grid').classList.remove('hidden');
+  document.getElementById('nhi-table-wrap').classList.add('hidden');
+}
+// ===========================================================================
