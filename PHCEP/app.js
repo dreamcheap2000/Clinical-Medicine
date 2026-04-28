@@ -885,14 +885,14 @@ function nhiRender() {
   const q = nhiSearchQ.toLowerCase();
   const showNote = document.getElementById('nhi-show-note').checked;
 
-  var codes = [];
-  var headerText = '';
-  var fhirProfile = '';
-  var fhirResource = '';
-  var fhirSystem = NHI_DATA.twCoreIG.nhi_system;
+  let codes = [];
+  let headerText = '';
+  let fhirProfile = '';
+  let fhirResource = '';
+  const fhirSystem = NHI_DATA.twCoreIG.nhi_system;
 
   if (nhiActiveCat) {
-    var cat = NHI_DATA.categories.find(function(c) { return c.id === nhiActiveCat; });
+    const cat = NHI_DATA.categories.find(function(c) { return c.id === nhiActiveCat; });
     if (!cat) return;
     codes = cat.codes.slice();
     headerText = escHtml(cat.icon) + ' ' + escHtml(cat.nameZh) +
@@ -926,7 +926,7 @@ function nhiRender() {
     '<span class="nhi-count-badge">' + codes.length + ' 項</span>' +
     '</div>';
 
-  var banner = document.getElementById('nhi-fhir-banner');
+  const banner = document.getElementById('nhi-fhir-banner');
   if (nhiActiveCat && fhirProfile) {
     banner.classList.remove('hidden');
     banner.innerHTML =
@@ -940,8 +940,8 @@ function nhiRender() {
     banner.classList.add('hidden');
   }
 
-  var tbody = document.getElementById('nhi-tbody');
-  var noRes = document.getElementById('nhi-no-results');
+  const tbody = document.getElementById('nhi-tbody');
+  const noRes = document.getElementById('nhi-no-results');
 
   if (codes.length === 0) {
     tbody.innerHTML = '';
@@ -952,7 +952,7 @@ function nhiRender() {
 
   function availBadges(avail) {
     if (!avail) return '';
-    var labels = [['基層院所','基'],['地區醫院','地'],['區域醫院','區'],['醫學中心','醫']];
+    const labels = [['基層院所','基'],['地區醫院','地'],['區域醫院','區'],['醫學中心','醫']];
     return labels.map(function(pair) {
       return '<span class="avail-badge ' + (avail[pair[0]] ? 'avail-yes' : 'avail-no') + '">' + pair[1] + '</span>';
     }).join('');
