@@ -39,9 +39,12 @@ https://github.com/dreamcheap2000/Dr.-Chan-Lin-Chu-CV-and-licenses/blob/79e059a5
 | 4 | `headache` | 🤕 | Headache & Migraine | 頭痛與偏頭痛 | G43–G44 | 84 |
 | 5 | `neuromuscular` | 🦾 | Neuromuscular, Peripheral Nerve & Vestibular | 神經肌肉、周邊神經與前庭疾患 | G50–G73, G89–G99, H81–H83 | 340 |
 | 6 | `sleep` | 😴 | Sleep Disorders | 睡眠疾患 | G47 | 43 |
-| 7 | `msk_spine` | 🦴 | Musculoskeletal & Spine | 骨骼肌肉與脊椎 | M00–M99 | 5,202 |
+| 7 | `msk_spine` | 🦴 | Musculoskeletal & Spine | 骨骼肌肉與脊椎 | M00–M99 (excl. M05–M09, M30–M36) | 4,658 |
 | 8 | `chronic` | 💊 | Chronic Disease Management | 慢性病管理 | E10–E14, E55, E65–E68, E78–E79, I10–I16, J44–J45, M80–M85, N17–N19 | 1,742 |
-| 9 | `others` | 📋 | Other Conditions (compact) | 其他疾病（精簡） | All remaining | 65,545 |
+| 9 | `infection` | 🦠 | Infectious & Parasitic Diseases | 感染與寄生蟲疾病 | A00–B99 | 1,065 |
+| 10 | `endocrine` | ⚗️ | Endocrine & Metabolic Disorders | 內分泌與代謝疾患 | E00–E09, E15–E35, E70–E89 | 568 |
+| 11 | `autoimmune` | 🛡️ | Autoimmune & Immune-mediated Disorders | 自體免疫與免疫相關疾病 | D80–D89, M05–M09, M30–M36 | 626 |
+| 12 | `others` | 📋 | Other Conditions (compact) | 其他疾病（精簡） | All remaining | 63,830 |
 
 **ICD-10-PCS category definitions:**
 
@@ -72,9 +75,9 @@ PHCEP/data/cm/epilepsy.json                  (10 KB)
 PHCEP/data/cm/headache.json                  (11 KB)
 PHCEP/data/cm/neuromuscular.json             (35 KB)
 PHCEP/data/cm/sleep.json                     (4 KB)
-PHCEP/data/cm/msk_spine.json                 (646 KB)
+PHCEP/data/cm/msk_spine.json                 (~580 KB, 4,658 codes after autoimmune split)
 PHCEP/data/cm/chronic.json                   (312 KB)
-PHCEP/data/cm/others_compact.json            (4.6 MB — 65,545 codes, compact)
+PHCEP/data/cm/others_compact.json            (~4.5 MB — 63,830 codes, compact)
 PHCEP/data/pcs/cns_pns.json                  (432 KB)
 PHCEP/data/pcs/cerebrovascular_proc.json     (639 KB)
 PHCEP/data/pcs/imaging_neuro.json            (148 KB)
@@ -116,11 +119,40 @@ To enable PHCEP as a GitHub Page, either:
 
 ---
 
+## Milestone 2 — Add Autoimmune, Endocrine, Infection Categories (2026-04-28)
+
+### New ICD-10-CM Categories Added
+
+| # | ID | Icon | English | 中文 | Code Range | Count |
+|---|----|----|---------|------|------------|-------|
+| 9 | `infection` | 🦠 | Infectious & Parasitic Diseases | 感染與寄生蟲疾病 | A00–B99 | 1,065 |
+| 10 | `endocrine` | ⚗️ | Endocrine & Metabolic Disorders | 內分泌與代謝疾患 | E00–E09, E15–E35, E70–E89 | 568 |
+| 11 | `autoimmune` | 🛡️ | Autoimmune & Immune-mediated Disorders | 自體免疫與免疫相關疾病 | D80–D89, M05–M09, M30–M36 | 626 |
+
+**Notes:**
+- `endocrine` excludes E10–E14 (diabetes), E55, E65–E68, E78–E79 which remain in `chronic`.  
+  Overlaps resolved by longest-prefix-first matching (3-char prefixes in `chronic` take priority over 2-char prefixes here).
+- `autoimmune` M05–M09 and M30–M36 prefixes (length 3) take priority over `msk_spine`'s "M0"/"M3" (length 2);  
+  `msk_spine` count adjusted from 5,202 → 4,658.
+- `others` reduced from 65,545 → 63,830 (1,065 + 568 + 626 = 2,259 codes moved out).
+
+**Files added/updated:**
+```
+PHCEP/data/cm/infection.json    (96 KB,  1,065 codes)
+PHCEP/data/cm/endocrine.json    (78 KB,    568 codes)
+PHCEP/data/cm/autoimmune.json   (84 KB,    626 codes)
+PHCEP/data/cm/msk_spine.json    (regenerated, 4,658 codes)
+PHCEP/data/cm/others_compact.json (regenerated, 63,830 codes)
+PHCEP/data/meta.json            (updated counts + 3 new category entries)
+```
+
+---
+
 ## Pending / Future Work
 
 - [ ] GitHub Pages deployment workflow for PHCEP
 - [ ] FHIR Condition / Procedure resource generator (from selected codes → JSON Bundle)
-- [ ] Virtual scrolling for large categories (msk_spine: 5,202; cns_pns: 3,144; etc.)
+- [ ] Virtual scrolling for large categories (msk_spine: 4,658; cns_pns: 3,144; etc.)
 - [ ] Export search results to CSV
 - [ ] Cross-reference with Daily OPD Classifier (shared code lookup)
 - [ ] Add `Encounter` / `Patient` TW Core IG profile references
