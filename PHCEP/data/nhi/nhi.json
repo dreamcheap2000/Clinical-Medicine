@@ -1,0 +1,4992 @@
+{
+  "source": {
+    "title": "全民健康保險醫療服務給付項目及支付標準",
+    "edition": "115.04.01",
+    "codebook": "第181版",
+    "url": "https://www.nhi.gov.tw/Content_List.aspx?n=5082839B5600C079",
+    "extractedBy": "PHCEP / Dr. Chan-Lin Chu specialty filter",
+    "expertise": "神經內科・神經血管介入・超音波・居家醫療・神經調控・DBS・安寧緩和・糖尿病照護"
+  },
+  "twCoreIG": {
+    "version": "0.3.1",
+    "url": "https://twcore.mohw.gov.tw/ig/twcore/",
+    "nhi_system": "https://www.nhi.gov.tw/Content_List.aspx?n=5082839B5600C079",
+    "procedure_profile": "https://twcore.mohw.gov.tw/ig/twcore/StructureDefinition-Procedure-twcore.html",
+    "encounter_profile": "https://twcore.mohw.gov.tw/ig/twcore/StructureDefinition-Encounter-twcore.html",
+    "serviceRequest_profile": "https://twcore.mohw.gov.tw/ig/twcore/StructureDefinition-ServiceRequest-twcore.html"
+  },
+  "categories": [
+    {
+      "id": "basic",
+      "nameZh": "門診・住院診察費",
+      "nameEn": "Outpatient & Inpatient Consultation Fees",
+      "icon": "🏥",
+      "section": "第二部第一章 (00xxx, 01xxx, 02xxx)",
+      "fhir_resource": "Encounter",
+      "fhir_profile": "https://twcore.mohw.gov.tw/ig/twcore/StructureDefinition-Encounter-twcore.html",
+      "codes": [
+        {
+          "code": "00154A",
+          "nameZh": "1)處方交付特約藥局調劑",
+          "nameEn": "",
+          "points": "286",
+          "available": {
+            "基層院所": false,
+            "地區醫院": false,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "00155A",
+          "nameZh": "2)開具慢性病連續處方並交付特約藥局調劑",
+          "nameEn": "",
+          "points": "316",
+          "available": {
+            "基層院所": false,
+            "地區醫院": false,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "00156A",
+          "nameZh": "3)未開處方或處方由本院所自行調劑",
+          "nameEn": "",
+          "points": "286",
+          "available": {
+            "基層院所": false,
+            "地區醫院": false,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "00157A",
+          "nameZh": "4)開具慢性病連續處方並由本院所自行調劑",
+          "nameEn": "",
+          "points": "292",
+          "available": {
+            "基層院所": false,
+            "地區醫院": false,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "00170A",
+          "nameZh": "5)開具連續二次以上調劑，而且每次給藥二十八天以上",
+          "nameEn": "",
+          "points": "520",
+          "available": {
+            "基層院所": false,
+            "地區醫院": false,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "之慢性病連續處方並交付特約藥局調劑"
+        },
+        {
+          "code": "00171A",
+          "nameZh": "6)開具連續二次以上調劑，而且每次給藥二十八天以上",
+          "nameEn": "",
+          "points": "497",
+          "available": {
+            "基層院所": false,
+            "地區醫院": false,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "之慢性病連續處方並由本院所自行調劑\n2.地區醫院"
+        },
+        {
+          "code": "00101B",
+          "nameZh": "1)處方交付特約藥局調劑",
+          "nameEn": "",
+          "points": "286",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00131B",
+          "nameZh": "2)開具慢性病連續處方並交付特約藥局調劑",
+          "nameEn": "",
+          "points": "316",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00102B",
+          "nameZh": "3)未開處方或處方由本院所自行調劑",
+          "nameEn": "",
+          "points": "286",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00132B",
+          "nameZh": "4)開具慢性病連續處方並由本院所自行調劑",
+          "nameEn": "",
+          "points": "292",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00172B",
+          "nameZh": "5)開具連續二次以上調劑，而且每次給藥二十八天以上",
+          "nameEn": "",
+          "points": "520",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": "之慢性病連續處方並交付特約藥局調劑"
+        },
+        {
+          "code": "00173B",
+          "nameZh": "6)開具連續二次以上調劑，而且每次給藥二十八天以上",
+          "nameEn": "",
+          "points": "497",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": "之慢性病連續處方並由本院所自行調劑\n3.金門馬祖以外之山地離島地區"
+        },
+        {
+          "code": "00105B",
+          "nameZh": "1)處方交付特約藥局調劑",
+          "nameEn": "",
+          "points": "286",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "00135B",
+          "nameZh": "2)開具慢性病連續處方並交付特約藥局調劑",
+          "nameEn": "",
+          "points": "316",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "00106B",
+          "nameZh": "3)未開處方或處方由本院所自行調劑",
+          "nameEn": "",
+          "points": "286",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "00136B",
+          "nameZh": "4)開具慢性病連續處方並由本院所自行調劑",
+          "nameEn": "",
+          "points": "292",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "00174B",
+          "nameZh": "5)開具連續二次以上調劑，而且每次給藥二十八天以上",
+          "nameEn": "",
+          "points": "520",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "之慢性病連續處方並交付特約藥局調劑"
+        },
+        {
+          "code": "00175B",
+          "nameZh": "6)開具連續二次以上調劑，而且每次給藥二十八天以上",
+          "nameEn": "",
+          "points": "497",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "之慢性病連續處方並由本院所自行調劑\n4.金門馬祖地區"
+        },
+        {
+          "code": "00107B",
+          "nameZh": "1)處方交付特約藥局調劑",
+          "nameEn": "",
+          "points": "288",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "00137B",
+          "nameZh": "2)開具慢性病連續處方並交付特約藥局調劑",
+          "nameEn": "",
+          "points": "339",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "00108B",
+          "nameZh": "3)未開處方或處方由本院所自行調劑",
+          "nameEn": "",
+          "points": "288",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "00138B",
+          "nameZh": "4)開具慢性病連續處方並由本院所自行調劑",
+          "nameEn": "",
+          "points": "316",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "00176B",
+          "nameZh": "5)開具連續二次以上調劑，而且每次給藥二十八天以上",
+          "nameEn": "",
+          "points": "542",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "之慢性病連續處方並交付特約藥局調劑"
+        },
+        {
+          "code": "00177B",
+          "nameZh": "6)開具連續二次以上調劑，而且每次給藥二十八天以上",
+          "nameEn": "",
+          "points": "520",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "之慢性病連續處方並由本院所自行調劑\n5.地區醫院假日加計"
+        },
+        {
+          "code": "00226B",
+          "nameZh": "地區醫院週六門診診察費加計",
+          "nameEn": "",
+          "points": "100",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00227B",
+          "nameZh": "地區醫院週日及國定假日門診診察費加計",
+          "nameEn": "",
+          "points": "150",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": "註：\n1.00226B及00227B限地區醫院申報。\n2.開具連續二次以上調劑，而且每次給藥二十八天以上\n之慢性病連續處方之案件不得申報上述加計點數。\n3.應於開診前至保險人健保資訊網服務系統VPN登錄開\n診資訊。\n4.住院值班醫師不得為假日之門診看診醫師。\n－ 基層院所門診診察費\n1.每位醫師每日門診量在四十人次以下部分(≦40)"
+        },
+        {
+          "code": "00109C",
+          "nameZh": "1-1)處方交付特約藥局調劑(1-30人次)",
+          "nameEn": "",
+          "points": "364",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00223C",
+          "nameZh": "1-2)處方交付特約藥局調劑(31-40人次)",
+          "nameEn": "",
+          "points": "250",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00197C",
+          "nameZh": "2-1)開具慢性病連續處方並交付特約藥局調劑(1-30人)",
+          "nameEn": "",
+          "points": "387",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00198C",
+          "nameZh": "2-2)開具慢性病連續處方並交付特約藥局調劑(31-40人",
+          "nameEn": "",
+          "points": "376",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ")"
+        },
+        {
+          "code": "00110C",
+          "nameZh": "3-1)未開處方或處方由本院所自行調劑(1-30人次)",
+          "nameEn": "",
+          "points": "364",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00224C",
+          "nameZh": "3-2)未開處方或處方由本院所自行調劑(31-40人次)",
+          "nameEn": "",
+          "points": "250",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00199C",
+          "nameZh": "4-1)開具慢性病連續處方並由本院所自行調劑(1-30人)",
+          "nameEn": "",
+          "points": "362",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00200C",
+          "nameZh": "4-2)開具慢性病連續處方並由本院所自行調劑(31-40人",
+          "nameEn": "",
+          "points": "351",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ")"
+        },
+        {
+          "code": "00158C",
+          "nameZh": "5)開具連續二次以上調劑，而且每次給藥二十八天以上",
+          "nameEn": "",
+          "points": "561",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": "之慢性病連續處方並交付特約藥局調劑"
+        },
+        {
+          "code": "00159C",
+          "nameZh": "6)開具連續二次以上調劑，而且每次給藥二十八天以上",
+          "nameEn": "",
+          "points": "536",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": "之慢性病連續處方並由本院所自行調劑\n2.每位醫師每日門診量超過四十人次，但在六十人次以\n下部分(41－60)"
+        },
+        {
+          "code": "00111C",
+          "nameZh": "1)處方交付特約藥局調劑",
+          "nameEn": "",
+          "points": "220",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00141C",
+          "nameZh": "2)開具慢性病連續處方並交付特約藥局調劑",
+          "nameEn": "",
+          "points": "275",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00112C",
+          "nameZh": "3)未開處方或處方由本院所自行調劑",
+          "nameEn": "",
+          "points": "220",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00142C",
+          "nameZh": "4)開具慢性病連續處方並由本院所自行調劑",
+          "nameEn": "",
+          "points": "250",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00160C",
+          "nameZh": "5)開具連續二次以上調劑，而且每次給藥二十八天以上",
+          "nameEn": "",
+          "points": "475",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": "之慢性病連續處方並交付特約藥局調劑"
+        },
+        {
+          "code": "00161C",
+          "nameZh": "6)開具連續二次以上調劑，而且每次給藥二十八天以上",
+          "nameEn": "",
+          "points": "450",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": "之慢性病連續處方並由本院所自行調劑\n3.每位醫師每日門診量超過六十人次，但在八十人次以\n下部分(61-80)"
+        },
+        {
+          "code": "00113C",
+          "nameZh": "1)處方交付特約藥局調劑",
+          "nameEn": "",
+          "points": "160",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00143C",
+          "nameZh": "2)開具慢性病連續處方並交付特約藥局調劑",
+          "nameEn": "",
+          "points": "215",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00114C",
+          "nameZh": "3)未開處方或處方由本院所自行調劑",
+          "nameEn": "",
+          "points": "160",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00144C",
+          "nameZh": "4)開具慢性病連續處方並由本院所自行調劑",
+          "nameEn": "",
+          "points": "190",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00162C",
+          "nameZh": "5)開具連續二次以上調劑，而且每次給藥二十八天以上",
+          "nameEn": "",
+          "points": "415",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": "之慢性病連續處方並交付特約藥局調劑"
+        },
+        {
+          "code": "00163C",
+          "nameZh": "6)開具連續二次以上調劑，而且每次給藥二十八天以上",
+          "nameEn": "",
+          "points": "390",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": "之慢性病連續處方並交由本院所自行調劑\n4.每位醫師每日門診量超過八十人次，但在一百五十人\n次以下部分(81-150)"
+        },
+        {
+          "code": "00115C",
+          "nameZh": "1)處方交付特約藥局調劑",
+          "nameEn": "",
+          "points": "70",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00145C",
+          "nameZh": "2)開具慢性病連續處方並交付特約藥局調劑",
+          "nameEn": "",
+          "points": "125",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00116C",
+          "nameZh": "3)未開處方或處方由本院所自行調劑",
+          "nameEn": "",
+          "points": "70",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00146C",
+          "nameZh": "4)開具慢性病連續處方並由本院所自行調劑",
+          "nameEn": "",
+          "points": "100",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00164C",
+          "nameZh": "5)開具連續二次以上調劑，而且每次給藥二十八天以上",
+          "nameEn": "",
+          "points": "325",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": "之慢性病連續處方並交付特約藥局調劑"
+        },
+        {
+          "code": "00165C",
+          "nameZh": "6)開具連續二次以上調劑，而且每次給藥二十八天以上",
+          "nameEn": "",
+          "points": "300",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": "之慢性病連續處方並由本院所自行調劑\n5.每位醫師每日門診量超過在一百五十人次部分(>150)"
+        },
+        {
+          "code": "00117C",
+          "nameZh": "1)處方交付特約藥局調劑",
+          "nameEn": "",
+          "points": "50",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00147C",
+          "nameZh": "2)開具慢性病連續處方並交付特約藥局調劑",
+          "nameEn": "",
+          "points": "105",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00118C",
+          "nameZh": "3)未開處方或處方由本院所自行調劑",
+          "nameEn": "",
+          "points": "50",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00148C",
+          "nameZh": "4)開具慢性病連續處方並由本院所自行調劑",
+          "nameEn": "",
+          "points": "80",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00166C",
+          "nameZh": "5)開具連續二次以上調劑，而且每次給藥二十八天以上",
+          "nameEn": "",
+          "points": "305",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": "之慢性病連續處方並交付特約藥局調劑"
+        },
+        {
+          "code": "00167C",
+          "nameZh": "6)開具連續二次以上調劑，而且每次給藥二十八天以上",
+          "nameEn": "",
+          "points": "280",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": "之慢性病連續處方並由本院所自行調劑\n6.山地離島地區\n(1)每位醫師每日門診量在五十人次以下部分(≦50)"
+        },
+        {
+          "code": "00230C",
+          "nameZh": "1-1)處方交付特約藥局調劑(1-30人)",
+          "nameEn": "",
+          "points": "364",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00231C",
+          "nameZh": "1-2)處方交付特約藥局調劑(31-50人)",
+          "nameEn": "",
+          "points": "353",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00232C",
+          "nameZh": "2-1)開具慢性病連續處方並交付特約藥局調劑(1-30人)",
+          "nameEn": "",
+          "points": "387",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00233C",
+          "nameZh": "2-2)開具慢性病連續處方並交付特約藥局調劑(31-50人",
+          "nameEn": "",
+          "points": "376",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ")"
+        },
+        {
+          "code": "00234C",
+          "nameZh": "3-1)未開處方或處方由本院所自行調劑(1-30人)",
+          "nameEn": "",
+          "points": "364",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00235C",
+          "nameZh": "3-2)未開處方或處方由本院所自行調劑(31-50人)",
+          "nameEn": "",
+          "points": "353",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00236C",
+          "nameZh": "4-1)開具慢性病連續處方並由本院所自行調劑(1-30人)",
+          "nameEn": "",
+          "points": "362",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "00237C",
+          "nameZh": "4-2)開具慢性病連續處方並由本院所自行調劑(31-50人",
+          "nameEn": "",
+          "points": "351",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ")"
+        },
+        {
+          "code": "00168C",
+          "nameZh": "5)開具連續二次以上調劑，而且每次給藥二十八天以上",
+          "nameEn": "",
+          "points": "561",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": "之慢性病連續處方並交付特約藥局調劑"
+        },
+        {
+          "code": "00169C",
+          "nameZh": "6)開具連續二次以上調劑，而且每次給藥二十八天以上",
+          "nameEn": "",
+          "points": "536",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": "之慢性病連續處方並由本院所自行調劑\n(2)每位醫師每日門診量超過五十人次，但在七十人次\n以下部分(51－70)"
+        }
+      ]
+    },
+    {
+      "id": "neuro_exam",
+      "nameZh": "神經系統檢查",
+      "nameEn": "Neurological Examinations",
+      "icon": "🧠",
+      "section": "第二部第二章第一節 (20001-20049)",
+      "fhir_resource": "Procedure",
+      "fhir_profile": "https://twcore.mohw.gov.tw/ig/twcore/StructureDefinition-Procedure-twcore.html",
+      "codes": [
+        {
+          "code": "20001C",
+          "nameZh": "－ 睡眠或清醒",
+          "nameEn": "",
+          "points": "990",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "20002C",
+          "nameZh": "－ 睡眠及清醒",
+          "nameEn": "",
+          "points": "1943",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：申報應附檢查報告。"
+        },
+        {
+          "code": "20003C",
+          "nameZh": "面神經刺激檢查",
+          "nameEn": "",
+          "points": "114",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "20004B",
+          "nameZh": "腦波檢查（手提式）EEG (portable)",
+          "nameEn": "",
+          "points": "700",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：申報應附檢查報告。"
+        },
+        {
+          "code": "20005B",
+          "nameZh": "蝶骨下電極腦波檢查 Sphenoid EEG",
+          "nameEn": "",
+          "points": "1080",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：申報應附檢查報告。"
+        },
+        {
+          "code": "20006B",
+          "nameZh": "鼻咽電極腦波檢查 Nasopharyngeal lead EEG",
+          "nameEn": "",
+          "points": "1200",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1.申報應附檢查報告。\n2.不得同時申報20046B。"
+        },
+        {
+          "code": "20007B",
+          "nameZh": "腦幹聽覺誘發電位檢查",
+          "nameEn": "",
+          "points": "1000",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Brainstem auditory evoked potentials(A.E.P Bs)"
+        },
+        {
+          "code": "20008B",
+          "nameZh": "中程聽覺誘發電位檢查",
+          "nameEn": "",
+          "points": "720",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Middle-latency auditory evoked potentials\n(A.E.P. ML)"
+        },
+        {
+          "code": "20009B",
+          "nameZh": "長程聽覺誘發電位檢查",
+          "nameEn": "",
+          "points": "720",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Long-latency auditory evoked potentials(A.E.P.\nL.L)\n體感誘發電位檢查\nSomatosensory evoked potentials (S.E.P.)"
+        },
+        {
+          "code": "20010B",
+          "nameZh": "－ 上肢 upper limb",
+          "nameEn": "",
+          "points": "720",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "20011B",
+          "nameZh": "－ 下肢 lower limb",
+          "nameEn": "",
+          "points": "720",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "20012B",
+          "nameZh": "視覺誘發電位檢查",
+          "nameEn": "",
+          "points": "720",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Visual evoked potentials (V.E.P.)"
+        },
+        {
+          "code": "20013C",
+          "nameZh": "頸動脈超音波檢查 (Dopscan)",
+          "nameEn": "",
+          "points": "800",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：屬西醫基層總額部門院所，除山地離島地區外，限\n由專任醫師開立處方及執行始可申報。"
+        },
+        {
+          "code": "20014B",
+          "nameZh": "針極肌電圖檢查 Needle electromyogram",
+          "nameEn": "",
+          "points": "1000",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "運動神經傳導速度測定 Mortor nerve conduction\nvelocity"
+        },
+        {
+          "code": "20015B",
+          "nameZh": "－ 上肢 upper",
+          "nameEn": "",
+          "points": "560",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "20016B",
+          "nameZh": "－ 下肢 lower",
+          "nameEn": "",
+          "points": "560",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "20017B",
+          "nameZh": "肌無力藥物測驗 Tensilon or vagostigmin test",
+          "nameEn": "",
+          "points": "270",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "20018B",
+          "nameZh": "重覆刺激測驗 Repetitive stimulation test",
+          "nameEn": "",
+          "points": "540",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "20019B",
+          "nameZh": "感覺神經傳導速度測定",
+          "nameEn": "",
+          "points": "720",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Sensory nerve conductive velocity, SNCV\n註：同時檢查雙側或四肢時，仍以申報一次為限。"
+        },
+        {
+          "code": "20020B",
+          "nameZh": "單纖維肌電圖 Single fiber EMG",
+          "nameEn": "",
+          "points": "900",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "20021B",
+          "nameZh": "眼動脈流速測定 Oculoplethymography(O.P.G.)",
+          "nameEn": "",
+          "points": "562",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "20022B",
+          "nameZh": "瞬眼反應 Blink reflex",
+          "nameEn": "",
+          "points": "1170",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "20023B",
+          "nameZh": "F波 F wave",
+          "nameEn": "",
+          "points": "720",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "20024B",
+          "nameZh": "H反射 H reflex",
+          "nameEn": "",
+          "points": "600",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "20025B",
+          "nameZh": "周邊神經纖維撕裂檢查",
+          "nameEn": "",
+          "points": "900",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Single nerve fiber tearing"
+        },
+        {
+          "code": "20026B",
+          "nameZh": "穿顱杜卜勒超音波檢查(顱內血管超音波檢查)",
+          "nameEn": "",
+          "points": "2000",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "(Transcranial Doppler sonography)\n註：不得同時申報20048B。"
+        },
+        {
+          "code": "20027B",
+          "nameZh": "長程數位影像腦波監測",
+          "nameEn": "",
+          "points": "4000",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "(Digital video EEG long term monitoring)\n註：\n1.適應症：\n(1)藥物控制不良癲癇之術前評估。\n(2)陣發性異常動作或意識障礙之鑑別診斷。\n(3)抽搐型／非抽搐型持續癲癇發作狀態之診療。\n2.支付規範：\n(1)限設有癲癇治療小組之醫院申報。\n(2)監測紀錄時間須至少為四小時，一日至多二次。\n(3)記錄電極須符合國際10-20系統，最少使用二十一條\n電極並加上心電圖導極一組。"
+        },
+        {
+          "code": "20028B",
+          "nameZh": "大腦皮質腦電圖檢查 Electrocorticography",
+          "nameEn": "",
+          "points": "6460",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "20029B",
+          "nameZh": "瓦達測驗 Wada's test",
+          "nameEn": "",
+          "points": "10310",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "20030B",
+          "nameZh": "肌肉組織化學檢查",
+          "nameEn": "",
+          "points": "800",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Histocheical examination of muscle tissue"
+        },
+        {
+          "code": "20031B",
+          "nameZh": "穩定狀態聽性誘發反應",
+          "nameEn": "",
+          "points": "1000",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Steady state evoked potential(SSEP)"
+        },
+        {
+          "code": "20032B",
+          "nameZh": "運動誘發電位(上肢)",
+          "nameEn": "",
+          "points": "720",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Motor evoked potential upper\n註：申報費用須檢附報告。"
+        },
+        {
+          "code": "20035B",
+          "nameZh": "運動誘發電位(下肢)",
+          "nameEn": "",
+          "points": "720",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Motor evoked potential lower limb"
+        },
+        {
+          "code": "20033B",
+          "nameZh": "神經功能溫度閾值測定",
+          "nameEn": "",
+          "points": "720",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Quantitative thermal threshold"
+        },
+        {
+          "code": "20034B",
+          "nameZh": "磁波刺激檢查(上肢)",
+          "nameEn": "",
+          "points": "720",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Magnetic stimulation (upper extremity)\n註：\n1.適應症包括：多發性硬化症、運動神經元疾病、脊髓\n損傷或病變、周邊神經病變、手術時皮質脊髓徑路之功\n能、腦中風之偏癱。\n2.申報費用時須檢附詳細病歷紀錄，包括檢查目的及報\n告。"
+        },
+        {
+          "code": "20036B",
+          "nameZh": "磁波刺激檢查(下肢)",
+          "nameEn": "",
+          "points": "720",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Magnetic stimulation (lower extremity)\n註：\n1.適應症包括：多發性硬化症、運動神經元疾病、脊髓\n損傷或病變、周邊神經病變、手術時皮質脊髓徑路之功\n能、腦中風之偏癱。\n2.申報費用時須檢附詳細病歷紀錄，包括檢查目的及報\n告。"
+        },
+        {
+          "code": "20037B",
+          "nameZh": "交感神經皮膚反應",
+          "nameEn": "",
+          "points": "560",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Sympathetic skin response"
+        },
+        {
+          "code": "20038B",
+          "nameZh": "震顫圖檢查 Tremography",
+          "nameEn": "",
+          "points": "560",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "20039B",
+          "nameZh": "交感神經測定",
+          "nameEn": "",
+          "points": "560",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Autonomic function test(SSR+RRIV)"
+        },
+        {
+          "code": "20040B",
+          "nameZh": "表面肌電圖 Surface EMG",
+          "nameEn": "",
+          "points": "900",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "20041B",
+          "nameZh": "感覺神經功能檢查 Sensation testing",
+          "nameEn": "",
+          "points": "540",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1.含挀動感覺、皮表感覺。\n2.不得重複申請本項目。"
+        },
+        {
+          "code": "20042B",
+          "nameZh": "電腦化神經心理測驗",
+          "nameEn": "",
+          "points": "968",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Neurobehavior exaluation\n動作障礙相關量表之評估\nEvaluation of Movement Disorder Rating Scale"
+        },
+        {
+          "code": "20043B",
+          "nameZh": "—執行一項量表",
+          "nameEn": "",
+          "points": "520",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "20045B",
+          "nameZh": "—執行二項以上量表",
+          "nameEn": "",
+          "points": "800",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1.本項目量表包含：\n(1)巴金森氏症UPDRS量表。\n(2)肌張力不全症FMDRS量表。\n(3)異動症UDysRS量表。\n(4)斜頸症TWSTRS量表。\n2.同次就醫執行二項以上量表者，不得拆分申報。\n3.每位病人每項量表每年限執行一次。"
+        },
+        {
+          "code": "20044B",
+          "nameZh": "多次入睡睡眠檢查",
+          "nameEn": "",
+          "points": "7623",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Multiple Sleep Latency Test(MSLT)\n註：\n1.適應症：\n(1)疑似猝睡症之診斷與追蹤。\n(2)疑似原發性嗜睡症之診斷。\n(3)以下二項情況不適用：\nA.不得作為阻塞性睡眠呼吸中止症起初評估或診斷的工\n具，或接受治療後的療效評估。\nB.不得作為例行性內科或神經系統疾病(除猝睡症)、失\n眠症、晝夜節律失調的嗜睡度評估。\n2.支付規範：\n(1)每人每年限執行一次。\n(2)限胸腔內科、神經內科、精神科、耳鼻喉科、兒童\n神經科及兒童胸腔科醫師執行。\n(3)申報時須檢附本項檢查報告。"
+        },
+        {
+          "code": "20046B",
+          "nameZh": "癲癇腦波檢查",
+          "nameEn": "",
+          "points": "3103",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "EEG for seizure\n註：\n1.適應症：癲癇之鑑別診斷或具癲癇診斷病人之追蹤，\n且限施作於具(疑)癲癇診斷且曾接受過一般腦波檢查(2\n0001C、20002C)之病人。\n2.支付規範：\n(1)限設有癲癇治療小組之醫院申報。\n(2)申報次數以每年一次為原則，如有特殊狀況（新診\n斷）得增加頻率，須於病歷敘明原因。\n(3)不得同時申報：20006B。\n(4)申報須檢附腦波報告。\n(5)記錄電極須符合國際10-20系統，最少使用二十七條\n電極並加上心電圖導極一組；未滿六歲兒童不在此限。"
+        },
+        {
+          "code": "20047B",
+          "nameZh": "腦皮質／皮下功能定位",
+          "nameEn": "",
+          "points": "15611",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Functional cortical and subcortical mapping\n註：\n1.適應症：藥物控制不良癲癇之術前評估，且限該次住\n院需植入顱內電極定位。\n2.支付規範：\n(1)限設有癲癇治療小組之醫院申報。\n(2)申報次數以每年一次為原則，第二次起應於病歷詳\n載再次執行原因。\n(3)不得同時申報：56039B。\n(4)申報須檢附報告。"
+        },
+        {
+          "code": "20048B",
+          "nameZh": "急性缺血性腦中風腦血流加護監測",
+          "nameEn": "",
+          "points": "4337",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Intensive cerebral blood flow and hemodynamic\nmonitoring in acute ischemic stroke\n註：\n1.適應症：腦梗塞(ICD-10-CM：I63)。\n2.支付規範：\n(1)限於加護病房(ICU)申報，同次ICU至多申報二次。\n若同次住院再中風進入ICU者，同次住院限申報四次，\n並應於病歷中敘明。\n(2)限神經科、神經外科、小兒神經科、急診醫學科專\n科醫師執行，並取得超音波訓練課程認證。\n(3)不得同時申報：20026B。\n(4)申報時應檢附下列任二項報告：\nA.顱內血管血流基礎評估。\nB.中線偏移與腦疝脫檢查。\nC.栓子連續偵測。"
+        },
+        {
+          "code": "20049C",
+          "nameZh": "多發性硬化症∕視神經脊髓炎EDSS量表評估",
+          "nameEn": "",
+          "points": "1328",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Evaluation of Expanded Disability Status Scale\n(EDSS) in Multiple Sclerosis/ Neuromyelitis\nOptic\n註：\n1.限神經專科醫師執行。\n2.每人每年限給付二次。\n3.申報時須檢附EDSS量表及各項目分數。"
+        }
+      ]
+    },
+    {
+      "id": "ultrasound",
+      "nameZh": "超音波檢查",
+      "nameEn": "Ultrasound Examinations",
+      "icon": "📡",
+      "section": "第二部第二章第一節 (19001-19018)",
+      "fhir_resource": "Procedure",
+      "fhir_profile": "https://twcore.mohw.gov.tw/ig/twcore/StructureDefinition-Procedure-twcore.html",
+      "codes": [
+        {
+          "code": "19001C",
+          "nameZh": "腹部超音波",
+          "nameEn": "",
+          "points": "882",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Abdominal ultrasound\n（包括肝liver, 膽囊gall bladder,\n胰pancreas,脾spleen, 下腔靜脈inferior vena cava,\n腹主動脈abdominal aorta, 腎kidney及其他腹部超音\n波abdominal others在內）\n註：兒童加成項目。"
+        },
+        {
+          "code": "19009C",
+          "nameZh": "腹部超音波，追蹤性",
+          "nameEn": "",
+          "points": "643",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Abdominal ultrasound, for follow-up\n註：兒童加成項目。"
+        },
+        {
+          "code": "19002B",
+          "nameZh": "術中超音波 Intra-operative echo",
+          "nameEn": "",
+          "points": "1372",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "19003C",
+          "nameZh": "婦科超音波",
+          "nameEn": "",
+          "points": "450",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Gynecologic ultrasound\n註：\n1.不含杜卜勒檢查及立體組像。\n2.不得同時申報19011C、19013C。"
+        },
+        {
+          "code": "19013C",
+          "nameZh": "陰道超音波",
+          "nameEn": "",
+          "points": "957",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Vaginal ultrasound\n註：\n1.支付規範：\n(1)不含杜卜勒檢查及立體組像。\n(2)不得同時申報：19003C及19011C。\n2.禁忌症：無性行為者。\n3.屬西醫基層總額部門院所，除山地離島地區外，限由\n專任醫師或診所支援他診所之醫師(接受支援之婦產科\n診所限執業登記醫師五人以下者)開立處方及執行始可\n申報。"
+        },
+        {
+          "code": "19010C",
+          "nameZh": "產科超音波",
+          "nameEn": "",
+          "points": "550",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Obstetric ultrasound\n註：\n1.不含杜卜勒檢查及立體組像。\n2.不得同時申報19011C。"
+        },
+        {
+          "code": "19011C",
+          "nameZh": "高危險妊娠胎兒生理評估",
+          "nameEn": "",
+          "points": "1900",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Fetal biophysical profile\n註：\n1.不含杜卜勒檢查及立體組像。\n2.不得同時申報18013C、18014C、18035B、19003C、19\n010C、 19013C。\n3.適應症：\n(1)各種高危險妊娠情況：子宮內胎兒生長遲滯(IUGR)\n、 糖尿病(DM)、妊娠高血壓症(含慢性高血壓與子癫\n前症)、羊水異常、妊娠二十四週後之胎動減少、其他\n高危險妊娠狀況等。\n(2)胎兒篩檢結果不正常：非反應性NST、陽性OCT、產\n科超音波檢查發現先天胎兒異常、杜卜勒超音波檢查發\n現胎兒臍帶血流異常及胎兒血管血流異常等。\n4.胎兒生理評估為確認胎兒窘迫的檢查，在妊娠期間若\n超過兩次須於病歷記載檢查理由。"
+        },
+        {
+          "code": "19004C",
+          "nameZh": "鼻竇超音波檢查 Echo for sinus",
+          "nameEn": "",
+          "points": "240",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "19005C",
+          "nameZh": "其他超音波 Echo for others",
+          "nameEn": "",
+          "points": "630",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1.本節未列之超音波檢查，得以本項申報。\n2.兒童加成項目。"
+        },
+        {
+          "code": "19012C",
+          "nameZh": "頭頸部軟組織超音波(如甲狀腺thyroid、副甲狀腺para",
+          "nameEn": "",
+          "points": "610",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "thyroid、腮腺parotid)\nHead and neck soft tissue\necho(thyroid,parathyroid,parotid gland)\n註：兒童加成項目。"
+        },
+        {
+          "code": "19014C",
+          "nameZh": "乳房超音波",
+          "nameEn": "",
+          "points": "588",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：兒童加成項目。"
+        },
+        {
+          "code": "19015C",
+          "nameZh": "男性外生殖器官超音波",
+          "nameEn": "",
+          "points": "697",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：兒童加成項目。"
+        },
+        {
+          "code": "19016C",
+          "nameZh": "四肢超音波",
+          "nameEn": "",
+          "points": "588",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：兒童加成項目。"
+        },
+        {
+          "code": "19017C",
+          "nameZh": "經尿道(直腸)超音波檢查",
+          "nameEn": "",
+          "points": "800",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Transurethral (transrectal) ultrasonography"
+        },
+        {
+          "code": "19018C",
+          "nameZh": "嬰幼兒腦部超音波",
+          "nameEn": "",
+          "points": "719",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Brain echo\n註：\n1.腦部超音波為嬰兒前囪門尚未關閉時才能操作的檢查\n。\n2.兒童加成項目。"
+        },
+        {
+          "code": "19007C",
+          "nameZh": "超音波導引(為組織切片，抽吸、注射等)",
+          "nameEn": "",
+          "points": "1500",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Ultrasonic guidance for needle placement\n(eg, biopsy, aspiration, injection)\n註：\n1.實施超音波導引下組織切片、抽吸、注射，除申報本\n項外，應再加報第二章第一節第二十二項診斷穿刺。\n2.兒童加成項目。\n3.屬西醫基層總額部門院所，除山地離島地區外，限由\n專任醫師開立處方及執行始可申報。"
+        },
+        {
+          "code": "19008B",
+          "nameZh": "超音波導引下肝內藥物注入治療",
+          "nameEn": "",
+          "points": "1430",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Sono guided intrahepatic drug injection"
+        }
+      ]
+    },
+    {
+      "id": "injection",
+      "nameZh": "注射治療（肉毒桿菌素・激痛點）",
+      "nameEn": "Injections: Botulinum toxin & Trigger Point",
+      "icon": "💉",
+      "section": "第二部第二章第三節 (39023B, 39024B, 39026C)",
+      "fhir_resource": "Procedure",
+      "fhir_profile": "https://twcore.mohw.gov.tw/ig/twcore/StructureDefinition-Procedure-twcore.html",
+      "codes": [
+        {
+          "code": "39023B",
+          "nameZh": "肉毒桿菌素注射費",
+          "nameEn": "",
+          "points": "200",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Botolinum toxin local injection\n註：\n1.下列適應症，每個注射點得申報一次注射費，每個療\n程申報之注射費上限如下：\n(1)半面痙攣(ICD-10-CM：G51.3)：四點(次)。\n-ICD-10-CM(2023年版)：G51.31、G51.32、G51.33\n(自一百十四年一月一日起適用)。\n(2)眼瞼痙攣(ICD-10-CM：G24.5)或口顎部肌張力不全(\nICD-10-CM：G24.4)：六點(次)。\n(3)斜頸症(ICD-10-CM：G24.3、M43.6)：八點(次)。\n(4)眼瞼痙攣合併口顎部肌張力不全(ICD-10-CM：G24.4\n合併G24.5)或書寫性痙攣(ICD-10-CM：G24.8)：十二點\n(次)。\n2.非上述任一適應症，僅可申報一次。\n3.支付規範：\n(1)需符合全民健康保險藥物給付項目及支付標準附件\n六藥品給付規定第一節神經系統藥物1.6.2.Botulinum\ntoxin type A-使用於眼瞼痙攣或半面痙攣或局部肌張"
+        },
+        {
+          "code": "39024B",
+          "nameZh": "激痛點注射調理(每一痛點)",
+          "nameEn": "",
+          "points": "180",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Trigger point injection(one)\n註:\n1.每次門診注射以三點為限(三點以上以三點計)，每週\n至多注射一次，每一療程以三週為原則，每兩療程間隔\n至少兩個月。\n2.申報時須檢附病歷影本，並敘明︰\n(1)激痛點注射(Trigger point INJ.)。\n(2)患者曾接受之相關治療(如藥物、物理治療)。\n(3)注射部位肌肉名稱。"
+        }
+      ]
+    },
+    {
+      "id": "neuro_rehab",
+      "nameZh": "復健治療（神經・語言・吞嚥）",
+      "nameEn": "Rehabilitation: Neuro, Speech, Swallowing",
+      "icon": "🏃",
+      "section": "第二部第二章第四節",
+      "fhir_resource": "Procedure",
+      "fhir_profile": "https://twcore.mohw.gov.tw/ig/twcore/StructureDefinition-Procedure-twcore.html",
+      "codes": [
+        {
+          "code": "42005B",
+          "nameZh": "－中度(指實施簡單治療項目二項以上，且合計時間超",
+          "nameEn": "",
+          "points": "320",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "過三十分鐘。)"
+        },
+        {
+          "code": "42008B",
+          "nameZh": "－中度Moderate",
+          "nameEn": "",
+          "points": "320",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "42011B",
+          "nameZh": "－複雜(指實施中度治療項目三項以上，且合計時間超",
+          "nameEn": "",
+          "points": "480",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "過五十分鐘。)"
+        },
+        {
+          "code": "42014B",
+          "nameZh": "複雜治療Complicated",
+          "nameEn": "",
+          "points": "600",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "42015C",
+          "nameZh": "",
+          "nameEn": "",
+          "points": "360",
+          "available": {
+            "基層院所": true,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": "註：1.限復健專科醫師開具處方後，交由相關治療專業\n人員親自實施始可申報。\n2.複雜治療項目\nPTC 1.促進技術 Facilitation techniques\nPTC 2.平衡訓練 Balance training\nPTC 3.義肢訓練 Prosthesis training\nPTC 4.等速肌力訓練 Isokinetic training\nPTC 5.心肺功能訓練 Cardiopulmonary training\nPTC 6.行走訓練 Ambulation training\nPTC 7.其他經保險人核可者\n3.42019C申報資格如下：\n(1)復健科專科醫師開設之基層院所。\n(2)聘有專任復健專科醫師之基層院所且由復健專科(含\n專任及支援)醫師所開立之處方。"
+        },
+        {
+          "code": "42016C",
+          "nameZh": "物理治療評估",
+          "nameEn": "",
+          "points": "240",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：物理治療評估須由復健科專科醫師或物理治療專業\n人員親自實施始可申報，同一病患治療期間一個月限申\n報一次，並須將評估項目、現有問題、短及長程治療目\n標及治療計畫記錄於病歷內。同一治療期間超過三個月\n者，不予支付。"
+        },
+        {
+          "code": "43005B",
+          "nameZh": "中度Moderate：指治療項目二至三項，合計治療時間超",
+          "nameEn": "",
+          "points": "320",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "過三十分鐘至五十分鐘以內之中度治療。"
+        },
+        {
+          "code": "43008B",
+          "nameZh": "中度-複雜：",
+          "nameEn": "",
+          "points": "480",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "1.指治療項目三項以上，合計治療時間三十分鐘以上之\n治療。\n2.且必須包含下列二項以上之治療項目(兒童病人從出\n生至未滿十二歲不予限制) ：\nOT 1、OT 3、OT 4、OT 5、OT 7、\nOT 8、OT 9、OT 10、OT 11、OT 12。"
+        },
+        {
+          "code": "43030B",
+          "nameZh": "複雜Complicated：實施本項須符合於下列適應症及其",
+          "nameEn": "",
+          "points": "600",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "項目規定：\n1.成人中樞神經系統疾患(含外傷造成)：\n須符合下列診斷代碼(ICD-10-CM)：\nA39、B20、C71、C72、G00-G09、G23、G11、G95、G35-\nG37、G81、G54、I60-I67、S14.1+S12.0-S12.6,\nS24.1+S22.0,\nS34.1+S22.0-S32.0、S06.2-S06.9、S12.0-S12.6、S22\n.0-S32.0、S14.1、S34.1、S14.2、S14.3、S34.4。\n-ICD-10-CM(2023年版)：A39、B20、C71、C72、G00-G0\n9、G23、G11、G95、G35-G37、G81、G54、I60-I67、P9\n1.821、P91.822、P91.823、P91.829、S14.1+S12.0-S1\n2.6、\nS24.1+S22.0、S34.1+S22.0-S32.0、S06.2-S06.9、S12\n.0-S12.6、S22.0-S32.0、S14.1、S34.1、S14.2、S14.\n3、S34.4(自一百十四年一月一日起適用)。"
+        },
+        {
+          "code": "44005B",
+          "nameZh": "中度Moderate：指治療項目二項以上，合計治療時間三",
+          "nameEn": "",
+          "points": "320",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "十分鐘至五十分鐘以內之中度治療。"
+        },
+        {
+          "code": "44014B",
+          "nameZh": "中度-複雜：",
+          "nameEn": "",
+          "points": "480",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "1.指治療項目三項以上，合計治療時間三十分鐘以上之\n中度治療；若治療對象為未滿十三歲者，則無治療時間\n之限制。\n2.需包含下列二項以上之治療項目：ST1、ST2、 ST3、\nST7、 ST9、 ST13、ST14。"
+        },
+        {
+          "code": "44008B",
+          "nameZh": "複雜Complicated：",
+          "nameEn": "",
+          "points": "600",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "1.指治療項目四項以上，合計治療時間三十分鐘以上之\n複雜治療；若治療對象為未滿十三歲者，則無治療時間\n之限制。\n2.個案需符合下列任一適應症，其診斷代碼(ICD-10-CM\n)如下：\n(1)C00-C41、C43-C58、C60-C86、C88、C90-C96、C4A\n、C7A、C7B、D03、D45、J910、R180、G450-G468、I60\n-I69、J380、R49、S019、S021-S024、S026-S029、S06\n0、S063-S066、S068-S069，且限因上述診斷住院期間\n及出院後十二個月內。\n-ICD-10-CM(2023年版)：C00-C41、C43-C58、C60-C86\n、C88、C90-C96、C4A、C7A、C7B、D03、D45、J91.0、\nR18.0、G45.0-G46.8、I60-I69、P91.821、P91.822、P\n91.823、P91.829、J38.0、R49、S01.9、S02.1-S02.4\n、S02.6-S02.9、S06.0、S06.3-S06.6、S06.8-S06.9、\nS06.8A1A、S06.8A2A、S06.8A3A、S06.8A4A、S06.8A5A\n、S06.8A6A、S06.8A7A及S06.8A8A，且限因上述診斷住\n院期間及出院後十二個月內(自一百十四年一月一日起\n適用)。\n(2)F840、G80、H90-H91、F80-F82、F88、F89、H9325\n，且治療對象需為未滿十三歲。\n3.需包含下列二項以上之治療項目：ST1、ST2、 ST3、\nST7、 ST9、 ST13、ST14。"
+        }
+      ]
+    },
+    {
+      "id": "neuromodulation",
+      "nameZh": "神經調控（VNS・脊髓刺激・術中監測）",
+      "nameEn": "Neuromodulation & Intraoperative Neuromonitoring",
+      "icon": "⚡",
+      "section": "第二部第二章第六節 (56039B, 56041B, 56042B)",
+      "fhir_resource": "Procedure",
+      "fhir_profile": "https://twcore.mohw.gov.tw/ig/twcore/StructureDefinition-Procedure-twcore.html",
+      "codes": [
+        {
+          "code": "56039B",
+          "nameZh": "神經外科術中神經功能監測(IONM)",
+          "nameEn": "",
+          "points": "15271",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Intra-operative neuromonitoring(IONM)\n註：\n1.適用條件：\n(1)Brain surgery (含supratentorial glioma,\nepilepsy surgery, brain tumor involved cranial\nnerve, brain stem lesion)：限施行83017B、83018B\n、83019B、83056B、83066B、83068B、83070B、83071B\n、83088B申報，且腦部病灶必須位於eloquent area (\n定義為brainstem, thalamus, insula cortex, basal\nganglia, paracentral region, language area,\ncranial nerve 2-12 involvement)。\n(2)Intradural spinal surgery (含intradural\ntumor, intradural vascular lesion, spinal\nbifida, lipomyelomeningocele, dorsal rhizotomy)\n：限施行83042B、83072B、83073B申報，且脊椎病灶限"
+        },
+        {
+          "code": "56041B",
+          "nameZh": "迷走神經刺激術（VNS）─參數調整",
+          "nameEn": "",
+          "points": "2087",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1.適應症：\n(1)無法以抗癲癇藥控制病情的頑固型癲癇病人，且亦\n無法以切除手術改善或曾以癲癇切除手術治療失敗。\n(2)頑固型癲癇病人定義：已服用或曾服用二種以上具\n適應症並已達有效劑量之抗癲癇藥物至少一年以上，仍\n無法控制發作。\n2.支付規範：\n(1)特殊專科別限制：曾參加迷走神經刺激器訓練課程\n並領有證書之小兒神經內科、神經內科及神經外科之專\n科醫師。\n(2)執行頻率：\nA.手術後第一至二個月，每月至多四次。\nB.手術後第三至六個月：十五歲以下兒童每月至多二次\n，其餘每月至多一次。\nC.手術後第七個月以後，每月至多一次。"
+        },
+        {
+          "code": "56042B",
+          "nameZh": "脊髓刺激器參數程控調整作業",
+          "nameEn": "",
+          "points": "1881",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "Spinal cord stimulator programming procedure\n註：\n1.限植入永久脊髓刺激器者(含「脊髓刺激器永久植入\n手術」項目實施前之病人)。\n2.一年申報三次為限。"
+        }
+      ]
+    },
+    {
+      "id": "neuro_surgery",
+      "nameZh": "神經外科・腦血管介入手術",
+      "nameEn": "Neurosurgery & Neurointerventional Procedures",
+      "icon": "🔬",
+      "section": "第二部第二章第七節 (83xxx, 84xxx)",
+      "fhir_resource": "Procedure",
+      "fhir_profile": "https://twcore.mohw.gov.tw/ig/twcore/StructureDefinition-Procedure-twcore.html",
+      "codes": [
+        {
+          "code": "83001B",
+          "nameZh": "腦微血管減壓術　\nMicrovascular decompression\n註：\n1.限神經外科專科醫師施行。\n2.一般材料費及特殊材料費，得另加計百分之一百零四。\n3.上開特殊材料為單一使用之拋棄式特殊材料。",
+          "nameEn": "",
+          "points": "19562",
+          "note": "椎弓切除術（減壓）\nLaminectomy for decompression",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83002C",
+          "nameZh": "－ 二節以內 ≦2 segments",
+          "nameEn": "",
+          "points": "11966",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83003C",
+          "nameZh": "－ 超過二節 ＞2 segments\n註：\n1.83002C一般材料費及單次使用鑽石鑽頭、氣動切割鑽頭，得另加計百分之八十二。\n2.83003C一般材料費及單次使用鑽石鑽頭、氣動切割鑽頭，得另加計百分之七十三。",
+          "nameEn": "",
+          "points": "17366",
+          "note": "顳下減壓術　Subtemporal decompression",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83004B",
+          "nameZh": "－ 單側 unilateral",
+          "nameEn": "",
+          "points": "13080",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83005B",
+          "nameZh": "－ 雙側 bilateral",
+          "nameEn": "",
+          "points": "16496",
+          "note": "註：限神經外科專科醫師施行\n正中神經或尺神經腕部減壓術\nDecompression of median or ulnar nerve at wrist",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83006C",
+          "nameZh": "－ 單側 unilateral",
+          "nameEn": "",
+          "points": "4325",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83007C",
+          "nameZh": "－ 雙側 bilateral",
+          "nameEn": "",
+          "points": "8190",
+          "note": "側股皮下神經或後脛神經減壓術\nDecompression of lateral femoral cutaneous nerve at inguinal or posterior tibial nerve at ankle",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83008C",
+          "nameZh": "－ 單側 unilateral",
+          "nameEn": "",
+          "points": "6249",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83009C",
+          "nameZh": "－ 雙側 bilateral",
+          "nameEn": "",
+          "points": "9715",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83010B",
+          "nameZh": "腦組織活體切片 Brain biopsy\n註：限神經外科專科醫師施行。",
+          "nameEn": "",
+          "points": "11257",
+          "note": "凹陷性顱骨骨折之手術　\nDepressed fracture of skull",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83011B",
+          "nameZh": "－ 簡單骨折 simple fracture",
+          "nameEn": "",
+          "points": "9848",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83012B",
+          "nameZh": "－ 開放骨折 open fracture",
+          "nameEn": "",
+          "points": "12615",
+          "note": "註：限神經外科專科醫師施行。",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83013C",
+          "nameZh": "頭顱穿洞術（止血引流、穿刺檢查）\nBurr hole (trephination) for hemostasis,\ndrainage or ventricular puncture\n註：\n1.如以顱骨穿孔術實施其他神經外科手術，按各該手術項目所訂點數申報。\n2.一般材料費及特殊材料費，得另加計百分之三百十四。\n3.上開特殊材料為單一使用之拋棄式特殊材料。",
+          "nameEn": "",
+          "points": "3786",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83014C",
+          "nameZh": "－每加一孔 one hole added",
+          "nameEn": "",
+          "points": "2571",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83015C",
+          "nameZh": "顱骨切除術 Craniectomy\n註：\n1.包括異物移除(remove F.B) 或減壓(decompression) 或神經切斷(neurotomy)。\n2.一般材料費及單一使用之拋棄式特殊材料費，得另加計百分之一百三十一。",
+          "nameEn": "",
+          "points": "13662",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83016B",
+          "nameZh": "頭顱成形術 Cranioplasty\n註：\n1.限神經外科專科醫師施行。\n2.一般材料費及特殊材料費，得另加計百分之一百四十八。\n3.上開特殊材料為單一使用之拋棄式特殊材料。",
+          "nameEn": "",
+          "points": "11210",
+          "note": "腦瘤切除 Brain tumor (I.C.T. / cephalocele)\n註：限神經外科專科醫師施行。",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83017B",
+          "nameZh": "－腦瘤大小三公分以內 ≦3cm\n註：\n1.一般材料費及特殊材料費，得另加計百分之九十六。\n2.上開特殊材料為單一使用之拋棄式特殊材料。",
+          "nameEn": "",
+          "points": "32193",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83018B",
+          "nameZh": "－腦瘤大小介於三至六公分 3~6cm\n註：\n1.一般材料費及特殊材料費，得另加計百分之八十。\n2.上開特殊材料為單一使用之拋棄式特殊材料。",
+          "nameEn": "",
+          "points": "52106",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83019B",
+          "nameZh": "－腦瘤大小六公分以上 ＞6cm",
+          "nameEn": "",
+          "points": "56942",
+          "note": "註：\n1.一般材料費及特殊材料費，得另加計百分之七十八。\n2.上開特殊材料為單一使用之拋棄式特殊材料。",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83020B",
+          "nameZh": "脊髓切斷術 Myelotomy\n註：\n1.脊索切斷術(cordotomy) 比照申報。\n2.限神經外科及骨科專科醫師施行。",
+          "nameEn": "",
+          "points": "19369",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83021B",
+          "nameZh": "後根切斷術Posterior rhizotomy\n註：限神經外科及骨科專科醫師施行。",
+          "nameEn": "",
+          "points": "14760",
+          "note": "椎間盤切除術 Diskectomy",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83022C",
+          "nameZh": "－ 頸椎 cervical",
+          "nameEn": "",
+          "points": "31732",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83023C",
+          "nameZh": "－ 胸椎 thoracic",
+          "nameEn": "",
+          "points": "25293",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83024C",
+          "nameZh": "－ 腰椎 lumbar\n註：83024C一般材料費及單次使用切割附件，得另加計百分之六十九。",
+          "nameEn": "",
+          "points": "20550",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83025C",
+          "nameZh": "頸交感神經切除術Cervical sympathectomy\n註：應用於手汗症治療時，禁止施行於未滿二十歲者。",
+          "nameEn": "",
+          "points": "7340",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83026C",
+          "nameZh": "胸交感神經切除術 Dorsal sympathectomy\n註：應用於手汗症治療時，禁止施行於未滿二十歲者。",
+          "nameEn": "",
+          "points": "17712",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83027C",
+          "nameZh": "腰交感神經切除術 Lumbar sympathectomy\n註：應用於手汗症治療時，禁止施行於未滿二十歲者。",
+          "nameEn": "",
+          "points": "14462",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83085B",
+          "nameZh": "經內視鏡胸交感神經切斷術\nTransendoscopic dorsal sympathectomy\n註：\n1.係指兩側手術。\n2.應用於手汗症治療時，禁止施行於未滿二十歲者。",
+          "nameEn": "",
+          "points": "4308",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83028C",
+          "nameZh": "神經切斷術 Neurectomy",
+          "nameEn": "",
+          "points": "4650",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83029C",
+          "nameZh": "註：每加一條one added。",
+          "nameEn": "",
+          "points": "2944",
+          "note": "神經分離術 Neurolysis",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83030B",
+          "nameZh": "—肩、臀關節以上，包括臂神經叢，坐骨神經",
+          "nameEn": "",
+          "points": "9758",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83089B",
+          "nameZh": "—上臂、前臂、大腿、小腿處之神經",
+          "nameEn": "",
+          "points": "8497",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83090B",
+          "nameZh": "—手、足的神經",
+          "nameEn": "",
+          "points": "8016",
+          "note": "神經移植 Nerve graft",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83032B",
+          "nameZh": "—肩、臀關節以上，包括臂神經叢，坐骨神經",
+          "nameEn": "",
+          "points": "19876",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83091B",
+          "nameZh": "—上臂、前臂、大腿、小腿處之神經",
+          "nameEn": "",
+          "points": "21790",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83092B",
+          "nameZh": "—手、足的神經",
+          "nameEn": "",
+          "points": "21546",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83033B",
+          "nameZh": "椎弓整形術 Lamino plasty",
+          "nameEn": "",
+          "points": "30568",
+          "note": "神經修補 Nerve repair",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83034B",
+          "nameZh": "—肩、臀關節以上，包括臂神經叢，坐骨神經",
+          "nameEn": "",
+          "points": "16072",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83093B",
+          "nameZh": "—上臂、前臂、大腿、小腿處之神經",
+          "nameEn": "",
+          "points": "13182",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83094B",
+          "nameZh": "—手、足的神經",
+          "nameEn": "",
+          "points": "10711",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83035B",
+          "nameZh": "顏面舌下神經吻合術 \nFacial hypoglossal nerve anastomosis\n註：限神經外科專科醫師施行。",
+          "nameEn": "",
+          "points": "12333",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83036C",
+          "nameZh": "硬腦膜外血腫清除術\nRemoval of epidural hematoma\n註：一般材料費及單一使用之拋棄式特殊材料費，得另加計百分之一百零四",
+          "nameEn": "",
+          "points": "20921",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83037C",
+          "nameZh": "急性硬腦膜下血腫清除術\nRemoval of acute subdural hematoma\n註：\n1.限急診病人申報並不得加算急診加成。\n2.一般材料費及單一使用之拋棄式特殊材料費，得另加計百分之一百零六。",
+          "nameEn": "",
+          "points": "20227",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83038C",
+          "nameZh": "慢性硬腦膜下血腫清除術\nRemoval of chronic subdural hematoma\n註：\n1.一般材料費及特殊材料費，得另加計百分之一百三十二。\n2.上開特殊材料為單一使用之拋棄式特殊材料。",
+          "nameEn": "",
+          "points": "12530",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83039B",
+          "nameZh": "腦內血腫清除術\nRemoval of intracerebral hematoma\n註：\n1.限神經外科專科醫師施行。\n2.一般材料費及特殊材料費，得另加計百分之百。\n3.上開特殊材料為單一使用之拋棄式特殊材料。",
+          "nameEn": "",
+          "points": "22904",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83040B",
+          "nameZh": "良性脊髓腫瘤切除術\nBenign intraspinal tumor, excision\n註：限神經外科及骨科專科醫師施行。",
+          "nameEn": "",
+          "points": "32601",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83041B",
+          "nameZh": "惡性脊髓腫瘤切除術\nMalignant intraspinal tumor, excision\n註：限神經外科及骨科專科醫師施行。",
+          "nameEn": "",
+          "points": "42643",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83042B",
+          "nameZh": "脊椎內脊髓內腫瘤切除術\nIntraspinal intramedullary tumor, excision\n註：限神經外科及骨科專科醫師施行。",
+          "nameEn": "",
+          "points": "36731",
+          "note": "脊椎融合術 Spinal fusion\n－前融合 anterior spinal fusion\n1.無固定物 without spinal instrumentation",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83043B",
+          "nameZh": "(1)≦四節      ≦4 motion segments",
+          "nameEn": "",
+          "points": "16580",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83095B",
+          "nameZh": "(2)每增加≦四節 4 additional motion segments add",
+          "nameEn": "",
+          "points": "8730",
+          "note": "2.有固定物 with spinal instrumentation",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83044B",
+          "nameZh": "(1)≦四節      ≦4 motion segments",
+          "nameEn": "",
+          "points": "20511",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83096B",
+          "nameZh": "(2)每增加≦四節 4 additional motion segments add",
+          "nameEn": "",
+          "points": "12589",
+          "note": "－後融合 posterior spinal fusion",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83045B",
+          "nameZh": "1.無固定物 without spinal instrumentation",
+          "nameEn": "",
+          "points": "14558",
+          "note": "2.有固定物 with spinal instrumentation",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83046B",
+          "nameZh": "(1)≦六節      ≦6 motion segments\n註：83046B一般材料費及單次使用鑽頭，得另加計百分之五十八。",
+          "nameEn": "",
+          "points": "20958",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83097B",
+          "nameZh": "(2)每增加≦六節 6 additional motion segments add",
+          "nameEn": "",
+          "points": "15979",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83047B",
+          "nameZh": "腦膜或脊髓膜突出修補術\nRepair of meningocele or encephalocele\n註：\n1.限神經外科及骨科專科醫師施行。\n2.一般材料費及特殊材料費，得另加計百分之一百十。\n3.上開特殊材料為單一使用之拋棄式特殊材料。",
+          "nameEn": "",
+          "points": "17315",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83048C",
+          "nameZh": "頭皮腫瘤 Scalp tumor\n註：\n1.包括頭皮縫合(suture of scalp)\n2.一般頭皮縫合依第二部第二章第六節第一項創傷處置所訂點數申報。",
+          "nameEn": "",
+          "points": "4190",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83049B",
+          "nameZh": "腦室腹腔分流手術 V-P shunt\n註：限神經外科專科醫師施行。",
+          "nameEn": "",
+          "points": "13378",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83050B",
+          "nameZh": "水腫症腦室心房分流手術 V-A shunt\n註：限神經外科專科醫師施行。",
+          "nameEn": "",
+          "points": "10447",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83051B",
+          "nameZh": "腦室體外引流 External ventricular drainage\n註：限神經外科專科醫師施行。",
+          "nameEn": "",
+          "points": "10232",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83052C",
+          "nameZh": "歐氏貯囊置放手術 Omaya reservoir implantation\n註：限神經外科專科醫師施行。",
+          "nameEn": "",
+          "points": "4525",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83053B",
+          "nameZh": "腰椎蜘蛛網膜下-腹腔分流手術　\nLumbar-peritoneal shunt\n註：限神經外科專科醫師施行。",
+          "nameEn": "",
+          "points": "9060",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83054B",
+          "nameZh": "腰椎腦脊髓液池體外引流　\nExternal lumbar cisternal drainage\n註：限神經外科或麻醉專科醫師施行。",
+          "nameEn": "",
+          "points": "3139",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83055B",
+          "nameZh": "腦脊髓液分流管重置　\nRevision of CSF shunt\n註：\n1.限神經外科專科醫師施行。\n2.已包含移除及再置之費用。",
+          "nameEn": "",
+          "points": "10560",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83056B",
+          "nameZh": "癲癇症腦葉切除術 \nBrain lobectomy for epilepsy\n註：\n1.包括腦皮質及深部腦波圖(EEG) 在內。\n2.腦葉切斷術(lobotomy)、胼胝體 (corpus callasum)切斷術，焦點切除或破壞(focal excision or destruction)，腦下垂體切除術(pituitectomy)及大腦半球切除術比照申報。\n3.限神經外科專科醫師施行。\n4.一般材料費及特殊材料費，得另加計百分之七十七。\n5.上開特殊材料為單一使用之拋棄式特殊材料。",
+          "nameEn": "",
+          "points": "49410",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83057B",
+          "nameZh": "經由蝶竇之腦下垂體瘤切除\nTranssphenoidal removal of pituitary adenoma\n註：\n1.限神經外科專科醫師施行。\n2.一般材料費及特殊材料費，得另加計百分之八十六。\n3.上開特殊材料為單一使用之拋棄式特殊材料。",
+          "nameEn": "",
+          "points": "30571",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83058B",
+          "nameZh": "頸動脈栓塞術　Carotid embolization",
+          "nameEn": "",
+          "points": "7700",
+          "note": "頸動脈結紮術　Carotid artery ligation",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83059B",
+          "nameZh": "－ 急性結紮 Acute ligation",
+          "nameEn": "",
+          "points": "5935",
+          "note": "－ 漸進性 gradual occlusion with special clamp",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83060B",
+          "nameZh": "1.血流遮斷器置入 application of clamp",
+          "nameEn": "",
+          "points": "6071",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83061B",
+          "nameZh": "2.血流遮斷器取出 removal of clamp",
+          "nameEn": "",
+          "points": "7200",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83063B",
+          "nameZh": "顱內外血管吻合術　EC-IC by-pass\n註：\n1.限神經外科專科醫師施行。\n2.一般材料費及特殊材料費，得另加計百分之九十九。\n3.上開特殊材料為單一使用之拋棄式特殊材料。",
+          "nameEn": "",
+          "points": "21751",
+          "note": "開顱術摘除血管病變　Craniotomy for vascular lesions\n註：限神經外科專科醫師施行。\n－ 腦血管瘤 aneurysms",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83064B",
+          "nameZh": "無病徵的 asymptomatic\n註：\n1.一般材料費及特殊材料費，得另加計百分之七十四。\n2.上開特殊材料為單一使用之拋棄式特殊材料。",
+          "nameEn": "",
+          "points": "48388",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83065B",
+          "nameZh": "2.有病徵的 symptomatic\n註：\n1.一般材料費及特殊材料費，得另加計百分之七十三。\n2.上開特殊材料為單一使用之拋棄式特殊材料。",
+          "nameEn": "",
+          "points": "50389",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83066B",
+          "nameZh": "3.巨大的 giant\n註：\n1.一般材料費及特殊材料費，得另加計百分之七十三。\n2.上開特殊材料為單一使用之拋棄式特殊材料。",
+          "nameEn": "",
+          "points": "53750",
+          "note": "－ 動靜脈畸型 Arteriovenous malformations\n1.小型 small (D≦2.5cm)",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83067B",
+          "nameZh": "(1)表淺 superficial\n註：\n1.一般材料費及特殊材料費，得另加計百分之八十一。\n2.上開特殊材料為單一使用之拋棄式特殊材料。",
+          "nameEn": "",
+          "points": "36000",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83068B",
+          "nameZh": "(2)深部 deep\n註：\n1.一般材料費及特殊材料費，得另加計百分之七十七。\n2.上開特殊材料為單一使用之拋棄式特殊材料。",
+          "nameEn": "",
+          "points": "42000",
+          "note": "2.中型 medium (2.5cm＜D≦5cm)",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83069B",
+          "nameZh": "(1)表淺 superficial\n註：\n1.一般材料費及特殊材料費，得另加計百分之七十四。\n2.上開特殊材料為單一使用之拋棄式特殊材料。",
+          "nameEn": "",
+          "points": "48000",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83070B",
+          "nameZh": "(2)深部 deep\n註：\n1.一般材料費及特殊材料費，得另加計百分之七十二。\n2.上開特殊材料為單一使用之拋棄式特殊材料。",
+          "nameEn": "",
+          "points": "54000",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83071B",
+          "nameZh": "3.大型 large (D＞5cm)\n註：\n1.一般材料費及特殊材料費，得另加計百分之七十。\n2.上開特殊材料為單一使用之拋棄式特殊材料。",
+          "nameEn": "",
+          "points": "64500",
+          "note": "脊椎腔內動靜脈畸型切除術\nExcision of intraspinal AVM",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83072B",
+          "nameZh": "－ 二節以內 ≦2 segments",
+          "nameEn": "",
+          "points": "43200",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83073B",
+          "nameZh": "－ 超過二節 ＞2 segments",
+          "nameEn": "",
+          "points": "50400",
+          "note": "註：限神經外科專科醫師施行。\n面神經痙攣　Facial tic",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83074C",
+          "nameZh": "－ 酒精阻斷 Alcohol block",
+          "nameEn": "",
+          "points": "2764",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83075B",
+          "nameZh": "－ 選擇性神經切除術Selective neurectomy",
+          "nameEn": "",
+          "points": "6552",
+          "note": "註：限神經外科專科醫師施行。\n顱骨縫線早期封閉症手術　Operation for craniosynostosis",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83077B",
+          "nameZh": "－ 簡單的縫合線顱骨咬除　Simple suturectomy",
+          "nameEn": "",
+          "points": "10128",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83078B",
+          "nameZh": "－ 顱骨分割法　Morcellation",
+          "nameEn": "",
+          "points": "10752",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83079B",
+          "nameZh": "高頻熱凝療法 \nRadiofrequency coagulation\n1.申請人檢附資料應符合之要件：\n(1)病歷應記載清楚、詳實及病史完整。須有理學檢查、術前術後Image-guided、OP note、疼痛量表等相關資料，以佐證實施之必要性。\n(2)需為中重度、慢性疼痛且經藥物、復健治療等保守療法三個月後未改善。\n(3)單一部位首次實施前需至少施行一次影像輔助診斷性阻斷(image-guided diagnostic block)，二週後倘症狀未緩解，才可施行RF，需檢附影像副本以資佐證。\n2.施行本項之適應症如下，並應由醫院申請事前審查：\n(1)需為脊椎小關節症候群(Facet Joint Syndrome)引起的疼痛者。\n(2)三叉神經痛、惡性腫瘤引起神經疼痛者。\n(3)Neuropathic pain，如postherpetic neuropathic pain等。\n(4)脊椎手術後疼痛症候群（Failed Back Surgery Syndrome,FBSS）、慢性脊椎疼痛(Chronic spinal pain)、後背根神經節、其他周邊神經痛等。\n3.治療次數與限制：\n(1)同區域重複治療以間隔六個月以上為原則，並應附施予高頻熱凝療法後之衛教紀錄與疼痛量表，個案病情如需於三至六個月內同區域重複施行者，應另檢附精神科醫師或心理治療師或疼痛科醫師之治療評估紀錄。\n(2)一次施行一個區域，共分五個區域：腰薦椎、胸椎、頸椎、頭部、周邊神經等五大部位。同一手術野內同時施行多點處置，視為單一處置申報。\n4.一般材料費及特殊材料費，得另加計百分之九十八。\n5.上開特殊材料為單一使用之拋棄式特殊材料。",
+          "nameEn": "",
+          "points": "5360",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83080B",
+          "nameZh": "顱內壓監視置入 ICP monitoring\n註：限神經外科專科醫師施行。",
+          "nameEn": "",
+          "points": "12042",
+          "note": "立體定位術 Stereotaxic procedure",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83081B",
+          "nameZh": "－ 切片 for biopsy",
+          "nameEn": "",
+          "points": "18000",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83082B",
+          "nameZh": "－ 抽吸 for aspiration",
+          "nameEn": "",
+          "points": "18000",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83083B",
+          "nameZh": "－ 放射同位素置放　for implantation of radio-isotope",
+          "nameEn": "",
+          "points": "25000",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83084B",
+          "nameZh": "－ 功能性失調　for functional disorder",
+          "nameEn": "",
+          "points": "25000",
+          "note": "註：\n1.83081B及83082B限神經外科、耳鼻喉科專科及口腔顎面外科專科醫師施行。\n2.83083B及83084B限神經外科及耳鼻喉科專科醫師施行。",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83087B",
+          "nameZh": "顏面神經減壓術　\nFacial nerve decompression\n註：\n1.一般材料費及特殊材料費，得另加計百分之一百四十四。\n2.上開特殊材料為單一使用之拋棄式特殊材料。",
+          "nameEn": "",
+          "points": "10900",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83088B",
+          "nameZh": "顱底瘤手術　Skull Base Tumor Surgery\n註：\n1.適應症：腫瘤必須大於三公分以上，或是位於 C-P angle 部位之腫瘤大於四公分以上。\n2.申報時請附上術前以及術後之X光片。\n3.一般材料費及特殊材料費，得另加計百分之六十五。\n4.上開特殊材料為單一使用之拋棄式特殊材料。",
+          "nameEn": "",
+          "points": "84082",
+          "note": "神經移轉手術　Never transfer",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83098B",
+          "nameZh": "－上肢肩、下肢臀關節以上，包括腦神經的轉移",
+          "nameEn": "",
+          "points": "17694",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83099B",
+          "nameZh": "－上肢腕、下肢足踝關節以上，神經的轉移",
+          "nameEn": "",
+          "points": "8848",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83100B",
+          "nameZh": "－上肢腕、下肢足踝關節以下，神經的轉移",
+          "nameEn": "",
+          "points": "4423",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83102K",
+          "nameZh": "迷走神經刺激術（VNS）─植入\n註：\n1.適應症：\n(1)無法以抗癲癇藥控制病情的頑固型癲癇病人，且亦無法以切除手術改善或曾以癲癇切除手術治療失敗。\n(2)頑固型癲癇病人定義：已服用或曾服用二種以上具適應症並已達有效劑量之抗癲癇藥物至少一年以上，仍無法控制發作。\n2.支付規範：\n(1)特殊專科別限制：曾參加過迷走神經刺激器訓練課程並領有證書之神經外科專科醫師。\n(2)執行頻率：須事前審查，每人僅需執行一次。\n(3)不得同時申報56037B「深部腦核電生理定位」、83056B「癲癇症腦葉切除術」、83084B「立體定位術-功能性失調」及72029B「迷走神經切斷術」。\n(4)一般材料費，得另加計百分之十一。",
+          "nameEn": "",
+          "points": "18242",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83103B",
+          "nameZh": "脊髓刺激器暫時性植入手術\nSpinal cord stimulator temporary implantation\n註：\n1.適應症：下列疾病之慢性疼痛病人並經專科醫師以藥物及非藥物治療（復健等非侵入性處置及微創疼痛介入性治療，例如：脊椎注射止痛藥物、高頻熱凝療法、脈衝式射頻等）六個月仍未改善，且經臨床心理師或精神科醫師完成心理評估者：\n(1)脊椎手術後疼痛症候群（Falled back surgery syndrome）。\n(2)因外傷導致的複雜性局部疼痛症候群（Complex regional pain syndrome）。\n(3)脊神經蜘蛛膜炎（Arachnoiditis）。\n(4)神經根病變（Radiculopathy）。\n(5)周邊神經病變（Peripheral neuropathy）。\n(6)無法執行血管重建或血管重建無效之頑固型缺血性疼痛。\n2.申報應檢附術前心理衡鑑或精神科醫師評估報告。\n3.須事前審查。\n4.不得同時申報項目：83002C、83003C、32026C。\n5.經台灣麻醉醫學會及社團法人台灣神經外科醫學會核發認證之神經外科、麻醉科專科醫師執行。\n6.含一般材料費，得另加計百分之五。",
+          "nameEn": "",
+          "points": "15234",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83104B",
+          "nameZh": "脊髓刺激器永久植入手術\nSpinal cord stimulator permanent implantation\n註：\n1.經「脊髓刺激器暫時性植入手術」疼痛改善達臨床上有意義之程度。\n2.須事前審查。\n3.不得同時申報項目：83002C、83003C、32026C。\n4.經台灣麻醉醫學會及社團法人台灣神經外科醫學會核發認證之神經外科、麻醉科專科醫師執行。\n5.含一般材料費，得另加計百分之二十三。",
+          "nameEn": "",
+          "points": "17755",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83105B",
+          "nameZh": "永久性刺激器電池更換術\n註：限植入永久脊髓刺激器者(含「脊髓刺激器永久植入手術」項目實施前之病人)。",
+          "nameEn": "",
+          "points": "7174",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "83106B",
+          "nameZh": "急性缺血性腦中風機械取栓術\nFee for neurovascular mechanical endovascular thrombectomy in acute ischemic stroke\n註：\n1.適用範圍：急性腦血管缺血性中風病人符合顱內血管支架取栓裝置使用條件，並使用該裝置進行機械性血管內血栓移除術治療，且同時符合下列條件：\n(1)發作後二十四小時內。\n(2)影像診斷為顱內大動脈阻塞，包括內頸動脈、大腦中動脈之第一段及第二段、大腦前動脈、基底動脈及脊椎動脈。\n(3)美國國衛院腦中風評估表(NIH Stroke Scale)評分6分至30分。\n2.禁忌症：\n(1)蜘蛛網膜下腔出血。\n(2)腦內出血。\n(3)硬腦膜下出血/顱內出血。\n3.支付規範：\n(1)限經下列任一學會之相關腦神經血管內介入治療專長訓練與認證之醫師施行：\nA.中華民國放射線醫學會授權之中華民國神經放射線醫學會。\nB.台灣神經外科醫學會授權之台灣神經血管外科與介入治療醫學會。\nC.台灣神經學會授權之台灣腦中風學會。\n(2)不得同時申報69001B、69002B、69003B。\n(3)一般材料費，得另加計百分之七。\n4.前循環若於發作後八小時至二十四小時執行，申報時應於病歷檢附影像報告(CTP、MR或CTA collaterals)。",
+          "nameEn": "",
+          "points": "42730",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84001C",
+          "nameZh": "耳介膿瘍或血腫切開引流術\nI & D for auricle abscess or hematoma",
+          "nameEn": "",
+          "points": "2663",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84002C",
+          "nameZh": "外耳道異物除去術，使用耳道鏡\nEar canal foreign body removal with otoscope",
+          "nameEn": "",
+          "points": "140",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84003C",
+          "nameZh": "外耳道異物除去術，使用耳道鏡，並有麻醉\nEar canal foreign body removal, with otoscope,\nunder anesthesia",
+          "nameEn": "",
+          "points": "1360",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84004C",
+          "nameZh": "T.D.傳統耳膜切開術\nMyringotomy with T.D. plunger",
+          "nameEn": "",
+          "points": "850",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84005C",
+          "nameZh": "耳前瘻管或囊腫切除術\nExcision of preauricular fistula or cyst",
+          "nameEn": "",
+          "points": "3405",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84006C",
+          "nameZh": "外耳道普通創傷縫合術\nSuture of ear injury",
+          "nameEn": "",
+          "points": "840",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84007C",
+          "nameZh": "顯微鏡／內視鏡下鼓膜切開術 \nMyringotomy under microscope or telescope",
+          "nameEn": "",
+          "points": "2316",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84008B",
+          "nameZh": "外耳道腫瘤顯微鏡切除術\nRemoval of external ear tumor (microscope)",
+          "nameEn": "",
+          "points": "4000",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84009B",
+          "nameZh": "外耳道惡性腫瘤切除術\nRemoval of external ear malignant tumor",
+          "nameEn": "",
+          "points": "12252",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84010B",
+          "nameZh": "外耳道閉鎖症手術 \nMeatoplasty & canaloplasty",
+          "nameEn": "",
+          "points": "10560",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84011B",
+          "nameZh": "外傷性耳成形術 Traumatic otoplasty",
+          "nameEn": "",
+          "points": "10560",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84012B",
+          "nameZh": "外耳道成形術 Ear canal plastic operation",
+          "nameEn": "",
+          "points": "9528",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84013B",
+          "nameZh": "耳膜成形術 Myringoplasty\n註：不分手術方式",
+          "nameEn": "",
+          "points": "7800",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84014B",
+          "nameZh": "中耳耳茸摘出術 Polypectomy, middle ear",
+          "nameEn": "",
+          "points": "4481",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84015B",
+          "nameZh": "顯微鏡下鼓膜切開術，併鼓室通氣管插入 \nMyringotomy with ventilation tube insertion Under microscope",
+          "nameEn": "",
+          "points": "4657",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84016B",
+          "nameZh": "鼓室探查術 Exploratory tympanotomy",
+          "nameEn": "",
+          "points": "5202",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84017B",
+          "nameZh": "鼓膜成形術 Myringoplasty\n註：包括植皮(including skin graft)在內",
+          "nameEn": "",
+          "points": "5930",
+          "note": "鼓室成形術 Tympanoplasty",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84018B",
+          "nameZh": "－ 不包括乳突鑿開術 without mastoidectomy",
+          "nameEn": "",
+          "points": "11522",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84019B",
+          "nameZh": "－ 包括乳突鑿開術 with mastoidectomy",
+          "nameEn": "",
+          "points": "15000",
+          "note": "註：\n1.包括植皮(including skin graft)在內。\n2.84019B一般材料費及單次使用鑽頭，得另加計百分之七十四。",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84020B",
+          "nameZh": "聽小骨重建術 Ossiculoplasty",
+          "nameEn": "",
+          "points": "11360",
+          "note": "乳突鑿開術 Mastoidectomy",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84021B",
+          "nameZh": "－ 簡單式 simple\n註：84021B一般材料費及單次使用鑽頭，得另加計百分之九十六。",
+          "nameEn": "",
+          "points": "7250",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84022B",
+          "nameZh": "－ 修正式 modified\n註：84022B一般材料費及單次使用鑽頭，得另加計百分之八十六。",
+          "nameEn": "",
+          "points": "9470",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84023B",
+          "nameZh": "耳性顱內合併症手術\nIntracranial operation otologically",
+          "nameEn": "",
+          "points": "17226",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84024B",
+          "nameZh": "耳性硬腦膜外膿瘍切開術\nDrainage of otogenic epidural abscess",
+          "nameEn": "",
+          "points": "15395",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84025B",
+          "nameZh": "鐙骨截除及修補\nStapedectomy with prosthesis",
+          "nameEn": "",
+          "points": "10196",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84026B",
+          "nameZh": "鐙骨鬆動術 Stapes mobilization",
+          "nameEn": "",
+          "points": "5455",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84027B",
+          "nameZh": "耳後瘻孔縫合術  Suture of postauricular",
+          "nameEn": "",
+          "points": "2665",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84028B",
+          "nameZh": "內耳全摘除術\nTranstympanic transmastoid labyrinthectomy",
+          "nameEn": "",
+          "points": "11256",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84029B",
+          "nameZh": "內淋巴囊減壓術\nEndolymphatic sac decompression",
+          "nameEn": "",
+          "points": "9720",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84030B",
+          "nameZh": "迷路開窩術 Labyrinthotomy",
+          "nameEn": "",
+          "points": "11364",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84031B",
+          "nameZh": "迷路切除術 Labyrinthectomy\n註：包括乳突鑿開術(including mastoidectomy)在內。",
+          "nameEn": "",
+          "points": "10597",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84032B",
+          "nameZh": "聽神經腫瘍切除術（經耳的）\nTranslabyrinthine acoustic neuroma excision",
+          "nameEn": "",
+          "points": "34020",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84033B",
+          "nameZh": "顳骨錐部切除術 \nPetrouectomy (apicectomy, petrous)",
+          "nameEn": "",
+          "points": "15216",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84034B",
+          "nameZh": "顳骨全切除術併乳突鑿開術 \nTemporal bone resection with mastoidectomy",
+          "nameEn": "",
+          "points": "35241",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84035B",
+          "nameZh": "耳病性暈眩手術\nSacculotomy for Meniere's disease",
+          "nameEn": "",
+          "points": "8780",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84036B",
+          "nameZh": "半規管造窗術\nFenestration of semicircular canals",
+          "nameEn": "",
+          "points": "7410",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84037B",
+          "nameZh": "耳再接手術  Replantation of ear\n註：\n1.限外耳完全斷裂行顯微手術者申報。\n2.外傷性耳成形術請按84011B申報。",
+          "nameEn": "",
+          "points": "18780",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        },
+        {
+          "code": "84038B",
+          "nameZh": "人工電子耳手術(人工耳蝸植入術)\n註：\n限設有聽語復健治療團隊（包括耳鼻喉科專科醫師或復健專科醫師、聽力師、語言治療師等）之醫院申報，施行本項適用範圍如下：\n1.嬰幼兒（未滿二歲）：\n(1)二耳聽力損失呈≧90dB HL（0.5、l、2、4K Hz）。\n(2)先前使用助聽器三個月至六個月以上，聽能訓練後言語辨識或語言能力無進展。\n(3)無手術植入電極之禁忌。\n2.兒童（二歲以上）及成人：\n(1)學語後失聰且二耳聽力損失呈≧70dB HL ( 0.5、l、2、4K Hz）。\n(2)先前使用助聽器六個月以上，助聽後開放式語言測試得分（Speech perception score）＜50%，或是噪聲下語詞測驗得分（Word recognition score）＜30%。\n(3)無手術植入電極之禁忌。\n3.單耳全聾：\n(1)劣耳聽力損失呈≧80dB HL，優耳聽力損失呈<30dB HL（0.5、1、2、4K Hz）。\n(2)助聽後單字詞測試中得分低於或等於5%，建議先前使用之跨傳助聽器（CROS）或其他合適之助聽器三個月以上之經驗。\n(3)無手術植入電極之禁忌。\n4.一般材料費及單次使用鑽頭，得另加計百分之六十九。",
+          "nameEn": "",
+          "points": "20250",
+          "note": "",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "home_care",
+      "nameZh": "居家照護",
+      "nameEn": "Home Care Services",
+      "icon": "🏠",
+      "section": "第五部",
+      "fhir_resource": "ServiceRequest",
+      "fhir_profile": "https://twcore.mohw.gov.tw/ig/twcore/StructureDefinition-ServiceRequest-twcore.html",
+      "codes": [
+        {
+          "code": "05301C",
+          "nameZh": "1.在宅",
+          "nameEn": "",
+          "points": "1103",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05342C",
+          "nameZh": "2.機構",
+          "nameEn": "",
+          "points": "882",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "山地離島地區護理訪視費(次) (在合理量內)"
+        },
+        {
+          "code": "05302C",
+          "nameZh": "1.在宅",
+          "nameEn": "",
+          "points": "1455",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05343C",
+          "nameZh": "2.機構",
+          "nameEn": "",
+          "points": "1164",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "護理訪視費(次) (超出合理量)"
+        },
+        {
+          "code": "05328C",
+          "nameZh": "1.在宅",
+          "nameEn": "",
+          "points": "441",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05344C",
+          "nameZh": "2.機構",
+          "nameEn": "",
+          "points": "441",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "山地離島地區護理訪視費(次) (超出合理量)"
+        },
+        {
+          "code": "05329C",
+          "nameZh": "1.在宅",
+          "nameEn": "",
+          "points": "580",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05345C",
+          "nameZh": "2.機構",
+          "nameEn": "",
+          "points": "580",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "－資源耗用群為第二類\n護理訪視費(次) (在合理量內)"
+        },
+        {
+          "code": "05303C",
+          "nameZh": "1.在宅",
+          "nameEn": "",
+          "points": "1528",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05346C",
+          "nameZh": "2.機構",
+          "nameEn": "",
+          "points": "1222",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "山地離島地區護理訪視費(次) (在合理量內)"
+        },
+        {
+          "code": "05304C",
+          "nameZh": "1.在宅",
+          "nameEn": "",
+          "points": "2017",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05347C",
+          "nameZh": "2.機構",
+          "nameEn": "",
+          "points": "1613",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "護理訪視費(次) (超出合理量)"
+        },
+        {
+          "code": "05330C",
+          "nameZh": "1.在宅",
+          "nameEn": "",
+          "points": "609",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05348C",
+          "nameZh": "2.機構",
+          "nameEn": "",
+          "points": "609",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "山地離島地區護理訪視費(次) (超出合理量)"
+        },
+        {
+          "code": "05331C",
+          "nameZh": "1.在宅",
+          "nameEn": "",
+          "points": "806",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05349C",
+          "nameZh": "2.機構",
+          "nameEn": "",
+          "points": "806",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "－資源耗用群為第三類\n護理訪視費(次) (在合理量內)"
+        },
+        {
+          "code": "05305C",
+          "nameZh": "1.在宅",
+          "nameEn": "",
+          "points": "1843",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05350C",
+          "nameZh": "2.機構",
+          "nameEn": "",
+          "points": "1474",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "山地離島地區護理訪視費(次) (在合理量內)"
+        },
+        {
+          "code": "05306C",
+          "nameZh": "1.在宅",
+          "nameEn": "",
+          "points": "2433",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05351C",
+          "nameZh": "2.機構",
+          "nameEn": "",
+          "points": "1946",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "護理訪視費(次) (超出合理量)"
+        },
+        {
+          "code": "05332C",
+          "nameZh": "1.在宅",
+          "nameEn": "",
+          "points": "735",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05352C",
+          "nameZh": "2.機構",
+          "nameEn": "",
+          "points": "735",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "山地離島地區護理訪視費(次) (超出合理量)"
+        },
+        {
+          "code": "05333C",
+          "nameZh": "1.在宅",
+          "nameEn": "",
+          "points": "970",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05353C",
+          "nameZh": "2.機構",
+          "nameEn": "",
+          "points": "970",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "－資源耗用群為第四類\n護理訪視費(次) (在合理量內)"
+        },
+        {
+          "code": "05321C",
+          "nameZh": "1.在宅",
+          "nameEn": "",
+          "points": "2158",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05354C",
+          "nameZh": "2.機構",
+          "nameEn": "",
+          "points": "1726",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "山地離島地區護理訪視費(次) (在合理量內)"
+        },
+        {
+          "code": "05322C",
+          "nameZh": "1.在宅",
+          "nameEn": "",
+          "points": "2849",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05355C",
+          "nameZh": "2.機構",
+          "nameEn": "",
+          "points": "2279",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "護理訪視費(次) (超出合理量)"
+        },
+        {
+          "code": "05334C",
+          "nameZh": "1.在宅",
+          "nameEn": "",
+          "points": "861",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05356C",
+          "nameZh": "2.機構",
+          "nameEn": "",
+          "points": "861",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "山地離島地區護理訪視費(次) (超出合理量)"
+        },
+        {
+          "code": "05335C",
+          "nameZh": "1.在宅",
+          "nameEn": "",
+          "points": "1134",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05357C",
+          "nameZh": "2.機構",
+          "nameEn": "",
+          "points": "1134",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1.資源耗用群分類：\n第一類：需居家護理一般照護項目之病人\n第二類：需居家護理特殊照護群組任一組之病人\n第三類：需居家護理特殊照護群組任二組之病人\n第四類：需居家護理特殊照護群組任三組及以上之病人\n2. 所定點數含訪視、護理服務、治療處置、代採檢體\n及送檢之檢查費\n治療材料及電子資料處理等費用在內。\n3. 上項代採之檢體，委託代檢機構應以保險醫事服務\n機構或保險人指\n定之醫事檢驗機構為限。\n4. 視訪時間應記錄於訪視紀錄內，並請病人或其家屬\n簽章。\n5. 訪視次數每一個案每月以二次為限，出院後新收個\n案當次之訪視，\n不計算於當月訪視次數內；依病情需要多於二次者，申\n報費用時應\n檢附護理計畫，並詳述理由。\n醫師訪視費(次)"
+        },
+        {
+          "code": "05307C",
+          "nameZh": "1.在宅",
+          "nameEn": "",
+          "points": "1631",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05358C",
+          "nameZh": "2.機構",
+          "nameEn": "",
+          "points": "1304",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "山地離島地區醫師訪視費(次)"
+        },
+        {
+          "code": "05308C",
+          "nameZh": "1.在宅",
+          "nameEn": "",
+          "points": "2154",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05359C",
+          "nameZh": "2.機構",
+          "nameEn": "",
+          "points": "1722",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "－同一醫師，應同一承辦居家照護業務機構之請，當日\n訪視個案在五個以上者，自第五個個案起，其訪視費依\n本項申報。"
+        },
+        {
+          "code": "05309C",
+          "nameZh": "1.在宅",
+          "nameEn": "",
+          "points": "630",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05360C",
+          "nameZh": "2.機構",
+          "nameEn": "",
+          "points": "630",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "－山地離島地區同一醫師，應同一承辦居家照護業務機\n構之請，當日訪視個案在五個以上者，自第五個個案起\n，其訪視費依本項申報。"
+        },
+        {
+          "code": "05310C",
+          "nameZh": "1.在宅",
+          "nameEn": "",
+          "points": "832",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05361C",
+          "nameZh": "2.機構",
+          "nameEn": "",
+          "points": "832",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1.訪視次數每一個案至少每三個月訪視一次，每二個月\n申報一次為限，若病人病情有顯著變化，需要多於一次\n者，申報費用時應檢附訪視紀錄，並詳述理由。\n2.每位醫師訪視個案數，每日以八人次為原則；每月以\n一百八十人次為限。\n3.訪視醫師，以與保險人特約之保險醫事服務機構之醫\n師為限。\n|當日診治個案數在五個以上者，自第五個個案起，其診\n|治費依本項申報。\n|註：1.診治費每一個案每人每月以二次為原則，申報費\n|用時應檢附訪視紀錄，並詳述理由。\n|2.每位醫師診治個案數，每日以八個為限；每月以二百\n|四十個為限。\n|註：處置費每一個案每月以二次為限，申報費用時應檢\n|附訪視紀錄。\n甲類：\n醫師訪視費用(次)"
+        },
+        {
+          "code": "05312C",
+          "nameZh": "－在宅",
+          "nameEn": "",
+          "points": "1631",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05362C",
+          "nameZh": "－機構",
+          "nameEn": "",
+          "points": "1304",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "醫師訪視費用山地離島地區(次)"
+        },
+        {
+          "code": "05323C",
+          "nameZh": "－在宅",
+          "nameEn": "",
+          "points": "2154",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05363C",
+          "nameZh": "－機構",
+          "nameEn": "",
+          "points": "1722",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "乙類：\n醫師訪視費用(次)"
+        },
+        {
+          "code": "05336C",
+          "nameZh": "－在宅",
+          "nameEn": "",
+          "points": "1142",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05364C",
+          "nameZh": "－機構",
+          "nameEn": "",
+          "points": "914",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "醫師訪視費用山地離島地區(次)"
+        },
+        {
+          "code": "05337C",
+          "nameZh": "－在宅",
+          "nameEn": "",
+          "points": "1507",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05365C",
+          "nameZh": "－機構",
+          "nameEn": "",
+          "points": "1204",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1.訪視次數每一個案每週以二次為原則，若病人病情有\n顯著變化，需要多於每週二次者，申報費用時應檢附訪\n視紀錄，並詳述理由。\n2.每位醫師每月訪視次數以四十五次為限。\n－訪視時間一小時以內 (≦1小時)\n甲類：\n護理訪視費(次)"
+        },
+        {
+          "code": "05313C",
+          "nameZh": "－在宅",
+          "nameEn": "",
+          "points": "1733",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05366C",
+          "nameZh": "－機構",
+          "nameEn": "",
+          "points": "1386",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "護理訪視費山地離島地區(次)"
+        },
+        {
+          "code": "05324C",
+          "nameZh": "－在宅",
+          "nameEn": "",
+          "points": "2287",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05367C",
+          "nameZh": "－機構",
+          "nameEn": "",
+          "points": "1829",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "乙類：\n護理訪視費(次)"
+        },
+        {
+          "code": "05338C",
+          "nameZh": "－在宅",
+          "nameEn": "",
+          "points": "1213",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05368C",
+          "nameZh": "－機構",
+          "nameEn": "",
+          "points": "970",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "護理訪視費山地離島地區(次)"
+        },
+        {
+          "code": "05339C",
+          "nameZh": "－在宅",
+          "nameEn": "",
+          "points": "1601",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05369C",
+          "nameZh": "－機構",
+          "nameEn": "",
+          "points": "1280",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "－訪視時間一小時以上 (＞1小時)\n甲類：\n護理訪視費(次)"
+        },
+        {
+          "code": "05314C",
+          "nameZh": "－在宅",
+          "nameEn": "",
+          "points": "2363",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05370C",
+          "nameZh": "－機構",
+          "nameEn": "",
+          "points": "1890",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "護理訪視費山地離島地區(次)"
+        },
+        {
+          "code": "05325C",
+          "nameZh": "－在宅",
+          "nameEn": "",
+          "points": "3119",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05371C",
+          "nameZh": "－機構",
+          "nameEn": "",
+          "points": "2495",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "乙類：\n護理訪視費(次)"
+        },
+        {
+          "code": "05340C",
+          "nameZh": "－在宅",
+          "nameEn": "",
+          "points": "1654",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05372C",
+          "nameZh": "－機構",
+          "nameEn": "",
+          "points": "1323",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "護理訪視費山地離島地區(次)"
+        },
+        {
+          "code": "05341C",
+          "nameZh": "－在宅",
+          "nameEn": "",
+          "points": "2184",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05373C",
+          "nameZh": "－機構",
+          "nameEn": "",
+          "points": "1746",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1.護理人員訪視次數每一個案每週以二次為原則，若病\n人病情有顯著變化，需要多於每週二次者，申報費用時\n應檢附訪視紀錄，並詳述理由。\n2.每位護理人員每月訪視次數以四十五次為限。\n3.護理訪視費所定點數含訪視、護理服務、治療處置、\n代取藥、代採檢體及送檢之檢查費、治療材料及電子資\n料處理等費用在內。"
+        },
+        {
+          "code": "05326C",
+          "nameZh": "臨終病人訪視費",
+          "nameEn": "",
+          "points": "5250",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "05327C",
+          "nameZh": "臨終病人訪視費山地離島地區",
+          "nameEn": "",
+          "points": "6930",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1.限訪視臨終病人，且ECOG三級以上之病人，實際訪視\n時間在二小時以上，始得申報此項費用，每位病人申報\n訪視次數僅限一次。\n2.甲乙二類醫事人員皆可申報。\n3.服務內容需包含臨終訪視、善終準備及家屬哀傷輔導\n等。\n或心理師"
+        },
+        {
+          "code": "05315C",
+          "nameZh": "－在宅",
+          "nameEn": "",
+          "points": "1103",
+          "available": {
+            "基層院所": false,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": ""
+        },
+        {
+          "code": "05374C",
+          "nameZh": "－機構",
+          "nameEn": "",
+          "points": "882",
+          "available": {
+            "基層院所": false,
+            "地區醫院": false,
+            "區域醫院": false,
+            "醫學中心": false
+          },
+          "note": "註：\n1.現暫定為社會工作人員或心理師。訪視次數每一個案\n每週以一次為原則，若病人病情有顯著變化，需要多於\n每週一次者，申報費用時應檢附訪視紀錄，並詳述理由\n。\n2.每位專業人員每月訪視次數以四十五次為限。"
+        },
+        {
+          "code": "05316C",
+          "nameZh": "病患自控式止痛處置及材料費",
+          "nameEn": "",
+          "points": "1890",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "(Patient- Controlled Analgesia, PCA)\n註：\n1.所定點數含PCA 幫浦注射費、PCA裝置(set)、\nPCA袋(bag)等。\n2.每一個案每月限申報二次。"
+        }
+      ]
+    },
+    {
+      "id": "palliative",
+      "nameZh": "安寧緩和療護",
+      "nameEn": "Palliative & Hospice Care",
+      "icon": "🌷",
+      "section": "第二部第一章第八節 (05xxx)",
+      "fhir_resource": "Procedure",
+      "fhir_profile": "https://twcore.mohw.gov.tw/ig/twcore/StructureDefinition-Procedure-twcore.html",
+      "codes": [
+        {
+          "code": "02020C",
+          "nameZh": "緩和醫療家庭諮詢費",
+          "nameEn": "",
+          "points": "2250",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1.適用範圍：符合安寧緩和醫療條例之住院、急診、\n接受居家醫療照護(含在宅、機構)末期病人，且未曾\n接受安寧療護服務。\n2.相關規範：\n(1)諮詢參與人員：包括主治醫療團隊、病人或病人\n家屬。\n(2)諮詢時間：每一個案諮詢時間至少一小時。\n(3)諮詢紀錄：應有完整之諮詢溝通內容紀錄，並應\n併入病人之病歷紀錄留存，紀錄並有參與諮詢醫療團\n隊及病人或家屬簽名。\n(4)申報規定：\nA.已參與全民健康保險安寧共同照護試辦方案、住院\n安寧療護及安寧居家療護之病人，不得再申報本項費\n用。\nB.同一院所限申報二次。"
+        },
+        {
+          "code": "02028C",
+          "nameZh": "預立醫療照護諮商費",
+          "nameEn": "",
+          "points": "3000",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1.符合下列任一條件，且具完全行為能力之病人：\n(1)六十五歲以上重大傷病病人。\n(2)符合安寧療護收案條件者。\n(3)臨床失智評估量表(Clinical Dementia Rating,\nCDR)0.5分至1分。\n(4)病人自主權利法第十四條第一項第五款所公告之\n病名。\n(5)「全民健康保險居家醫療照護整合計畫」收案對\n象。\n(6)「全民健康保險家庭醫師整合性照護計畫」、「\n全民健康保險地區醫院全人全社區照護計畫」收案之\n六十五歲以上多重慢性病人。\n2.相關規範：\n(1)諮商參與人員：依病人自主權利法之規定辦理。\n(2)諮商紀錄：應有每次會議完整之諮商溝通內容紀\n錄，並應將影本併入病人之病歷紀錄留存，紀錄有參\n與諮商醫療團隊及病人或家屬簽名，並簽署預立醫療\n決定。\n(3)申報規定：\nA.當次就醫前已於全民健康保險憑證註記預立醫療決\n定者，不得申報本項費用。\nB.每人終生以申報一次為限。\nC.應依病人自主權利法，於申報前完成預立醫療決定\n上傳至中央主管機關之資料庫，未完成者，本項費用\n不予支付。"
+        }
+      ]
+    },
+    {
+      "id": "dm_ckd",
+      "nameZh": "糖尿病・慢性腎臟病照護",
+      "nameEn": "Diabetes & Early CKD Integrated Care",
+      "icon": "💊",
+      "section": "第八部第二章 (P1407C-P7003C)",
+      "fhir_resource": "ServiceRequest",
+      "fhir_profile": "https://twcore.mohw.gov.tw/ig/twcore/StructureDefinition-ServiceRequest-twcore.html",
+      "codes": [
+        {
+          "code": "P1407C",
+          "nameZh": "─第一階段新收案管理照護費",
+          "nameEn": "",
+          "points": "650",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1.照護項目詳附表8.2.1，除檢驗檢查項目外，其費用已\n內含於本項所訂點數內。\n2.地區醫院及基層院所之團隊醫事人員可為醫師加另一專\n業人員執行。"
+        },
+        {
+          "code": "P1408C",
+          "nameZh": "─第一階段追蹤管理照護費",
+          "nameEn": "",
+          "points": "200",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1.照護項目詳附表8.2.2，除檢驗檢查項目外，其費用已\n內含於本項所訂點數內。\n2.申報新收案後至少須間隔七週才能申報本項，本項每年\n度最多申報三次，每次間隔至少十週。若當年度同時有申\n報P1410C或P7001C，合計最多申報三次。\n3.地區醫院及基層院所之團隊醫事人員如為醫師加另一專\n業人員執行，則申報點數為本項點數之百分之八十。\n4.不得與P7001C同時申報。\n5.進入第二階段管理照護一年內不得再申報第一階段管理\n照護費P1408C、P1409C。"
+        },
+        {
+          "code": "P1409C",
+          "nameZh": "─第一階段年度評估管理照護費",
+          "nameEn": "",
+          "points": "800",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1.照護項目詳附表8.2.3，除檢驗檢查項目外，其費用已\n內含於本項所訂點數內。\n2.申報追蹤管理照護費後至少間隔十週才能申報本項，本\n項限執行P1407C、P1408C或P7001C追蹤合計達三次以上者\n始得申報，本項每年度最多申報一次。\n3.地區醫院及基層院所之團隊醫事人員如為醫師加另一專\n業人員執行，則申報點數為本項點數之百分之八十。\n4.不得與P7002C同時申報。\n5.進入第二階段管理照護一年內不得再申報第一階段管理\n照護費P1408C、P1409C。"
+        },
+        {
+          "code": "P1410C",
+          "nameZh": "─第二階段追蹤管理照護費",
+          "nameEn": "",
+          "points": "100",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1.照護項目參考附表8.2.2之檢驗項目，另得視病情需要\n進行衛教服務。除檢驗檢查項目外，其費用已內含於本項\n所訂點數內。\n2.本項每年度最多申報三次，每次間隔至少十週。若當年\n度同時有申報P1408C或P7001C，合計最多申報三次。\n3.不得與P7001C同時申報。"
+        },
+        {
+          "code": "P1411C",
+          "nameZh": "─第二階段年度評估管理照護費",
+          "nameEn": "",
+          "points": "300",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1.照護項目參考附表8.2.3之檢驗項目，另得視病情需要\n進行衛教服務。除檢驗檢查項目外，其費用已內含於本項\n所訂點數內。\n2.申報追蹤管理照護費後至少間隔十週才能申報本項，本\n項限執行P1408C、P1410C或P7001C追蹤合計達三次以上者\n始得申報，本項每年度最多申報一次。\n3.不得與P7002C同時申報。\n初期慢性腎臟病"
+        },
+        {
+          "code": "P4301C",
+          "nameZh": "─新收案管理照護費",
+          "nameEn": "",
+          "points": "200",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：應記錄「新收案個案管理基本資料參考表」(詳附表8\n.2.5)及檢查、檢驗與衛教情形等資料(詳附表8.2.6)。除\n檢驗檢查項目外，其費用已內含於本項所訂點數內。"
+        },
+        {
+          "code": "P4302C",
+          "nameZh": "─追蹤管理照護費",
+          "nameEn": "",
+          "points": "200",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1.應記錄追蹤檢查、檢驗與衛教情形等資料(詳附表8.2.6\n)。除檢驗檢查項目外，其費用已內含於本項所訂點數內\n。\n2.申報新收案管理照護費至少需間隔三個月才能申報本項\n，本項每年度最多申報二次，每次至少間隔六個月。若當\n年度同時有申報P7001C，兩者合計最多申報三次。\n3.不得與P7001C同時申報。"
+        },
+        {
+          "code": "P4303C",
+          "nameZh": "─轉診照護獎勵費",
+          "nameEn": "",
+          "points": "200",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1.限個案符合轉診條件，並經轉診至參與「全民健康保險\n末期腎臟病前期(Pre-ESRD)病人照護與衛教計畫」院所，\n確認經該計畫收案後方可申報，每人限申報一次。\n2.跨院需填寫「全民健康保險轉診單」(如附表8.2.8，一\n份留存院所)，並提供患者腎臟功能相關資料(如：初期慢\n性腎臟病患者追蹤管理紀錄參考表及初期慢性腎臟病患者\n結案參考表等)予被轉診機構參考。若為院內跨科轉診，\n則須保留院內轉診單於病歷內，且於腎臟科收案追蹤後方\n予支付。(鼓勵跨院或跨科轉診，但排除已參加Pre-ESRD\n計畫同一院所的腎臟科互轉)\n3.結案原因為恢復正常、長期失聯(一百八十天以上)、拒\n絕再接受治療或死亡者，不可申報本項。\n4.不得與P7003C同時申報。\n5.執行前述及其餘轉診相關事宜，應依全民健康保險轉診\n實施辦法各項規定辦理。\n糖尿病合併初期慢性腎臟病"
+        },
+        {
+          "code": "P7001C",
+          "nameZh": "─追蹤管理照護費",
+          "nameEn": "",
+          "points": "400",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1.院所照護同時於糖尿病及初期慢性腎臟病收案之病人，\n需於同一次就診完成二項疾病之追蹤管理（照護項目同附\n表8.2.2及附表8.2.6），並以本項目申報，且當次就診不\n得再另申報P1408C、P1410C及P4302C。\n2.除檢驗檢查項目外，表列照護項目之費用已內含於本項\n所訂點數內。\n3.地區醫院及基層院所之團隊醫事人員如為醫師加另一專\n業人員執行，則申報點數為本項點數之百分之八十。\n4.至少須間隔任一方案之新收案七週後才能申報本項，每\n年度最多申報三次，每次間隔至少十週。若年度中因個案\n尚未同時參與同院所糖尿病及初期慢性腎臟病收案照護，\n有單一疾病追蹤管理者，仍得以該次追蹤管理疾病別申報\nP1408C(或P1410C)或P4302C，惟每年度分別與本項合計最\n多申報仍為三次，每次間隔至少十週。"
+        },
+        {
+          "code": "P7002C",
+          "nameZh": "─年度評估管理照護費",
+          "nameEn": "",
+          "points": "800",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1.照護項目同附表8.2.3，除檢驗檢查項目外，其費用已\n內含於本項所訂點數內。\n2.申報任一追蹤管理照護費後至少間隔十週才能申報本項\n，本項限執行P1407C、P1408C、P1410C、P4301C、P4302C\n或P7001C合計達三次以上者始得申報，本項每年度最多申\n報一次。\n3.地區醫院及基層院所之團隊醫事人員如為醫師加另一專\n業人員執行，則申報點數為本項點數之百分之八十。\n4.不得與P1409C或P1411C同時申報。"
+        },
+        {
+          "code": "P7003C",
+          "nameZh": "─轉診照護獎勵費",
+          "nameEn": "",
+          "points": "200",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1.限個案符合轉診條件，並經轉診至參與「全民健康保險\n末期腎臟病前期(Pre-ESRD)病人照護與衛教計畫」院所，\n確認經該計畫收案後方可申報，每人限申報一次。\n2.跨院需填寫「全民健康保險轉診單」(同附表8.2.8，一\n份留存院所)，並提供患者腎臟功能相關資料(如：初期慢\n性腎臟病患者追蹤管理紀錄參考表及初期慢性腎臟病患者\n結案參考表等)予被轉診機構參考。若為院內跨科轉診，\n則須保留院內轉診單於病歷內，且於腎臟科收案追蹤後方\n予支付。(鼓勵跨院或跨科轉診，但排除已參加Pre-ESRD\n計畫同一院所的腎臟科互轉)\n3.結案原因為恢復正常、長期失聯(一百八十天以上)、拒\n絕再接受治療或死亡者，不可申報本項。\n4.執行前述及其餘轉診相關事宜，應依全民健康保險轉診\n實施辦法各項規定辦理。"
+        }
+      ]
+    }
+  ]
+}
