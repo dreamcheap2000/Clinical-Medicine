@@ -39,6 +39,10 @@
     <button class="tab-btn" data-tab="pcs" onclick="switchTab('pcs')">ICD-10-PCS (處置)</button>
     <button class="tab-btn" data-tab="search" onclick="switchTab('search')">🔍 全文搜尋</button>
     <button class="tab-btn" data-tab="about" onclick="switchTab('about')">ℹ️ About</button>
+    <button class="tab-btn" data-tab="ebm" onclick="switchTab('ebm')">📝 EBM筆記</button>
+    <button class="tab-btn" data-tab="soap" onclick="switchTab('soap')">🏥 SOAP病歷</button>
+    <button class="tab-btn" data-tab="edu" onclick="switchTab('edu')">📚 衛教資源</button>
+    <button class="tab-btn" data-tab="history" onclick="switchTab('history')">🗂️ 歷史記錄</button>
   </nav>
 
   <!-- CM Tab -->
@@ -81,6 +85,119 @@
   <!-- About Tab -->
   <div id="tab-about" class="tab-content">
     <div class="about-content" id="about-content"></div>
+  </div>
+
+  <!-- EBM Tab -->
+  <div id="tab-ebm" class="tab-content">
+    <div class="section-header">
+      <h2>📝 EBM 實證醫學筆記</h2>
+      <p class="section-desc">貼上或輸入實證醫學文獻摘要，自動記錄日期，可存為範本重複使用</p>
+    </div>
+    <div class="entry-form">
+      <div class="form-row">
+        <div class="form-field">
+          <label>日期</label>
+          <input type="date" id="ebm-date" />
+        </div>
+        <div class="form-field" style="flex:2">
+          <label>ICD 類別（選填）</label>
+          <select id="ebm-icd-cat"></select>
+        </div>
+      </div>
+      <div class="form-row template-row">
+        <div class="form-field" style="flex:2">
+          <label>載入範本</label>
+          <select id="ebm-template-sel" onchange="loadEbmTemplate()"></select>
+        </div>
+        <button class="btn-secondary" onclick="saveEbmTemplate()">💾 存為範本</button>
+        <button class="btn-secondary" onclick="deleteEbmTemplate()">🗑️ 刪除範本</button>
+      </div>
+      <div class="form-field" style="margin-top:4px">
+        <label>EBM 內容</label>
+        <textarea id="ebm-content" class="entry-textarea" rows="14"
+          placeholder="在此貼上或輸入 EBM 文獻摘要、臨床指引或實證內容…"></textarea>
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary" onclick="saveEbmEntry()">💾 儲存筆記</button>
+        <button class="btn-secondary" onclick="clearEbmForm()">🗑️ 清除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SOAP Tab -->
+  <div id="tab-soap" class="tab-content">
+    <div class="section-header">
+      <h2>🏥 SOAP 病歷記錄</h2>
+      <p class="section-desc">輸入病患 SOAP 病歷，可儲存自訂範本</p>
+    </div>
+    <div class="entry-form">
+      <div class="form-row">
+        <div class="form-field">
+          <label>日期</label>
+          <input type="date" id="soap-date" />
+        </div>
+      </div>
+      <div class="form-row template-row">
+        <div class="form-field" style="flex:2">
+          <label>載入範本</label>
+          <select id="soap-template-sel" onchange="loadSoapTemplate()"></select>
+        </div>
+        <button class="btn-secondary" onclick="saveSoapTemplate()">💾 存為範本</button>
+        <button class="btn-secondary" onclick="deleteSoapTemplate()">🗑️ 刪除範本</button>
+      </div>
+      <div class="form-field" style="margin-top:4px">
+        <label>SOAP 記錄</label>
+        <textarea id="soap-content" class="entry-textarea" rows="16"
+          placeholder="輸入 SOAP 病歷…"></textarea>
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary" onclick="saveSoapEntry()">💾 儲存病歷</button>
+        <button class="btn-secondary" onclick="clearSoapForm()">🔄 重置為預設範本</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Patient Education Tab -->
+  <div id="tab-edu" class="tab-content">
+    <div class="section-header">
+      <h2>📚 衛教資源庫</h2>
+      <p class="section-desc">預設連結倉庫衛教文件，可新增外部連結（儲存於本機）</p>
+    </div>
+    <div id="edu-list" class="edu-list"></div>
+    <div class="entry-form" style="margin-top:16px">
+      <h3 class="subform-title">➕ 新增外部衛教連結</h3>
+      <div class="form-row">
+        <div class="form-field" style="flex:2">
+          <label>名稱</label>
+          <input type="text" id="edu-link-name" placeholder="衛教資源名稱" />
+        </div>
+      </div>
+      <div class="form-field">
+        <label>連結 URL</label>
+        <input type="url" id="edu-link-url" placeholder="https://…" />
+      </div>
+      <div class="form-field" style="margin-top:8px">
+        <label>說明（選填）</label>
+        <input type="text" id="edu-link-note" placeholder="簡短說明或備註" />
+      </div>
+      <div class="form-actions">
+        <button class="btn-primary" onclick="addEduLink()">➕ 新增</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- History / Browse Tab -->
+  <div id="tab-history" class="tab-content">
+    <div class="section-header">
+      <h2>🗂️ 歷史記錄</h2>
+      <p class="section-desc">瀏覽過去儲存的 EBM 筆記與 SOAP 病歷，依日期排序</p>
+    </div>
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all" onclick="setHistoryFilter('all')">全部</button>
+      <button class="filter-btn" data-filter="ebm" onclick="setHistoryFilter('ebm')">📝 EBM</button>
+      <button class="filter-btn" data-filter="soap" onclick="setHistoryFilter('soap')">🏥 SOAP</button>
+    </div>
+    <div id="history-list" class="history-list"></div>
   </div>
 </div>
 
