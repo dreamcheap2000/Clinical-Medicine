@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PHCEP — Taiwan Core IG ICD-10 Viewer</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="app">
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-title">
+        <span class="header-logo">🏥</span>
+        <div>
+          <h1>PHCEP <span class="header-sub">Primary Health Care Electronic Program</span></h1>
+          <p class="header-tagline">ICD-10 Code Viewer — Taiwan Core Implementation Guide (TW Core IG)</p>
+        </div>
+      </div>
+      <div class="header-meta" id="ig-badge"></div>
+    </div>
+  </header>
+
+  <!-- Info bar -->
+  <div class="infobar" id="infobar">
+    <span id="infobar-counts"></span>
+    <a id="ig-link" href="https://twcore.mohw.gov.tw/ig/twcore/" target="_blank" rel="noopener">
+      🔗 TW Core IG
+    </a>
+    <a href="https://github.com/ITRI-BDL-D/MOHW_TWCoreIG" target="_blank" rel="noopener">
+      🔗 GitHub
+    </a>
+  </div>
+
+  <!-- Tab bar -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="cm" onclick="switchTab('cm')">ICD-10-CM (診斷)</button>
+    <button class="tab-btn" data-tab="pcs" onclick="switchTab('pcs')">ICD-10-PCS (處置)</button>
+    <button class="tab-btn" data-tab="search" onclick="switchTab('search')">🔍 全文搜尋</button>
+    <button class="tab-btn" data-tab="about" onclick="switchTab('about')">ℹ️ About</button>
+  </nav>
+
+  <!-- CM Tab -->
+  <div id="tab-cm" class="tab-content active">
+    <div class="section-header">
+      <h2>ICD-10-CM 2023 中文版 — 診斷分類</h2>
+      <p class="section-desc">依醫師專科相關性分類，相關領域顯示完整資訊，其他領域以精簡模式儲存</p>
+    </div>
+    <div class="cat-grid" id="cm-cat-grid"></div>
+    <div id="cm-detail" class="detail-panel hidden"></div>
+  </div>
+
+  <!-- PCS Tab -->
+  <div id="tab-pcs" class="tab-content">
+    <div class="section-header">
+      <h2>ICD-10-PCS 2023 中文版 — 手術處置分類</h2>
+      <p class="section-desc">依醫師介入手術與復健相關性分類，相關領域顯示完整資訊，其他領域以精簡模式儲存</p>
+    </div>
+    <div class="cat-grid" id="pcs-cat-grid"></div>
+    <div id="pcs-detail" class="detail-panel hidden"></div>
+  </div>
+
+  <!-- Search Tab -->
+  <div id="tab-search" class="tab-content">
+    <div class="section-header">
+      <h2>🔍 全文搜尋 ICD-10-CM / PCS</h2>
+    </div>
+    <div class="search-box">
+      <input id="search-input" type="text" placeholder="輸入代碼或關鍵字（中英文均可）…" autocomplete="off" oninput="onSearchInput()" />
+      <div class="search-type-row">
+        <label><input type="checkbox" id="srch-cm" checked onchange="onSearchInput()" /> ICD-10-CM</label>
+        <label><input type="checkbox" id="srch-pcs" checked onchange="onSearchInput()" /> ICD-10-PCS</label>
+        <label><input type="checkbox" id="srch-others" onchange="onSearchInput()" /> 含其他（需先載入）</label>
+        <span id="search-status" class="search-status"></span>
+      </div>
+    </div>
+    <div id="search-results" class="results-table-wrap"></div>
+  </div>
+
+  <!-- About Tab -->
+  <div id="tab-about" class="tab-content">
+    <div class="about-content" id="about-content"></div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
