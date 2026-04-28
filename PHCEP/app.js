@@ -33,6 +33,9 @@ async function boot() {
     renderCmGrid();
     renderPcsGrid();
     renderAbout();
+    initEbmTab();
+    initSoapTab();
+    initEduTab();
   } catch (e) {
     console.error('Boot failed:', e);
     toast('⚠️ 載入 meta.json 失敗，請確認部署路徑');
@@ -88,6 +91,7 @@ function switchTab(name) {
     b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('.tab-content').forEach(c =>
     c.classList.toggle('active', c.id === 'tab-' + name));
+  if (name === 'history') renderHistory();
 }
 
 // ---------------------------------------------------------------------------
@@ -477,4 +481,310 @@ document.addEventListener('DOMContentLoaded', async () => {
   await boot();
   // Preload specialty categories in background (enables search without clicking)
   preloadSpecialtyCm();
+
+  // Event delegation for edu-list (delete buttons)
+  document.getElementById('edu-list').addEventListener('click', e => {
+    const btn = e.target.closest('[data-action="delete-edu"]');
+    if (btn) deleteEduLink(btn.dataset.id);
+  });
+
+  // Event delegation for history-list (toggle / delete buttons)
+  document.getElementById('history-list').addEventListener('click', e => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    if (btn.dataset.action === 'toggle-entry') toggleHistoryEntry(btn.dataset.id);
+    if (btn.dataset.action === 'delete-entry') deleteHistoryEntry(btn.dataset.type, btn.dataset.id);
+  });
 });
+
+// ---------------------------------------------------------------------------
+// Storage helpers
+// ---------------------------------------------------------------------------
+function storageGet(key, def = []) {
+  try { return JSON.parse(localStorage.getItem(key)) ?? def; }
+  catch { return def; }
+}
+
+function storageSet(key, val) {
+  localStorage.setItem(key, JSON.stringify(val));
+}
+
+function genId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// ---------------------------------------------------------------------------
+// EBM Notes
+// ---------------------------------------------------------------------------
+const EBM_ENTRIES_KEY   = 'phcep_ebm_entries';
+const EBM_TEMPLATES_KEY = 'phcep_ebm_templates';
+
+function initEbmTab() {
+  document.getElementById('ebm-date').value = todayStr();
+  renderEbmCatOptions();
+  renderEbmTemplates();
+}
+
+function renderEbmCatOptions() {
+  if (!META) return;
+  const sel = document.getElementById('ebm-icd-cat');
+  const cats = [...META.cm_categories, ...META.pcs_categories].filter(c => c.id !== 'others');
+  sel.innerHTML = '<option value="">-- 選擇 ICD 類別 --</option>' +
+    cats.map(c => `<option value="${escHtml(c.id)}">${escHtml(c.icon)} ${escHtml(c.nameZh)}</option>`).join('');
+}
+
+function renderEbmTemplates() {
+  const templates = storageGet(EBM_TEMPLATES_KEY);
+  const sel = document.getElementById('ebm-template-sel');
+  sel.innerHTML = '<option value="">-- 載入範本 --</option>' +
+    templates.map(t => `<option value="${escHtml(t.id)}">${escHtml(t.name)}</option>`).join('');
+}
+
+function loadEbmTemplate() {
+  const id = document.getElementById('ebm-template-sel').value;
+  if (!id) return;
+  const t = storageGet(EBM_TEMPLATES_KEY).find(x => x.id === id);
+  if (t) document.getElementById('ebm-content').value = t.content;
+}
+
+function saveEbmTemplate() {
+  const content = document.getElementById('ebm-content').value.trim();
+  if (!content) { toast('⚠️ 請先輸入內容再儲存範本'); return; }
+  const name = prompt('範本名稱：');
+  if (!name) return;
+  const templates = storageGet(EBM_TEMPLATES_KEY);
+  templates.push({ id: genId(), name, content });
+  storageSet(EBM_TEMPLATES_KEY, templates);
+  renderEbmTemplates();
+  toast('✅ 範本已儲存');
+}
+
+function deleteEbmTemplate() {
+  const id = document.getElementById('ebm-template-sel').value;
+  if (!id) { toast('⚠️ 請先選擇要刪除的範本'); return; }
+  const templates = storageGet(EBM_TEMPLATES_KEY).filter(t => t.id !== id);
+  storageSet(EBM_TEMPLATES_KEY, templates);
+  renderEbmTemplates();
+  toast('🗑️ 範本已刪除');
+}
+
+function saveEbmEntry() {
+  const content = document.getElementById('ebm-content').value.trim();
+  if (!content) { toast('⚠️ 請先輸入 EBM 內容'); return; }
+  const date   = document.getElementById('ebm-date').value || todayStr();
+  const icdCat = document.getElementById('ebm-icd-cat').value;
+  const entries = storageGet(EBM_ENTRIES_KEY);
+  entries.unshift({ id: genId(), date, icdCat, content, createdAt: new Date().toISOString() });
+  storageSet(EBM_ENTRIES_KEY, entries);
+  toast('✅ EBM 筆記已儲存');
+  if (document.getElementById('tab-history').classList.contains('active')) renderHistory();
+}
+
+function clearEbmForm() {
+  document.getElementById('ebm-content').value = '';
+  document.getElementById('ebm-date').value = todayStr();
+  document.getElementById('ebm-icd-cat').value = '';
+}
+
+// ---------------------------------------------------------------------------
+// SOAP Notes
+// ---------------------------------------------------------------------------
+const SOAP_ENTRIES_KEY   = 'phcep_soap_entries';
+const SOAP_TEMPLATES_KEY = 'phcep_soap_templates';
+
+const DEFAULT_SOAP =
+`S（主觀/主訴）：
+
+O（客觀/檢查）：
+
+A（評估/診斷）：
+
+P（計畫/處置）：
+`;
+
+function initSoapTab() {
+  document.getElementById('soap-date').value = todayStr();
+  document.getElementById('soap-content').value = DEFAULT_SOAP;
+  renderSoapTemplates();
+}
+
+function renderSoapTemplates() {
+  const templates = storageGet(SOAP_TEMPLATES_KEY);
+  const sel = document.getElementById('soap-template-sel');
+  sel.innerHTML = '<option value="">-- 載入範本 --</option>' +
+    templates.map(t => `<option value="${escHtml(t.id)}">${escHtml(t.name)}</option>`).join('');
+}
+
+function loadSoapTemplate() {
+  const id = document.getElementById('soap-template-sel').value;
+  if (!id) return;
+  const t = storageGet(SOAP_TEMPLATES_KEY).find(x => x.id === id);
+  if (t) document.getElementById('soap-content').value = t.content;
+}
+
+function saveSoapTemplate() {
+  const content = document.getElementById('soap-content').value.trim();
+  if (!content) { toast('⚠️ 請先輸入內容再儲存範本'); return; }
+  const name = prompt('範本名稱：');
+  if (!name) return;
+  const templates = storageGet(SOAP_TEMPLATES_KEY);
+  templates.push({ id: genId(), name, content });
+  storageSet(SOAP_TEMPLATES_KEY, templates);
+  renderSoapTemplates();
+  toast('✅ 範本已儲存');
+}
+
+function deleteSoapTemplate() {
+  const id = document.getElementById('soap-template-sel').value;
+  if (!id) { toast('⚠️ 請先選擇要刪除的範本'); return; }
+  const templates = storageGet(SOAP_TEMPLATES_KEY).filter(t => t.id !== id);
+  storageSet(SOAP_TEMPLATES_KEY, templates);
+  renderSoapTemplates();
+  toast('🗑️ 範本已刪除');
+}
+
+function saveSoapEntry() {
+  const content = document.getElementById('soap-content').value.trim();
+  if (!content) { toast('⚠️ 請先輸入 SOAP 內容'); return; }
+  const date = document.getElementById('soap-date').value || todayStr();
+  const entries = storageGet(SOAP_ENTRIES_KEY);
+  entries.unshift({ id: genId(), date, content, createdAt: new Date().toISOString() });
+  storageSet(SOAP_ENTRIES_KEY, entries);
+  toast('✅ SOAP 病歷已儲存');
+  if (document.getElementById('tab-history').classList.contains('active')) renderHistory();
+}
+
+function clearSoapForm() {
+  document.getElementById('soap-content').value = DEFAULT_SOAP;
+  document.getElementById('soap-date').value = todayStr();
+}
+
+// ---------------------------------------------------------------------------
+// Patient Education Resources
+// ---------------------------------------------------------------------------
+const EDU_LINKS_KEY = 'phcep_edu_links';
+
+const DEFAULT_EDU = [
+  {
+    id: 'default_1',
+    name: '無痛關節鬆動術',
+    url: 'https://github.com/dreamcheap2000/Clinical-Medicine/blob/main/Patient%20education/%E7%84%A1%E7%97%9B%E9%97%9C%E7%AF%80%E9%AC%86%E5%8B%95%E8%A1%93.docx',
+    type: 'repo',
+    note: '關節鬆動術衛教文件（Clinical-Medicine 倉庫）'
+  }
+];
+
+function initEduTab() {
+  renderEduList();
+}
+
+function renderEduList() {
+  const userLinks = storageGet(EDU_LINKS_KEY);
+  const all = [...DEFAULT_EDU, ...userLinks];
+  const container = document.getElementById('edu-list');
+  if (all.length === 0) {
+    container.innerHTML = '<p class="empty-msg">尚無資源</p>';
+    return;
+  }
+  container.innerHTML = all.map(r => `
+    <div class="edu-card">
+      <div class="edu-card-header">
+        <span class="edu-type-badge ${r.type === 'repo' ? 'repo' : 'ext'}">${r.type === 'repo' ? '📁 倉庫' : '🔗 外部'}</span>
+        <span class="edu-name">${escHtml(r.name)}</span>
+        ${r.id.startsWith('default_') ? '' : `<button class="btn-icon" data-action="delete-edu" data-id="${escHtml(r.id)}" title="刪除">🗑️</button>`}
+      </div>
+      ${r.note ? `<div class="edu-note">${escHtml(r.note)}</div>` : ''}
+      <a class="edu-link" href="${escHtml(r.url)}" target="_blank" rel="noopener">${escHtml(r.url)}</a>
+    </div>`).join('');
+}
+
+function addEduLink() {
+  const name = document.getElementById('edu-link-name').value.trim();
+  const url  = document.getElementById('edu-link-url').value.trim();
+  const note = document.getElementById('edu-link-note').value.trim();
+  if (!name || !url) { toast('⚠️ 請填寫名稱和連結'); return; }
+  const links = storageGet(EDU_LINKS_KEY);
+  links.push({ id: genId(), name, url, type: 'external', note });
+  storageSet(EDU_LINKS_KEY, links);
+  document.getElementById('edu-link-name').value = '';
+  document.getElementById('edu-link-url').value  = '';
+  document.getElementById('edu-link-note').value = '';
+  renderEduList();
+  toast('✅ 資源已新增');
+}
+
+function deleteEduLink(id) {
+  storageSet(EDU_LINKS_KEY, storageGet(EDU_LINKS_KEY).filter(l => l.id !== id));
+  renderEduList();
+  toast('🗑️ 已刪除');
+}
+
+// ---------------------------------------------------------------------------
+// History / Browse
+// ---------------------------------------------------------------------------
+let historyFilter = 'all';
+
+function setHistoryFilter(f) {
+  historyFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.filter === f));
+  renderHistory();
+}
+
+function renderHistory() {
+  const ebm  = storageGet(EBM_ENTRIES_KEY).map(e => ({ ...e, type: 'ebm' }));
+  const soap = storageGet(SOAP_ENTRIES_KEY).map(e => ({ ...e, type: 'soap' }));
+  let all = [];
+  if (historyFilter === 'all' || historyFilter === 'ebm')  all.push(...ebm);
+  if (historyFilter === 'all' || historyFilter === 'soap') all.push(...soap);
+  all.sort((a, b) => {
+    if (b.date !== a.date) return b.date.localeCompare(a.date);
+    return b.createdAt.localeCompare(a.createdAt);
+  });
+
+  const container = document.getElementById('history-list');
+  if (all.length === 0) {
+    container.innerHTML = '<p class="empty-msg">尚無記錄</p>';
+    return;
+  }
+  container.innerHTML = all.map(entry => {
+    const preview   = entry.content.slice(0, 150).replace(/\n/g, ' ');
+    const label     = entry.type === 'ebm' ? '📝 EBM' : '🏥 SOAP';
+    const labelCls  = entry.type === 'ebm' ? 'ebm' : 'soap';
+    let catLabel = '';
+    if (entry.type === 'ebm' && entry.icdCat && META) {
+      const cat = [...META.cm_categories, ...META.pcs_categories].find(c => c.id === entry.icdCat);
+      if (cat) catLabel = `<span class="icd-tag">${escHtml(cat.icon)} ${escHtml(cat.nameZh)}</span>`;
+    }
+    return `
+    <div class="history-entry" id="hentry-${escHtml(entry.id)}">
+      <div class="history-entry-header">
+        <span class="type-badge ${labelCls}">${label}</span>
+        <span class="date-tag">📅 ${escHtml(entry.date)}</span>
+        ${catLabel}
+        <div class="history-actions">
+          <button class="btn-icon" data-action="toggle-entry" data-id="${escHtml(entry.id)}" title="展開/收合">👁️</button>
+          <button class="btn-icon" data-action="delete-entry" data-type="${escHtml(entry.type)}" data-id="${escHtml(entry.id)}" title="刪除">🗑️</button>
+        </div>
+      </div>
+      <div class="history-preview">${escHtml(preview)}${entry.content.length > 150 ? '…' : ''}</div>
+      <div class="history-full hidden" id="hfull-${escHtml(entry.id)}"><pre>${escHtml(entry.content)}</pre></div>
+    </div>`;
+  }).join('');
+}
+
+function toggleHistoryEntry(id) {
+  const el = document.getElementById('hfull-' + id);
+  if (el) el.classList.toggle('hidden');
+}
+
+function deleteHistoryEntry(type, id) {
+  const key = type === 'ebm' ? EBM_ENTRIES_KEY : SOAP_ENTRIES_KEY;
+  storageSet(key, storageGet(key).filter(e => e.id !== id));
+  renderHistory();
+  toast('🗑️ 已刪除');
+}
