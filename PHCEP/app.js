@@ -37,6 +37,7 @@ async function boot() {
     initSoapTab();
     initEduTab();
     initNhiTab();
+    initDrugTab();
   } catch (e) {
     console.error('Boot failed:', e);
     toast('⚠️ 載入 meta.json 失敗，請確認部署路徑');
@@ -94,6 +95,7 @@ function switchTab(name) {
     c.classList.toggle('active', c.id === 'tab-' + name));
   if (name === 'history') renderHistory();
   if (name === 'nhi') nhiOnTabShow();
+  if (name === 'drug') drugOnTabShow();
 }
 
 // ---------------------------------------------------------------------------
@@ -277,6 +279,9 @@ function onSearchInput() {
 
 async function runSearch() {
   const q = document.getElementById('search-input').value.trim().toLowerCase();
+  if (q.length >= 2) {
+    saveSearchHistory('fulltext', q);
+  }
   const useCm  = document.getElementById('srch-cm').checked;
   const usePcs = document.getElementById('srch-pcs').checked;
   const useOthers = document.getElementById('srch-others').checked;
@@ -866,6 +871,9 @@ function nhiOpenCat(id) {
 
 function nhiSearch(q) {
   nhiSearchQ = q.trim();
+  if (nhiSearchQ.length >= 2) {
+    saveSearchHistory('nhi', nhiSearchQ);
+  }
   if (nhiSearchQ) {
     if (!nhiActiveCat) {
       document.getElementById('nhi-cat-grid').classList.add('hidden');
@@ -989,5 +997,393 @@ function nhiBackToGrid() {
   document.getElementById('nhi-cat-sel').value = '';
   document.getElementById('nhi-cat-grid').classList.remove('hidden');
   document.getElementById('nhi-table-wrap').classList.add('hidden');
+}
+// ===========================================================================
+
+// ===========================================================================
+// Search History
+// ---------------------------------------------------------------------------
+const SEARCH_HISTORY_MAX = 10;
+
+function searchHistoryKey(type) {
+  return 'phcep_search_history_' + type;
+}
+
+function getSearchHistory(type) {
+  return storageGet(searchHistoryKey(type), []);
+}
+
+function saveSearchHistory(type, query) {
+  if (!query || query.length < 2) return;
+  let hist = getSearchHistory(type);
+  // Remove duplicate
+  hist = hist.filter(function(h) { return h !== query; });
+  hist.unshift(query);
+  if (hist.length > SEARCH_HISTORY_MAX) hist = hist.slice(0, SEARCH_HISTORY_MAX);
+  storageSet(searchHistoryKey(type), hist);
+}
+
+function clearSearchHistory(type) {
+  storageSet(searchHistoryKey(type), []);
+  var itemsEl = document.getElementById(type + '-history-items');
+  if (itemsEl) {
+    itemsEl.innerHTML = '<div class="search-history-empty">無搜尋記錄</div>';
+  }
+}
+
+function showSearchHistory(type) {
+  var dropdownEl = document.getElementById(type + '-search-history');
+  var itemsEl = document.getElementById(type + '-history-items');
+  if (!dropdownEl || !itemsEl) return;
+
+  var hist = getSearchHistory(type);
+  if (hist.length === 0) {
+    itemsEl.innerHTML = '<div class="search-history-empty">無搜尋記錄</div>';
+  } else {
+    itemsEl.innerHTML = '';
+    hist.forEach(function(h) {
+      var div = document.createElement('div');
+      div.className = 'search-history-item';
+      div.textContent = h;
+      div.dataset.histType = type;
+      div.dataset.histQuery = h;
+      div.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        applySearchHistory(type, h);
+      });
+      itemsEl.appendChild(div);
+    });
+  }
+  dropdownEl.classList.add('open');
+}
+
+function hideSearchHistory(type, delayMs) {
+  setTimeout(function() {
+    var el = document.getElementById(type + '-search-history');
+    if (el) el.classList.remove('open');
+  }, delayMs || 0);
+}
+
+function applySearchHistory(type, query) {
+  if (type === 'nhi') {
+    var inp = document.getElementById('nhi-search');
+    if (inp) { inp.value = query; nhiSearch(query); }
+  } else if (type === 'drug') {
+    var inp = document.getElementById('drug-search');
+    if (inp) { inp.value = query; drugSearch(query); }
+  } else if (type === 'fulltext') {
+    var inp = document.getElementById('search-input');
+    if (inp) { inp.value = query; onSearchInput(); }
+  }
+  hideSearchHistory(type, 0);
+}
+
+// ===========================================================================
+// Drug Benefits Tab
+// ---------------------------------------------------------------------------
+let DRUG_DATA = null;
+let drugActiveCat = null;
+let drugSearchQ = '';
+let drugActiveTag = '';
+
+async function initDrugTab() {
+  try {
+    DRUG_DATA = await fetchJson(BASE + 'data/nhi/drug_benefits.json');
+    renderDrugCatGrid();
+    populateDrugCatSelect();
+    renderDrugTagFilter();
+  } catch (e) {
+    console.error('Drug benefits load failed:', e);
+    var el = document.getElementById('drug-cat-grid');
+    if (el) el.innerHTML = '<p class="nhi-load-error">⚠️ 無法載入藥品給付規定資料：' + escHtml(String(e)) + '</p>';
+  }
+}
+
+function drugOnTabShow() {
+  if (!DRUG_DATA) initDrugTab();
+}
+
+function renderDrugCatGrid() {
+  if (!DRUG_DATA) return;
+  var grid = document.getElementById('drug-cat-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  DRUG_DATA.categories.forEach(function(cat) {
+    var card = document.createElement('div');
+    card.className = 'drug-cat-card';
+    card.addEventListener('click', function() { drugOpenCat(cat.id); });
+
+    var iconDiv = document.createElement('div');
+    iconDiv.className = 'drug-cat-icon';
+    iconDiv.textContent = cat.icon;
+
+    var nameZhDiv = document.createElement('div');
+    nameZhDiv.className = 'drug-cat-name-zh';
+    nameZhDiv.textContent = cat.nameZh;
+
+    var nameEnDiv = document.createElement('div');
+    nameEnDiv.className = 'drug-cat-name-en';
+    nameEnDiv.textContent = cat.nameEn;
+
+    var countDiv = document.createElement('div');
+    countDiv.className = 'drug-cat-count';
+    countDiv.textContent = cat.totalEntries + ' 項';
+
+    card.appendChild(iconDiv);
+    card.appendChild(nameZhDiv);
+    card.appendChild(nameEnDiv);
+    card.appendChild(countDiv);
+    grid.appendChild(card);
+  });
+}
+
+function populateDrugCatSelect() {
+  if (!DRUG_DATA) return;
+  var sel = document.getElementById('drug-cat-sel');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— 選擇藥物分類 —</option>' +
+    DRUG_DATA.categories.map(function(c) {
+      return '<option value="' + escHtml(c.id) + '">' + escHtml(c.icon) + ' ' + escHtml(c.nameZh) + '</option>';
+    }).join('');
+}
+
+function renderDrugTagFilter() {
+  if (!DRUG_DATA) return;
+  var wrap = document.getElementById('drug-tag-filter');
+  if (!wrap) return;
+  var tags = DRUG_DATA.expertiseTags || [];
+
+  // Build buttons using DOM to avoid XSS
+  wrap.innerHTML = '';
+
+  var allBtn = document.createElement('button');
+  allBtn.className = 'drug-tag-btn active';
+  allBtn.dataset.tag = '';
+  allBtn.textContent = '全部';
+  allBtn.addEventListener('click', function() { drugFilterTag('', allBtn); });
+  wrap.appendChild(allBtn);
+
+  tags.forEach(function(t) {
+    var btn = document.createElement('button');
+    btn.className = 'drug-tag-btn';
+    btn.dataset.tag = t;
+    btn.textContent = t;
+    btn.addEventListener('click', function() { drugFilterTag(t, btn); });
+    wrap.appendChild(btn);
+  });
+}
+
+function drugFilterTag(tag, btn) {
+  drugActiveTag = tag;
+  document.querySelectorAll('.drug-tag-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.tag === tag);
+  });
+  if (drugActiveCat || drugSearchQ) {
+    drugRender();
+  }
+}
+
+function drugSelectCat(id) {
+  if (!id) {
+    drugActiveCat = null;
+    drugSearchQ = '';
+    var inp = document.getElementById('drug-search');
+    if (inp) inp.value = '';
+    document.getElementById('drug-cat-grid').classList.remove('hidden');
+    document.getElementById('drug-list-wrap').classList.add('hidden');
+    return;
+  }
+  drugOpenCat(id);
+  var sel = document.getElementById('drug-cat-sel');
+  if (sel) sel.value = id;
+}
+
+function drugOpenCat(id) {
+  if (!DRUG_DATA) return;
+  drugActiveCat = id;
+  drugSearchQ = (document.getElementById('drug-search') || {}).value || '';
+  drugSearchQ = drugSearchQ.trim();
+  var sel = document.getElementById('drug-cat-sel');
+  if (sel) sel.value = id;
+  document.getElementById('drug-cat-grid').classList.add('hidden');
+  document.getElementById('drug-list-wrap').classList.remove('hidden');
+  drugRender();
+}
+
+function drugSearch(q) {
+  drugSearchQ = q.trim();
+  if (drugSearchQ.length >= 2) {
+    saveSearchHistory('drug', drugSearchQ);
+  }
+  if (drugSearchQ) {
+    if (!drugActiveCat) {
+      document.getElementById('drug-cat-grid').classList.add('hidden');
+      document.getElementById('drug-list-wrap').classList.remove('hidden');
+    }
+  } else if (!drugActiveCat) {
+    document.getElementById('drug-cat-grid').classList.remove('hidden');
+    document.getElementById('drug-list-wrap').classList.add('hidden');
+    return;
+  }
+  drugRender();
+}
+
+function drugGetFilteredEntries() {
+  if (!DRUG_DATA) return [];
+  var allEntries = [];
+
+  if (drugActiveCat) {
+    var cat = DRUG_DATA.categories.find(function(c) { return c.id === drugActiveCat; });
+    if (cat) allEntries = cat.entries.slice();
+  } else {
+    DRUG_DATA.categories.forEach(function(cat) {
+      cat.entries.forEach(function(e) {
+        allEntries.push(Object.assign({}, e, { _cat: cat.nameZh, _catId: cat.id }));
+      });
+    });
+  }
+
+  // Filter by expertise tag
+  if (drugActiveTag) {
+    allEntries = allEntries.filter(function(e) {
+      return e.tags && e.tags.indexOf(drugActiveTag) >= 0;
+    });
+  }
+
+  // Filter by search query
+  if (drugSearchQ) {
+    var q = drugSearchQ.toLowerCase();
+    allEntries = allEntries.filter(function(e) {
+      return e.name.toLowerCase().includes(q) ||
+             (e.content || '').toLowerCase().includes(q) ||
+             e.id.toLowerCase().includes(q);
+    });
+  }
+
+  return allEntries;
+}
+
+function drugRender() {
+  if (!DRUG_DATA) return;
+
+  var entries = drugGetFilteredEntries();
+  var headerEl = document.getElementById('drug-list-header');
+  var entriesEl = document.getElementById('drug-entries');
+  var noResEl = document.getElementById('drug-no-results');
+
+  // Build header using DOM
+  if (headerEl) {
+    headerEl.innerHTML = '';
+    var titleEl = document.createElement('div');
+    titleEl.className = 'drug-list-title';
+    if (drugActiveCat) {
+      var cat = DRUG_DATA.categories.find(function(c) { return c.id === drugActiveCat; });
+      if (cat) {
+        titleEl.textContent = cat.icon + ' ' + cat.nameZh + ' ';
+        var enSpan = document.createElement('span');
+        enSpan.style.cssText = 'font-size:.78rem;font-weight:400;color:var(--muted)';
+        enSpan.textContent = cat.nameEn;
+        titleEl.appendChild(enSpan);
+      }
+    } else if (drugSearchQ) {
+      titleEl.textContent = '🔍 全分類搜尋：「' + drugSearchQ + '」';
+    } else if (drugActiveTag) {
+      titleEl.textContent = '🏷️ 標籤篩選：' + drugActiveTag;
+    } else {
+      titleEl.textContent = '全部藥品';
+    }
+    headerEl.appendChild(titleEl);
+
+    if (drugActiveCat) {
+      var backBtn = document.createElement('button');
+      backBtn.className = 'btn-drug-back';
+      backBtn.textContent = '← 返回分類';
+      backBtn.addEventListener('click', drugBackToGrid);
+      headerEl.appendChild(backBtn);
+    }
+
+    var countBadge = document.createElement('span');
+    countBadge.className = 'drug-count-badge';
+    countBadge.textContent = entries.length + ' 項';
+    headerEl.appendChild(countBadge);
+  }
+
+  if (entries.length === 0) {
+    if (entriesEl) entriesEl.innerHTML = '';
+    if (noResEl) noResEl.classList.remove('hidden');
+    return;
+  }
+  if (noResEl) noResEl.classList.add('hidden');
+
+  if (entriesEl) {
+    entriesEl.innerHTML = '';
+    entries.forEach(function(e) {
+      var entryDiv = document.createElement('div');
+      entryDiv.className = 'drug-entry';
+
+      var headerDiv = document.createElement('div');
+      headerDiv.className = 'drug-entry-header';
+
+      var idSpan = document.createElement('span');
+      idSpan.className = 'drug-entry-id';
+      idSpan.textContent = e.id;
+
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'drug-entry-name';
+      if (e._cat) {
+        var catBadge = document.createElement('span');
+        catBadge.style.cssText = 'font-size:.68rem;color:var(--muted);margin-right:6px';
+        catBadge.textContent = e._cat;
+        nameSpan.appendChild(catBadge);
+      }
+      nameSpan.appendChild(document.createTextNode(e.name));
+
+      var tagsSpan = document.createElement('span');
+      tagsSpan.className = 'drug-entry-tags';
+      (e.tags || []).forEach(function(t) {
+        var tagEl = document.createElement('span');
+        tagEl.className = 'drug-tag';
+        tagEl.textContent = t;
+        tagsSpan.appendChild(tagEl);
+      });
+
+      var chevronSpan = document.createElement('span');
+      chevronSpan.className = 'drug-entry-chevron';
+      chevronSpan.textContent = '▶';
+
+      headerDiv.appendChild(idSpan);
+      headerDiv.appendChild(nameSpan);
+      headerDiv.appendChild(tagsSpan);
+      headerDiv.appendChild(chevronSpan);
+
+      var contentDiv = document.createElement('div');
+      contentDiv.className = 'drug-entry-content';
+      contentDiv.textContent = e.content || '';
+
+      headerDiv.addEventListener('click', function() {
+        entryDiv.classList.toggle('open');
+      });
+
+      entryDiv.appendChild(headerDiv);
+      entryDiv.appendChild(contentDiv);
+      entriesEl.appendChild(entryDiv);
+    });
+  }
+}
+
+function drugToggleEntry(entryId) {
+  var el = document.getElementById('dentry-' + entryId);
+  if (el) el.classList.toggle('open');
+}
+
+function drugBackToGrid() {
+  drugActiveCat = null;
+  drugSearchQ = '';
+  var inp = document.getElementById('drug-search');
+  if (inp) inp.value = '';
+  var sel = document.getElementById('drug-cat-sel');
+  if (sel) sel.value = '';
+  document.getElementById('drug-cat-grid').classList.remove('hidden');
+  document.getElementById('drug-list-wrap').classList.add('hidden');
 }
 // ===========================================================================

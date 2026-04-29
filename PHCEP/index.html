@@ -37,6 +37,7 @@
   <nav class="tab-bar">
     <button class="tab-btn active" data-tab="cm" onclick="switchTab('cm')">ICD-10-CM (診斷)</button>
     <button class="tab-btn" data-tab="nhi" onclick="switchTab('nhi')">💰 NHI支付標準</button>
+    <button class="tab-btn" data-tab="drug" onclick="switchTab('drug')">💊 藥品給付規定</button>
     <button class="tab-btn" data-tab="pcs" onclick="switchTab('pcs')">ICD-10-PCS (處置)</button>
     <button class="tab-btn" data-tab="search" onclick="switchTab('search')">🔍 全文搜尋</button>
     <button class="tab-btn" data-tab="about" onclick="switchTab('about')">ℹ️ About</button>
@@ -65,9 +66,21 @@
       </p>
     </div>
     <div class="nhi-toolbar">
-      <input id="nhi-search" type="text" class="nhi-search-input"
-             placeholder="搜尋代碼或名稱（中英文）…"
-             oninput="nhiSearch(this.value)" autocomplete="off" />
+      <div class="nhi-search-wrap">
+        <input id="nhi-search" type="text" class="nhi-search-input"
+               placeholder="搜尋代碼或名稱（中英文）…"
+               oninput="nhiSearch(this.value)"
+               onfocus="showSearchHistory('nhi')"
+               onblur="hideSearchHistory('nhi', 150)"
+               autocomplete="off" />
+        <div id="nhi-search-history" class="search-history-dropdown">
+          <div class="search-history-header">
+            <span>最近搜尋</span>
+            <button class="search-history-clear" onclick="clearSearchHistory('nhi')">清除</button>
+          </div>
+          <div id="nhi-history-items"></div>
+        </div>
+      </div>
       <select id="nhi-cat-sel" class="nhi-cat-sel" onchange="nhiSelectCat(this.value)">
         <option value="">— 選擇分類 —</option>
       </select>
@@ -95,6 +108,43 @@
     </div>
   </div>
 
+  <!-- Drug Benefits Tab -->
+  <div id="tab-drug" class="tab-content">
+    <div class="section-header">
+      <h2>💊 藥品給付規定 (115.04.23更新)</h2>
+      <p class="section-desc">依朱展麟醫師專科相關性（神經內科・神經血管介入・居家醫療・神經調控/DBS・安寧緩和・糖尿病照護）篩選之藥品給付規定。
+        資料來源：<a href="https://www.nhi.gov.tw/Content_List.aspx?n=5082839B5600C079" target="_blank" rel="noopener">完整給付規定 115.04.23</a>。
+      </p>
+    </div>
+    <div class="drug-toolbar">
+      <div class="drug-search-wrap">
+        <input id="drug-search" type="text" class="drug-search-input"
+               placeholder="搜尋藥品名稱或給付規定（中英文）…"
+               oninput="drugSearch(this.value)"
+               onfocus="showSearchHistory('drug')"
+               onblur="hideSearchHistory('drug', 150)"
+               autocomplete="off" />
+        <div id="drug-search-history" class="search-history-dropdown">
+          <div class="search-history-header">
+            <span>最近搜尋</span>
+            <button class="search-history-clear" onclick="clearSearchHistory('drug')">清除</button>
+          </div>
+          <div id="drug-history-items"></div>
+        </div>
+      </div>
+      <select id="drug-cat-sel" class="drug-cat-sel" onchange="drugSelectCat(this.value)">
+        <option value="">— 選擇藥物分類 —</option>
+      </select>
+    </div>
+    <div class="drug-tag-filter" id="drug-tag-filter"></div>
+    <div id="drug-cat-grid" class="drug-cat-grid"></div>
+    <div id="drug-list-wrap" class="drug-list-wrap hidden">
+      <div class="drug-list-header" id="drug-list-header"></div>
+      <div id="drug-entries"></div>
+      <p id="drug-no-results" class="drug-no-results hidden">無符合條件的藥品。</p>
+    </div>
+  </div>
+
   <!-- PCS Tab -->
   <div id="tab-pcs" class="tab-content">
     <div class="section-header">
@@ -110,8 +160,18 @@
     <div class="section-header">
       <h2>🔍 全文搜尋 ICD-10-CM / PCS</h2>
     </div>
-    <div class="search-box">
-      <input id="search-input" type="text" placeholder="輸入代碼或關鍵字（中英文均可）…" autocomplete="off" oninput="onSearchInput()" />
+    <div class="search-box" style="position:relative">
+      <input id="search-input" type="text" placeholder="輸入代碼或關鍵字（中英文均可）…" autocomplete="off"
+             oninput="onSearchInput()"
+             onfocus="showSearchHistory('fulltext')"
+             onblur="hideSearchHistory('fulltext', 150)" />
+      <div id="fulltext-search-history" class="search-history-dropdown" style="left:0;right:0">
+        <div class="search-history-header">
+          <span>最近搜尋</span>
+          <button class="search-history-clear" onclick="clearSearchHistory('fulltext')">清除</button>
+        </div>
+        <div id="fulltext-history-items"></div>
+      </div>
       <div class="search-type-row">
         <label><input type="checkbox" id="srch-cm" checked onchange="onSearchInput()" /> ICD-10-CM</label>
         <label><input type="checkbox" id="srch-pcs" checked onchange="onSearchInput()" /> ICD-10-PCS</label>
