@@ -38,6 +38,7 @@ async function boot() {
     initEduTab();
     initNhiTab();
     initDrugTab();
+    initStrokeTab();
   } catch (e) {
     console.error('Boot failed:', e);
     toast('⚠️ 載入 meta.json 失敗，請確認部署路徑');
@@ -1386,4 +1387,395 @@ function drugBackToGrid() {
   document.getElementById('drug-cat-grid').classList.remove('hidden');
   document.getElementById('drug-list-wrap').classList.add('hidden');
 }
+// ===========================================================================
+
+// ===========================================================================
+// Stroke Guidelines Tab
+// ===========================================================================
+var STROKE_DATA = null;
+var strokeActiveTopic = '';
+var strokeSearchQ = '';
+var strokeSearchDebounce = null;
+
+var STROKE_TOPIC_LABELS = {
+  'dyslipidemia':              { label: '🧪 血脂異常', order: 1 },
+  'blood_pressure':            { label: '💉 血壓控制', order: 2 },
+  'iv_thrombolysis':           { label: '💊 靜脈溶栓', order: 3 },
+  'mechanical_thrombectomy':   { label: '🔧 動脈取栓', order: 4 },
+  'antiplatelet':              { label: '💊 抗血小板', order: 5 },
+  'noac_af':                   { label: '💊 NOAC/心房顫動', order: 6 },
+  'intracerebral_hemorrhage':  { label: '🩸 腦出血', order: 7 },
+  'intracranial_atherosclerosis': { label: '🧠 顱內動脈硬化', order: 8 },
+  'diabetes_glycemic':         { label: '🩸 糖尿病/血糖', order: 9 },
+  'ckd_stroke':                { label: '🫘 慢性腎臟病', order: 10 },
+  'prehospital':               { label: '🚑 院前處置', order: 11 },
+  'prehospital_emergency':     { label: '🏥 急診處置', order: 12 },
+  'post_stroke_epilepsy':      { label: '⚡ 中風後癲癇', order: 13 },
+  'post_stroke_spasticity':    { label: '💪 中風後痙攣', order: 14 },
+  'post_stroke_dysphagia':     { label: '🍽️ 中風後吞嚥', order: 15 },
+  'women_stroke':              { label: '👩 女性中風', order: 16 },
+  'anti_amyloid_antibody':     { label: '🧬 抗類澱粉蛋白', order: 17 },
+  'herpes_zoster_vaccine':     { label: '💉 帶狀疹疫苗', order: 18 },
+  'covid19_adjustment':        { label: '😷 COVID-19', order: 19 },
+  'focused_update_2017':       { label: '🔄 2017指引更新', order: 20 },
+  'general_2020':              { label: '📋 2020綜合指引', order: 21 }
+};
+
+async function initStrokeTab() {
+  try {
+    STROKE_DATA = await fetchJson(BASE + 'data/stroke_guidelines.json');
+    renderStrokeTopicFilter();
+    strokeRender();
+  } catch (e) {
+    console.error('Stroke guidelines load failed:', e);
+    var el = document.getElementById('stroke-results');
+    if (el) el.innerHTML = '<p class="stroke-no-results">⚠️ 無法載入腦中風指引資料：' + escHtml(String(e)) + '</p>';
+  }
+}
+
+function renderStrokeTopicFilter() {
+  if (!STROKE_DATA) return;
+  var wrap = document.getElementById('stroke-topic-filter');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+
+  var allBtn = document.createElement('button');
+  allBtn.className = 'stroke-topic-btn active';
+  allBtn.dataset.topic = '';
+  allBtn.textContent = '全部';
+  allBtn.addEventListener('click', function() { strokeSelectTopic('', allBtn); });
+  wrap.appendChild(allBtn);
+
+  // Collect topics actually present (non-superseded guidelines)
+  var topicsPresent = {};
+  STROKE_DATA.guidelines.forEach(function(g) {
+    if (!g.superseded_by) topicsPresent[g.topic] = true;
+  });
+  var sorted = Object.keys(topicsPresent).sort(function(a, b) {
+    var oa = (STROKE_TOPIC_LABELS[a] || {}).order || 99;
+    var ob = (STROKE_TOPIC_LABELS[b] || {}).order || 99;
+    return oa - ob;
+  });
+  sorted.forEach(function(topic) {
+    var info = STROKE_TOPIC_LABELS[topic] || { label: topic };
+    var btn = document.createElement('button');
+    btn.className = 'stroke-topic-btn';
+    btn.dataset.topic = topic;
+    btn.textContent = info.label;
+    btn.addEventListener('click', function() { strokeSelectTopic(topic, btn); });
+    wrap.appendChild(btn);
+  });
+}
+
+function strokeSelectTopic(topic, btn) {
+  strokeActiveTopic = topic;
+  document.querySelectorAll('.stroke-topic-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.topic === topic);
+  });
+  strokeRender();
+}
+
+function strokeSearch(q) {
+  clearTimeout(strokeSearchDebounce);
+  strokeSearchDebounce = setTimeout(function() {
+    strokeSearchQ = q.trim().toLowerCase();
+    strokeRender();
+  }, 200);
+}
+
+function strokeRender() {
+  if (!STROKE_DATA) return;
+  var resultsEl = document.getElementById('stroke-results');
+  if (!resultsEl) return;
+
+  var showSuperseded = document.getElementById('stroke-show-superseded');
+  var inclSuperseded = showSuperseded && showSuperseded.checked;
+  var q = strokeSearchQ;
+  var topic = strokeActiveTopic;
+
+  var filtered = STROKE_DATA.guidelines.filter(function(g) {
+    if (g.superseded_by && !inclSuperseded) return false;
+    if (topic && g.topic !== topic) return false;
+    if (q) {
+      var titleMatch = (g.title || '').toLowerCase().indexOf(q) >= 0;
+      var topicMatch = (g.topic || '').toLowerCase().indexOf(q) >= 0;
+      var sectionMatch = (g.sections || []).some(function(s) {
+        return (s.heading || '').toLowerCase().indexOf(q) >= 0 ||
+               (s.content || '').toLowerCase().indexOf(q) >= 0 ||
+               (s.subsections || []).some(function(ss) {
+                 return (ss.heading || '').toLowerCase().indexOf(q) >= 0 ||
+                        (ss.content || '').toLowerCase().indexOf(q) >= 0;
+               });
+      });
+      if (!titleMatch && !topicMatch && !sectionMatch) return false;
+    }
+    return true;
+  });
+
+  resultsEl.innerHTML = '';
+  if (filtered.length === 0) {
+    resultsEl.innerHTML = '<p class="stroke-no-results">沒有符合條件的指引。</p>';
+    return;
+  }
+
+  filtered.forEach(function(g) {
+    resultsEl.appendChild(buildStrokeCard(g, q));
+  });
+}
+
+function buildStrokeCard(g, q) {
+  var card = document.createElement('div');
+  card.className = 'stroke-card' + (g.superseded_by ? ' superseded' : '');
+
+  // Header
+  var header = document.createElement('div');
+  header.className = 'stroke-card-header';
+
+  var yearEl = document.createElement('span');
+  yearEl.className = 'stroke-card-year';
+  yearEl.textContent = g.year;
+
+  var langEl = document.createElement('span');
+  langEl.className = 'stroke-card-lang';
+  langEl.textContent = g.lang === 'zh' ? '中' : 'EN';
+
+  var titleEl = document.createElement('span');
+  titleEl.className = 'stroke-card-title';
+  titleEl.textContent = g.title || g.filename;
+
+  var badges = document.createElement('span');
+  badges.className = 'stroke-card-badges';
+  if (g.superseded_by) {
+    var sup = document.createElement('span');
+    sup.className = 'stroke-badge-superseded';
+    sup.title = '已被 ' + g.superseded_by + ' 取代';
+    sup.textContent = '已更新';
+    badges.appendChild(sup);
+  }
+  if (g.garbled) {
+    var garb = document.createElement('span');
+    garb.className = 'stroke-badge-garbled';
+    garb.title = '原始 PDF 使用自訂字型，部分文字可能無法正確顯示';
+    garb.textContent = '字型限制';
+    badges.appendChild(garb);
+  }
+
+  var chevron = document.createElement('span');
+  chevron.className = 'stroke-card-chevron';
+  chevron.textContent = '▶';
+
+  header.appendChild(yearEl);
+  header.appendChild(langEl);
+  header.appendChild(titleEl);
+  header.appendChild(badges);
+  header.appendChild(chevron);
+
+  header.addEventListener('click', function() {
+    card.classList.toggle('open');
+  });
+
+  // Body
+  var body = document.createElement('div');
+  body.className = 'stroke-card-body';
+
+  var refs = g.references || [];
+  var refsMap = {};
+  refs.forEach(function(r) { refsMap[String(r.num)] = r.text; });
+
+  // Sections
+  var sectionsToShow = filterSectionsForSearch(g.sections || [], q);
+  if (sectionsToShow.length === 0 && !q) {
+    sectionsToShow = (g.sections || []).slice(0, 30); // show first 30 sections if no query
+  }
+
+  sectionsToShow.forEach(function(s) {
+    body.appendChild(buildStrokeSection(s, refsMap, q, 1));
+  });
+
+  // References toggle
+  if (refs.length > 0) {
+    var refsToggle = document.createElement('div');
+    refsToggle.className = 'stroke-refs-toggle';
+    refsToggle.textContent = '📚 參考文獻 (' + refs.length + ')';
+    var refsList = document.createElement('div');
+    refsList.className = 'stroke-refs-list';
+    refs.forEach(function(r) {
+      var item = document.createElement('div');
+      item.className = 'stroke-ref-item';
+      var numLabel = document.createElement('span');
+      numLabel.className = 'stroke-ref-num-label';
+      numLabel.textContent = r.num + '.';
+      item.appendChild(numLabel);
+      item.appendChild(document.createTextNode(r.text || ''));
+      refsList.appendChild(item);
+    });
+    refsToggle.addEventListener('click', function() {
+      refsList.classList.toggle('open');
+      refsToggle.textContent = refsList.classList.contains('open')
+        ? '📚 隱藏參考文獻' : '📚 參考文獻 (' + refs.length + ')';
+    });
+    body.appendChild(refsToggle);
+    body.appendChild(refsList);
+  }
+
+  card.appendChild(header);
+  card.appendChild(body);
+
+  // Auto-open if search matches
+  if (q) card.classList.add('open');
+
+  return card;
+}
+
+function filterSectionsForSearch(sections, q) {
+  if (!q) return sections;
+  return sections.filter(function(s) {
+    return (s.heading || '').toLowerCase().indexOf(q) >= 0 ||
+           (s.content || '').toLowerCase().indexOf(q) >= 0 ||
+           (s.subsections || []).some(function(ss) {
+             return (ss.heading || '').toLowerCase().indexOf(q) >= 0 ||
+                    (ss.content || '').toLowerCase().indexOf(q) >= 0;
+           });
+  });
+}
+
+function buildStrokeSection(s, refsMap, q, level) {
+  if (level === 1) {
+    var sec = document.createElement('div');
+    sec.className = 'stroke-section';
+
+    var secHeader = document.createElement('div');
+    secHeader.className = 'stroke-section-header';
+
+    var secChevron = document.createElement('span');
+    secChevron.className = 'stroke-section-chevron';
+    secChevron.textContent = '▶';
+
+    var secTitle = document.createElement('span');
+    secTitle.className = 'stroke-section-title';
+    secTitle.textContent = s.heading || '（無標題）';
+
+    var secPage = document.createElement('span');
+    secPage.className = 'stroke-section-page';
+    if (s.page) secPage.textContent = 'p.' + s.page;
+
+    secHeader.appendChild(secChevron);
+    secHeader.appendChild(secTitle);
+    secHeader.appendChild(secPage);
+    secHeader.addEventListener('click', function() { sec.classList.toggle('open'); });
+
+    var secBody = document.createElement('div');
+    secBody.className = 'stroke-section-body';
+
+    if (s.content) {
+      var contentEl = document.createElement('div');
+      contentEl.className = 'stroke-section-content';
+      appendContentWithRefs(contentEl, s.content, s.refs || [], refsMap);
+      secBody.appendChild(contentEl);
+    }
+
+    // Subsections
+    (s.subsections || []).forEach(function(ss) {
+      secBody.appendChild(buildStrokeSection(ss, refsMap, q, 2));
+    });
+
+    sec.appendChild(secHeader);
+    sec.appendChild(secBody);
+    if (q) sec.classList.add('open');
+    return sec;
+  } else {
+    // Level 2 subsection
+    var sub = document.createElement('div');
+    sub.className = 'stroke-subsection';
+
+    var subHeader = document.createElement('div');
+    subHeader.className = 'stroke-subsection-header';
+
+    var subChevron = document.createElement('span');
+    subChevron.className = 'stroke-subsection-chevron';
+    subChevron.textContent = '▶';
+
+    var subTitle = document.createElement('span');
+    subTitle.className = 'stroke-subsection-title';
+    subTitle.textContent = s.heading || '（無標題）';
+
+    subHeader.appendChild(subChevron);
+    subHeader.appendChild(subTitle);
+    subHeader.addEventListener('click', function() { sub.classList.toggle('open'); });
+
+    var subBody = document.createElement('div');
+    subBody.className = 'stroke-subsection-body';
+
+    if (s.content) {
+      var subContent = document.createElement('div');
+      subContent.className = 'stroke-subsection-content';
+      appendContentWithRefs(subContent, s.content, s.refs || [], refsMap);
+      subBody.appendChild(subContent);
+    }
+
+    sub.appendChild(subHeader);
+    sub.appendChild(subBody);
+    if (q) sub.classList.add('open');
+    return sub;
+  }
+}
+
+function appendContentWithRefs(el, content, refNums, refsMap) {
+  // Split content on reference patterns like [1] [2,3] or superscript-like ¹²
+  // The extracted content stores inline refs as numbers in brackets or bare digits
+  // We'll parse patterns like (1) or [1,2] or just trailing numbers separated by commas
+  var parts = content.split(/(\[\d+(?:,\s*\d+)*\])/g);
+  parts.forEach(function(part) {
+    var m = part.match(/^\[(\d+(?:,\s*\d+)*)\]$/);
+    if (m) {
+      var nums = m[1].split(/,\s*/);
+      nums.forEach(function(n) {
+        var refEl = document.createElement('sup');
+        refEl.className = 'stroke-ref-num';
+        refEl.textContent = '[' + n + ']';
+        var refText = refsMap[n.trim()];
+        if (refText) {
+          refEl.addEventListener('mouseenter', function(e) {
+            showStrokeRefTooltip(e, refText);
+          });
+          refEl.addEventListener('mouseleave', hideStrokeRefTooltip);
+        }
+        el.appendChild(refEl);
+      });
+    } else if (part) {
+      el.appendChild(document.createTextNode(part));
+    }
+  });
+}
+
+function showStrokeRefTooltip(e, text) {
+  var tip = document.getElementById('stroke-ref-tooltip');
+  if (!tip) return;
+  tip.textContent = text;
+  tip.classList.remove('hidden');
+  positionStrokeTooltip(e, tip);
+}
+
+function positionStrokeTooltip(e, tip) {
+  var x = e.clientX + 14;
+  var y = e.clientY - 10;
+  var w = tip.offsetWidth || 300;
+  var h = tip.offsetHeight || 80;
+  if (x + w > window.innerWidth - 10) x = e.clientX - w - 10;
+  if (y + h > window.innerHeight - 10) y = e.clientY - h - 5;
+  tip.style.left = Math.max(5, x) + 'px';
+  tip.style.top = Math.max(5, y) + 'px';
+}
+
+function hideStrokeRefTooltip() {
+  var tip = document.getElementById('stroke-ref-tooltip');
+  if (tip) tip.classList.add('hidden');
+}
+
+document.addEventListener('mousemove', function(e) {
+  var tip = document.getElementById('stroke-ref-tooltip');
+  if (tip && !tip.classList.contains('hidden')) {
+    positionStrokeTooltip(e, tip);
+  }
+});
 // ===========================================================================

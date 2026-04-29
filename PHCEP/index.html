@@ -40,6 +40,7 @@
     <button class="tab-btn" data-tab="drug" onclick="switchTab('drug')">💊 藥品給付規定</button>
     <button class="tab-btn" data-tab="pcs" onclick="switchTab('pcs')">ICD-10-PCS (處置)</button>
     <button class="tab-btn" data-tab="search" onclick="switchTab('search')">🔍 全文搜尋</button>
+    <button class="tab-btn" data-tab="stroke" onclick="switchTab('stroke')">🧠 腦中風指引</button>
     <button class="tab-btn" data-tab="about" onclick="switchTab('about')">ℹ️ About</button>
     <button class="tab-btn" data-tab="ebm" onclick="switchTab('ebm')">📝 EBM筆記</button>
     <button class="tab-btn" data-tab="soap" onclick="switchTab('soap')">🏥 SOAP病歷</button>
@@ -284,6 +285,29 @@
         <button class="btn-primary" onclick="addEduLink()">➕ 新增</button>
       </div>
     </div>
+  </div>
+
+  <!-- Stroke Guidelines Tab -->
+  <div id="tab-stroke" class="tab-content">
+    <div class="section-header">
+      <h2>🧠 腦中風治療指引</h2>
+      <p class="section-desc">台灣腦中風學會歷年治療指引，可依主題分類瀏覽或全文搜尋</p>
+    </div>
+    <div class="stroke-toolbar">
+      <div class="stroke-search-wrap">
+        <input id="stroke-search" type="text" class="stroke-search-input"
+               placeholder="搜尋指引標題、章節或內容…"
+               oninput="strokeSearch(this.value)"
+               autocomplete="off" />
+      </div>
+      <label class="stroke-toggle-label">
+        <input type="checkbox" id="stroke-show-superseded" onchange="strokeRender()" />
+        顯示已更新取代版本
+      </label>
+    </div>
+    <div class="stroke-topic-filter" id="stroke-topic-filter"></div>
+    <div id="stroke-results" class="stroke-results"></div>
+    <div id="stroke-ref-tooltip" class="stroke-ref-tooltip hidden"></div>
   </div>
 
   <!-- History / Browse Tab -->
