@@ -1040,11 +1040,19 @@ function showSearchHistory(type) {
   if (hist.length === 0) {
     itemsEl.innerHTML = '<div class="search-history-empty">無搜尋記錄</div>';
   } else {
-    itemsEl.innerHTML = hist.map(function(h) {
-      return '<div class="search-history-item" onmousedown="applySearchHistory(\'' +
-        type + '\',\'' + escHtml(h.replace(/'/g, "\\'")) + '\')">' +
-        escHtml(h) + '</div>';
-    }).join('');
+    itemsEl.innerHTML = '';
+    hist.forEach(function(h) {
+      var div = document.createElement('div');
+      div.className = 'search-history-item';
+      div.textContent = h;
+      div.dataset.histType = type;
+      div.dataset.histQuery = h;
+      div.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        applySearchHistory(type, h);
+      });
+      itemsEl.appendChild(div);
+    });
   }
   dropdownEl.classList.add('open');
 }
@@ -1124,10 +1132,25 @@ function renderDrugTagFilter() {
   var wrap = document.getElementById('drug-tag-filter');
   if (!wrap) return;
   var tags = DRUG_DATA.expertiseTags || [];
-  wrap.innerHTML = '<button class="drug-tag-btn active" data-tag="" onclick="drugFilterTag(\'\', this)">全部</button>' +
-    tags.map(function(t) {
-      return '<button class="drug-tag-btn" data-tag="' + escHtml(t) + '" onclick="drugFilterTag(\'' + escHtml(t) + '\', this)">' + escHtml(t) + '</button>';
-    }).join('');
+
+  // Build buttons using DOM to avoid XSS
+  wrap.innerHTML = '';
+
+  var allBtn = document.createElement('button');
+  allBtn.className = 'drug-tag-btn active';
+  allBtn.dataset.tag = '';
+  allBtn.textContent = '全部';
+  allBtn.addEventListener('click', function() { drugFilterTag('', allBtn); });
+  wrap.appendChild(allBtn);
+
+  tags.forEach(function(t) {
+    var btn = document.createElement('button');
+    btn.className = 'drug-tag-btn';
+    btn.dataset.tag = t;
+    btn.textContent = t;
+    btn.addEventListener('click', function() { drugFilterTag(t, btn); });
+    wrap.appendChild(btn);
+  });
 }
 
 function drugFilterTag(tag, btn) {
@@ -1228,25 +1251,41 @@ function drugRender() {
   var entriesEl = document.getElementById('drug-entries');
   var noResEl = document.getElementById('drug-no-results');
 
-  // Build header
-  var headerTitle = '';
-  if (drugActiveCat) {
-    var cat = DRUG_DATA.categories.find(function(c) { return c.id === drugActiveCat; });
-    if (cat) {
-      headerTitle = escHtml(cat.icon) + ' ' + escHtml(cat.nameZh) +
-        ' <span style="font-size:.78rem;font-weight:400;color:var(--muted)">' + escHtml(cat.nameEn) + '</span>';
-    }
-  } else if (drugSearchQ) {
-    headerTitle = '🔍 全分類搜尋：「' + escHtml(drugSearchQ) + '」';
-  } else if (drugActiveTag) {
-    headerTitle = '🏷️ 標籤篩選：' + escHtml(drugActiveTag);
-  }
-
+  // Build header using DOM
   if (headerEl) {
-    headerEl.innerHTML =
-      '<div class="drug-list-title">' + (headerTitle || '全部藥品') + '</div>' +
-      (drugActiveCat ? '<button class="btn-drug-back" onclick="drugBackToGrid()">← 返回分類</button>' : '') +
-      '<span class="drug-count-badge">' + entries.length + ' 項</span>';
+    headerEl.innerHTML = '';
+    var titleEl = document.createElement('div');
+    titleEl.className = 'drug-list-title';
+    if (drugActiveCat) {
+      var cat = DRUG_DATA.categories.find(function(c) { return c.id === drugActiveCat; });
+      if (cat) {
+        titleEl.textContent = cat.icon + ' ' + cat.nameZh + ' ';
+        var enSpan = document.createElement('span');
+        enSpan.style.cssText = 'font-size:.78rem;font-weight:400;color:var(--muted)';
+        enSpan.textContent = cat.nameEn;
+        titleEl.appendChild(enSpan);
+      }
+    } else if (drugSearchQ) {
+      titleEl.textContent = '🔍 全分類搜尋：「' + drugSearchQ + '」';
+    } else if (drugActiveTag) {
+      titleEl.textContent = '🏷️ 標籤篩選：' + drugActiveTag;
+    } else {
+      titleEl.textContent = '全部藥品';
+    }
+    headerEl.appendChild(titleEl);
+
+    if (drugActiveCat) {
+      var backBtn = document.createElement('button');
+      backBtn.className = 'btn-drug-back';
+      backBtn.textContent = '← 返回分類';
+      backBtn.addEventListener('click', drugBackToGrid);
+      headerEl.appendChild(backBtn);
+    }
+
+    var countBadge = document.createElement('span');
+    countBadge.className = 'drug-count-badge';
+    countBadge.textContent = entries.length + ' 項';
+    headerEl.appendChild(countBadge);
   }
 
   if (entries.length === 0) {
@@ -1257,24 +1296,58 @@ function drugRender() {
   if (noResEl) noResEl.classList.add('hidden');
 
   if (entriesEl) {
-    entriesEl.innerHTML = entries.map(function(e) {
-      var tagsHtml = (e.tags || []).map(function(t) {
-        return '<span class="drug-tag">' + escHtml(t) + '</span>';
-      }).join('');
-      var catBadge = e._cat
-        ? '<span style="font-size:.68rem;color:var(--muted);margin-right:6px">' + escHtml(e._cat) + '</span>'
-        : '';
-      var entryId = escHtml(e._catId || drugActiveCat || 'x') + '_' + escHtml(e.id.replace(/\./g, '_'));
-      return '<div class="drug-entry" id="dentry-' + entryId + '">' +
-        '<div class="drug-entry-header" onclick="drugToggleEntry(\'' + entryId + '\')">' +
-          '<span class="drug-entry-id">' + escHtml(e.id) + '</span>' +
-          '<span class="drug-entry-name">' + catBadge + escHtml(e.name) + '</span>' +
-          '<span class="drug-entry-tags">' + tagsHtml + '</span>' +
-          '<span class="drug-entry-chevron">▶</span>' +
-        '</div>' +
-        '<div class="drug-entry-content">' + escHtml(e.content || '') + '</div>' +
-        '</div>';
-    }).join('');
+    entriesEl.innerHTML = '';
+    entries.forEach(function(e) {
+      var entryDiv = document.createElement('div');
+      entryDiv.className = 'drug-entry';
+
+      var headerDiv = document.createElement('div');
+      headerDiv.className = 'drug-entry-header';
+
+      var idSpan = document.createElement('span');
+      idSpan.className = 'drug-entry-id';
+      idSpan.textContent = e.id;
+
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'drug-entry-name';
+      if (e._cat) {
+        var catBadge = document.createElement('span');
+        catBadge.style.cssText = 'font-size:.68rem;color:var(--muted);margin-right:6px';
+        catBadge.textContent = e._cat;
+        nameSpan.appendChild(catBadge);
+      }
+      nameSpan.appendChild(document.createTextNode(e.name));
+
+      var tagsSpan = document.createElement('span');
+      tagsSpan.className = 'drug-entry-tags';
+      (e.tags || []).forEach(function(t) {
+        var tagEl = document.createElement('span');
+        tagEl.className = 'drug-tag';
+        tagEl.textContent = t;
+        tagsSpan.appendChild(tagEl);
+      });
+
+      var chevronSpan = document.createElement('span');
+      chevronSpan.className = 'drug-entry-chevron';
+      chevronSpan.textContent = '▶';
+
+      headerDiv.appendChild(idSpan);
+      headerDiv.appendChild(nameSpan);
+      headerDiv.appendChild(tagsSpan);
+      headerDiv.appendChild(chevronSpan);
+
+      var contentDiv = document.createElement('div');
+      contentDiv.className = 'drug-entry-content';
+      contentDiv.textContent = e.content || '';
+
+      headerDiv.addEventListener('click', function() {
+        entryDiv.classList.toggle('open');
+      });
+
+      entryDiv.appendChild(headerDiv);
+      entryDiv.appendChild(contentDiv);
+      entriesEl.appendChild(entryDiv);
+    });
   }
 }
 
