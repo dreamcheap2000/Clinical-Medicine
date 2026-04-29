@@ -1107,14 +1107,34 @@ function renderDrugCatGrid() {
   if (!DRUG_DATA) return;
   var grid = document.getElementById('drug-cat-grid');
   if (!grid) return;
-  grid.innerHTML = DRUG_DATA.categories.map(function(cat) {
-    return '<div class="drug-cat-card" onclick="drugOpenCat(\'' + cat.id + '\')">' +
-      '<div class="drug-cat-icon">' + escHtml(cat.icon) + '</div>' +
-      '<div class="drug-cat-name-zh">' + escHtml(cat.nameZh) + '</div>' +
-      '<div class="drug-cat-name-en">' + escHtml(cat.nameEn) + '</div>' +
-      '<div class="drug-cat-count">' + cat.totalEntries + ' 項</div>' +
-      '</div>';
-  }).join('');
+  grid.innerHTML = '';
+  DRUG_DATA.categories.forEach(function(cat) {
+    var card = document.createElement('div');
+    card.className = 'drug-cat-card';
+    card.addEventListener('click', function() { drugOpenCat(cat.id); });
+
+    var iconDiv = document.createElement('div');
+    iconDiv.className = 'drug-cat-icon';
+    iconDiv.textContent = cat.icon;
+
+    var nameZhDiv = document.createElement('div');
+    nameZhDiv.className = 'drug-cat-name-zh';
+    nameZhDiv.textContent = cat.nameZh;
+
+    var nameEnDiv = document.createElement('div');
+    nameEnDiv.className = 'drug-cat-name-en';
+    nameEnDiv.textContent = cat.nameEn;
+
+    var countDiv = document.createElement('div');
+    countDiv.className = 'drug-cat-count';
+    countDiv.textContent = cat.totalEntries + ' 項';
+
+    card.appendChild(iconDiv);
+    card.appendChild(nameZhDiv);
+    card.appendChild(nameEnDiv);
+    card.appendChild(countDiv);
+    grid.appendChild(card);
+  });
 }
 
 function populateDrugCatSelect() {
