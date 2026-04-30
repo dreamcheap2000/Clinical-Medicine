@@ -54,6 +54,26 @@
       <h2>ICD-10-CM 2023 中文版 — 診斷分類</h2>
       <p class="section-desc">依醫師專科相關性分類，相關領域顯示完整資訊，其他領域以精簡模式儲存</p>
     </div>
+    <div class="drug-toolbar">
+      <div class="drug-search-wrap">
+        <input id="cm-search" type="text" class="drug-search-input"
+               placeholder="搜尋 ICD-10-CM 代碼或名稱（中英文）…"
+               oninput="cmSearch(this.value)"
+               onfocus="showSearchHistory('cm')"
+               onblur="hideSearchHistory('cm', 150)"
+               autocomplete="off" />
+        <div id="cm-search-history" class="search-history-dropdown">
+          <div class="search-history-header">
+            <span>最近搜尋</span>
+            <button class="search-history-clear" onclick="clearSearchHistory('cm')">清除</button>
+          </div>
+          <div id="cm-history-items"></div>
+        </div>
+      </div>
+      <select id="cm-cat-sel" class="drug-cat-sel" onchange="cmSelectCat(this.value)">
+        <option value="">全部分類</option>
+      </select>
+    </div>
     <div class="cat-grid" id="cm-cat-grid"></div>
     <div id="cm-detail" class="detail-panel hidden"></div>
   </div>
@@ -134,7 +154,7 @@
         </div>
       </div>
       <select id="drug-cat-sel" class="drug-cat-sel" onchange="drugSelectCat(this.value)">
-        <option value="">— 選擇藥物分類 —</option>
+        <option value="">全部分類</option>
       </select>
     </div>
     <div class="drug-tag-filter" id="drug-tag-filter"></div>
@@ -262,28 +282,18 @@
   <div id="tab-edu" class="tab-content">
     <div class="section-header">
       <h2>📚 衛教資源庫</h2>
-      <p class="section-desc">預設連結倉庫衛教文件，可新增外部連結（儲存於本機）</p>
+      <p class="section-desc">
+        衛教文件資料庫，點選文件以閱覽內容。
+        來源：<a href="https://github.com/dreamcheap2000/Clinical-Medicine/tree/main/Patient%20education" target="_blank" rel="noopener">Patient education 資料夾</a>
+      </p>
     </div>
-    <div id="edu-list" class="edu-list"></div>
-    <div class="entry-form" style="margin-top:16px">
-      <h3 class="subform-title">➕ 新增外部衛教連結</h3>
-      <div class="form-row">
-        <div class="form-field" style="flex:2">
-          <label>名稱</label>
-          <input type="text" id="edu-link-name" placeholder="衛教資源名稱" />
-        </div>
+    <div id="edu-file-list" class="edu-file-list"></div>
+    <div id="edu-viewer" class="edu-viewer hidden">
+      <div class="edu-viewer-header">
+        <button class="btn-drug-back" onclick="eduCloseViewer()">← 返回列表</button>
+        <span id="edu-viewer-title" class="edu-viewer-title"></span>
       </div>
-      <div class="form-field">
-        <label>連結 URL</label>
-        <input type="url" id="edu-link-url" placeholder="https://…" />
-      </div>
-      <div class="form-field" style="margin-top:8px">
-        <label>說明（選填）</label>
-        <input type="text" id="edu-link-note" placeholder="簡短說明或備註" />
-      </div>
-      <div class="form-actions">
-        <button class="btn-primary" onclick="addEduLink()">➕ 新增</button>
-      </div>
+      <div id="edu-viewer-content" class="edu-viewer-content"></div>
     </div>
   </div>
 
@@ -293,20 +303,32 @@
       <h2>🧠 腦中風治療指引</h2>
       <p class="section-desc">台灣腦中風學會歷年治療指引，可依主題分類瀏覽或全文搜尋</p>
     </div>
-    <div class="stroke-toolbar">
-      <div class="stroke-search-wrap">
-        <input id="stroke-search" type="text" class="stroke-search-input"
+    <div class="drug-toolbar">
+      <div class="drug-search-wrap">
+        <input id="stroke-search" type="text" class="drug-search-input"
                placeholder="搜尋指引標題、章節或內容…"
                oninput="strokeSearch(this.value)"
+               onfocus="showSearchHistory('stroke')"
+               onblur="hideSearchHistory('stroke', 150)"
                autocomplete="off" />
+        <div id="stroke-search-history" class="search-history-dropdown">
+          <div class="search-history-header">
+            <span>最近搜尋</span>
+            <button class="search-history-clear" onclick="clearSearchHistory('stroke')">清除</button>
+          </div>
+          <div id="stroke-history-items"></div>
+        </div>
       </div>
-      <label class="stroke-toggle-label">
-        <input type="checkbox" id="stroke-show-superseded" onchange="strokeRender()" />
-        顯示已更新取代版本
-      </label>
+      <select id="stroke-cat-sel" class="drug-cat-sel" onchange="strokeSelectCatById(this.value)">
+        <option value="">全部分類</option>
+      </select>
     </div>
-    <div class="stroke-topic-filter" id="stroke-topic-filter"></div>
-    <div id="stroke-results" class="stroke-results"></div>
+    <div id="stroke-cat-grid" class="drug-cat-grid"></div>
+    <div id="stroke-list-wrap" class="drug-list-wrap hidden">
+      <div class="drug-list-header" id="stroke-list-header"></div>
+      <div id="stroke-entries"></div>
+      <p id="stroke-no-results" class="drug-no-results hidden">無符合條件的指引。</p>
+    </div>
     <div id="stroke-ref-tooltip" class="stroke-ref-tooltip hidden"></div>
   </div>
 

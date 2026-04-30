@@ -31,6 +31,7 @@ async function boot() {
     renderIgBadge();
     renderInfoBar();
     renderCmGrid();
+    populateCmCatSelect();
     renderPcsGrid();
     renderAbout();
     initEbmTab();
@@ -97,14 +98,115 @@ function switchTab(name) {
   if (name === 'history') renderHistory();
   if (name === 'nhi') nhiOnTabShow();
   if (name === 'drug') drugOnTabShow();
+  if (name === 'stroke') strokeOnTabShow();
 }
 
 // ---------------------------------------------------------------------------
 // CM Category Grid
 // ---------------------------------------------------------------------------
+let cmSearchQ = '';
+let cmActiveCatId = null;
+
 function renderCmGrid() {
   const grid = document.getElementById('cm-cat-grid');
   grid.innerHTML = META.cm_categories.map(cat => catCardHtml(cat, 'cm')).join('');
+}
+
+function populateCmCatSelect() {
+  const sel = document.getElementById('cm-cat-sel');
+  if (!sel || !META) return;
+  sel.innerHTML = '<option value="">全部分類</option>' +
+    META.cm_categories.map(c =>
+      `<option value="${escHtml(c.id)}">${escHtml(c.icon)} ${escHtml(c.nameZh)}</option>`
+    ).join('');
+}
+
+function cmSelectCat(id) {
+  const sel = document.getElementById('cm-cat-sel');
+  cmActiveCatId = id || null;
+  if (id) {
+    openCat('cm', id);
+  } else {
+    // show grid, hide detail
+    document.getElementById('cm-cat-grid').classList.remove('hidden');
+    document.getElementById('cm-detail').classList.add('hidden');
+    activeCmCat = null;
+    cmActiveCatId = null;
+    document.querySelectorAll('#cm-cat-grid .cat-card').forEach(c => c.classList.remove('active'));
+  }
+}
+
+function cmSearch(q) {
+  cmSearchQ = q.trim();
+  if (cmSearchQ.length >= 2) {
+    saveSearchHistory('cm', cmSearchQ);
+  }
+  const grid = document.getElementById('cm-cat-grid');
+  const detail = document.getElementById('cm-detail');
+  if (cmSearchQ) {
+    // Overlay: fade grid, show search results in detail panel
+    grid.classList.add('search-overlay-active');
+    detail.classList.remove('hidden');
+    detail.innerHTML = buildCmSearchResults(cmSearchQ);
+  } else {
+    grid.classList.remove('search-overlay-active');
+    if (!activeCmCat) {
+      detail.classList.add('hidden');
+    }
+  }
+}
+
+function buildCmSearchResults(q) {
+  const ql = q.toLowerCase();
+  const results = [];
+  // Search loaded categories
+  for (const cat of META.cm_categories) {
+    if (cat.id === 'others') {
+      if (cmOthers) {
+        for (const [c, z] of cmOthers) {
+          if (c.toLowerCase().includes(ql) || z.toLowerCase().includes(ql)) {
+            results.push({ code: c, en: '', zh: z, catName: cat.nameZh });
+            if (results.length >= 300) break;
+          }
+        }
+      }
+    } else {
+      const data = cmLoaded[cat.id];
+      if (data) {
+        for (const r of (data.codes || [])) {
+          if (r.code.toLowerCase().includes(ql) || r.en.toLowerCase().includes(ql) || r.zh.toLowerCase().includes(ql)) {
+            results.push({ ...r, catName: cat.nameZh });
+            if (results.length >= 300) break;
+          }
+        }
+      }
+    }
+    if (results.length >= 300) break;
+  }
+
+  if (results.length === 0) {
+    return `<div style="padding:24px;color:var(--muted);text-align:center">無符合「${escHtml(q)}」的 ICD-10-CM 代碼（未載入的分類不在搜尋範圍）</div>`;
+  }
+
+  const rows = results.map(r => `
+    <tr>
+      <td class="code-cell">${escHtml(r.code)}</td>
+      <td class="en-cell">${escHtml(r.en)}</td>
+      <td class="zh-cell">${escHtml(r.zh)}</td>
+      <td style="font-size:.72rem;color:var(--muted)">${escHtml(r.catName)}</td>
+    </tr>`).join('');
+
+  return `
+    <div class="detail-header">
+      <div class="detail-title">🔍 搜尋「${escHtml(q)}」— ICD-10-CM</div>
+    </div>
+    <div class="codes-table-wrap" style="max-height:60vh">
+      <table class="codes-table">
+        <thead><tr><th>代碼</th><th>English</th><th>中文名稱</th><th>分類</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div class="row-count">找到 ${results.length} 筆${results.length >= 300 ? '（已截斷）' : ''}</div>`;
 }
 
 function renderPcsGrid() {
@@ -222,7 +324,6 @@ function fillDetailTable(type, catId, filterStr) {
   const container = document.getElementById(tableId);
   if (!container) return;
 
-  let rows;
   let totalCount;
 
   if (isCompact) {
@@ -231,17 +332,22 @@ function fillDetailTable(type, catId, filterStr) {
       ? data.filter(([c,z]) => c.toLowerCase().includes(q) || z.toLowerCase().includes(q))
       : data;
     totalCount = filtered.length;
-    rows = filtered.slice(0, 500).map(([c,z]) =>
-      `<tr><td class="code-cell">${escHtml(c)}</td><td class="zh-cell">${escHtml(z)}</td></tr>`
-    ).join('');
+
+    // Build alphabet navigation for large sets
+    const alphaNav = buildAlphaNav(filtered.map(([c]) => c));
+
+    // Build table rows grouped by first letter
+    const rows = buildGroupedRows(filtered.map(([c,z]) => ({code:c, en:'', zh:z})), true);
+
     container.innerHTML = `
+      ${alphaNav}
       <div class="codes-table-wrap">
         <table class="codes-table compact-table">
           <thead><tr><th>代碼</th><th>中文名稱</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>
-      <div class="row-count">顯示 ${Math.min(500, totalCount).toLocaleString()} / ${totalCount.toLocaleString()} 筆${totalCount > 500 ? '（輸入關鍵字篩選）' : ''}</div>`;
+      <div class="row-count">顯示 ${totalCount.toLocaleString()} 筆</div>`;
   } else {
     // data is {codes: [{code, en, zh}, ...]}
     const codes = data.codes || [];
@@ -252,22 +358,57 @@ function fillDetailTable(type, catId, filterStr) {
           r.zh.toLowerCase().includes(q))
       : codes;
     totalCount = filtered.length;
-    rows = filtered.slice(0, 500).map(r =>
-      `<tr>
-        <td class="code-cell">${escHtml(r.code)}</td>
-        <td class="en-cell">${escHtml(r.en)}</td>
-        <td class="zh-cell">${escHtml(r.zh)}</td>
-      </tr>`
-    ).join('');
+
+    // Build alphabet navigation for large sets
+    const alphaNav = buildAlphaNav(filtered.map(r => r.code));
+
+    // Build table rows grouped by first letter
+    const rows = buildGroupedRows(filtered, false);
+
     container.innerHTML = `
+      ${alphaNav}
       <div class="codes-table-wrap">
         <table class="codes-table">
           <thead><tr><th>代碼</th><th>English</th><th>中文名稱</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>
-      <div class="row-count">顯示 ${Math.min(500, totalCount).toLocaleString()} / ${totalCount.toLocaleString()} 筆${totalCount > 500 ? '（輸入關鍵字篩選）' : ''}</div>`;
+      <div class="row-count">顯示 ${totalCount.toLocaleString()} 筆</div>`;
   }
+}
+
+function buildAlphaNav(codes) {
+  if (codes.length <= 500) return '';
+  // Collect unique first letters and the anchor code for each
+  const letterMap = {};
+  for (const code of codes) {
+    const letter = code[0] ? code[0].toUpperCase() : '#';
+    if (!letterMap[letter]) letterMap[letter] = code;
+  }
+  const letters = Object.keys(letterMap).sort();
+  const links = letters.map(l =>
+    `<a class="alpha-link" href="#alpha-${escHtml(l)}" title="${escHtml(letterMap[l])}">${escHtml(l)}</a>`
+  ).join('');
+  return `<div class="alpha-nav">${links}</div>`;
+}
+
+function buildGroupedRows(items, isCompact) {
+  if (items.length === 0) return '';
+  let html = '';
+  let lastLetter = null;
+  for (const item of items) {
+    const letter = item.code[0] ? item.code[0].toUpperCase() : '#';
+    if (letter !== lastLetter) {
+      html += `<tr><td colspan="${isCompact ? 2 : 3}" id="alpha-${escHtml(letter)}" class="alpha-anchor-row">${escHtml(letter)}</td></tr>`;
+      lastLetter = letter;
+    }
+    if (isCompact) {
+      html += `<tr><td class="code-cell">${escHtml(item.code)}</td><td class="zh-cell">${escHtml(item.zh)}</td></tr>`;
+    } else {
+      html += `<tr><td class="code-cell">${escHtml(item.code)}</td><td class="en-cell">${escHtml(item.en)}</td><td class="zh-cell">${escHtml(item.zh)}</td></tr>`;
+    }
+  }
+  return html;
 }
 
 // ---------------------------------------------------------------------------
@@ -674,61 +815,100 @@ function clearSoapForm() {
 // ---------------------------------------------------------------------------
 // Patient Education Resources
 // ---------------------------------------------------------------------------
-const EDU_LINKS_KEY = 'phcep_edu_links';
-
-const DEFAULT_EDU = [
-  {
-    id: 'default_1',
-    name: '無痛關節鬆動術',
-    url: 'https://github.com/dreamcheap2000/Clinical-Medicine/blob/main/Patient%20education/%E7%84%A1%E7%97%9B%E9%97%9C%E7%AF%80%E9%AC%86%E5%8B%95%E8%A1%93.docx',
-    type: 'repo',
-    note: '關節鬆動術衛教文件（Clinical-Medicine 倉庫）'
-  }
-];
 
 function initEduTab() {
-  renderEduList();
+  renderEduFileList();
 }
 
-function renderEduList() {
-  const userLinks = storageGet(EDU_LINKS_KEY);
-  const all = [...DEFAULT_EDU, ...userLinks];
-  const container = document.getElementById('edu-list');
-  if (all.length === 0) {
-    container.innerHTML = '<p class="empty-msg">尚無資源</p>';
-    return;
+function renderEduFileList() {
+  var container = document.getElementById('edu-file-list');
+  if (!container) return;
+  container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">載入中…</div>';
+
+  fetchJson(BASE + 'data/edu/patient_edu_data.json').then(function(data) {
+    if (!data || !data.files || data.files.length === 0) {
+      container.innerHTML = '<p class="empty-msg" style="padding:20px">尚無衛教資源</p>';
+      return;
+    }
+    container.innerHTML = '';
+    data.files.forEach(function(file) {
+      var card = document.createElement('div');
+      card.className = 'edu-file-card';
+
+      var icon = document.createElement('span');
+      icon.className = 'edu-file-icon';
+      icon.textContent = file.type === 'docx' ? '📄' : file.type === 'pdf' ? '📕' : '🖼️';
+
+      var title = document.createElement('span');
+      title.className = 'edu-file-title';
+      title.textContent = file.title || file.filename;
+
+      var meta = document.createElement('span');
+      meta.className = 'edu-file-meta';
+      meta.textContent = file.type ? file.type.toUpperCase() : '';
+
+      card.appendChild(icon);
+      card.appendChild(title);
+      card.appendChild(meta);
+
+      card.addEventListener('click', function() { eduOpenFile(file); });
+      container.appendChild(card);
+    });
+  }).catch(function() {
+    container.innerHTML = '<p style="padding:20px;color:var(--red)">⚠️ 無法載入衛教資源列表</p>';
+  });
+}
+
+function eduOpenFile(file) {
+  var viewer = document.getElementById('edu-viewer');
+  var titleEl = document.getElementById('edu-viewer-title');
+  var content = document.getElementById('edu-viewer-content');
+  var fileList = document.getElementById('edu-file-list');
+
+  if (!viewer || !content) return;
+
+  titleEl.textContent = file.title || file.filename;
+  content.innerHTML = '';
+
+  // Show HTML content if available
+  if (file.htmlContent) {
+    content.innerHTML = file.htmlContent;
   }
-  container.innerHTML = all.map(r => `
-    <div class="edu-card">
-      <div class="edu-card-header">
-        <span class="edu-type-badge ${r.type === 'repo' ? 'repo' : 'ext'}">${r.type === 'repo' ? '📁 倉庫' : '🔗 外部'}</span>
-        <span class="edu-name">${escHtml(r.name)}</span>
-        ${r.id.startsWith('default_') ? '' : `<button class="btn-icon" data-action="delete-edu" data-id="${escHtml(r.id)}" title="刪除">🗑️</button>`}
-      </div>
-      ${r.note ? `<div class="edu-note">${escHtml(r.note)}</div>` : ''}
-      <a class="edu-link" href="${escHtml(r.url)}" target="_blank" rel="noopener">${escHtml(r.url)}</a>
-    </div>`).join('');
+
+  // Show images if available
+  if (file.images && file.images.length > 0) {
+    var imgSection = document.createElement('div');
+    imgSection.className = 'edu-images';
+    file.images.forEach(function(img) {
+      var figure = document.createElement('figure');
+      var imgEl = document.createElement('img');
+      imgEl.src = img.data;
+      imgEl.alt = img.caption || '';
+      imgEl.className = 'edu-img';
+      figure.appendChild(imgEl);
+      if (img.caption) {
+        var cap = document.createElement('figcaption');
+        cap.textContent = img.caption;
+        figure.appendChild(cap);
+      }
+      imgSection.appendChild(figure);
+    });
+    content.appendChild(imgSection);
+  }
+
+  if (!file.htmlContent && (!file.images || file.images.length === 0)) {
+    content.innerHTML = '<p style="color:var(--muted);padding:20px">無可顯示的內容</p>';
+  }
+
+  if (fileList) fileList.classList.add('hidden');
+  viewer.classList.remove('hidden');
 }
 
-function addEduLink() {
-  const name = document.getElementById('edu-link-name').value.trim();
-  const url  = document.getElementById('edu-link-url').value.trim();
-  const note = document.getElementById('edu-link-note').value.trim();
-  if (!name || !url) { toast('⚠️ 請填寫名稱和連結'); return; }
-  const links = storageGet(EDU_LINKS_KEY);
-  links.push({ id: genId(), name, url, type: 'external', note });
-  storageSet(EDU_LINKS_KEY, links);
-  document.getElementById('edu-link-name').value = '';
-  document.getElementById('edu-link-url').value  = '';
-  document.getElementById('edu-link-note').value = '';
-  renderEduList();
-  toast('✅ 資源已新增');
-}
-
-function deleteEduLink(id) {
-  storageSet(EDU_LINKS_KEY, storageGet(EDU_LINKS_KEY).filter(l => l.id !== id));
-  renderEduList();
-  toast('🗑️ 已刪除');
+function eduCloseViewer() {
+  var viewer = document.getElementById('edu-viewer');
+  var fileList = document.getElementById('edu-file-list');
+  if (viewer) viewer.classList.add('hidden');
+  if (fileList) fileList.classList.remove('hidden');
 }
 
 // ---------------------------------------------------------------------------
@@ -1004,7 +1184,7 @@ function nhiBackToGrid() {
 // ===========================================================================
 // Search History
 // ---------------------------------------------------------------------------
-const SEARCH_HISTORY_MAX = 10;
+const SEARCH_HISTORY_MAX = 50;
 
 function searchHistoryKey(type) {
   return 'phcep_search_history_' + type;
@@ -1075,6 +1255,12 @@ function applySearchHistory(type, query) {
   } else if (type === 'fulltext') {
     var inp = document.getElementById('search-input');
     if (inp) { inp.value = query; onSearchInput(); }
+  } else if (type === 'cm') {
+    var inp = document.getElementById('cm-search');
+    if (inp) { inp.value = query; cmSearch(query); }
+  } else if (type === 'stroke') {
+    var inp = document.getElementById('stroke-search');
+    if (inp) { inp.value = query; strokeSearch(inp.value); }
   }
   hideSearchHistory(type, 0);
 }
@@ -1142,7 +1328,7 @@ function populateDrugCatSelect() {
   if (!DRUG_DATA) return;
   var sel = document.getElementById('drug-cat-sel');
   if (!sel) return;
-  sel.innerHTML = '<option value="">— 選擇藥物分類 —</option>' +
+  sel.innerHTML = '<option value="">全部分類</option>' +
     DRUG_DATA.categories.map(function(c) {
       return '<option value="' + escHtml(c.id) + '">' + escHtml(c.icon) + ' ' + escHtml(c.nameZh) + '</option>';
     }).join('');
@@ -1216,15 +1402,27 @@ function drugSearch(q) {
   if (drugSearchQ.length >= 2) {
     saveSearchHistory('drug', drugSearchQ);
   }
+  var grid = document.getElementById('drug-cat-grid');
+  var sel = document.getElementById('drug-cat-sel');
+  var tagFilter = document.getElementById('drug-tag-filter');
   if (drugSearchQ) {
+    // When searching: make category controls transparent, overlay with results
+    if (grid) grid.classList.add('search-overlay-active');
+    if (sel) sel.classList.add('search-overlay-active');
+    if (tagFilter) tagFilter.classList.add('search-overlay-active');
     if (!drugActiveCat) {
-      document.getElementById('drug-cat-grid').classList.add('hidden');
+      if (grid) grid.classList.add('hidden');
       document.getElementById('drug-list-wrap').classList.remove('hidden');
     }
-  } else if (!drugActiveCat) {
-    document.getElementById('drug-cat-grid').classList.remove('hidden');
-    document.getElementById('drug-list-wrap').classList.add('hidden');
-    return;
+  } else {
+    if (grid) grid.classList.remove('search-overlay-active');
+    if (sel) sel.classList.remove('search-overlay-active');
+    if (tagFilter) tagFilter.classList.remove('search-overlay-active');
+    if (!drugActiveCat) {
+      if (grid) grid.classList.remove('hidden');
+      document.getElementById('drug-list-wrap').classList.add('hidden');
+      return;
+    }
   }
   drugRender();
 }
@@ -1383,14 +1581,17 @@ function drugBackToGrid() {
   var inp = document.getElementById('drug-search');
   if (inp) inp.value = '';
   var sel = document.getElementById('drug-cat-sel');
-  if (sel) sel.value = '';
-  document.getElementById('drug-cat-grid').classList.remove('hidden');
+  if (sel) { sel.value = ''; sel.classList.remove('search-overlay-active'); }
+  var grid = document.getElementById('drug-cat-grid');
+  if (grid) grid.classList.remove('hidden', 'search-overlay-active');
+  var tagFilter = document.getElementById('drug-tag-filter');
+  if (tagFilter) tagFilter.classList.remove('search-overlay-active');
   document.getElementById('drug-list-wrap').classList.add('hidden');
 }
 // ===========================================================================
 
 // ===========================================================================
-// Stroke Guidelines Tab
+// Stroke Guidelines Tab — redesigned to match drug/ICD tab format
 // ===========================================================================
 var STROKE_DATA = null;
 var strokeActiveTopic = '';
@@ -1398,59 +1599,109 @@ var strokeSearchQ = '';
 var strokeSearchDebounce = null;
 
 var STROKE_TOPIC_LABELS = {
-  'dyslipidemia':              { label: '🧪 血脂異常', order: 1 },
-  'blood_pressure':            { label: '💉 血壓控制', order: 2 },
-  'iv_thrombolysis':           { label: '💊 靜脈溶栓', order: 3 },
-  'mechanical_thrombectomy':   { label: '🔧 動脈取栓', order: 4 },
-  'antiplatelet':              { label: '💊 抗血小板', order: 5 },
-  'noac_af':                   { label: '💊 NOAC/心房顫動', order: 6 },
-  'intracerebral_hemorrhage':  { label: '🩸 腦出血', order: 7 },
-  'intracranial_atherosclerosis': { label: '🧠 顱內動脈硬化', order: 8 },
-  'diabetes_glycemic':         { label: '🩸 糖尿病/血糖', order: 9 },
-  'ckd_stroke':                { label: '🫘 慢性腎臟病', order: 10 },
-  'prehospital':               { label: '🚑 院前處置', order: 11 },
-  'prehospital_emergency':     { label: '🏥 急診處置', order: 12 },
-  'post_stroke_epilepsy':      { label: '⚡ 中風後癲癇', order: 13 },
-  'post_stroke_spasticity':    { label: '💪 中風後痙攣', order: 14 },
-  'post_stroke_dysphagia':     { label: '🍽️ 中風後吞嚥', order: 15 },
-  'women_stroke':              { label: '👩 女性中風', order: 16 },
-  'anti_amyloid_antibody':     { label: '🧬 抗類澱粉蛋白', order: 17 },
-  'herpes_zoster_vaccine':     { label: '💉 帶狀疹疫苗', order: 18 },
-  'covid19_adjustment':        { label: '😷 COVID-19', order: 19 },
-  'focused_update_2017':       { label: '🔄 2017指引更新', order: 20 },
-  'general_2020':              { label: '📋 2020綜合指引', order: 21 }
+  'dyslipidemia':              { label: '🧪 血脂異常', icon: '🧪', order: 1 },
+  'blood_pressure':            { label: '💉 血壓控制', icon: '💉', order: 2 },
+  'iv_thrombolysis':           { label: '💊 靜脈溶栓', icon: '💊', order: 3 },
+  'mechanical_thrombectomy':   { label: '🔧 動脈取栓', icon: '🔧', order: 4 },
+  'antiplatelet':              { label: '💊 抗血小板', icon: '💊', order: 5 },
+  'noac_af':                   { label: '💊 NOAC/心房顫動', icon: '💊', order: 6 },
+  'intracerebral_hemorrhage':  { label: '🩸 腦出血', icon: '🩸', order: 7 },
+  'intracranial_atherosclerosis': { label: '🧠 顱內動脈硬化', icon: '🧠', order: 8 },
+  'diabetes_glycemic':         { label: '🩸 糖尿病/血糖', icon: '🩸', order: 9 },
+  'ckd_stroke':                { label: '🫘 慢性腎臟病', icon: '🫘', order: 10 },
+  'prehospital':               { label: '🚑 院前處置', icon: '🚑', order: 11 },
+  'prehospital_emergency':     { label: '🏥 急診處置', icon: '🏥', order: 12 },
+  'post_stroke_epilepsy':      { label: '⚡ 中風後癲癇', icon: '⚡', order: 13 },
+  'post_stroke_spasticity':    { label: '💪 中風後痙攣', icon: '💪', order: 14 },
+  'post_stroke_dysphagia':     { label: '🍽️ 中風後吞嚥', icon: '🍽️', order: 15 },
+  'women_stroke':              { label: '👩 女性中風', icon: '👩', order: 16 },
+  'anti_amyloid_antibody':     { label: '🧬 抗類澱粉蛋白', icon: '🧬', order: 17 },
+  'herpes_zoster_vaccine':     { label: '💉 帶狀疹疫苗', icon: '💉', order: 18 },
+  'covid19_adjustment':        { label: '😷 COVID-19', icon: '😷', order: 19 },
+  'focused_update_2017':       { label: '🔄 2017指引更新', icon: '🔄', order: 20 },
+  'general_2020':              { label: '📋 2020綜合指引', icon: '📋', order: 21 },
+  'general':                   { label: '📋 綜合指引', icon: '📋', order: 22 }
 };
 
 async function initStrokeTab() {
-  try {
-    STROKE_DATA = await fetchJson(BASE + 'data/stroke_guidelines.json');
-    renderStrokeTopicFilter();
-    strokeRender();
-  } catch (e) {
-    console.error('Stroke guidelines load failed:', e);
-    var el = document.getElementById('stroke-results');
-    if (el) el.innerHTML = '<p class="stroke-no-results">⚠️ 無法載入腦中風指引資料：' + escHtml(String(e)) + '</p>';
+  if (!STROKE_DATA) {
+    try {
+      STROKE_DATA = await fetchJson(BASE + 'data/stroke_guidelines.json');
+    } catch (e) {
+      console.error('Stroke guidelines load failed:', e);
+      var grid = document.getElementById('stroke-cat-grid');
+      if (grid) grid.innerHTML = '<p style="padding:20px;color:var(--red)">⚠️ 無法載入腦中風指引資料：' + escHtml(String(e)) + '</p>';
+      return;
+    }
   }
+  renderStrokeCatGrid();
+  populateStrokeCatSelect();
 }
 
-function renderStrokeTopicFilter() {
-  if (!STROKE_DATA) return;
-  var wrap = document.getElementById('stroke-topic-filter');
-  if (!wrap) return;
-  wrap.innerHTML = '';
+function strokeOnTabShow() {
+  if (!STROKE_DATA) initStrokeTab();
+}
 
-  var allBtn = document.createElement('button');
-  allBtn.className = 'stroke-topic-btn active';
-  allBtn.dataset.topic = '';
-  allBtn.textContent = '全部';
-  allBtn.addEventListener('click', function() { strokeSelectTopic('', allBtn); });
-  wrap.appendChild(allBtn);
+function renderStrokeCatGrid() {
+  var grid = document.getElementById('stroke-cat-grid');
+  if (!grid || !STROKE_DATA) return;
+  grid.innerHTML = '';
 
-  // Collect topics actually present (non-superseded guidelines)
-  var topicsPresent = {};
+  // Group guidelines by topic
+  var topicMap = {};
   STROKE_DATA.guidelines.forEach(function(g) {
-    if (!g.superseded_by) topicsPresent[g.topic] = true;
+    if (!topicMap[g.topic]) topicMap[g.topic] = [];
+    topicMap[g.topic].push(g);
   });
+
+  // Sort topics by order
+  var topics = Object.keys(topicMap).sort(function(a, b) {
+    var oa = (STROKE_TOPIC_LABELS[a] || {}).order || 99;
+    var ob = (STROKE_TOPIC_LABELS[b] || {}).order || 99;
+    return oa - ob;
+  });
+
+  topics.forEach(function(topic) {
+    var info = STROKE_TOPIC_LABELS[topic] || { label: topic, icon: '📄' };
+    var guidelines = topicMap[topic];
+    var card = document.createElement('div');
+    card.className = 'drug-cat-card stroke-cat-card';
+    card.addEventListener('click', function() { strokeOpenTopic(topic); });
+
+    var iconDiv = document.createElement('div');
+    iconDiv.className = 'drug-cat-icon';
+    iconDiv.textContent = info.icon || '📄';
+
+    var nameDiv = document.createElement('div');
+    nameDiv.className = 'drug-cat-name-zh';
+    nameDiv.textContent = info.label.replace(/^[^\s]+\s/, ''); // remove emoji prefix
+
+    var countDiv = document.createElement('div');
+    countDiv.className = 'drug-cat-count';
+    countDiv.textContent = guidelines.length + ' 篇指引';
+
+    // Year range
+    var years = guidelines.map(function(g) { return g.year; });
+    var yearRange = Math.min.apply(null, years) + (years.length > 1 ? '–' + Math.max.apply(null, years) : '');
+    var yearDiv = document.createElement('div');
+    yearDiv.className = 'stroke-cat-years';
+    yearDiv.textContent = yearRange;
+
+    card.appendChild(iconDiv);
+    card.appendChild(nameDiv);
+    card.appendChild(countDiv);
+    card.appendChild(yearDiv);
+    grid.appendChild(card);
+  });
+}
+
+function populateStrokeCatSelect() {
+  var sel = document.getElementById('stroke-cat-sel');
+  if (!sel || !STROKE_DATA) return;
+  sel.innerHTML = '<option value="">全部分類</option>';
+
+  var topicsPresent = {};
+  STROKE_DATA.guidelines.forEach(function(g) { topicsPresent[g.topic] = true; });
   var sorted = Object.keys(topicsPresent).sort(function(a, b) {
     var oa = (STROKE_TOPIC_LABELS[a] || {}).order || 99;
     var ob = (STROKE_TOPIC_LABELS[b] || {}).order || 99;
@@ -1458,141 +1709,204 @@ function renderStrokeTopicFilter() {
   });
   sorted.forEach(function(topic) {
     var info = STROKE_TOPIC_LABELS[topic] || { label: topic };
-    var btn = document.createElement('button');
-    btn.className = 'stroke-topic-btn';
-    btn.dataset.topic = topic;
-    btn.textContent = info.label;
-    btn.addEventListener('click', function() { strokeSelectTopic(topic, btn); });
-    wrap.appendChild(btn);
+    var opt = document.createElement('option');
+    opt.value = topic;
+    opt.textContent = info.label;
+    sel.appendChild(opt);
   });
 }
 
-function strokeSelectTopic(topic, btn) {
+function strokeSelectCatById(topic) {
+  if (!topic) {
+    strokeActiveTopic = '';
+    document.getElementById('stroke-cat-grid').classList.remove('hidden');
+    document.getElementById('stroke-list-wrap').classList.add('hidden');
+    var sel = document.getElementById('stroke-cat-sel');
+    if (sel) sel.value = '';
+    return;
+  }
+  strokeOpenTopic(topic);
+  var sel = document.getElementById('stroke-cat-sel');
+  if (sel) sel.value = topic;
+}
+
+function strokeOpenTopic(topic) {
   strokeActiveTopic = topic;
-  document.querySelectorAll('.stroke-topic-btn').forEach(function(b) {
-    b.classList.toggle('active', b.dataset.topic === topic);
-  });
+  var sel = document.getElementById('stroke-cat-sel');
+  if (sel) sel.value = topic;
+  document.getElementById('stroke-cat-grid').classList.add('hidden');
+  document.getElementById('stroke-list-wrap').classList.remove('hidden');
   strokeRender();
 }
 
 function strokeSearch(q) {
   clearTimeout(strokeSearchDebounce);
   strokeSearchDebounce = setTimeout(function() {
-    strokeSearchQ = q.trim().toLowerCase();
+    strokeSearchQ = q.trim();
+    if (strokeSearchQ.length >= 2) {
+      saveSearchHistory('stroke', strokeSearchQ);
+    }
+    var grid = document.getElementById('stroke-cat-grid');
+    var sel = document.getElementById('stroke-cat-sel');
+    if (strokeSearchQ) {
+      if (grid) grid.classList.add('search-overlay-active');
+      if (sel) sel.classList.add('search-overlay-active');
+      if (!strokeActiveTopic) {
+        if (grid) grid.classList.add('hidden');
+        document.getElementById('stroke-list-wrap').classList.remove('hidden');
+      }
+    } else {
+      if (grid) grid.classList.remove('search-overlay-active', 'hidden');
+      if (sel) sel.classList.remove('search-overlay-active');
+      if (!strokeActiveTopic) {
+        document.getElementById('stroke-list-wrap').classList.add('hidden');
+        return;
+      }
+    }
     strokeRender();
   }, 200);
 }
 
 function strokeRender() {
   if (!STROKE_DATA) return;
-  var resultsEl = document.getElementById('stroke-results');
-  if (!resultsEl) return;
-
-  var showSuperseded = document.getElementById('stroke-show-superseded');
-  var inclSuperseded = showSuperseded && showSuperseded.checked;
-  var q = strokeSearchQ;
+  var q = strokeSearchQ.toLowerCase();
   var topic = strokeActiveTopic;
 
   var filtered = STROKE_DATA.guidelines.filter(function(g) {
-    if (g.superseded_by && !inclSuperseded) return false;
     if (topic && g.topic !== topic) return false;
     if (q) {
-      var titleMatch = (g.title || '').toLowerCase().indexOf(q) >= 0;
+      var titleMatch = (g.title || g.title_en || '').toLowerCase().indexOf(q) >= 0;
       var topicMatch = (g.topic || '').toLowerCase().indexOf(q) >= 0;
-      var sectionMatch = (g.sections || []).some(function(s) {
-        return (s.heading || '').toLowerCase().indexOf(q) >= 0 ||
-               (s.content || '').toLowerCase().indexOf(q) >= 0 ||
-               (s.subsections || []).some(function(ss) {
-                 return (ss.heading || '').toLowerCase().indexOf(q) >= 0 ||
-                        (ss.content || '').toLowerCase().indexOf(q) >= 0;
-               });
-      });
+      var sectionMatch = sectionMatchesQuery(g.sections || [], q);
       if (!titleMatch && !topicMatch && !sectionMatch) return false;
     }
     return true;
   });
 
-  resultsEl.innerHTML = '';
-  if (filtered.length === 0) {
-    resultsEl.innerHTML = '<p class="stroke-no-results">沒有符合條件的指引。</p>';
-    return;
+  var headerEl = document.getElementById('stroke-list-header');
+  var entriesEl = document.getElementById('stroke-entries');
+  var noResEl = document.getElementById('stroke-no-results');
+
+  if (headerEl) {
+    headerEl.innerHTML = '';
+    var titleEl = document.createElement('div');
+    titleEl.className = 'drug-list-title';
+    if (topic) {
+      var info = STROKE_TOPIC_LABELS[topic] || { label: topic };
+      titleEl.textContent = info.label;
+    } else if (q) {
+      titleEl.textContent = '🔍 全指引搜尋：「' + q + '」';
+    } else {
+      titleEl.textContent = '全部指引';
+    }
+    headerEl.appendChild(titleEl);
+
+    if (topic) {
+      var backBtn = document.createElement('button');
+      backBtn.className = 'btn-drug-back';
+      backBtn.textContent = '← 返回分類';
+      backBtn.addEventListener('click', strokeBackToGrid);
+      headerEl.appendChild(backBtn);
+    }
+
+    var badge = document.createElement('span');
+    badge.className = 'drug-count-badge';
+    badge.textContent = filtered.length + ' 篇';
+    headerEl.appendChild(badge);
   }
 
-  filtered.forEach(function(g) {
-    resultsEl.appendChild(buildStrokeCard(g, q));
+  if (filtered.length === 0) {
+    if (entriesEl) entriesEl.innerHTML = '';
+    if (noResEl) noResEl.classList.remove('hidden');
+    return;
+  }
+  if (noResEl) noResEl.classList.add('hidden');
+
+  if (entriesEl) {
+    entriesEl.innerHTML = '';
+    filtered.forEach(function(g) {
+      entriesEl.appendChild(buildStrokeCard(g, q));
+    });
+  }
+}
+
+function sectionMatchesQuery(sections, q) {
+  return sections.some(function(s) {
+    return (s.heading || '').toLowerCase().indexOf(q) >= 0 ||
+           (s.content || '').toLowerCase().indexOf(q) >= 0 ||
+           sectionMatchesQuery(s.subsections || [], q);
   });
+}
+
+function strokeBackToGrid() {
+  strokeActiveTopic = '';
+  strokeSearchQ = '';
+  var inp = document.getElementById('stroke-search');
+  if (inp) inp.value = '';
+  var sel = document.getElementById('stroke-cat-sel');
+  if (sel) sel.value = '';
+  var grid = document.getElementById('stroke-cat-grid');
+  if (grid) grid.classList.remove('hidden', 'search-overlay-active');
+  document.getElementById('stroke-list-wrap').classList.add('hidden');
 }
 
 function buildStrokeCard(g, q) {
   var card = document.createElement('div');
-  card.className = 'stroke-card' + (g.superseded_by ? ' superseded' : '');
+  card.className = 'drug-entry stroke-guideline-card';
 
-  // Header
   var header = document.createElement('div');
-  header.className = 'stroke-card-header';
+  header.className = 'drug-entry-header';
 
-  var yearEl = document.createElement('span');
-  yearEl.className = 'stroke-card-year';
-  yearEl.textContent = g.year;
+  var yearBadge = document.createElement('span');
+  yearBadge.className = 'drug-entry-id stroke-year-badge';
+  yearBadge.textContent = g.year;
 
-  var langEl = document.createElement('span');
-  langEl.className = 'stroke-card-lang';
-  langEl.textContent = g.lang === 'zh' ? '中' : 'EN';
+  var langBadge = document.createElement('span');
+  langBadge.className = 'stroke-lang-badge';
+  langBadge.textContent = g.lang === 'zh' ? '中文' : 'EN';
 
-  var titleEl = document.createElement('span');
-  titleEl.className = 'stroke-card-title';
-  titleEl.textContent = g.title || g.filename;
-
-  var badges = document.createElement('span');
-  badges.className = 'stroke-card-badges';
-  if (g.superseded_by) {
-    var sup = document.createElement('span');
-    sup.className = 'stroke-badge-superseded';
-    sup.title = '已被 ' + g.superseded_by + ' 取代';
-    sup.textContent = '已更新';
-    badges.appendChild(sup);
-  }
-  if (g.garbled) {
-    var garb = document.createElement('span');
-    garb.className = 'stroke-badge-garbled';
-    garb.title = '原始 PDF 使用自訂字型，部分文字可能無法正確顯示';
-    garb.textContent = '字型限制';
-    badges.appendChild(garb);
-  }
+  var titleSpan = document.createElement('span');
+  titleSpan.className = 'drug-entry-name';
+  titleSpan.textContent = g.title || g.title_en || g.filename;
 
   var chevron = document.createElement('span');
-  chevron.className = 'stroke-card-chevron';
+  chevron.className = 'drug-entry-chevron';
   chevron.textContent = '▶';
 
-  header.appendChild(yearEl);
-  header.appendChild(langEl);
-  header.appendChild(titleEl);
-  header.appendChild(badges);
+  header.appendChild(yearBadge);
+  header.appendChild(langBadge);
+  header.appendChild(titleSpan);
   header.appendChild(chevron);
+  header.addEventListener('click', function() { card.classList.toggle('open'); });
 
-  header.addEventListener('click', function() {
-    card.classList.toggle('open');
-  });
-
-  // Body
   var body = document.createElement('div');
-  body.className = 'stroke-card-body';
+  body.className = 'drug-entry-content stroke-card-body';
 
-  var refs = g.references || [];
+  // Attribution line: "台灣腦中風學會治療指引(year)" + affiliations in lower right
+  var attrib = document.createElement('div');
+  attrib.className = 'stroke-attribution';
+  var attribLeft = document.createElement('span');
+  attribLeft.className = 'stroke-attrib-main';
+  attribLeft.textContent = '台灣腦中風學會治療指引（' + g.year + '）';
+  var attribRight = document.createElement('span');
+  attribRight.className = 'stroke-attrib-affil';
+  attribRight.textContent = (g.affiliations || []).slice(0, 3).join('・');
+  attrib.appendChild(attribLeft);
+  attrib.appendChild(attribRight);
+  body.appendChild(attrib);
+
+  // Sections tree
   var refsMap = {};
-  refs.forEach(function(r) { refsMap[String(r.num)] = r.text; });
+  (g.references || []).forEach(function(r) { refsMap[String(r.num)] = r.text; });
 
-  // Sections
-  var sectionsToShow = filterSectionsForSearch(g.sections || [], q);
-  if (sectionsToShow.length === 0 && !q) {
-    sectionsToShow = (g.sections || []).slice(0, 30); // show first 30 sections if no query
-  }
-
+  var sectionsToShow = q ? filterSectionsForQuery(g.sections || [], q) : (g.sections || []);
   sectionsToShow.forEach(function(s) {
+    if (!s.heading && !s.content) return;
     body.appendChild(buildStrokeSection(s, refsMap, q, 1));
   });
 
   // References toggle
+  var refs = g.references || [];
   if (refs.length > 0) {
     var refsToggle = document.createElement('div');
     refsToggle.className = 'stroke-refs-toggle';
@@ -1602,11 +1916,7 @@ function buildStrokeCard(g, q) {
     refs.forEach(function(r) {
       var item = document.createElement('div');
       item.className = 'stroke-ref-item';
-      var numLabel = document.createElement('span');
-      numLabel.className = 'stroke-ref-num-label';
-      numLabel.textContent = r.num + '.';
-      item.appendChild(numLabel);
-      item.appendChild(document.createTextNode(r.text || ''));
+      item.textContent = r.num + '. ' + (r.text || '');
       refsList.appendChild(item);
     });
     refsToggle.addEventListener('click', function() {
@@ -1620,110 +1930,67 @@ function buildStrokeCard(g, q) {
 
   card.appendChild(header);
   card.appendChild(body);
-
-  // Auto-open if search matches
   if (q) card.classList.add('open');
-
   return card;
 }
 
-function filterSectionsForSearch(sections, q) {
-  if (!q) return sections;
+function filterSectionsForQuery(sections, q) {
   return sections.filter(function(s) {
     return (s.heading || '').toLowerCase().indexOf(q) >= 0 ||
            (s.content || '').toLowerCase().indexOf(q) >= 0 ||
-           (s.subsections || []).some(function(ss) {
-             return (ss.heading || '').toLowerCase().indexOf(q) >= 0 ||
-                    (ss.content || '').toLowerCase().indexOf(q) >= 0;
-           });
+           filterSectionsForQuery(s.subsections || [], q).length > 0;
   });
 }
 
 function buildStrokeSection(s, refsMap, q, level) {
-  if (level === 1) {
-    var sec = document.createElement('div');
-    sec.className = 'stroke-section';
+  var cls = level === 1 ? 'stroke-section' : level === 2 ? 'stroke-subsection' : 'stroke-sub3';
+  var hdrCls = level === 1 ? 'stroke-section-header' : level === 2 ? 'stroke-subsection-header' : 'stroke-sub3-header';
+  var bodyCls = level === 1 ? 'stroke-section-body' : level === 2 ? 'stroke-subsection-body' : 'stroke-sub3-body';
 
-    var secHeader = document.createElement('div');
-    secHeader.className = 'stroke-section-header';
+  var sec = document.createElement('div');
+  sec.className = cls;
 
-    var secChevron = document.createElement('span');
-    secChevron.className = 'stroke-section-chevron';
-    secChevron.textContent = '▶';
+  var hdr = document.createElement('div');
+  hdr.className = hdrCls;
 
-    var secTitle = document.createElement('span');
-    secTitle.className = 'stroke-section-title';
-    secTitle.textContent = s.heading || '（無標題）';
+  var chevron = document.createElement('span');
+  chevron.className = 'stroke-section-chevron';
+  chevron.textContent = '▶';
 
-    var secPage = document.createElement('span');
-    secPage.className = 'stroke-section-page';
-    if (s.page) secPage.textContent = 'p.' + s.page;
+  var titleSpan = document.createElement('span');
+  titleSpan.textContent = s.heading || '';
 
-    secHeader.appendChild(secChevron);
-    secHeader.appendChild(secTitle);
-    secHeader.appendChild(secPage);
-    secHeader.addEventListener('click', function() { sec.classList.toggle('open'); });
+  var pageSpan = document.createElement('span');
+  pageSpan.className = 'stroke-section-page';
+  if (s.page) pageSpan.textContent = 'p.' + s.page;
 
-    var secBody = document.createElement('div');
-    secBody.className = 'stroke-section-body';
+  hdr.appendChild(chevron);
+  hdr.appendChild(titleSpan);
+  hdr.appendChild(pageSpan);
+  hdr.addEventListener('click', function() { sec.classList.toggle('open'); });
 
-    if (s.content) {
-      var contentEl = document.createElement('div');
-      contentEl.className = 'stroke-section-content';
-      appendContentWithRefs(contentEl, s.content, s.refs || [], refsMap);
-      secBody.appendChild(contentEl);
-    }
+  var body = document.createElement('div');
+  body.className = bodyCls;
 
-    // Subsections
-    (s.subsections || []).forEach(function(ss) {
-      secBody.appendChild(buildStrokeSection(ss, refsMap, q, 2));
-    });
-
-    sec.appendChild(secHeader);
-    sec.appendChild(secBody);
-    if (q) sec.classList.add('open');
-    return sec;
-  } else {
-    // Level 2 subsection
-    var sub = document.createElement('div');
-    sub.className = 'stroke-subsection';
-
-    var subHeader = document.createElement('div');
-    subHeader.className = 'stroke-subsection-header';
-
-    var subChevron = document.createElement('span');
-    subChevron.className = 'stroke-subsection-chevron';
-    subChevron.textContent = '▶';
-
-    var subTitle = document.createElement('span');
-    subTitle.className = 'stroke-subsection-title';
-    subTitle.textContent = s.heading || '（無標題）';
-
-    subHeader.appendChild(subChevron);
-    subHeader.appendChild(subTitle);
-    subHeader.addEventListener('click', function() { sub.classList.toggle('open'); });
-
-    var subBody = document.createElement('div');
-    subBody.className = 'stroke-subsection-body';
-
-    if (s.content) {
-      var subContent = document.createElement('div');
-      subContent.className = 'stroke-subsection-content';
-      appendContentWithRefs(subContent, s.content, s.refs || [], refsMap);
-      subBody.appendChild(subContent);
-    }
-
-    sub.appendChild(subHeader);
-    sub.appendChild(subBody);
-    if (q) sub.classList.add('open');
-    return sub;
+  if (s.content) {
+    var contentEl = document.createElement('div');
+    contentEl.className = 'stroke-section-content';
+    appendContentWithRefs(contentEl, s.content, s.refs || [], refsMap);
+    body.appendChild(contentEl);
   }
+
+  (s.subsections || []).forEach(function(ss) {
+    if (!ss.heading && !ss.content) return;
+    body.appendChild(buildStrokeSection(ss, refsMap, q, level + 1));
+  });
+
+  sec.appendChild(hdr);
+  sec.appendChild(body);
+  if (q) sec.classList.add('open');
+  return sec;
 }
 
 function appendContentWithRefs(el, content, refNums, refsMap) {
-  // Split content on reference patterns like [1] [2,3] or superscript-like ¹²
-  // The extracted content stores inline refs as numbers in brackets or bare digits
-  // We'll parse patterns like (1) or [1,2] or just trailing numbers separated by commas
   var parts = content.split(/(\[\d+(?:,\s*\d+)*\])/g);
   parts.forEach(function(part) {
     var m = part.match(/^\[(\d+(?:,\s*\d+)*)\]$/);
@@ -1735,9 +2002,7 @@ function appendContentWithRefs(el, content, refNums, refsMap) {
         refEl.textContent = '[' + n + ']';
         var refText = refsMap[n.trim()];
         if (refText) {
-          refEl.addEventListener('mouseenter', function(e) {
-            showStrokeRefTooltip(e, refText);
-          });
+          refEl.addEventListener('mouseenter', function(e) { showStrokeRefTooltip(e, refText); });
           refEl.addEventListener('mouseleave', hideStrokeRefTooltip);
         }
         el.appendChild(refEl);
@@ -1774,8 +2039,6 @@ function hideStrokeRefTooltip() {
 
 document.addEventListener('mousemove', function(e) {
   var tip = document.getElementById('stroke-ref-tooltip');
-  if (tip && !tip.classList.contains('hidden')) {
-    positionStrokeTooltip(e, tip);
-  }
+  if (tip && !tip.classList.contains('hidden')) positionStrokeTooltip(e, tip);
 });
 // ===========================================================================
