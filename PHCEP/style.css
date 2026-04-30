@@ -1721,3 +1721,261 @@ select.search-overlay-active {
   transform: rotate(90deg);
 }
 
+
+/* ============================================================
+   NEW FEATURE STYLES (ICD-9, Search Above, Drug Groups, etc.)
+   ============================================================ */
+
+/* ICD-9-CM code displayed next to ICD-10-CM */
+.icd9-code {
+  font-size: 0.68rem;
+  color: var(--muted);
+  opacity: 0.65;
+  margin-left: 4px;
+  font-style: italic;
+  white-space: nowrap;
+}
+
+/* Search results above category grid */
+.search-results-above {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 12px;
+  max-height: 65vh;
+  overflow-y: auto;
+}
+.search-results-above .detail-header {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 1;
+}
+
+/* Drug group headers (non-tappable) */
+.drug-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px 6px;
+  margin-top: 8px;
+  border-bottom: 2px solid var(--primary);
+  background: transparent;
+  cursor: default;
+}
+.drug-group-id {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
+  border-radius: 3px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+.drug-group-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Inline history in EBM/SOAP tabs */
+.inline-history-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.inline-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 10px;
+  gap: 8px;
+}
+.inline-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.inline-history-empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.inline-history-item {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+}
+.inline-history-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.inline-history-date {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+.inline-history-cat {
+  font-size: 0.7rem;
+  color: var(--muted);
+  background: var(--surface);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+.inline-history-preview {
+  font-size: 0.78rem;
+  color: var(--text);
+  line-height: 1.4;
+  margin-bottom: 6px;
+  white-space: pre-wrap;
+}
+.inline-history-actions {
+  display: flex;
+  gap: 6px;
+}
+.btn-xs {
+  font-size: 0.72rem;
+  padding: 3px 8px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: opacity .2s;
+}
+.btn-xs:hover { opacity: 0.85; }
+
+/* Special Materials (特材給付) */
+.specmat-entry {}
+.specmat-date-badge {
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-left: auto;
+  white-space: nowrap;
+}
+.specmat-search-result {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin: 6px 12px;
+  background: var(--surface2);
+}
+.specmat-result-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.specmat-cat-badge {
+  font-size: 0.7rem;
+  color: var(--muted);
+  background: var(--surface);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+.specmat-result-rule {
+  font-size: 0.78rem;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+/* Stroke: Authors block */
+.stroke-authors-block {
+  background: var(--surface2);
+  border-left: 3px solid var(--primary);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+.stroke-authors-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin-bottom: 4px;
+}
+.stroke-authors-list {
+  font-size: 0.83rem;
+  color: var(--text);
+  font-weight: 600;
+  margin-bottom: 6px;
+  line-height: 1.5;
+}
+.stroke-affiliations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.stroke-affil-item {
+  font-size: 0.74rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+/* Stroke: Markdown content */
+.stroke-md-content {
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: var(--text);
+}
+.stroke-md-content .stroke-md-p {
+  margin: 4px 0;
+}
+.stroke-md-content .stroke-md-h3 {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 10px 0 4px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 3px;
+}
+.stroke-md-content .stroke-md-h4 {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 8px 0 3px;
+}
+.stroke-md-content .stroke-md-h5, .stroke-md-content .stroke-md-h6 {
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin: 6px 0 2px;
+}
+.stroke-md-content .stroke-md-list {
+  padding-left: 20px;
+  margin: 4px 0;
+}
+.stroke-md-content .stroke-md-list li {
+  margin: 2px 0;
+}
+.stroke-md-content .stroke-md-hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 10px 0;
+}
+.stroke-md-content .stroke-rec-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 8px;
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  border-radius: 4px;
+  margin: 6px 0;
+}
+.stroke-rec-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 15%, transparent);
+  padding: 1px 6px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
