@@ -1487,3 +1487,237 @@ a:hover { text-decoration: underline; }
   .stroke-card-header { padding: 10px; gap: 8px; }
   .stroke-card-body { max-height: 55vh; }
 }
+
+/* ============================================================
+   Alpha Navigation — ICD table pagination by letter
+   ============================================================ */
+.alpha-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.alpha-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--surface2);
+  color: var(--accent);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.alpha-link:hover { background: var(--accent); color: #fff; text-decoration: none; }
+.alpha-anchor-row td {
+  background: var(--surface2);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 4px 12px !important;
+  letter-spacing: 0.1em;
+}
+
+/* ============================================================
+   Search Overlay — transparent effect when searching
+   ============================================================ */
+.search-overlay-active {
+  opacity: 0.35;
+  transition: opacity 0.2s;
+}
+/* Don't disable interaction on select elements */
+select.search-overlay-active {
+  pointer-events: auto;
+}
+
+/* ============================================================
+   Patient Education Tab
+   ============================================================ */
+.edu-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 20px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.edu-file-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.edu-file-card:hover {
+  border-color: var(--accent);
+  background: var(--surface2);
+}
+.edu-file-icon { font-size: 1.6rem; flex-shrink: 0; }
+.edu-file-title { flex: 1; font-weight: 600; font-size: 1rem; }
+.edu-file-meta {
+  font-size: 0.72rem;
+  color: var(--muted);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+.edu-viewer {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+}
+.edu-viewer-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.edu-viewer-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--heading);
+}
+.edu-viewer-content {
+  line-height: 1.75;
+  color: var(--text);
+}
+.edu-viewer-content h1,
+.edu-viewer-content h2,
+.edu-viewer-content h3 {
+  color: var(--heading);
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  font-weight: 700;
+}
+.edu-viewer-content h1 { font-size: 1.4rem; }
+.edu-viewer-content h2 { font-size: 1.15rem; }
+.edu-viewer-content h3 { font-size: 1rem; }
+.edu-viewer-content p { margin-bottom: 0.75em; }
+.edu-viewer-content ul, .edu-viewer-content ol {
+  margin: 0.5em 0 0.75em 1.5em;
+}
+.edu-viewer-content li { margin-bottom: 0.25em; }
+.edu-viewer-content strong { color: var(--heading); }
+.edu-viewer-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1em;
+}
+.edu-viewer-content td, .edu-viewer-content th {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  font-size: 0.9rem;
+}
+.edu-images { margin-top: 16px; }
+.edu-img {
+  max-width: 100%;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.edu-images figure { margin-bottom: 16px; }
+.edu-images figcaption {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* ============================================================
+   Stroke Tab — new drug-tab format
+   ============================================================ */
+.stroke-cat-card {
+  cursor: pointer;
+}
+.stroke-cat-years {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.stroke-guideline-card {}
+.stroke-year-badge {
+  background: var(--primary);
+  color: #fff;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.stroke-lang-badge {
+  background: var(--surface2);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 5px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  margin-right: 4px;
+}
+.stroke-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 16px;
+}
+.stroke-attribution {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.stroke-attrib-main {
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+.stroke-attrib-affil {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-align: right;
+  flex-shrink: 0;
+}
+.stroke-sub3 {
+  margin-left: 24px;
+}
+.stroke-sub3-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  border-left: 2px solid var(--border);
+}
+.stroke-sub3-header:hover { background: var(--surface2); }
+.stroke-sub3-body {
+  display: none;
+  padding-left: 16px;
+}
+.stroke-sub3.open > .stroke-sub3-body { display: block; }
+.stroke-sub3.open > .stroke-sub3-header .stroke-section-chevron,
+.stroke-section.open > .stroke-section-header .stroke-section-chevron,
+.stroke-subsection.open > .stroke-subsection-header .stroke-subsection-chevron {
+  transform: rotate(90deg);
+}
+
