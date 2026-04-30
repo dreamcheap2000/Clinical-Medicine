@@ -9,6 +9,7 @@
 // State
 // ---------------------------------------------------------------------------
 let META = null;
+let ICD9_MAP = null;  // ICD-10 code → [ICD-9 codes]
 let cmLoaded  = {};   // catId → {codes: [...]}
 let pcsLoaded = {};   // catId → {codes: [...]}
 let cmOthers  = null; // compact [[code,zh],...]
@@ -33,6 +34,7 @@ async function boot() {
     renderCmGrid();
     populateCmCatSelect();
     renderPcsGrid();
+    populatePcsCatSelect();
     renderAbout();
     initEbmTab();
     initSoapTab();
@@ -40,6 +42,9 @@ async function boot() {
     initNhiTab();
     initDrugTab();
     initStrokeTab();
+    initSpecmatTab();
+    // Load ICD-9 mapping in background
+    fetchJson(BASE + 'data/icd9_mapping.json').then(d => { ICD9_MAP = d; }).catch(() => {});
   } catch (e) {
     console.error('Boot failed:', e);
     toast('⚠️ 載入 meta.json 失敗，請確認部署路徑');
@@ -99,6 +104,9 @@ function switchTab(name) {
   if (name === 'nhi') nhiOnTabShow();
   if (name === 'drug') drugOnTabShow();
   if (name === 'stroke') strokeOnTabShow();
+  if (name === 'specmat') specmatOnTabShow();
+  if (name === 'ebm') renderEbmInlineHistory();
+  if (name === 'soap') renderSoapInlineHistory();
 }
 
 // ---------------------------------------------------------------------------
@@ -143,13 +151,20 @@ function cmSearch(q) {
   }
   const grid = document.getElementById('cm-cat-grid');
   const detail = document.getElementById('cm-detail');
+  const resultsAbove = document.getElementById('cm-search-results');
   if (cmSearchQ) {
-    // Overlay: fade grid, show search results in detail panel
+    // Show results above category grid
     grid.classList.add('search-overlay-active');
-    detail.classList.remove('hidden');
-    detail.innerHTML = buildCmSearchResults(cmSearchQ);
+    if (resultsAbove) {
+      resultsAbove.classList.remove('hidden');
+      resultsAbove.innerHTML = buildCmSearchResults(cmSearchQ);
+    } else {
+      detail.classList.remove('hidden');
+      detail.innerHTML = buildCmSearchResults(cmSearchQ);
+    }
   } else {
     grid.classList.remove('search-overlay-active');
+    if (resultsAbove) resultsAbove.classList.add('hidden');
     if (!activeCmCat) {
       detail.classList.add('hidden');
     }
@@ -188,13 +203,18 @@ function buildCmSearchResults(q) {
     return `<div style="padding:24px;color:var(--muted);text-align:center">無符合「${escHtml(q)}」的 ICD-10-CM 代碼（未載入的分類不在搜尋範圍）</div>`;
   }
 
-  const rows = results.map(r => `
+  const rows = results.map(r => {
+    const icd9s = ICD9_MAP ? (ICD9_MAP[r.code] || []) : [];
+    const icd9Html = icd9s.length > 0
+      ? `<span class="icd9-code">(ICD-9: ${escHtml(icd9s.slice(0,3).join(', '))})</span>` : '';
+    return `
     <tr>
-      <td class="code-cell">${escHtml(r.code)}</td>
+      <td class="code-cell">${escHtml(r.code)}${icd9Html}</td>
       <td class="en-cell">${escHtml(r.en)}</td>
       <td class="zh-cell">${escHtml(r.zh)}</td>
       <td style="font-size:.72rem;color:var(--muted)">${escHtml(r.catName)}</td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 
   return `
     <div class="detail-header">
@@ -405,10 +425,108 @@ function buildGroupedRows(items, isCompact) {
     if (isCompact) {
       html += `<tr><td class="code-cell">${escHtml(item.code)}</td><td class="zh-cell">${escHtml(item.zh)}</td></tr>`;
     } else {
-      html += `<tr><td class="code-cell">${escHtml(item.code)}</td><td class="en-cell">${escHtml(item.en)}</td><td class="zh-cell">${escHtml(item.zh)}</td></tr>`;
+      // Show ICD-9 code if available
+      const icd9s = ICD9_MAP ? (ICD9_MAP[item.code] || []) : [];
+      const icd9Html = icd9s.length > 0
+        ? ` <span class="icd9-code">${escHtml(icd9s.join(', '))}</span>` : '';
+      html += `<tr><td class="code-cell">${escHtml(item.code)}${icd9Html}</td><td class="en-cell">${escHtml(item.en)}</td><td class="zh-cell">${escHtml(item.zh)}</td></tr>`;
     }
   }
   return html;
+}
+
+// ---------------------------------------------------------------------------
+// PCS Tab — search bar and category select
+// ---------------------------------------------------------------------------
+let pcsSearchQ = '';
+
+function populatePcsCatSelect() {
+  const sel = document.getElementById('pcs-cat-sel');
+  if (!sel || !META) return;
+  sel.innerHTML = '<option value="">全部分類</option>' +
+    META.pcs_categories.map(c =>
+      `<option value="${escHtml(c.id)}">${escHtml(c.icon)} ${escHtml(c.nameZh)}</option>`
+    ).join('');
+}
+
+function pcsSelectCat(id) {
+  activePcsCat = id || null;
+  const detail = document.getElementById('pcs-detail');
+  const grid = document.getElementById('pcs-cat-grid');
+  const resultsAbove = document.getElementById('pcs-search-results');
+  if (id) {
+    openCat('pcs', id);
+  } else {
+    if (grid) grid.classList.remove('hidden');
+    if (detail) detail.classList.add('hidden');
+    if (resultsAbove) resultsAbove.classList.add('hidden');
+    document.querySelectorAll('#pcs-cat-grid .cat-card').forEach(c => c.classList.remove('active'));
+  }
+}
+
+function pcsSearch(q) {
+  pcsSearchQ = q.trim();
+  const grid = document.getElementById('pcs-cat-grid');
+  const resultsAbove = document.getElementById('pcs-search-results');
+  if (pcsSearchQ) {
+    if (grid) grid.classList.add('search-overlay-active');
+    if (resultsAbove) {
+      resultsAbove.classList.remove('hidden');
+      resultsAbove.innerHTML = buildPcsSearchResults(pcsSearchQ);
+    }
+  } else {
+    if (grid) grid.classList.remove('search-overlay-active');
+    if (resultsAbove) resultsAbove.classList.add('hidden');
+  }
+}
+
+function buildPcsSearchResults(q) {
+  const ql = q.toLowerCase();
+  const results = [];
+  for (const cat of META.pcs_categories) {
+    if (cat.id === 'others') {
+      if (pcsOthers) {
+        for (const [c, z] of pcsOthers) {
+          if (c.toLowerCase().includes(ql) || z.toLowerCase().includes(ql)) {
+            results.push({ code: c, en: '', zh: z, catName: cat.nameZh });
+            if (results.length >= 300) break;
+          }
+        }
+      }
+    } else {
+      const data = pcsLoaded[cat.id];
+      if (data) {
+        for (const r of (data.codes || [])) {
+          if (r.code.toLowerCase().includes(ql) || r.en.toLowerCase().includes(ql) || r.zh.toLowerCase().includes(ql)) {
+            results.push({ ...r, catName: cat.nameZh });
+            if (results.length >= 300) break;
+          }
+        }
+      }
+    }
+    if (results.length >= 300) break;
+  }
+  if (results.length === 0) {
+    return `<div style="padding:24px;color:var(--muted);text-align:center">無符合「${escHtml(q)}」的 ICD-10-PCS 代碼（未載入的分類不在搜尋範圍）</div>`;
+  }
+  const rows = results.map(r => `
+    <tr>
+      <td class="code-cell">${escHtml(r.code)}</td>
+      <td class="en-cell">${escHtml(r.en)}</td>
+      <td class="zh-cell">${escHtml(r.zh)}</td>
+      <td style="font-size:.72rem;color:var(--muted)">${escHtml(r.catName)}</td>
+    </tr>`).join('');
+  return `
+    <div class="detail-header">
+      <div class="detail-title">🔍 搜尋「${escHtml(q)}」— ICD-10-PCS</div>
+    </div>
+    <div class="codes-table-wrap" style="max-height:60vh">
+      <table class="codes-table">
+        <thead><tr><th>代碼</th><th>English</th><th>中文名稱</th><th>分類</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div class="row-count">找到 ${results.length} 筆${results.length >= 300 ? '（已截斷）' : ''}</div>`;
 }
 
 // ---------------------------------------------------------------------------
@@ -731,12 +849,48 @@ function saveEbmEntry() {
   storageSet(EBM_ENTRIES_KEY, entries);
   toast('✅ EBM 筆記已儲存');
   if (document.getElementById('tab-history').classList.contains('active')) renderHistory();
+  renderEbmInlineHistory();
 }
 
 function clearEbmForm() {
   document.getElementById('ebm-content').value = '';
   document.getElementById('ebm-date').value = todayStr();
   document.getElementById('ebm-icd-cat').value = '';
+}
+
+function renderEbmInlineHistory() {
+  var container = document.getElementById('ebm-inline-history');
+  if (!container) return;
+  var entries = storageGet(EBM_ENTRIES_KEY);
+  if (entries.length === 0) {
+    container.innerHTML = '<div class="inline-history-empty">尚無 EBM 筆記記錄</div>';
+    return;
+  }
+  container.innerHTML = entries.slice(0, 10).map(function(e) {
+    var preview = e.content.substring(0, 120).replace(/\n/g, ' ');
+    if (e.content.length > 120) preview += '…';
+    return `<div class="inline-history-item">
+      <div class="inline-history-meta">
+        <span class="inline-history-date">${escHtml(e.date)}</span>
+        ${e.icdCat ? `<span class="inline-history-cat">${escHtml(e.icdCat)}</span>` : ''}
+      </div>
+      <div class="inline-history-preview">${escHtml(preview)}</div>
+      <div class="inline-history-actions">
+        <button class="btn-xs" onclick="loadEbmFromHistory('${escHtml(e.id)}')">📥 載入</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function loadEbmFromHistory(id) {
+  var entries = storageGet(EBM_ENTRIES_KEY);
+  var entry = entries.find(function(e) { return e.id === id; });
+  if (!entry) return;
+  document.getElementById('ebm-date').value = entry.date;
+  if (entry.icdCat) document.getElementById('ebm-icd-cat').value = entry.icdCat;
+  document.getElementById('ebm-content').value = entry.content;
+  document.getElementById('ebm-content').scrollIntoView({ behavior: 'smooth' });
+  toast('📥 EBM 筆記已載入');
 }
 
 // ---------------------------------------------------------------------------
@@ -805,11 +959,45 @@ function saveSoapEntry() {
   storageSet(SOAP_ENTRIES_KEY, entries);
   toast('✅ SOAP 病歷已儲存');
   if (document.getElementById('tab-history').classList.contains('active')) renderHistory();
+  renderSoapInlineHistory();
 }
 
 function clearSoapForm() {
   document.getElementById('soap-content').value = DEFAULT_SOAP;
   document.getElementById('soap-date').value = todayStr();
+}
+
+function renderSoapInlineHistory() {
+  var container = document.getElementById('soap-inline-history');
+  if (!container) return;
+  var entries = storageGet(SOAP_ENTRIES_KEY);
+  if (entries.length === 0) {
+    container.innerHTML = '<div class="inline-history-empty">尚無 SOAP 病歷記錄</div>';
+    return;
+  }
+  container.innerHTML = entries.slice(0, 10).map(function(e) {
+    var preview = e.content.substring(0, 120).replace(/\n/g, ' ');
+    if (e.content.length > 120) preview += '…';
+    return `<div class="inline-history-item">
+      <div class="inline-history-meta">
+        <span class="inline-history-date">${escHtml(e.date)}</span>
+      </div>
+      <div class="inline-history-preview">${escHtml(preview)}</div>
+      <div class="inline-history-actions">
+        <button class="btn-xs" onclick="loadSoapFromHistory('${escHtml(e.id)}')">📥 載入</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function loadSoapFromHistory(id) {
+  var entries = storageGet(SOAP_ENTRIES_KEY);
+  var entry = entries.find(function(e) { return e.id === id; });
+  if (!entry) return;
+  document.getElementById('soap-date').value = entry.date;
+  document.getElementById('soap-content').value = entry.content;
+  document.getElementById('soap-content').scrollIntoView({ behavior: 'smooth' });
+  toast('📥 SOAP 病歷已載入');
 }
 
 // ---------------------------------------------------------------------------
@@ -1405,26 +1593,64 @@ function drugSearch(q) {
   var grid = document.getElementById('drug-cat-grid');
   var sel = document.getElementById('drug-cat-sel');
   var tagFilter = document.getElementById('drug-tag-filter');
+  var searchResults = document.getElementById('drug-search-results');
+  var listWrap = document.getElementById('drug-list-wrap');
+
   if (drugSearchQ) {
-    // When searching: make category controls transparent, overlay with results
     if (grid) grid.classList.add('search-overlay-active');
     if (sel) sel.classList.add('search-overlay-active');
     if (tagFilter) tagFilter.classList.add('search-overlay-active');
     if (!drugActiveCat) {
+      // Global search: show results ABOVE the category grid
       if (grid) grid.classList.add('hidden');
-      document.getElementById('drug-list-wrap').classList.remove('hidden');
-    }
-  } else {
-    if (grid) grid.classList.remove('search-overlay-active');
-    if (sel) sel.classList.remove('search-overlay-active');
-    if (tagFilter) tagFilter.classList.remove('search-overlay-active');
-    if (!drugActiveCat) {
-      if (grid) grid.classList.remove('hidden');
-      document.getElementById('drug-list-wrap').classList.add('hidden');
+      if (listWrap) listWrap.classList.add('hidden');
+      if (searchResults) {
+        searchResults.classList.remove('hidden');
+        searchResults.innerHTML = buildDrugSearchResultsHtml(drugSearchQ);
+      }
       return;
     }
+    // Category + search: render in drug-list-wrap as before
+    if (searchResults) searchResults.classList.add('hidden');
+    if (listWrap) listWrap.classList.remove('hidden');
+  } else {
+    if (grid) grid.classList.remove('search-overlay-active', 'hidden');
+    if (sel) sel.classList.remove('search-overlay-active');
+    if (tagFilter) tagFilter.classList.remove('search-overlay-active');
+    if (searchResults) searchResults.classList.add('hidden');
+    if (!drugActiveCat) {
+      if (listWrap) listWrap.classList.add('hidden');
+      return;
+    }
+    if (listWrap) listWrap.classList.remove('hidden');
   }
   drugRender();
+}
+
+function buildDrugSearchResultsHtml(q) {
+  var entries = drugGetFilteredEntries();
+  if (entries.length === 0) {
+    return `<div style="padding:24px;color:var(--muted);text-align:center">無符合「${escHtml(q)}」的藥品</div>`;
+  }
+  var header = `<div class="detail-header">
+    <div class="detail-title">🔍 搜尋「${escHtml(q)}」— 共 ${entries.length} 項</div>
+  </div>`;
+  var items = entries.map(function(e) {
+    if (e.isGroup) {
+      return `<div class="drug-group-header"><span class="drug-group-id">${escHtml(e.id)}</span><span class="drug-group-name">${escHtml(e.name)}</span></div>`;
+    }
+    var rulePreview = (e.content || '').substring(0, 120);
+    if ((e.content || '').length > 120) rulePreview += '…';
+    var catBadge = e._cat ? `<span style="font-size:.68rem;color:var(--muted);margin-left:4px">${escHtml(e._cat)}</span>` : '';
+    return `<div class="drug-entry specmat-search-result" style="cursor:pointer" onclick="drugOpenCat('${escHtml(e._catId || '')}')">
+      <div class="specmat-result-header">
+        <span class="drug-entry-id">${escHtml(e.id)}</span>
+        <span class="drug-entry-name">${escHtml(e.name)}</span>${catBadge}
+      </div>
+      ${rulePreview ? `<div class="specmat-result-rule">${escHtml(rulePreview)}</div>` : ''}
+    </div>`;
+  }).join('');
+  return header + '<div style="padding:0 8px 8px">' + items + '</div>';
 }
 
 function drugGetFilteredEntries() {
@@ -1517,6 +1743,28 @@ function drugRender() {
   if (entriesEl) {
     entriesEl.innerHTML = '';
     entries.forEach(function(e) {
+      // Render group title headers (not tappable)
+      if (e.isGroup) {
+        var groupDiv = document.createElement('div');
+        groupDiv.className = 'drug-group-header';
+        var groupId = document.createElement('span');
+        groupId.className = 'drug-group-id';
+        groupId.textContent = e.id;
+        var groupName = document.createElement('span');
+        groupName.className = 'drug-group-name';
+        if (e._cat) {
+          var catBadge = document.createElement('span');
+          catBadge.style.cssText = 'font-size:.68rem;color:var(--muted);margin-right:6px';
+          catBadge.textContent = e._cat;
+          groupName.appendChild(catBadge);
+        }
+        groupName.appendChild(document.createTextNode(e.name));
+        groupDiv.appendChild(groupId);
+        groupDiv.appendChild(groupName);
+        entriesEl.appendChild(groupDiv);
+        return;
+      }
+
       var entryDiv = document.createElement('div');
       entryDiv.className = 'drug-entry';
 
@@ -1546,22 +1794,24 @@ function drugRender() {
         tagsSpan.appendChild(tagEl);
       });
 
-      var chevronSpan = document.createElement('span');
-      chevronSpan.className = 'drug-entry-chevron';
-      chevronSpan.textContent = '▶';
-
       headerDiv.appendChild(idSpan);
       headerDiv.appendChild(nameSpan);
       headerDiv.appendChild(tagsSpan);
-      headerDiv.appendChild(chevronSpan);
 
       var contentDiv = document.createElement('div');
       contentDiv.className = 'drug-entry-content';
-      contentDiv.textContent = e.content || '';
 
-      headerDiv.addEventListener('click', function() {
-        entryDiv.classList.toggle('open');
-      });
+      // Only add expand functionality if there's content
+      if (e.content) {
+        var chevronSpan = document.createElement('span');
+        chevronSpan.className = 'drug-entry-chevron';
+        chevronSpan.textContent = '▶';
+        headerDiv.appendChild(chevronSpan);
+        contentDiv.textContent = e.content;
+        headerDiv.addEventListener('click', function() {
+          entryDiv.classList.toggle('open');
+        });
+      }
 
       entryDiv.appendChild(headerDiv);
       entryDiv.appendChild(contentDiv);
@@ -1586,6 +1836,8 @@ function drugBackToGrid() {
   if (grid) grid.classList.remove('hidden', 'search-overlay-active');
   var tagFilter = document.getElementById('drug-tag-filter');
   if (tagFilter) tagFilter.classList.remove('search-overlay-active');
+  var searchResults = document.getElementById('drug-search-results');
+  if (searchResults) { searchResults.classList.add('hidden'); searchResults.innerHTML = ''; }
   document.getElementById('drug-list-wrap').classList.add('hidden');
 }
 // ===========================================================================
@@ -1850,6 +2102,82 @@ function strokeBackToGrid() {
   document.getElementById('stroke-list-wrap').classList.add('hidden');
 }
 
+// ---------------------------------------------------------------------------
+// Simple Markdown renderer for stroke content
+// ---------------------------------------------------------------------------
+function renderMarkdown(text) {
+  if (!text) return '';
+  var lines = text.split('\n');
+  var html = '';
+  var inList = false;
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    // Horizontal rule
+    if (/^[-=]{3,}$/.test(line.trim())) {
+      if (inList) { html += '</ul>'; inList = false; }
+      html += '<hr class="stroke-md-hr">';
+      continue;
+    }
+    // Headings
+    var hm = line.match(/^(#{1,4})\s+(.*)/);
+    if (hm) {
+      if (inList) { html += '</ul>'; inList = false; }
+      var lvl = Math.min(hm[1].length + 2, 6);
+      html += '<h' + lvl + ' class="stroke-md-h' + lvl + '">' + mdInline(hm[2]) + '</h' + lvl + '>';
+      continue;
+    }
+    // Bullet list
+    var bm = line.match(/^[\s]*[-•]\s+(.*)/);
+    if (bm) {
+      if (!inList) { html += '<ul class="stroke-md-list">'; inList = true; }
+      html += '<li>' + mdInline(bm[1]) + '</li>';
+      continue;
+    }
+    // Numbered list
+    var nm = line.match(/^[\s]*(\d+)[.)]\s+(.*)/);
+    if (nm) {
+      if (!inList) { html += '<ul class="stroke-md-list stroke-md-olist">'; inList = true; }
+      html += '<li>' + mdInline(nm[2]) + '</li>';
+      continue;
+    }
+    // End list
+    if (inList) { html += '</ul>'; inList = false; }
+    // Blank line
+    if (line.trim() === '') {
+      html += '<br>';
+      continue;
+    }
+    // Recommendation class (Class I / Class II / Level A etc.)
+    var recm = line.match(/^(Class\s+[IVX]+[ab]*|Level\s+[A-C][-\w]*|建議等級|證據等級|推薦等級)\s*[：:](.*)/i);
+    if (recm) {
+      html += '<div class="stroke-rec-line"><span class="stroke-rec-badge">' + escHtml(recm[1]) + '</span>' + mdInline(recm[2]) + '</div>';
+      continue;
+    }
+    // Normal paragraph
+    html += '<p class="stroke-md-p">' + mdInline(line) + '</p>';
+  }
+  if (inList) html += '</ul>';
+  return html;
+}
+
+function mdInline(text) {
+  if (!text) return '';
+  // Bold
+  text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/__(.*?)__/g, '<strong>$1</strong>');
+  // Italic
+  text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  text = text.replace(/_(.*?)_/g, '<em>$1</em>');
+  // Inline code
+  text = text.replace(/`(.*?)`/g, '<code>$1</code>');
+  // References [1], [2,3]
+  text = text.replace(/\[(\d+(?:,\s*\d+)*)\]/g, function(m, nums) {
+    return '<sup class="stroke-ref-num">' + escHtml(m) + '</sup>';
+  });
+  // HTML escape remaining (but keep existing HTML)
+  return text;
+}
+
 function buildStrokeCard(g, q) {
   var card = document.createElement('div');
   card.className = 'drug-entry stroke-guideline-card';
@@ -1882,18 +2210,34 @@ function buildStrokeCard(g, q) {
   var body = document.createElement('div');
   body.className = 'drug-entry-content stroke-card-body';
 
-  // Attribution line: "台灣腦中風學會治療指引(year)" + affiliations in lower right
-  var attrib = document.createElement('div');
-  attrib.className = 'stroke-attribution';
-  var attribLeft = document.createElement('span');
-  attribLeft.className = 'stroke-attrib-main';
-  attribLeft.textContent = '台灣腦中風學會治療指引（' + g.year + '）';
-  var attribRight = document.createElement('span');
-  attribRight.className = 'stroke-attrib-affil';
-  attribRight.textContent = (g.affiliations || []).slice(0, 3).join('・');
-  attrib.appendChild(attribLeft);
-  attrib.appendChild(attribRight);
-  body.appendChild(attrib);
+  // --- AUTHORS / AFFILIATIONS BLOCK at top ---
+  if (g.authors && g.authors.length > 0) {
+    var authorsBlock = document.createElement('div');
+    authorsBlock.className = 'stroke-authors-block';
+
+    var authorsTitle = document.createElement('div');
+    authorsTitle.className = 'stroke-authors-title';
+    authorsTitle.textContent = '作者群';
+    authorsBlock.appendChild(authorsTitle);
+
+    var authorsList = document.createElement('div');
+    authorsList.className = 'stroke-authors-list';
+    authorsList.textContent = g.authors.join('、');
+    authorsBlock.appendChild(authorsList);
+
+    if (g.affiliations && g.affiliations.length > 0) {
+      var affilList = document.createElement('div');
+      affilList.className = 'stroke-affiliations-list';
+      g.affiliations.forEach(function(aff) {
+        var affilItem = document.createElement('div');
+        affilItem.className = 'stroke-affil-item';
+        affilItem.textContent = aff;
+        affilList.appendChild(affilItem);
+      });
+      authorsBlock.appendChild(affilList);
+    }
+    body.appendChild(authorsBlock);
+  }
 
   // Sections tree
   var refsMap = {};
@@ -1905,7 +2249,7 @@ function buildStrokeCard(g, q) {
     body.appendChild(buildStrokeSection(s, refsMap, q, 1));
   });
 
-  // References toggle
+  // --- REFERENCES at bottom ---
   var refs = g.references || [];
   if (refs.length > 0) {
     var refsToggle = document.createElement('div');
@@ -1974,8 +2318,23 @@ function buildStrokeSection(s, refsMap, q, level) {
 
   if (s.content) {
     var contentEl = document.createElement('div');
-    contentEl.className = 'stroke-section-content';
-    appendContentWithRefs(contentEl, s.content, s.refs || [], refsMap);
+    contentEl.className = 'stroke-section-content stroke-md-content';
+    // Render as Markdown HTML
+    contentEl.innerHTML = renderMarkdown(s.content);
+    // Re-attach ref tooltips
+    contentEl.querySelectorAll('.stroke-ref-num').forEach(function(refEl) {
+      var m = refEl.textContent.match(/\[(\d+(?:,\s*\d+)*)\]/);
+      if (m) {
+        var nums = m[1].split(/,\s*/);
+        nums.forEach(function(n) {
+          var refText = refsMap[n.trim()];
+          if (refText) {
+            refEl.addEventListener('mouseenter', function(e) { showStrokeRefTooltip(e, refText); });
+            refEl.addEventListener('mouseleave', hideStrokeRefTooltip);
+          }
+        });
+      }
+    });
     body.appendChild(contentEl);
   }
 
@@ -2041,4 +2400,188 @@ document.addEventListener('mousemove', function(e) {
   var tip = document.getElementById('stroke-ref-tooltip');
   if (tip && !tip.classList.contains('hidden')) positionStrokeTooltip(e, tip);
 });
+
+// ===========================================================================
+// Special Materials Tab (特材給付)
+// ===========================================================================
+var specmatData = null;
+var specmatActiveCat = null;
+var specmatSearchQ = '';
+
+function initSpecmatTab() {
+  // Data will be loaded when the tab is first opened
+}
+
+function specmatOnTabShow() {
+  if (!specmatData) {
+    loadSpecmatData();
+  }
+}
+
+async function loadSpecmatData() {
+  var grid = document.getElementById('specmat-cat-grid');
+  if (grid) grid.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">載入中…</div>';
+  try {
+    specmatData = await fetchJson(BASE + 'data/nhi/special_materials.json');
+    renderSpecmatGrid();
+    populateSpecmatCatSelect();
+  } catch(e) {
+    if (grid) grid.innerHTML = '<p style="color:var(--red);padding:20px">⚠️ 載入特材資料失敗</p>';
+  }
+}
+
+function renderSpecmatGrid() {
+  var grid = document.getElementById('specmat-cat-grid');
+  if (!grid || !specmatData) return;
+  grid.innerHTML = specmatData.categories.map(function(cat) {
+    return `<div class="cat-card" onclick="specmatOpenCat('${escHtml(cat.id)}')">
+      <div class="cat-icon">${escHtml(cat.icon)}</div>
+      <div class="cat-name-en">${escHtml(cat.nameEn)}</div>
+      <div class="cat-name-zh">${escHtml(cat.nameZh)}</div>
+      <div class="cat-range"></div>
+      <div class="cat-count"><span class="count-badge">${cat.totalEntries} items</span></div>
+    </div>`;
+  }).join('');
+}
+
+function populateSpecmatCatSelect() {
+  var sel = document.getElementById('specmat-cat-sel');
+  if (!sel || !specmatData) return;
+  sel.innerHTML = '<option value="">全部分類</option>' +
+    specmatData.categories.map(function(c) {
+      return `<option value="${escHtml(c.id)}">${escHtml(c.icon)} ${escHtml(c.nameZh)}</option>`;
+    }).join('');
+}
+
+function specmatSelectCat(id) {
+  specmatActiveCat = id || null;
+  if (id) {
+    specmatOpenCat(id);
+  } else {
+    var grid = document.getElementById('specmat-cat-grid');
+    if (grid) grid.classList.remove('hidden');
+    document.getElementById('specmat-list-wrap').classList.add('hidden');
+    var searchResults = document.getElementById('specmat-search-results');
+    if (searchResults) searchResults.classList.add('hidden');
+  }
+}
+
+function specmatOpenCat(catId) {
+  if (!specmatData) return;
+  var cat = specmatData.categories.find(function(c) { return c.id === catId; });
+  if (!cat) return;
+  specmatActiveCat = catId;
+  var grid = document.getElementById('specmat-cat-grid');
+  if (grid) grid.classList.add('hidden');
+  var wrap = document.getElementById('specmat-list-wrap');
+  var header = document.getElementById('specmat-list-header');
+  var entriesEl = document.getElementById('specmat-entries');
+  wrap.classList.remove('hidden');
+  header.innerHTML = `<button class="btn-drug-back" onclick="specmatBackToGrid()">← 返回</button>
+    <span class="drug-list-title">${escHtml(cat.icon)} ${escHtml(cat.nameZh)}</span>
+    <span class="drug-list-count">${cat.totalEntries} 項</span>`;
+  entriesEl.innerHTML = '';
+  cat.entries.forEach(function(e) {
+    var entryDiv = document.createElement('div');
+    entryDiv.className = 'drug-entry specmat-entry';
+
+    var headerDiv = document.createElement('div');
+    headerDiv.className = 'drug-entry-header';
+
+    var idSpan = document.createElement('span');
+    idSpan.className = 'drug-entry-id';
+    idSpan.textContent = e.id;
+
+    var nameSpan = document.createElement('span');
+    nameSpan.className = 'drug-entry-name';
+    nameSpan.textContent = e.name;
+
+    var dateBadge = document.createElement('span');
+    dateBadge.className = 'specmat-date-badge';
+    dateBadge.textContent = e.startDate;
+
+    headerDiv.appendChild(idSpan);
+    headerDiv.appendChild(nameSpan);
+    headerDiv.appendChild(dateBadge);
+
+    var contentDiv = document.createElement('div');
+    contentDiv.className = 'drug-entry-content';
+
+    if (e.rule) {
+      var chevronSpan = document.createElement('span');
+      chevronSpan.className = 'drug-entry-chevron';
+      chevronSpan.textContent = '▶';
+      headerDiv.appendChild(chevronSpan);
+      contentDiv.textContent = e.rule;
+      headerDiv.addEventListener('click', function() { entryDiv.classList.toggle('open'); });
+    }
+
+    entryDiv.appendChild(headerDiv);
+    entryDiv.appendChild(contentDiv);
+    entriesEl.appendChild(entryDiv);
+  });
+}
+
+function specmatBackToGrid() {
+  specmatActiveCat = null;
+  specmatSearchQ = '';
+  var inp = document.getElementById('specmat-search');
+  if (inp) inp.value = '';
+  var grid = document.getElementById('specmat-cat-grid');
+  if (grid) grid.classList.remove('hidden', 'search-overlay-active');
+  var searchResults = document.getElementById('specmat-search-results');
+  if (searchResults) searchResults.classList.add('hidden');
+  document.getElementById('specmat-list-wrap').classList.add('hidden');
+}
+
+function specmatSearch(q) {
+  specmatSearchQ = q.trim();
+  if (!specmatData) return;
+  var grid = document.getElementById('specmat-cat-grid');
+  var searchResults = document.getElementById('specmat-search-results');
+  if (specmatSearchQ) {
+    if (grid) grid.classList.add('search-overlay-active');
+    if (searchResults) {
+      searchResults.classList.remove('hidden');
+      searchResults.innerHTML = buildSpecmatSearchResults(specmatSearchQ);
+    }
+  } else {
+    if (grid) grid.classList.remove('search-overlay-active');
+    if (searchResults) searchResults.classList.add('hidden');
+  }
+}
+
+function buildSpecmatSearchResults(q) {
+  var ql = q.toLowerCase();
+  var results = [];
+  specmatData.categories.forEach(function(cat) {
+    cat.entries.forEach(function(e) {
+      if ((e.name || '').toLowerCase().includes(ql) ||
+          (e.rule || '').toLowerCase().includes(ql) ||
+          (e.id || '').toLowerCase().includes(ql)) {
+        results.push({ catName: cat.nameZh, catIcon: cat.icon, entry: e });
+        if (results.length >= 200) return;
+      }
+    });
+  });
+  if (results.length === 0) {
+    return `<div style="padding:24px;color:var(--muted);text-align:center">無符合「${escHtml(q)}」的特材</div>`;
+  }
+  var html = `<div class="detail-header"><div class="detail-title">🔍 搜尋「${escHtml(q)}」— 特材給付規定</div></div>`;
+  results.forEach(function(r) {
+    var e = r.entry;
+    var rulePreview = (e.rule || '').substring(0, 150);
+    if (e.rule && e.rule.length > 150) rulePreview += '…';
+    html += `<div class="specmat-search-result">
+      <div class="specmat-result-header">
+        <span class="drug-entry-id">${escHtml(e.id)}</span>
+        <span class="drug-entry-name">${escHtml(e.name)}</span>
+        <span class="specmat-cat-badge">${escHtml(r.catIcon)} ${escHtml(r.catName)}</span>
+      </div>
+      ${rulePreview ? `<div class="specmat-result-rule">${escHtml(rulePreview)}</div>` : ''}
+    </div>`;
+  });
+  html += `<div class="row-count">找到 ${results.length} 筆${results.length >= 200 ? '（已截斷）' : ''}</div>`;
+  return html;
+}
 // ===========================================================================

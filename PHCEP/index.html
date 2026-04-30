@@ -40,7 +40,8 @@
     <button class="tab-btn" data-tab="drug" onclick="switchTab('drug')">💊 藥品給付規定</button>
     <button class="tab-btn" data-tab="pcs" onclick="switchTab('pcs')">ICD-10-PCS (處置)</button>
     <button class="tab-btn" data-tab="search" onclick="switchTab('search')">🔍 全文搜尋</button>
-    <button class="tab-btn" data-tab="stroke" onclick="switchTab('stroke')">🧠 腦中風指引</button>
+    <button class="tab-btn" data-tab="stroke" onclick="switchTab('stroke')">🧠 治療指引</button>
+    <button class="tab-btn" data-tab="specmat" onclick="switchTab('specmat')">🔩 特材給付</button>
     <button class="tab-btn" data-tab="about" onclick="switchTab('about')">ℹ️ About</button>
     <button class="tab-btn" data-tab="ebm" onclick="switchTab('ebm')">📝 EBM筆記</button>
     <button class="tab-btn" data-tab="soap" onclick="switchTab('soap')">🏥 SOAP病歷</button>
@@ -74,6 +75,7 @@
         <option value="">全部分類</option>
       </select>
     </div>
+    <div id="cm-search-results" class="search-results-above hidden"></div>
     <div class="cat-grid" id="cm-cat-grid"></div>
     <div id="cm-detail" class="detail-panel hidden"></div>
   </div>
@@ -158,6 +160,7 @@
       </select>
     </div>
     <div class="drug-tag-filter" id="drug-tag-filter"></div>
+    <div id="drug-search-results" class="search-results-above hidden"></div>
     <div id="drug-cat-grid" class="drug-cat-grid"></div>
     <div id="drug-list-wrap" class="drug-list-wrap hidden">
       <div class="drug-list-header" id="drug-list-header"></div>
@@ -172,6 +175,18 @@
       <h2>ICD-10-PCS 2023 中文版 — 手術處置分類</h2>
       <p class="section-desc">依醫師介入手術與復健相關性分類，相關領域顯示完整資訊，其他領域以精簡模式儲存</p>
     </div>
+    <div class="drug-toolbar">
+      <div class="drug-search-wrap">
+        <input id="pcs-search" type="text" class="drug-search-input"
+               placeholder="搜尋 ICD-10-PCS 代碼或名稱（中英文）…"
+               oninput="pcsSearch(this.value)"
+               autocomplete="off" />
+      </div>
+      <select id="pcs-cat-sel" class="drug-cat-sel" onchange="pcsSelectCat(this.value)">
+        <option value="">全部分類</option>
+      </select>
+    </div>
+    <div id="pcs-search-results" class="search-results-above hidden"></div>
     <div class="cat-grid" id="pcs-cat-grid"></div>
     <div id="pcs-detail" class="detail-panel hidden"></div>
   </div>
@@ -243,6 +258,13 @@
         <button class="btn-secondary" onclick="clearEbmForm()">🗑️ 清除</button>
       </div>
     </div>
+    <div class="inline-history-section">
+      <div class="inline-history-header">
+        <span>📋 最近 EBM 筆記</span>
+        <button class="filter-btn active" onclick="renderEbmInlineHistory()">🔄 重新整理</button>
+      </div>
+      <div id="ebm-inline-history" class="inline-history-list"></div>
+    </div>
   </div>
 
   <!-- SOAP Tab -->
@@ -276,6 +298,13 @@
         <button class="btn-secondary" onclick="clearSoapForm()">🔄 重置為預設範本</button>
       </div>
     </div>
+    <div class="inline-history-section">
+      <div class="inline-history-header">
+        <span>📋 最近 SOAP 病歷</span>
+        <button class="filter-btn active" onclick="renderSoapInlineHistory()">🔄 重新整理</button>
+      </div>
+      <div id="soap-inline-history" class="inline-history-list"></div>
+    </div>
   </div>
 
   <!-- Patient Education Tab -->
@@ -301,7 +330,7 @@
   <div id="tab-stroke" class="tab-content">
     <div class="section-header">
       <h2>🧠 腦中風治療指引</h2>
-      <p class="section-desc">台灣腦中風學會歷年治療指引，可依主題分類瀏覽或全文搜尋</p>
+      <p class="section-desc">台灣腦中風學會歷年治療指引，可依主題分類瀏覽或全文搜尋。內容以章節展開，包含建議等級、參考文獻。</p>
     </div>
     <div class="drug-toolbar">
       <div class="drug-search-wrap">
@@ -330,6 +359,34 @@
       <p id="stroke-no-results" class="drug-no-results hidden">無符合條件的指引。</p>
     </div>
     <div id="stroke-ref-tooltip" class="stroke-ref-tooltip hidden"></div>
+  </div>
+
+  <!-- Special Materials Tab -->
+  <div id="tab-specmat" class="tab-content">
+    <div class="section-header">
+      <h2>🔩 特材給付規定</h2>
+      <p class="section-desc">依朱展麟醫師專科相關性（神經介入・神經調控・脊椎骨科・顱骨）篩選之全民健康保險特殊材料給付規定。
+        資料來源：<a href="https://www.nhi.gov.tw/Content_List.aspx?n=5082839B5600C079" target="_blank" rel="noopener">衛福部健保署特材給付規定</a>。
+      </p>
+    </div>
+    <div class="drug-toolbar">
+      <div class="drug-search-wrap">
+        <input id="specmat-search" type="text" class="drug-search-input"
+               placeholder="搜尋特材品名或給付規定…"
+               oninput="specmatSearch(this.value)"
+               autocomplete="off" />
+      </div>
+      <select id="specmat-cat-sel" class="drug-cat-sel" onchange="specmatSelectCat(this.value)">
+        <option value="">全部分類</option>
+      </select>
+    </div>
+    <div id="specmat-search-results" class="search-results-above hidden"></div>
+    <div id="specmat-cat-grid" class="drug-cat-grid"></div>
+    <div id="specmat-list-wrap" class="drug-list-wrap hidden">
+      <div class="drug-list-header" id="specmat-list-header"></div>
+      <div id="specmat-entries"></div>
+      <p id="specmat-no-results" class="drug-no-results hidden">無符合條件的特材。</p>
+    </div>
   </div>
 
   <!-- History / Browse Tab -->
