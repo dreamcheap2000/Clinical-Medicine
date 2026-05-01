@@ -39,7 +39,6 @@
     <button class="tab-btn" data-tab="nhi" onclick="switchTab('nhi')">💰 NHI支付標準</button>
     <button class="tab-btn" data-tab="drug" onclick="switchTab('drug')">💊 藥品給付規定</button>
     <button class="tab-btn" data-tab="pcs" onclick="switchTab('pcs')">ICD-10-PCS (處置)</button>
-    <button class="tab-btn" data-tab="search" onclick="switchTab('search')">🔍 全文搜尋</button>
     <button class="tab-btn" data-tab="stroke" onclick="switchTab('stroke')">🧠 治療指引</button>
     <button class="tab-btn" data-tab="specmat" onclick="switchTab('specmat')">🔩 特材給付</button>
     <button class="tab-btn" data-tab="about" onclick="switchTab('about')">ℹ️ About</button>
@@ -189,33 +188,6 @@
     <div id="pcs-search-results" class="search-results-above hidden"></div>
     <div class="cat-grid" id="pcs-cat-grid"></div>
     <div id="pcs-detail" class="detail-panel hidden"></div>
-  </div>
-
-  <!-- Search Tab -->
-  <div id="tab-search" class="tab-content">
-    <div class="section-header">
-      <h2>🔍 全文搜尋 ICD-10-CM / PCS</h2>
-    </div>
-    <div class="search-box" style="position:relative">
-      <input id="search-input" type="text" placeholder="輸入代碼或關鍵字（中英文均可）…" autocomplete="off"
-             oninput="onSearchInput()"
-             onfocus="showSearchHistory('fulltext')"
-             onblur="hideSearchHistory('fulltext', 150)" />
-      <div id="fulltext-search-history" class="search-history-dropdown" style="left:0;right:0">
-        <div class="search-history-header">
-          <span>最近搜尋</span>
-          <button class="search-history-clear" onclick="clearSearchHistory('fulltext')">清除</button>
-        </div>
-        <div id="fulltext-history-items"></div>
-      </div>
-      <div class="search-type-row">
-        <label><input type="checkbox" id="srch-cm" checked onchange="onSearchInput()" /> ICD-10-CM</label>
-        <label><input type="checkbox" id="srch-pcs" checked onchange="onSearchInput()" /> ICD-10-PCS</label>
-        <label><input type="checkbox" id="srch-others" onchange="onSearchInput()" /> 含其他（需先載入）</label>
-        <span id="search-status" class="search-status"></span>
-      </div>
-    </div>
-    <div id="search-results" class="results-table-wrap"></div>
   </div>
 
   <!-- About Tab -->
