@@ -95,6 +95,8 @@ function renderInfoBar() {
 // Tab switching
 // ---------------------------------------------------------------------------
 function switchTab(name) {
+  // PCS tab is only accessible if enabled in settings
+  if (name === 'pcs' && !getSettings().showPcs) return;
   document.querySelectorAll('.tab-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('.tab-content').forEach(c =>
@@ -106,6 +108,7 @@ function switchTab(name) {
   if (name === 'specmat') specmatOnTabShow();
   if (name === 'ebm') renderEbmInlineHistory();
   if (name === 'soap') renderSoapInlineHistory();
+  if (name === 'settings') renderSettingsTab();
 }
 
 // ---------------------------------------------------------------------------
@@ -299,7 +302,11 @@ async function openCat(type, catId) {
 
   // Re-render with data
   detail.innerHTML = buildDetailSkeleton(catMeta, type);
+  // Reset page for this category
+  _icdPageState[type + '_' + catId] = 0;
   fillDetailTable(type, catId, '');
+  // Scroll to detail
+  detail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function buildDetailSkeleton(cat, type) {
@@ -325,14 +332,18 @@ function buildDetailSkeleton(cat, type) {
   </div>
   <div class="detail-filter">
     <input type="text" id="detail-filter-${type}" placeholder="篩選代碼或名稱…"
-      oninput="fillDetailTable('${type}','${cat.id}',this.value)" />
+      oninput="_icdPageState['${type}_${cat.id}']=0; fillDetailTable('${type}','${cat.id}',this.value)" />
   </div>
   <div id="detail-table-${type}">
     <div style="padding:20px;text-align:center;color:var(--muted)">載入中…</div>
   </div>`;
 }
 
-function fillDetailTable(type, catId, filterStr) {
+// Page state for large ICD category pagination
+var _icdPageState = {};  // key: `${type}_${catId}` → current page (0-indexed)
+const ICD_PAGE_SIZE = 500;  // codes per page for large categories
+
+function fillDetailTable(type, catId, filterStr, pageOverride) {
   const loaded = type === 'cm' ? cmLoaded : pcsLoaded;
   const data   = loaded[catId];
   if (!data) return;
@@ -343,32 +354,25 @@ function fillDetailTable(type, catId, filterStr) {
   const container = document.getElementById(tableId);
   if (!container) return;
 
-  let totalCount;
+  // Determine current page
+  var pageKey = type + '_' + catId;
+  if (pageOverride !== undefined) {
+    _icdPageState[pageKey] = pageOverride;
+  }
+  if (_icdPageState[pageKey] === undefined) {
+    _icdPageState[pageKey] = 0;
+  }
+
+  let allItems;
+  let isCompactMode;
 
   if (isCompact) {
-    // data is [[code, zh], ...]
     const filtered = q
       ? data.filter(([c,z]) => c.toLowerCase().includes(q) || z.toLowerCase().includes(q))
       : data;
-    totalCount = filtered.length;
-
-    // Build alphabet navigation for large sets
-    const alphaNav = buildAlphaNav(filtered.map(([c]) => c));
-
-    // Build table rows grouped by first letter
-    const rows = buildGroupedRows(filtered.map(([c,z]) => ({code:c, en:'', zh:z})), true);
-
-    container.innerHTML = `
-      ${alphaNav}
-      <div class="codes-table-wrap">
-        <table class="codes-table compact-table">
-          <thead><tr><th>代碼</th><th>中文名稱</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
-      <div class="row-count">顯示 ${totalCount.toLocaleString()} 筆</div>`;
+    allItems = filtered.map(([c,z]) => ({code:c, en:'', zh:z}));
+    isCompactMode = true;
   } else {
-    // data is {codes: [{code, en, zh}, ...]}
     const codes = data.codes || [];
     const filtered = q
       ? codes.filter(r =>
@@ -376,24 +380,58 @@ function fillDetailTable(type, catId, filterStr) {
           r.en.toLowerCase().includes(q) ||
           r.zh.toLowerCase().includes(q))
       : codes;
-    totalCount = filtered.length;
-
-    // Build alphabet navigation for large sets
-    const alphaNav = buildAlphaNav(filtered.map(r => r.code));
-
-    // Build table rows grouped by first letter
-    const rows = buildGroupedRows(filtered, false);
-
-    container.innerHTML = `
-      ${alphaNav}
-      <div class="codes-table-wrap">
-        <table class="codes-table">
-          <thead><tr><th>代碼</th><th>English</th><th>中文名稱</th></tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
-      <div class="row-count">顯示 ${totalCount.toLocaleString()} 筆</div>`;
+    allItems = filtered;
+    isCompactMode = false;
   }
+
+  const totalCount = allItems.length;
+  const needsPaging = totalCount > ICD_PAGE_SIZE;
+  const totalPages = needsPaging ? Math.ceil(totalCount / ICD_PAGE_SIZE) : 1;
+  var currentPage = _icdPageState[pageKey];
+  if (currentPage >= totalPages) currentPage = 0;
+  _icdPageState[pageKey] = currentPage;
+
+  const pageItems = needsPaging
+    ? allItems.slice(currentPage * ICD_PAGE_SIZE, (currentPage + 1) * ICD_PAGE_SIZE)
+    : allItems;
+
+  // Build alphabet navigation only if single page or small set
+  const alphaNav = !needsPaging ? buildAlphaNav(pageItems.map(r => r.code)) : '';
+
+  // Build table rows
+  const rows = buildGroupedRows(pageItems, isCompactMode);
+
+  // Pagination controls
+  var pagingHtml = '';
+  if (needsPaging) {
+    var prevDisabled = currentPage === 0 ? 'disabled' : '';
+    var nextDisabled = currentPage >= totalPages - 1 ? 'disabled' : '';
+    var rangeStart = currentPage * ICD_PAGE_SIZE + 1;
+    var rangeEnd = Math.min((currentPage + 1) * ICD_PAGE_SIZE, totalCount);
+    pagingHtml = `
+      <div class="icd-paging">
+        <button class="icd-page-btn" onclick="fillDetailTable('${escHtml(type)}','${escHtml(catId)}','${escHtml(filterStr)}',${currentPage - 1})" ${prevDisabled}>← 上一頁</button>
+        <span class="icd-page-info">第 ${currentPage + 1} / ${totalPages} 頁（${rangeStart}–${rangeEnd} / ${totalCount.toLocaleString()} 筆）</span>
+        <button class="icd-page-btn" onclick="fillDetailTable('${escHtml(type)}','${escHtml(catId)}','${escHtml(filterStr)}',${currentPage + 1})" ${nextDisabled}>下一頁 →</button>
+      </div>`;
+  }
+
+  const colHeaders = isCompactMode
+    ? '<tr><th>代碼</th><th>中文名稱</th></tr>'
+    : '<tr><th>代碼</th><th>English</th><th>中文名稱</th></tr>';
+  const tableCls = isCompactMode ? 'codes-table compact-table' : 'codes-table';
+
+  container.innerHTML = `
+    ${alphaNav}
+    ${pagingHtml}
+    <div class="codes-table-wrap">
+      <table class="${tableCls}">
+        <thead>${colHeaders}</thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div class="row-count">顯示 ${needsPaging ? pageItems.length : totalCount.toLocaleString()} 筆${needsPaging ? '（共 ' + totalCount.toLocaleString() + ' 筆，分頁顯示）' : ''}</div>
+    ${needsPaging ? pagingHtml : ''}`;
 }
 
 function buildAlphaNav(codes) {
@@ -529,20 +567,51 @@ function buildPcsSearchResults(q) {
 }
 
 // ---------------------------------------------------------------------------
-// Keyboard Shortcuts: Shift+1…6 → jump to main tabs
+// Keyboard Shortcuts
+// Shift+1…6 → jump to main tabs
 // Tabs: cm(1), nhi(2), drug(3), pcs(4), stroke(5), specmat(6)
+// Option/Alt + ↑/↓ → page up / page down
+// Cmd/Ctrl + ↑/↓  → scroll to top / bottom of page
 // ---------------------------------------------------------------------------
 (function() {
   var TAB_SHORTCUTS = { '1': 'cm', '2': 'nhi', '3': 'drug', '4': 'pcs', '5': 'stroke', '6': 'specmat' };
   document.addEventListener('keydown', function(e) {
-    if (!e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return;
-    var key = e.key;
-    if (TAB_SHORTCUTS[key]) {
-      // Don't intercept if user is typing in an input/textarea
-      var tag = (document.activeElement || {}).tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    var tag = (document.activeElement || {}).tagName;
+    var inInput = (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
+
+    // Tab switching: Shift+1…6
+    if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      var key = e.key;
+      if (TAB_SHORTCUTS[key] && !inInput) {
+        e.preventDefault();
+        switchTab(TAB_SHORTCUTS[key]);
+      }
+      return;
+    }
+
+    // Page scroll shortcuts (ignore when typing)
+    if (inInput) return;
+
+    var isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+    var isAlt = e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey;
+    var isCmdCtrl = (isMac ? e.metaKey : e.ctrlKey) && !e.altKey && !e.shiftKey;
+
+    // Option/Alt + ↓ → page down
+    if (isAlt && e.key === 'ArrowDown') {
       e.preventDefault();
-      switchTab(TAB_SHORTCUTS[key]);
+      window.scrollBy({ top: window.innerHeight * 0.85, behavior: 'smooth' });
+    // Option/Alt + ↑ → page up
+    } else if (isAlt && e.key === 'ArrowUp') {
+      e.preventDefault();
+      window.scrollBy({ top: -window.innerHeight * 0.85, behavior: 'smooth' });
+    // Cmd/Ctrl + ↓ → scroll to bottom
+    } else if (isCmdCtrl && e.key === 'ArrowDown') {
+      e.preventDefault();
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    // Cmd/Ctrl + ↑ → scroll to top
+    } else if (isCmdCtrl && e.key === 'ArrowUp') {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   });
 })();
@@ -643,15 +712,25 @@ async function preloadSpecialtyCm() {
 // Start
 // ---------------------------------------------------------------------------
 document.addEventListener('DOMContentLoaded', async () => {
+  // Apply color mode first (no-flash via inline script, but also here for JS access)
+  applyColorMode();
+
   await boot();
+
+  // Apply persisted settings
+  applySettings();
+
   // Preload specialty categories in background (enables search without clicking)
   preloadSpecialtyCm();
 
   // Event delegation for edu-list (delete buttons)
-  document.getElementById('edu-list').addEventListener('click', e => {
-    const btn = e.target.closest('[data-action="delete-edu"]');
-    if (btn) deleteEduLink(btn.dataset.id);
-  });
+  var eduListEl = document.getElementById('edu-list');
+  if (eduListEl) {
+    eduListEl.addEventListener('click', e => {
+      const btn = e.target.closest('[data-action="delete-edu"]');
+      if (btn) deleteEduLink(btn.dataset.id);
+    });
+  }
 
   // Event delegation for history-list (toggle / delete buttons)
   document.getElementById('history-list').addEventListener('click', e => {
@@ -1084,7 +1163,11 @@ async function initNhiTab() {
 }
 
 function nhiOnTabShow() {
-  if (!NHI_DATA) initNhiTab();
+  if (!NHI_DATA) {
+    initNhiTab().then(function() { applyNhiPtsVisibility(); });
+  } else {
+    applyNhiPtsVisibility();
+  }
 }
 
 // Render the category card grid (landing view)
@@ -1132,8 +1215,10 @@ function nhiOpenCat(id) {
   nhiSearchQ = document.getElementById('nhi-search').value.trim();
   document.getElementById('nhi-cat-sel').value = id;
   document.getElementById('nhi-cat-grid').classList.add('hidden');
-  document.getElementById('nhi-table-wrap').classList.remove('hidden');
+  var wrap = document.getElementById('nhi-table-wrap');
+  wrap.classList.remove('hidden');
   nhiRender();
+  wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function nhiSearch(q) {
@@ -1257,6 +1342,22 @@ function nhiToggleNote(row) {
   }
 }
 
+function nhiTogglePts() {
+  var show = document.getElementById('nhi-show-pts').checked;
+  var settings = getSettings();
+  settings.showNhiPoints = show;
+  saveSettings(settings);
+  applyNhiPtsVisibility();
+}
+
+function applyNhiPtsVisibility() {
+  var show = getSettings().showNhiPoints;
+  var tbl = document.getElementById('nhi-table');
+  if (tbl) tbl.classList.toggle('nhi-pts-hidden', !show);
+  var el = document.getElementById('nhi-show-pts');
+  if (el) el.checked = show;
+}
+
 function nhiBackToGrid() {
   nhiActiveCat = null;
   nhiSearchQ = '';
@@ -1347,6 +1448,19 @@ function applySearchHistory(type, query) {
   }
   hideSearchHistory(type, 0);
 }
+
+// Close all search history dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+  var types = ['cm', 'nhi', 'drug', 'stroke', 'specmat'];
+  types.forEach(function(type) {
+    var dropdown = document.getElementById(type + '-search-history');
+    if (!dropdown || !dropdown.classList.contains('open')) return;
+    var input = document.getElementById(type + '-search');
+    if (!dropdown.contains(e.target) && e.target !== input) {
+      dropdown.classList.remove('open');
+    }
+  });
+});
 
 // ===========================================================================
 // Drug Benefits Tab
@@ -1476,8 +1590,10 @@ function drugOpenCat(id) {
   var sel = document.getElementById('drug-cat-sel');
   if (sel) sel.value = id;
   document.getElementById('drug-cat-grid').classList.add('hidden');
-  document.getElementById('drug-list-wrap').classList.remove('hidden');
+  var wrap = document.getElementById('drug-list-wrap');
+  wrap.classList.remove('hidden');
   drugRender();
+  wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function drugSearch(q) {
@@ -1882,8 +1998,10 @@ function strokeOpenTopic(topic) {
   var sel = document.getElementById('stroke-cat-sel');
   if (sel) sel.value = topic;
   document.getElementById('stroke-cat-grid').classList.add('hidden');
-  document.getElementById('stroke-list-wrap').classList.remove('hidden');
+  var wrap = document.getElementById('stroke-list-wrap');
+  wrap.classList.remove('hidden');
   strokeRender();
+  wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
 function strokeSearch(q) {
@@ -2130,6 +2248,18 @@ function buildStrokeCard(g, q) {
   titleSpan.className = 'drug-entry-name';
   titleSpan.textContent = g.title || g.title_en || g.filename;
 
+  // PDF download link
+  var pdfId = g.id || g.filename.replace('.pdf', '');
+  var pdfName = g.filename && g.filename.endsWith('.pdf') ? g.filename : pdfId + '.pdf';
+  var pdfLink = document.createElement('a');
+  pdfLink.className = 'stroke-pdf-btn';
+  pdfLink.href = BASE + 'data/stroke_pdfs/' + encodeURIComponent(pdfName);
+  pdfLink.target = '_blank';
+  pdfLink.rel = 'noopener';
+  pdfLink.title = '下載 PDF';
+  pdfLink.textContent = '📄 PDF';
+  pdfLink.addEventListener('click', function(e) { e.stopPropagation(); });
+
   var chevron = document.createElement('span');
   chevron.className = 'drug-entry-chevron';
   chevron.textContent = '▶';
@@ -2137,6 +2267,7 @@ function buildStrokeCard(g, q) {
   header.appendChild(yearBadge);
   header.appendChild(langBadge);
   header.appendChild(titleSpan);
+  header.appendChild(pdfLink);
   header.appendChild(chevron);
   header.addEventListener('click', function() { card.classList.toggle('open'); });
 
@@ -2148,7 +2279,7 @@ function buildStrokeCard(g, q) {
     var garbledNotice = document.createElement('div');
     garbledNotice.className = 'stroke-garbled-notice';
     garbledNotice.innerHTML = '⚠️ 此 PDF 使用非標準字體編碼，文字內容無法正常提取（亂碼）。' +
-      '請下載原始 PDF 查閱完整內容。';
+      '請點擊上方「📄 PDF」按鈕下載原始 PDF 查閱完整內容。';
     body.appendChild(garbledNotice);
   }
 
@@ -2527,3 +2658,135 @@ function buildSpecmatSearchResults(q) {
   return html;
 }
 // ===========================================================================
+
+// ===========================================================================
+// Settings management
+// ===========================================================================
+const SETTINGS_KEY = 'phcep_settings';
+
+function getSettings() {
+  return storageGet(SETTINGS_KEY, { showPcs: false, showNhiPoints: false });
+}
+
+function saveSettings(settings) {
+  storageSet(SETTINGS_KEY, settings);
+}
+
+function applySettings() {
+  var settings = getSettings();
+
+  // PCS tab visibility
+  var pcsBtns = document.querySelectorAll('[data-tab="pcs"]');
+  pcsBtns.forEach(function(btn) {
+    btn.style.display = settings.showPcs ? '' : 'none';
+  });
+  // If PCS tab was active and now hidden, switch to CM
+  var activePcsTab = document.querySelector('[data-tab="pcs"].active');
+  if (!settings.showPcs && activePcsTab) {
+    switchTab('cm');
+  }
+
+  // NHI points column visibility
+  applyNhiPtsVisibility();
+}
+
+// ===========================================================================
+// Color mode (dark / light)
+// ===========================================================================
+function applyColorMode() {
+  var mode = localStorage.getItem('phcep_color_mode') || 'dark';
+  document.documentElement.classList.toggle('light-mode', mode === 'light');
+  var btn = document.getElementById('btn-color-mode');
+  if (btn) btn.textContent = mode === 'light' ? '🌙' : '☀️';
+}
+
+function toggleColorMode() {
+  var current = localStorage.getItem('phcep_color_mode') || 'dark';
+  var next = current === 'dark' ? 'light' : 'dark';
+  localStorage.setItem('phcep_color_mode', next);
+  applyColorMode();
+}
+
+// ===========================================================================
+// Settings Tab Renderer
+// ===========================================================================
+function renderSettingsTab() {
+  var container = document.getElementById('settings-content');
+  if (!container) return;
+  var settings = getSettings();
+  var mode = localStorage.getItem('phcep_color_mode') || 'dark';
+
+  container.innerHTML = `
+    <div class="settings-group">
+      <div class="settings-group-title">🎨 外觀</div>
+      <label class="settings-item">
+        <div class="settings-item-label">
+          <div class="settings-item-name">顯示模式</div>
+          <div class="settings-item-desc">深色或淺色背景</div>
+        </div>
+        <button class="btn-settings-mode" onclick="toggleColorMode(); renderSettingsTab();">
+          ${mode === 'dark' ? '🌙 深色模式（點擊切換淺色）' : '☀️ 淺色模式（點擊切換深色）'}
+        </button>
+      </label>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-title">📋 標籤頁顯示</div>
+      <label class="settings-item">
+        <div class="settings-item-label">
+          <div class="settings-item-name">顯示 ICD-10-PCS 標籤頁</div>
+          <div class="settings-item-desc">ICD-10-PCS（手術處置）標籤頁，預設隱藏</div>
+        </div>
+        <input type="checkbox" class="settings-toggle" id="setting-show-pcs"
+          ${settings.showPcs ? 'checked' : ''}
+          onchange="onSettingShowPcs(this.checked)" />
+      </label>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-title">🏥 NHI 支付標準</div>
+      <label class="settings-item">
+        <div class="settings-item-label">
+          <div class="settings-item-name">顯示支付點數欄位</div>
+          <div class="settings-item-desc">在 NHI 支付標準表格中顯示支付點數，預設隱藏</div>
+        </div>
+        <input type="checkbox" class="settings-toggle" id="setting-show-nhi-pts"
+          ${settings.showNhiPoints ? 'checked' : ''}
+          onchange="onSettingShowNhiPts(this.checked)" />
+      </label>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-title">⌨️ 快速鍵說明</div>
+      <div class="settings-shortcuts">
+        <div class="shortcut-row"><kbd>Shift+1</kbd> ICD-10-CM</div>
+        <div class="shortcut-row"><kbd>Shift+2</kbd> NHI支付標準</div>
+        <div class="shortcut-row"><kbd>Shift+3</kbd> 藥品給付規定</div>
+        <div class="shortcut-row"><kbd>Shift+4</kbd> ICD-10-PCS（需先啟用）</div>
+        <div class="shortcut-row"><kbd>Shift+5</kbd> 治療指引</div>
+        <div class="shortcut-row"><kbd>Shift+6</kbd> 特材給付</div>
+        <div class="shortcut-row"><kbd class="key-combo">Option/Alt + ↑</kbd> 向上翻頁</div>
+        <div class="shortcut-row"><kbd class="key-combo">Option/Alt + ↓</kbd> 向下翻頁</div>
+        <div class="shortcut-row"><kbd class="key-combo">Cmd/Ctrl + ↑</kbd> 回到頁頂</div>
+        <div class="shortcut-row"><kbd class="key-combo">Cmd/Ctrl + ↓</kbd> 前往頁底</div>
+      </div>
+    </div>`;
+}
+
+function onSettingShowPcs(checked) {
+  var settings = getSettings();
+  settings.showPcs = checked;
+  saveSettings(settings);
+  applySettings();
+}
+
+function onSettingShowNhiPts(checked) {
+  var settings = getSettings();
+  settings.showNhiPoints = checked;
+  saveSettings(settings);
+  var cb = document.getElementById('nhi-show-pts');
+  if (cb) cb.checked = checked;
+  applyNhiPtsVisibility();
+}
+// ===========================================================================
+
