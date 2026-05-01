@@ -16,7 +16,6 @@ let cmOthers  = null; // compact [[code,zh],...]
 let pcsOthers = null; // compact [[code,zh],...]
 let activeCmCat  = null;
 let activePcsCat = null;
-let searchDebounce = null;
 const BASE = (function () {
   // Works on GitHub Pages (/repo/PHCEP/) and local file://
   const s = document.currentScript ? document.currentScript.src : location.href;
@@ -530,124 +529,23 @@ function buildPcsSearchResults(q) {
 }
 
 // ---------------------------------------------------------------------------
-// Search
+// Keyboard Shortcuts: Shift+1…6 → jump to main tabs
+// Tabs: cm(1), nhi(2), drug(3), pcs(4), stroke(5), specmat(6)
 // ---------------------------------------------------------------------------
-function onSearchInput() {
-  clearTimeout(searchDebounce);
-  searchDebounce = setTimeout(runSearch, 300);
-}
-
-async function runSearch() {
-  const q = document.getElementById('search-input').value.trim().toLowerCase();
-  if (q.length >= 2) {
-    saveSearchHistory('fulltext', q);
-  }
-  const useCm  = document.getElementById('srch-cm').checked;
-  const usePcs = document.getElementById('srch-pcs').checked;
-  const useOthers = document.getElementById('srch-others').checked;
-  const status = document.getElementById('search-status');
-  const container = document.getElementById('search-results');
-
-  if (q.length < 2) {
-    container.innerHTML = '';
-    status.textContent = '';
-    return;
-  }
-
-  // Pre-load others if needed
-  if (useOthers) {
-    if (useCm && !cmOthers) {
-      status.textContent = '載入 CM others…';
-      try { cmOthers = cmLoaded['others'] = await fetchJson(BASE + 'data/cm/others_compact.json'); }
-      catch(e) { status.textContent = '⚠️ CM others 載入失敗'; }
+(function() {
+  var TAB_SHORTCUTS = { '1': 'cm', '2': 'nhi', '3': 'drug', '4': 'pcs', '5': 'stroke', '6': 'specmat' };
+  document.addEventListener('keydown', function(e) {
+    if (!e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return;
+    var key = e.key;
+    if (TAB_SHORTCUTS[key]) {
+      // Don't intercept if user is typing in an input/textarea
+      var tag = (document.activeElement || {}).tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      e.preventDefault();
+      switchTab(TAB_SHORTCUTS[key]);
     }
-    if (usePcs && !pcsOthers) {
-      status.textContent = '載入 PCS others…';
-      try { pcsOthers = pcsLoaded['others'] = await fetchJson(BASE + 'data/pcs/others_compact.json'); }
-      catch(e) { status.textContent = '⚠️ PCS others 載入失敗'; }
-    }
-  }
-
-  status.textContent = '搜尋中…';
-
-  const results = [];
-
-  // Search CM specialty categories
-  if (useCm) {
-    for (const cat of META.cm_categories) {
-      if (cat.id === 'others') {
-        if (!useOthers || !cmOthers) continue;
-        for (const [c,z] of cmOthers) {
-          if (c.toLowerCase().includes(q) || z.toLowerCase().includes(q)) {
-            results.push({ type:'CM', catId:'others', catName: cat.nameZh, code:c, en:'', zh:z });
-            if (results.length >= 200) break;
-          }
-        }
-      } else {
-        const data = cmLoaded[cat.id];
-        if (!data) continue;
-        for (const r of data.codes) {
-          if (r.code.toLowerCase().includes(q) || r.en.toLowerCase().includes(q) || r.zh.toLowerCase().includes(q)) {
-            results.push({ type:'CM', catId: cat.id, catName: cat.nameZh, ...r });
-            if (results.length >= 200) break;
-          }
-        }
-      }
-      if (results.length >= 200) break;
-    }
-  }
-
-  // Search PCS specialty categories
-  if (usePcs) {
-    for (const cat of META.pcs_categories) {
-      if (cat.id === 'others') {
-        if (!useOthers || !pcsOthers) continue;
-        for (const [c,z] of pcsOthers) {
-          if (c.toLowerCase().includes(q) || z.toLowerCase().includes(q)) {
-            results.push({ type:'PCS', catId:'others', catName: cat.nameZh, code:c, en:'', zh:z });
-            if (results.length >= 200) break;
-          }
-        }
-      } else {
-        const data = pcsLoaded[cat.id];
-        if (!data) continue;
-        for (const r of data.codes) {
-          if (r.code.toLowerCase().includes(q) || r.en.toLowerCase().includes(q) || r.zh.toLowerCase().includes(q)) {
-            results.push({ type:'PCS', catId: cat.id, catName: cat.nameZh, ...r });
-            if (results.length >= 200) break;
-          }
-        }
-      }
-      if (results.length >= 200) break;
-    }
-  }
-
-  status.textContent = results.length === 0
-    ? '無結果（專科類別中；勾選「含其他」可搜尋全量）'
-    : `找到 ${results.length} 筆${results.length >= 200 ? '（已截斷）' : ''}`;
-
-  if (results.length === 0) {
-    container.innerHTML = `<p style="color:var(--muted);padding:20px">無結果</p>`;
-    return;
-  }
-
-  const rows = results.map(r => `
-    <tr>
-      <td><span style="font-size:.7rem;background:${r.type==='CM'?'#1e3a5f':'#1a3020'};color:${r.type==='CM'?'var(--accent2)':'var(--green)'};border-radius:10px;padding:1px 6px">${r.type}</span></td>
-      <td class="code-cell">${escHtml(r.code)}</td>
-      <td class="en-cell">${escHtml(r.en)}</td>
-      <td class="zh-cell">${escHtml(r.zh)}</td>
-      <td style="font-size:.72rem;color:var(--muted)">${escHtml(r.catName)}</td>
-    </tr>`).join('');
-
-  container.innerHTML = `
-    <div class="codes-table-wrap" style="max-height:500px">
-      <table class="codes-table">
-        <thead><tr><th>類型</th><th>代碼</th><th>English</th><th>中文名稱</th><th>分類</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>`;
-}
+  });
+})();
 
 // ---------------------------------------------------------------------------
 // About
@@ -1440,9 +1338,6 @@ function applySearchHistory(type, query) {
   } else if (type === 'drug') {
     var inp = document.getElementById('drug-search');
     if (inp) { inp.value = query; drugSearch(query); }
-  } else if (type === 'fulltext') {
-    var inp = document.getElementById('search-input');
-    if (inp) { inp.value = query; onSearchInput(); }
   } else if (type === 'cm') {
     var inp = document.getElementById('cm-search');
     if (inp) { inp.value = query; cmSearch(query); }
@@ -2110,18 +2005,56 @@ function renderMarkdown(text) {
   var lines = text.split('\n');
   var html = '';
   var inList = false;
+  var inTable = false;
+  var tableHeaderSep = false;
+
+  function closeList() { if (inList) { html += '</ul>'; inList = false; } }
+  function closeTable() { if (inTable) { html += '</tbody></table>'; inTable = false; tableHeaderSep = false; } }
+
   for (var i = 0; i < lines.length; i++) {
     var line = lines[i];
+
+    // Markdown table row: starts and ends with |
+    var isTableRow = /^\s*\|/.test(line) && /\|\s*$/.test(line);
+    var isSepRow = isTableRow && /^\s*\|[\s|:-]+\|\s*$/.test(line);
+
+    if (isTableRow) {
+      closeList();
+      if (!inTable) {
+        html += '<div class="stroke-md-table-wrap"><table class="stroke-md-table"><thead><tr>';
+        inTable = true;
+        tableHeaderSep = false;
+        // Parse header cells
+        var cells = line.split('|').slice(1, -1);
+        cells.forEach(function(c) { html += '<th>' + mdInline(c.trim()) + '</th>'; });
+        html += '</tr></thead><tbody>';
+        continue;
+      }
+      if (!tableHeaderSep && isSepRow) {
+        // This is the header separator row (| --- | --- |) - skip it
+        tableHeaderSep = true;
+        continue;
+      }
+      // Data row
+      var cells = line.split('|').slice(1, -1);
+      html += '<tr>';
+      cells.forEach(function(c) { html += '<td>' + mdInline(c.trim()) + '</td>'; });
+      html += '</tr>';
+      continue;
+    }
+
+    closeTable();
+
     // Horizontal rule
     if (/^[-=]{3,}$/.test(line.trim())) {
-      if (inList) { html += '</ul>'; inList = false; }
+      closeList();
       html += '<hr class="stroke-md-hr">';
       continue;
     }
     // Headings
     var hm = line.match(/^(#{1,4})\s+(.*)/);
     if (hm) {
-      if (inList) { html += '</ul>'; inList = false; }
+      closeList();
       var lvl = Math.min(hm[1].length + 2, 6);
       html += '<h' + lvl + ' class="stroke-md-h' + lvl + '">' + mdInline(hm[2]) + '</h' + lvl + '>';
       continue;
@@ -2140,8 +2073,7 @@ function renderMarkdown(text) {
       html += '<li>' + mdInline(nm[2]) + '</li>';
       continue;
     }
-    // End list
-    if (inList) { html += '</ul>'; inList = false; }
+    closeList();
     // Blank line
     if (line.trim() === '') {
       html += '<br>';
@@ -2156,7 +2088,8 @@ function renderMarkdown(text) {
     // Normal paragraph
     html += '<p class="stroke-md-p">' + mdInline(line) + '</p>';
   }
-  if (inList) html += '</ul>';
+  closeList();
+  closeTable();
   return html;
 }
 
@@ -2209,6 +2142,15 @@ function buildStrokeCard(g, q) {
 
   var body = document.createElement('div');
   body.className = 'drug-entry-content stroke-card-body';
+
+  // --- GARBLED NOTICE ---
+  if (g.garbled) {
+    var garbledNotice = document.createElement('div');
+    garbledNotice.className = 'stroke-garbled-notice';
+    garbledNotice.innerHTML = '⚠️ 此 PDF 使用非標準字體編碼，文字內容無法正常提取（亂碼）。' +
+      '請下載原始 PDF 查閱完整內容。';
+    body.appendChild(garbledNotice);
+  }
 
   // --- AUTHORS / AFFILIATIONS BLOCK at top ---
   if (g.authors && g.authors.length > 0) {

@@ -1979,3 +1979,43 @@ select.search-overlay-active {
   border-radius: 3px;
   white-space: nowrap;
 }
+
+/* Markdown table rendering in stroke guidelines */
+.stroke-md-table-wrap {
+  overflow-x: auto;
+  margin: 12px 0;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+.stroke-md-table {
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  min-width: 300px;
+  width: 100%;
+}
+.stroke-md-table th, .stroke-md-table td {
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+  vertical-align: top;
+  line-height: 1.45;
+}
+.stroke-md-table th {
+  background: color-mix(in srgb, var(--primary) 12%, var(--surface));
+  font-weight: 600;
+  color: var(--primary);
+  text-align: left;
+}
+.stroke-md-table tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--surface) 50%, transparent);
+}
+
+/* Garbled content notice */
+.stroke-garbled-notice {
+  background: color-mix(in srgb, var(--red, #d9534f) 12%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--red, #d9534f) 40%, transparent);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  color: var(--text);
+}
