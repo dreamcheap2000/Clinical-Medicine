@@ -1,30 +1,17 @@
-# Clinical-Medicine
+# Project Title
 
-A collection of clinical tools and reference materials.
+This is a brief description of the project.
 
-## Projects
+## Live URL
 
-| Folder | Description |
-|--------|-------------|
-| [Daily/](Daily/) | Daily OPD Session Logger — browser-local ICD-10 classifier, SOAP templates, neurologic/MSK exam reference |
-| [PHCEP/](PHCEP/) | Primary Health Care Electronic Program — Taiwan Core IG (TW Core IG) ICD-10-CM/PCS viewer, codes classified by doctor's specialty relevance |
-| [EVT/](EVT/) | EVT-related resources |
-| [Report/](Report/) | Report tools |
+You can access the live site here: [GitHub Pages URL]
 
-## GitHub Pages
+## Site Framework
 
-The **Daily** project is published as a GitHub Pages site via GitHub Actions.
+This project is built with [specific framework].
 
-**Live URL:** <https://dreamcheap2000.github.io/Clinical-Medicine/>
+## Links
 
-The workflow (`.github/workflows/deploy-pages.yml`) automatically deploys the contents of the `Daily/` folder whenever code is pushed to the `main` branch.
-
-### Pages configuration
-
-- **Source:** GitHub Actions (configured in repository **Settings → Pages**)
-- **Workflow:** `.github/workflows/deploy-pages.yml`
-- **Published folder:** `Daily/`
-
-
-## Latest Update: 無痛關節鬆動術.docx
-**Summary:** No summary available....
+- [PHCEP](link_to_PHCEP)
+- [Report](link_to_Report)
+- [EVT acute stroke thrombectomy workflow](link_to_EVT_workflow)
