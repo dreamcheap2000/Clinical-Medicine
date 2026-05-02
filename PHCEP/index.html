@@ -298,17 +298,116 @@
   <div id="tab-edu" class="tab-content active">
     <div class="section-header">
       <h2>📚 衛教資源庫</h2>
-      <p class="section-desc">
-        衛教文件資料庫，點選文件以閱覽內容。
-        來源：<a href="https://github.com/dreamcheap2000/Clinical-Medicine/tree/main/Patient%20education" target="_blank" rel="noopener">Patient education 資料夾</a>
-      </p>
+      <p class="section-desc">FastSR 智能衛教平台 — 結構化醫學知識搜尋・個人化語言版本切換</p>
     </div>
-    <div id="edu-file-list" class="edu-file-list"></div>
+
+    <!-- Search toolbar -->
+    <div class="edu-toolbar">
+      <div class="edu-search-wrap">
+        <input id="edu-search" type="text" class="edu-search-input"
+               placeholder="搜尋衛教知識（症狀、診斷、治療…）"
+               oninput="eduSearch(this.value)"
+               autocomplete="off" />
+        <button class="edu-search-btn" onclick="eduSearch(document.getElementById('edu-search').value)">🔍</button>
+      </div>
+      <div class="edu-soap-filters">
+        <button class="edu-filter-btn active" data-mode="all" onclick="eduSetSearchMode('all')">全文</button>
+        <button class="edu-filter-btn" data-mode="S" onclick="eduSetSearchMode('S')">S 症狀</button>
+        <button class="edu-filter-btn" data-mode="O" onclick="eduSetSearchMode('O')">O 發現</button>
+        <button class="edu-filter-btn" data-mode="A" onclick="eduSetSearchMode('A')">A 評估</button>
+        <button class="edu-filter-btn" data-mode="P" onclick="eduSetSearchMode('P')">P 治療</button>
+      </div>
+      <button class="edu-add-btn" onclick="eduToggleAddForm()">＋ 新增資源</button>
+    </div>
+
+    <!-- Add entry form panel (hidden by default) -->
+    <div id="edu-add-panel" class="edu-add-panel hidden">
+      <div class="edu-add-form">
+        <div class="edu-add-form-header">
+          <h3>新增衛教資源</h3>
+          <button class="edu-add-close" onclick="eduToggleAddForm()" title="關閉">✕</button>
+        </div>
+        <div class="edu-form-row">
+          <label>資源標題 *</label>
+          <input id="edu-form-title" type="text" placeholder="例：膝關節退化衛教" />
+        </div>
+        <div class="edu-form-grid2">
+          <div class="edu-form-row">
+            <label>來源 URL</label>
+            <input id="edu-form-url" type="url" placeholder="https://..." />
+          </div>
+          <div class="edu-form-row">
+            <label>來源名稱</label>
+            <input id="edu-form-source-label" type="text" placeholder="例：Openevidence / UpToDate" />
+          </div>
+        </div>
+        <div class="edu-form-row">
+          <label>標籤（以逗號分隔）</label>
+          <input id="edu-form-tags" type="text" placeholder="例：膝蓋, 退化, 關節炎" />
+        </div>
+        <div class="edu-form-row">
+          <label>原始文字（貼上英文或中文，按下按鈕進行 FastSR 自動分類）</label>
+          <textarea id="edu-form-original" rows="5" placeholder="貼上原文，可為英文、繁體或簡體中文..."></textarea>
+          <button class="edu-encode-btn" onclick="eduRunAutoEncode()">🔬 FastSR 自動分類 S/O/A/P</button>
+        </div>
+        <div class="edu-soap-editor">
+          <div class="edu-soap-section">
+            <label class="edu-soap-label edu-soap-s">S — 症狀／主訴／適應症</label>
+            <textarea id="edu-form-s" rows="4" placeholder="每行一句（自動分類後可手動調整）"></textarea>
+          </div>
+          <div class="edu-soap-section">
+            <label class="edu-soap-label edu-soap-o">O — 客觀發現／檢查</label>
+            <textarea id="edu-form-o" rows="4" placeholder="每行一句"></textarea>
+          </div>
+          <div class="edu-soap-section">
+            <label class="edu-soap-label edu-soap-a">A — 評估／診斷</label>
+            <textarea id="edu-form-a" rows="4" placeholder="每行一句"></textarea>
+          </div>
+          <div class="edu-soap-section">
+            <label class="edu-soap-label edu-soap-p">P — 計畫／治療建議</label>
+            <textarea id="edu-form-p" rows="4" placeholder="每行一句"></textarea>
+          </div>
+        </div>
+        <div class="edu-versions-editor">
+          <h4>語言版本（支援 HTML 格式標籤，如 &lt;p&gt;、&lt;ul&gt;、&lt;strong&gt;）</h4>
+          <div class="edu-form-row">
+            <label class="edu-soap-label edu-soap-s" style="display:inline-block;margin-bottom:6px">【簡易版】繁體中文（淺顯易懂）</label>
+            <textarea id="edu-form-simple-zh" rows="5" placeholder="<p>...</p>"></textarea>
+          </div>
+          <div class="edu-form-row">
+            <label class="edu-soap-label edu-soap-o" style="display:inline-block;margin-bottom:6px">【專業版】繁體中文（醫學術語）</label>
+            <textarea id="edu-form-pro-zh" rows="5" placeholder="<p>...</p>"></textarea>
+          </div>
+          <div class="edu-form-row">
+            <label class="edu-soap-label edu-soap-p" style="display:inline-block;margin-bottom:6px">[English] 英文版</label>
+            <textarea id="edu-form-en" rows="5" placeholder="<p>...</p>"></textarea>
+          </div>
+        </div>
+        <div class="edu-form-actions">
+          <button class="edu-save-btn" onclick="eduSaveNewEntry()">💾 儲存</button>
+          <button class="edu-cancel-btn" onclick="eduToggleAddForm()">取消</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Entry list -->
+    <div id="edu-list" class="edu-list"></div>
+
+    <!-- Detail viewer -->
     <div id="edu-viewer" class="edu-viewer hidden">
       <div class="edu-viewer-header">
         <button class="btn-drug-back" onclick="eduCloseViewer()">← 返回列表</button>
         <span id="edu-viewer-title" class="edu-viewer-title"></span>
       </div>
+      <!-- Version tabs -->
+      <div class="edu-version-tabs">
+        <button class="edu-vtab active" data-v="simple_zh" onclick="eduSwitchVersion('simple_zh')">簡易版</button>
+        <button class="edu-vtab" data-v="professional_zh" onclick="eduSwitchVersion('professional_zh')">專業版</button>
+        <button class="edu-vtab" data-v="english" onclick="eduSwitchVersion('english')">English</button>
+        <button class="edu-vtab" data-v="fastsr" onclick="eduSwitchVersion('fastsr')">FastSR 結構</button>
+        <button class="edu-vtab" data-v="source" onclick="eduSwitchVersion('source')">Source</button>
+      </div>
+      <!-- Content -->
       <div id="edu-viewer-content" class="edu-viewer-content"></div>
     </div>
   </div>

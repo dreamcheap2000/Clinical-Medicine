@@ -720,15 +720,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Preload specialty categories in background (enables search without clicking)
   preloadSpecialtyCm();
 
-  // Event delegation for edu-list (delete buttons)
-  var eduListEl = document.getElementById('edu-list');
-  if (eduListEl) {
-    eduListEl.addEventListener('click', e => {
-      const btn = e.target.closest('[data-action="delete-edu"]');
-      if (btn) deleteEduLink(btn.dataset.id);
-    });
-  }
-
   // Event delegation for history-list (toggle / delete buttons)
   document.getElementById('history-list').addEventListener('click', e => {
     const btn = e.target.closest('[data-action]');
@@ -975,102 +966,464 @@ function loadSoapFromHistory(id) {
 }
 
 // ---------------------------------------------------------------------------
-// Patient Education Resources
+// Patient Education (衛教資源) — FastSR-powered Search Platform
 // ---------------------------------------------------------------------------
 
+// FastSR SOAP keyword tables (inspired by EBM-NLP PICO → clinical SOAP mapping)
+const FASTSR_KEYWORDS = {
+  S: {
+    zh: ['症狀','主訴','感覺','疼痛','患者','病人','病史','不適','不舒服','發燒','頭痛',
+         '噁心','嘔吐','出血','腫脹','麻木','刺痛','無力','疲勞','呼吸困難','胸悶','心悸',
+         '背景','適應症','適合','對象','若您','如果您','主要症狀','症','痛','癢','腫',
+         '酸痛','疼','抱怨','受傷','扭傷','撕裂','拉傷','骨折'],
+    en: ['symptom','complaint','feel','pain','discomfort','history','present','chief complaint',
+         'subjective','nausea','vomit','fever','headache','swelling','numbness','weakness',
+         'fatigue','dyspnea','indication','candidate','suffer','report','complain','notice',
+         'experience','strain','sprain','fracture','injury']
+  },
+  O: {
+    zh: ['檢查','測量','理學','發現','超音波','MRI','X光','CT','核磁共振','血液','影像',
+         '數值','角度','活動度','壓痛','徵候','客觀','驗血','切片','度','°','陽性','陰性',
+         '指數','比例','追蹤','例','個案','統計','發生率','臨床數據','改善','結果'],
+    en: ['examination','finding','sign','measure','ultrasound','MRI','CT','x-ray','range of motion',
+         'blood test','objective','physical','test','score','positive','negative','rate','degree',
+         'percent','cases','study','result','data','statistic','trial','outcome']
+  },
+  A: {
+    zh: ['診斷','可能','評估','考慮','鑑別','分析','因此','代表','判斷','機轉','病理',
+         '原因','懷疑','歸因','相關','合併','病症','疾病','損傷','炎症','症候群','綜合症',
+         '沾黏','退化','韌帶','撕裂','炎'],
+    en: ['diagnosis','assessment','consider','likely','differential','mechanism','pathology',
+         'cause','etiology','condition','disorder','disease','syndrome','injury','lesion',
+         'damage','torn','rupture','capsulitis','adhesion','degeneration']
+  },
+  P: {
+    zh: ['治療','建議','藥物','手術','復健','計畫','管理','處置','注射','物理治療','護理',
+         '康復','預防','衛教','飲食','運動','休息','服藥','回診','追蹤','照護','步驟',
+         '方法','技術','原則','注意','禁忌','避免','應','需','進行','操作','施術'],
+    en: ['treatment','recommend','plan','therapy','surgery','medication','rehabilitation',
+         'management','inject','physical therapy','exercise','rest','follow','care','prescribe',
+         'protocol','step','procedure','avoid','should','apply','perform','manipulation',
+         'block','RICE']
+  }
+};
+
+let eduData = [];
+let eduSearchMode = 'all';
+let eduCurrentEntry = null;
+let eduCurrentVersion = 'simple_zh';
+
 function initEduTab() {
-  renderEduFileList();
+  loadEduData();
 }
 
-function renderEduFileList() {
-  var container = document.getElementById('edu-file-list');
-  if (!container) return;
-  container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted)">載入中…</div>';
+async function loadEduData() {
+  const list = document.getElementById('edu-list');
+  if (list) list.innerHTML = '<p style="padding:20px;text-align:center;color:var(--muted)">載入中…</p>';
+  try {
+    const jsonData = await fetchJson(BASE + 'data/edu/patient_edu_data.json');
+    // Support v2 (entries) and legacy v1 (files)
+    const baseEntries = jsonData.entries
+      ? jsonData.entries
+      : (jsonData.files || []).map(eduConvertV1);
+    const localEntries = eduLoadLocal();
+    eduData = [...baseEntries, ...localEntries];
+  } catch (e) {
+    console.error('edu data load failed:', e);
+    eduData = eduLoadLocal();
+  }
+  eduRenderList();
+}
 
-  fetchJson(BASE + 'data/edu/patient_edu_data.json').then(function(data) {
-    if (!data || !data.files || data.files.length === 0) {
-      container.innerHTML = '<p class="empty-msg" style="padding:20px">尚無衛教資源</p>';
-      return;
+function eduConvertV1(file) {
+  return {
+    id: file.id || ('edu_' + Math.random().toString(36).substr(2, 8)),
+    title: file.title || file.filename || '未命名',
+    source_url: '', source_label: '', original_lang: 'zh-TW', added_date: '',
+    tags: [],
+    fastsr: { S: [], O: [], A: [], P: [] },
+    versions: {
+      simple_zh: file.htmlContent || '',
+      professional_zh: file.htmlContent || '',
+      english: ''
     }
-    container.innerHTML = '';
-    data.files.forEach(function(file) {
-      var card = document.createElement('div');
-      card.className = 'edu-file-card';
+  };
+}
 
-      var icon = document.createElement('span');
-      icon.className = 'edu-file-icon';
-      icon.textContent = file.type === 'docx' ? '📄' : file.type === 'pdf' ? '📕' : '🖼️';
+function eduLoadLocal() {
+  try { return JSON.parse(localStorage.getItem('phcep_edu_entries_v1') || '[]'); }
+  catch (e) { return []; }
+}
 
-      var title = document.createElement('span');
-      title.className = 'edu-file-title';
-      title.textContent = file.title || file.filename;
+function eduSaveLocal(entries) {
+  localStorage.setItem('phcep_edu_entries_v1', JSON.stringify(entries));
+}
 
-      var meta = document.createElement('span');
-      meta.className = 'edu-file-meta';
-      meta.textContent = file.type ? file.type.toUpperCase() : '';
+// ---------------------------------------------------------------------------
+// Render list view
+// ---------------------------------------------------------------------------
+function eduRenderList() {
+  var list = document.getElementById('edu-list');
+  if (!list) return;
+  var query = ((document.getElementById('edu-search') || {}).value || '').trim();
 
-      card.appendChild(icon);
-      card.appendChild(title);
-      card.appendChild(meta);
+  var results;
+  if (query) {
+    results = eduScoreAll(query);
+    // filter out zero-score if query present
+    var scored = results.filter(r => r.score > 0);
+    results = scored.length ? scored : results;
+  } else {
+    results = eduData.map(e => ({ entry: e, score: 0, sectionScores: { S: 0, O: 0, A: 0, P: 0 } }));
+  }
 
-      card.addEventListener('click', function() { eduOpenFile(file); });
-      container.appendChild(card);
-    });
-  }).catch(function() {
-    container.innerHTML = '<p style="padding:20px;color:var(--red)">⚠️ 無法載入衛教資源列表</p>';
+  if (results.length === 0) {
+    list.innerHTML = '<p class="empty-msg" style="padding:24px;text-align:center;color:var(--muted)">尚無衛教資源</p>';
+    return;
+  }
+
+  list.innerHTML = '';
+  results.forEach(function({ entry, score, sectionScores }) {
+    var card = document.createElement('div');
+    card.className = 'edu-entry-card';
+
+    // Score badge
+    var scoreBadge = (query && score > 0)
+      ? `<span class="edu-score-badge">${score}%</span>` : '';
+
+    // SOAP pills
+    var soapHtml = '';
+    if (query && score > 0) {
+      var pills = [
+        { k: 'S', label: 'S', cls: 'edu-soap-s-pill' },
+        { k: 'O', label: 'O', cls: 'edu-soap-o-pill' },
+        { k: 'A', label: 'A', cls: 'edu-soap-a-pill' },
+        { k: 'P', label: 'P', cls: 'edu-soap-p-pill' }
+      ].map(function({ k, label, cls }) {
+        var s = sectionScores[k] || 0;
+        return s > 0
+          ? `<span class="${cls} edu-soap-pill active" title="${k}段落匹配度 ${s}%">${label}<span class="edu-pill-bar"><span style="width:${Math.min(s, 100)}%"></span></span></span>`
+          : `<span class="${cls} edu-soap-pill">${label}</span>`;
+      }).join('');
+      soapHtml = `<div class="edu-soap-pills">${pills}</div>`;
+    }
+
+    var tagsHtml = (entry.tags || []).map(t => `<span class="edu-tag">${escHtml(t)}</span>`).join('');
+    var srcBtn = entry.source_url
+      ? `<a class="edu-vbtn edu-source-btn" href="${escHtml(entry.source_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source ↗</a>`
+      : '';
+    var deleteBtn = entry._local
+      ? `<button class="edu-vbtn edu-delete-btn" onclick="eduDeleteEntry('${escHtml(entry.id)}');event.stopPropagation()" title="刪除此條目">🗑</button>`
+      : '';
+
+    card.innerHTML = `
+      <div class="edu-card-top">
+        <span class="edu-card-icon">📄</span>
+        <div class="edu-card-info">
+          <div class="edu-card-title">${escHtml(entry.title)}${scoreBadge}</div>
+          ${entry.source_label ? `<div class="edu-card-source">來源：${escHtml(entry.source_label)}</div>` : ''}
+          ${soapHtml}
+          <div class="edu-card-tags">${tagsHtml}</div>
+        </div>
+      </div>
+      <div class="edu-card-versions">
+        <button class="edu-vbtn" onclick="eduOpenEntry('${escHtml(entry.id)}','simple_zh');event.stopPropagation()">簡易版</button>
+        <button class="edu-vbtn" onclick="eduOpenEntry('${escHtml(entry.id)}','professional_zh');event.stopPropagation()">專業版</button>
+        <button class="edu-vbtn" onclick="eduOpenEntry('${escHtml(entry.id)}','english');event.stopPropagation()">English</button>
+        ${srcBtn}${deleteBtn}
+      </div>
+    `;
+    card.addEventListener('click', function() { eduOpenEntry(entry.id, 'simple_zh'); });
+    list.appendChild(card);
   });
 }
 
-function eduOpenFile(file) {
-  var viewer = document.getElementById('edu-viewer');
-  var titleEl = document.getElementById('edu-viewer-title');
-  var content = document.getElementById('edu-viewer-content');
-  var fileList = document.getElementById('edu-file-list');
+function eduSearch(query) {
+  eduRenderList();
+}
 
-  if (!viewer || !content) return;
+function eduSetSearchMode(mode) {
+  eduSearchMode = mode;
+  document.querySelectorAll('.edu-filter-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.mode === mode);
+  });
+  var q = (document.getElementById('edu-search') || {}).value || '';
+  if (q.trim()) eduSearch(q);
+}
 
-  titleEl.textContent = file.title || file.filename;
-  content.innerHTML = '';
+// ---------------------------------------------------------------------------
+// FastSR-like SOAP scoring
+// ---------------------------------------------------------------------------
+function eduScoreAll(query) {
+  var tokens = eduTokenize(query);
+  if (!tokens.length) return eduData.map(e => ({ entry: e, score: 0, sectionScores: { S: 0, O: 0, A: 0, P: 0 } }));
+  return eduData
+    .map(function(entry) {
+      var result = eduScoreEntry(entry, tokens);
+      return { entry, score: result.score, sectionScores: result.sectionScores };
+    })
+    .sort(function(a, b) { return b.score - a.score; });
+}
 
-  // Show HTML content if available
-  if (file.htmlContent) {
-    content.innerHTML = file.htmlContent;
-  }
-
-  // Show images if available
-  if (file.images && file.images.length > 0) {
-    var imgSection = document.createElement('div');
-    imgSection.className = 'edu-images';
-    file.images.forEach(function(img) {
-      var figure = document.createElement('figure');
-      var imgEl = document.createElement('img');
-      imgEl.src = img.data;
-      imgEl.alt = img.caption || '';
-      imgEl.className = 'edu-img';
-      figure.appendChild(imgEl);
-      if (img.caption) {
-        var cap = document.createElement('figcaption');
-        cap.textContent = img.caption;
-        figure.appendChild(cap);
+function eduTokenize(text) {
+  var lower = text.toLowerCase();
+  var tokens = [];
+  var words = lower.split(/[\s,，、；;。.!！?？\-\/]+/).filter(Boolean);
+  words.forEach(function(w) {
+    tokens.push(w);
+    if (/[\u4e00-\u9fff]/.test(w) && w.length > 1) {
+      for (var i = 0; i < w.length - 1; i++) {
+        tokens.push(w[i] + w[i + 1]); // Chinese bigrams
       }
-      imgSection.appendChild(figure);
-    });
-    content.appendChild(imgSection);
-  }
+    }
+  });
+  return [...new Set(tokens)].filter(t => t.length >= 1);
+}
 
-  if (!file.htmlContent && (!file.images || file.images.length === 0)) {
-    content.innerHTML = '<p style="color:var(--muted);padding:20px">無可顯示的內容</p>';
-  }
+function eduScoreEntry(entry, tokens) {
+  var sectionWeights = { S: 1.5, O: 1.0, A: 1.8, P: 1.5 };
+  var sectionScores = { S: 0, O: 0, A: 0, P: 0 };
+  var titleScore = 0;
+  var tagScore = 0;
 
-  if (fileList) fileList.classList.add('hidden');
-  viewer.classList.remove('hidden');
+  // Title score
+  var titleText = (entry.title || '').toLowerCase();
+  tokens.forEach(function(t) { if (titleText.includes(t)) titleScore += 10; });
+
+  // Tag score
+  var tagText = (entry.tags || []).join(' ').toLowerCase();
+  tokens.forEach(function(t) { if (tagText.includes(t)) tagScore += 6; });
+
+  // SOAP section scores
+  var fastsr = entry.fastsr || { S: [], O: [], A: [], P: [] };
+  ['S', 'O', 'A', 'P'].forEach(function(sec) {
+    var text = (fastsr[sec] || []).join(' ').toLowerCase();
+    var raw = 0;
+    tokens.forEach(function(t) { if (text.includes(t)) raw += 3; });
+    // Search mode filter
+    if (eduSearchMode !== 'all') {
+      raw = (eduSearchMode === sec) ? raw * 4 : raw * 0.05;
+    }
+    sectionScores[sec] = Math.round(Math.min(raw * sectionWeights[sec], 100));
+  });
+
+  // Version text score (low weight)
+  var versionText = Object.values(entry.versions || {}).join(' ').replace(/<[^>]+>/g, '').toLowerCase();
+  var vScore = 0;
+  tokens.forEach(function(t) { if (versionText.includes(t)) vScore += 0.8; });
+
+  var totalRaw = titleScore + tagScore + Object.values(sectionScores).reduce((a, b) => a + b, 0) + Math.min(vScore, 15);
+  var maxPossible = Math.max(tokens.length * (10 + 6 + 3 * 4 * sectionWeights['A'] + 15), 1);
+  var score = Math.min(Math.round((totalRaw / maxPossible) * 100 * 2.5), 100);
+
+  // Per-section percentages for display
+  var secMax = Math.max(tokens.length * 3 * 1.8, 1);
+  ['S', 'O', 'A', 'P'].forEach(function(k) {
+    sectionScores[k] = Math.min(Math.round((sectionScores[k] / secMax) * 100 * 2), 100);
+  });
+
+  return { score, sectionScores };
+}
+
+// ---------------------------------------------------------------------------
+// Detail viewer
+// ---------------------------------------------------------------------------
+function eduOpenEntry(id, version) {
+  var entry = eduData.find(e => e.id === id);
+  if (!entry) return;
+  eduCurrentEntry = entry;
+  eduCurrentVersion = version || 'simple_zh';
+
+  document.getElementById('edu-viewer-title').textContent = entry.title;
+  var list = document.getElementById('edu-list');
+  var toolbar = document.querySelector('.edu-toolbar');
+  var addPanel = document.getElementById('edu-add-panel');
+  if (list) list.classList.add('hidden');
+  if (toolbar) toolbar.classList.add('hidden');
+  if (addPanel) addPanel.classList.add('hidden');
+  document.getElementById('edu-viewer').classList.remove('hidden');
+
+  document.querySelectorAll('.edu-vtab').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.v === eduCurrentVersion);
+  });
+  eduRenderViewerContent();
+}
+
+function eduSwitchVersion(v) {
+  if (!eduCurrentEntry) return;
+  eduCurrentVersion = v;
+  document.querySelectorAll('.edu-vtab').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.v === v);
+  });
+  eduRenderViewerContent();
+}
+
+function eduRenderViewerContent() {
+  var content = document.getElementById('edu-viewer-content');
+  if (!content || !eduCurrentEntry) return;
+  var entry = eduCurrentEntry;
+  var v = eduCurrentVersion;
+
+  if (v === 'fastsr') {
+    var fastsr = entry.fastsr || { S: [], O: [], A: [], P: [] };
+    var sections = [
+      { k: 'S', label: 'S — 症狀／主訴／適應症', cls: 'edu-soap-s' },
+      { k: 'O', label: 'O — 客觀發現／檢查結果', cls: 'edu-soap-o' },
+      { k: 'A', label: 'A — 評估／診斷', cls: 'edu-soap-a' },
+      { k: 'P', label: 'P — 計畫／治療', cls: 'edu-soap-p' }
+    ];
+    content.innerHTML = `
+      <div class="edu-fastsr-view">
+        <p class="edu-fastsr-desc">FastSR 結構 — 將原文依 SOAP 格式分類，用於精準搜尋與跨文件對比<br>
+        此分類方式參考 FastSR 論文（EBM-NLP PICO 框架）映射至臨床 SOAP 格式。</p>
+        ${sections.map(function({ k, label, cls }) {
+          var items = fastsr[k] || [];
+          return `<div class="edu-fastsr-block">
+            <div class="edu-fastsr-header ${cls}">${label}</div>
+            <ul class="edu-fastsr-list">
+              ${items.length
+                ? items.map(s => `<li>${escHtml(s)}</li>`).join('')
+                : '<li class="edu-fastsr-empty">（無資料）</li>'}
+            </ul>
+          </div>`;
+        }).join('')}
+      </div>`;
+  } else if (v === 'source') {
+    content.innerHTML = `
+      <div class="edu-source-view">
+        <h3>來源資訊</h3>
+        ${entry.source_label ? `<p><strong>來源：</strong>${escHtml(entry.source_label)}</p>` : ''}
+        ${entry.source_url
+          ? `<p><a href="${escHtml(entry.source_url)}" target="_blank" rel="noopener">${escHtml(entry.source_url)}</a></p>`
+          : '<p style="color:var(--muted)">（未提供來源連結）</p>'}
+        ${entry.tags && entry.tags.length
+          ? `<p><strong>標籤：</strong>${entry.tags.map(t => `<span class="edu-tag">${escHtml(t)}</span>`).join(' ')}</p>`
+          : ''}
+        ${entry.added_date ? `<p style="color:var(--muted);font-size:0.85rem;margin-top:12px">新增日期：${escHtml(entry.added_date)}</p>` : ''}
+      </div>`;
+  } else {
+    var html = ((entry.versions || {})[v]) || '<p style="color:var(--muted);padding:8px">（此語言版本尚未提供）</p>';
+    content.innerHTML = html;
+  }
 }
 
 function eduCloseViewer() {
-  var viewer = document.getElementById('edu-viewer');
-  var fileList = document.getElementById('edu-file-list');
-  if (viewer) viewer.classList.add('hidden');
-  if (fileList) fileList.classList.remove('hidden');
+  document.getElementById('edu-viewer').classList.add('hidden');
+  var list = document.getElementById('edu-list');
+  var toolbar = document.querySelector('.edu-toolbar');
+  if (list) list.classList.remove('hidden');
+  if (toolbar) toolbar.classList.remove('hidden');
+  eduCurrentEntry = null;
+}
+
+// ---------------------------------------------------------------------------
+// Add entry form
+// ---------------------------------------------------------------------------
+function eduToggleAddForm() {
+  var panel = document.getElementById('edu-add-panel');
+  if (!panel) return;
+  panel.classList.toggle('hidden');
+  if (!panel.classList.contains('hidden')) {
+    eduClearAddForm();
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function eduClearAddForm() {
+  ['edu-form-title', 'edu-form-url', 'edu-form-source-label', 'edu-form-tags',
+   'edu-form-original', 'edu-form-s', 'edu-form-o', 'edu-form-a', 'edu-form-p',
+   'edu-form-simple-zh', 'edu-form-pro-zh', 'edu-form-en'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+}
+
+// FastSR auto-encoder: classifies pasted text into S/O/A/P
+function eduRunAutoEncode() {
+  var text = (document.getElementById('edu-form-original') || {}).value || '';
+  if (!text.trim()) { toast('⚠️ 請先貼上原始文字'); return; }
+  var encoded = eduEncodeFastSR(text);
+  var set = function(id, arr) { var el = document.getElementById(id); if (el) el.value = arr.join('\n'); };
+  set('edu-form-s', encoded.S);
+  set('edu-form-o', encoded.O);
+  set('edu-form-a', encoded.A);
+  set('edu-form-p', encoded.P);
+  toast(`✅ FastSR 分類完成：S(${encoded.S.length}) O(${encoded.O.length}) A(${encoded.A.length}) P(${encoded.P.length})`);
+}
+
+function eduEncodeFastSR(text) {
+  var sentences = eduSplitSentences(text);
+  var result = { S: [], O: [], A: [], P: [] };
+  sentences.forEach(function(s) {
+    if (s.trim()) result[eduClassifySentence(s)].push(s.trim());
+  });
+  return result;
+}
+
+function eduSplitSentences(text) {
+  return text
+    .replace(/([。！？.!?])\s*/g, '$1\n')
+    .split('\n')
+    .map(s => s.trim())
+    .filter(s => s.length > 3);
+}
+
+function eduClassifySentence(sent) {
+  var lower = sent.toLowerCase();
+  var scores = { S: 0, O: 0, A: 0, P: 0 };
+  Object.entries(FASTSR_KEYWORDS).forEach(function([cat, kws]) {
+    [...kws.zh, ...kws.en].forEach(function(kw) {
+      if (lower.includes(kw.toLowerCase())) scores[cat] += kw.length > 3 ? 2 : 1;
+    });
+  });
+  var best = Object.entries(scores).sort((a, b) => b[1] - a[1])[0];
+  return best[1] > 0 ? best[0] : 'S';
+}
+
+function eduSaveNewEntry() {
+  var get = function(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  var title = get('edu-form-title');
+  if (!title) { toast('⚠️ 請輸入資源標題'); return; }
+
+  var tags = get('edu-form-tags').split(/[,，、\s]+/).filter(Boolean);
+  var entry = {
+    id: 'edu_local_' + Date.now(),
+    title,
+    source_url: get('edu-form-url'),
+    source_label: get('edu-form-source-label'),
+    original_lang: 'zh-TW',
+    added_date: new Date().toISOString().split('T')[0],
+    tags,
+    fastsr: {
+      S: get('edu-form-s').split('\n').filter(Boolean),
+      O: get('edu-form-o').split('\n').filter(Boolean),
+      A: get('edu-form-a').split('\n').filter(Boolean),
+      P: get('edu-form-p').split('\n').filter(Boolean)
+    },
+    versions: {
+      simple_zh: get('edu-form-simple-zh'),
+      professional_zh: get('edu-form-pro-zh'),
+      english: get('edu-form-en')
+    },
+    _local: true
+  };
+
+  var locals = eduLoadLocal();
+  locals.push(entry);
+  eduSaveLocal(locals);
+  eduData.push(entry);
+  eduToggleAddForm();
+  eduRenderList();
+  toast(`✅ 已儲存「${title}」`);
+}
+
+function eduDeleteEntry(id) {
+  if (!confirm('確定要刪除此衛教資源？')) return;
+  var locals = eduLoadLocal().filter(e => e.id !== id);
+  eduSaveLocal(locals);
+  eduData = eduData.filter(e => e.id !== id);
+  eduRenderList();
+  toast('🗑️ 已刪除');
 }
 
 // ---------------------------------------------------------------------------
