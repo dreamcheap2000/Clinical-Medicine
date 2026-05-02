@@ -49,7 +49,6 @@
     <button class="tab-btn" data-tab="pcs" onclick="switchTab('pcs')">ICD-10-PCS (處置)</button>
     <button class="tab-btn" data-tab="stroke" onclick="switchTab('stroke')">🧠 治療指引</button>
     <button class="tab-btn" data-tab="specmat" onclick="switchTab('specmat')">🔩 特材給付</button>
-    <button class="tab-btn" data-tab="about" onclick="switchTab('about')">ℹ️ About</button>
     <button class="tab-btn" data-tab="ebm" onclick="switchTab('ebm')">📝 EBM筆記</button>
     <button class="tab-btn" data-tab="soap" onclick="switchTab('soap')">🏥 SOAP病歷</button>
     <button class="tab-btn" data-tab="edu" onclick="switchTab('edu')">📚 衛教資源</button>
@@ -68,16 +67,8 @@
         <input id="cm-search" type="text" class="drug-search-input"
                placeholder="搜尋 ICD-10-CM 代碼或名稱（中英文）…"
                oninput="cmSearch(this.value)"
-               onfocus="showSearchHistory('cm')"
-               onblur="hideSearchHistory('cm', 150)"
+               onfocus="if(!this.value) cmSearch('')"
                autocomplete="off" />
-        <div id="cm-search-history" class="search-history-dropdown">
-          <div class="search-history-header">
-            <span>最近搜尋</span>
-            <button class="search-history-clear" onclick="clearSearchHistory('cm')">清除</button>
-          </div>
-          <div id="cm-history-items"></div>
-        </div>
       </div>
       <select id="cm-cat-sel" class="drug-cat-sel" onchange="cmSelectCat(this.value)">
         <option value="">全部分類</option>
@@ -101,19 +92,18 @@
         <input id="nhi-search" type="text" class="nhi-search-input"
                placeholder="搜尋代碼或名稱（中英文）…"
                oninput="nhiSearch(this.value)"
-               onfocus="showSearchHistory('nhi')"
-               onblur="hideSearchHistory('nhi', 150)"
+               onfocus="if(!this.value) nhiSearch('')"
                autocomplete="off" />
-        <div id="nhi-search-history" class="search-history-dropdown">
-          <div class="search-history-header">
-            <span>最近搜尋</span>
-            <button class="search-history-clear" onclick="clearSearchHistory('nhi')">清除</button>
-          </div>
-          <div id="nhi-history-items"></div>
-        </div>
       </div>
       <select id="nhi-cat-sel" class="nhi-cat-sel" onchange="nhiSelectCat(this.value)">
         <option value="">— 選擇分類 —</option>
+      </select>
+      <select id="nhi-level-sel" class="nhi-cat-sel" onchange="nhiFilterLevel(this.value)" title="篩選適用層級">
+        <option value="">全部層級</option>
+        <option value="基層院所">基層院所</option>
+        <option value="地區醫院">地區醫院</option>
+        <option value="區域醫院">區域醫院</option>
+        <option value="醫學中心">醫學中心</option>
       </select>
       <label class="nhi-toggle-label">
         <input type="checkbox" id="nhi-show-note" onchange="nhiRender()" checked />
@@ -156,16 +146,8 @@
         <input id="drug-search" type="text" class="drug-search-input"
                placeholder="搜尋藥品名稱或給付規定（中英文）…"
                oninput="drugSearch(this.value)"
-               onfocus="showSearchHistory('drug')"
-               onblur="hideSearchHistory('drug', 150)"
+               onfocus="if(!this.value) drugSearch('')"
                autocomplete="off" />
-        <div id="drug-search-history" class="search-history-dropdown">
-          <div class="search-history-header">
-            <span>最近搜尋</span>
-            <button class="search-history-clear" onclick="clearSearchHistory('drug')">清除</button>
-          </div>
-          <div id="drug-history-items"></div>
-        </div>
       </div>
       <select id="drug-cat-sel" class="drug-cat-sel" onchange="drugSelectCat(this.value)">
         <option value="">全部分類</option>
@@ -201,11 +183,6 @@
     <div id="pcs-search-results" class="search-results-above hidden"></div>
     <div class="cat-grid" id="pcs-cat-grid"></div>
     <div id="pcs-detail" class="detail-panel hidden"></div>
-  </div>
-
-  <!-- About Tab -->
-  <div id="tab-about" class="tab-content">
-    <div class="about-content" id="about-content"></div>
   </div>
 
   <!-- EBM Tab -->
@@ -315,35 +292,9 @@
   <div id="tab-stroke" class="tab-content">
     <div class="section-header">
       <h2>🧠 腦中風治療指引</h2>
-      <p class="section-desc">台灣腦中風學會歷年治療指引，可依主題分類瀏覽或全文搜尋。內容以章節展開，包含建議等級、參考文獻。</p>
+      <p class="section-desc">台灣腦中風學會歷年治療指引 PDF 文件。點選按鈕即可開啟或下載 PDF。</p>
     </div>
-    <div class="drug-toolbar">
-      <div class="drug-search-wrap">
-        <input id="stroke-search" type="text" class="drug-search-input"
-               placeholder="搜尋指引標題、章節或內容…"
-               oninput="strokeSearch(this.value)"
-               onfocus="showSearchHistory('stroke')"
-               onblur="hideSearchHistory('stroke', 150)"
-               autocomplete="off" />
-        <div id="stroke-search-history" class="search-history-dropdown">
-          <div class="search-history-header">
-            <span>最近搜尋</span>
-            <button class="search-history-clear" onclick="clearSearchHistory('stroke')">清除</button>
-          </div>
-          <div id="stroke-history-items"></div>
-        </div>
-      </div>
-      <select id="stroke-cat-sel" class="drug-cat-sel" onchange="strokeSelectCatById(this.value)">
-        <option value="">全部分類</option>
-      </select>
-    </div>
-    <div id="stroke-cat-grid" class="drug-cat-grid"></div>
-    <div id="stroke-list-wrap" class="drug-list-wrap hidden">
-      <div class="drug-list-header" id="stroke-list-header"></div>
-      <div id="stroke-entries"></div>
-      <p id="stroke-no-results" class="drug-no-results hidden">無符合條件的指引。</p>
-    </div>
-    <div id="stroke-ref-tooltip" class="stroke-ref-tooltip hidden"></div>
+    <div id="stroke-pdf-grid" class="stroke-pdf-grid"></div>
   </div>
 
   <!-- Special Materials Tab -->

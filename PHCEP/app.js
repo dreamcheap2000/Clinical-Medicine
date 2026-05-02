@@ -34,7 +34,6 @@ async function boot() {
     populateCmCatSelect();
     renderPcsGrid();
     populatePcsCatSelect();
-    renderAbout();
     initEbmTab();
     initSoapTab();
     initEduTab();
@@ -1149,6 +1148,7 @@ function deleteHistoryEntry(type, id) {
 let NHI_DATA = null;       // Full JSON from data/nhi/nhi.json
 let nhiActiveCat = null;   // Currently selected category id
 let nhiSearchQ = '';       // Current search query
+let nhiLevelFilter = '';   // Filter by 適用層級
 
 async function initNhiTab() {
   try {
@@ -1279,6 +1279,12 @@ function nhiRender() {
     });
   }
 
+  if (nhiLevelFilter) {
+    codes = codes.filter(function(r) {
+      return r.available && r.available[nhiLevelFilter] === true;
+    });
+  }
+
   document.getElementById('nhi-table-header').innerHTML =
     '<div class="nhi-th-left">' + headerText + '</div>' +
     '<div class="nhi-th-right">' +
@@ -1366,6 +1372,13 @@ function nhiBackToGrid() {
   document.getElementById('nhi-cat-grid').classList.remove('hidden');
   document.getElementById('nhi-table-wrap').classList.add('hidden');
 }
+
+function nhiFilterLevel(level) {
+  nhiLevelFilter = level;
+  if (nhiActiveCat || nhiSearchQ) {
+    nhiRender();
+  }
+}
 // ===========================================================================
 
 // ===========================================================================
@@ -1442,16 +1455,13 @@ function applySearchHistory(type, query) {
   } else if (type === 'cm') {
     var inp = document.getElementById('cm-search');
     if (inp) { inp.value = query; cmSearch(query); }
-  } else if (type === 'stroke') {
-    var inp = document.getElementById('stroke-search');
-    if (inp) { inp.value = query; strokeSearch(inp.value); }
   }
   hideSearchHistory(type, 0);
 }
 
 // Close all search history dropdowns when clicking outside
 document.addEventListener('click', function(e) {
-  var types = ['cm', 'nhi', 'drug', 'stroke', 'specmat'];
+  var types = ['cm', 'nhi', 'drug', 'specmat'];
   types.forEach(function(type) {
     var dropdown = document.getElementById(type + '-search-history');
     if (!dropdown || !dropdown.classList.contains('open')) return;
@@ -1854,37 +1864,9 @@ function drugBackToGrid() {
 // ===========================================================================
 
 // ===========================================================================
-// Stroke Guidelines Tab — redesigned to match drug/ICD tab format
+// Stroke Guidelines Tab — simple PDF link buttons
 // ===========================================================================
 var STROKE_DATA = null;
-var strokeActiveTopic = '';
-var strokeSearchQ = '';
-var strokeSearchDebounce = null;
-
-var STROKE_TOPIC_LABELS = {
-  'dyslipidemia':              { label: '🧪 血脂異常', icon: '🧪', order: 1 },
-  'blood_pressure':            { label: '💉 血壓控制', icon: '💉', order: 2 },
-  'iv_thrombolysis':           { label: '💊 靜脈溶栓', icon: '💊', order: 3 },
-  'mechanical_thrombectomy':   { label: '🔧 動脈取栓', icon: '🔧', order: 4 },
-  'antiplatelet':              { label: '💊 抗血小板', icon: '💊', order: 5 },
-  'noac_af':                   { label: '💊 NOAC/心房顫動', icon: '💊', order: 6 },
-  'intracerebral_hemorrhage':  { label: '🩸 腦出血', icon: '🩸', order: 7 },
-  'intracranial_atherosclerosis': { label: '🧠 顱內動脈硬化', icon: '🧠', order: 8 },
-  'diabetes_glycemic':         { label: '🩸 糖尿病/血糖', icon: '🩸', order: 9 },
-  'ckd_stroke':                { label: '🫘 慢性腎臟病', icon: '🫘', order: 10 },
-  'prehospital':               { label: '🚑 院前處置', icon: '🚑', order: 11 },
-  'prehospital_emergency':     { label: '🏥 急診處置', icon: '🏥', order: 12 },
-  'post_stroke_epilepsy':      { label: '⚡ 中風後癲癇', icon: '⚡', order: 13 },
-  'post_stroke_spasticity':    { label: '💪 中風後痙攣', icon: '💪', order: 14 },
-  'post_stroke_dysphagia':     { label: '🍽️ 中風後吞嚥', icon: '🍽️', order: 15 },
-  'women_stroke':              { label: '👩 女性中風', icon: '👩', order: 16 },
-  'anti_amyloid_antibody':     { label: '🧬 抗類澱粉蛋白', icon: '🧬', order: 17 },
-  'herpes_zoster_vaccine':     { label: '💉 帶狀疹疫苗', icon: '💉', order: 18 },
-  'covid19_adjustment':        { label: '😷 COVID-19', icon: '😷', order: 19 },
-  'focused_update_2017':       { label: '🔄 2017指引更新', icon: '🔄', order: 20 },
-  'general_2020':              { label: '📋 2020綜合指引', icon: '📋', order: 21 },
-  'general':                   { label: '📋 綜合指引', icon: '📋', order: 22 }
-};
 
 async function initStrokeTab() {
   if (!STROKE_DATA) {
@@ -1892,587 +1874,37 @@ async function initStrokeTab() {
       STROKE_DATA = await fetchJson(BASE + 'data/stroke_guidelines.json');
     } catch (e) {
       console.error('Stroke guidelines load failed:', e);
-      var grid = document.getElementById('stroke-cat-grid');
+      var grid = document.getElementById('stroke-pdf-grid');
       if (grid) grid.innerHTML = '<p style="padding:20px;color:var(--red)">⚠️ 無法載入腦中風指引資料：' + escHtml(String(e)) + '</p>';
       return;
     }
   }
-  renderStrokeCatGrid();
-  populateStrokeCatSelect();
+  renderStrokePdfGrid();
 }
 
 function strokeOnTabShow() {
-  if (!STROKE_DATA) initStrokeTab();
+  if (!STROKE_DATA) {
+    initStrokeTab();
+  }
 }
 
-function renderStrokeCatGrid() {
-  var grid = document.getElementById('stroke-cat-grid');
+function renderStrokePdfGrid() {
+  var grid = document.getElementById('stroke-pdf-grid');
   if (!grid || !STROKE_DATA) return;
   grid.innerHTML = '';
-
-  // Group guidelines by topic
-  var topicMap = {};
-  STROKE_DATA.guidelines.forEach(function(g) {
-    if (!topicMap[g.topic]) topicMap[g.topic] = [];
-    topicMap[g.topic].push(g);
-  });
-
-  // Sort topics by order
-  var topics = Object.keys(topicMap).sort(function(a, b) {
-    var oa = (STROKE_TOPIC_LABELS[a] || {}).order || 99;
-    var ob = (STROKE_TOPIC_LABELS[b] || {}).order || 99;
-    return oa - ob;
-  });
-
-  topics.forEach(function(topic) {
-    var info = STROKE_TOPIC_LABELS[topic] || { label: topic, icon: '📄' };
-    var guidelines = topicMap[topic];
-    var card = document.createElement('div');
-    card.className = 'drug-cat-card stroke-cat-card';
-    card.addEventListener('click', function() { strokeOpenTopic(topic); });
-
-    var iconDiv = document.createElement('div');
-    iconDiv.className = 'drug-cat-icon';
-    iconDiv.textContent = info.icon || '📄';
-
-    var nameDiv = document.createElement('div');
-    nameDiv.className = 'drug-cat-name-zh';
-    nameDiv.textContent = info.label.replace(/^[^\s]+\s/, ''); // remove emoji prefix
-
-    var countDiv = document.createElement('div');
-    countDiv.className = 'drug-cat-count';
-    countDiv.textContent = guidelines.length + ' 篇指引';
-
-    // Year range
-    var years = guidelines.map(function(g) { return g.year; });
-    var yearRange = Math.min.apply(null, years) + (years.length > 1 ? '–' + Math.max.apply(null, years) : '');
-    var yearDiv = document.createElement('div');
-    yearDiv.className = 'stroke-cat-years';
-    yearDiv.textContent = yearRange;
-
-    card.appendChild(iconDiv);
-    card.appendChild(nameDiv);
-    card.appendChild(countDiv);
-    card.appendChild(yearDiv);
-    grid.appendChild(card);
+  (STROKE_DATA.guidelines || []).forEach(function(g) {
+    var pdfName = g.filename && g.filename.endsWith('.pdf') ? g.filename : (g.id || g.filename) + '.pdf';
+    var label = g.title || g.title_en || pdfName;
+    var a = document.createElement('a');
+    a.className = 'stroke-pdf-link-btn';
+    a.href = BASE + 'data/stroke_pdfs/' + encodeURIComponent(pdfName);
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.textContent = '📄 ' + label;
+    a.title = label;
+    grid.appendChild(a);
   });
 }
-
-function populateStrokeCatSelect() {
-  var sel = document.getElementById('stroke-cat-sel');
-  if (!sel || !STROKE_DATA) return;
-  sel.innerHTML = '<option value="">全部分類</option>';
-
-  var topicsPresent = {};
-  STROKE_DATA.guidelines.forEach(function(g) { topicsPresent[g.topic] = true; });
-  var sorted = Object.keys(topicsPresent).sort(function(a, b) {
-    var oa = (STROKE_TOPIC_LABELS[a] || {}).order || 99;
-    var ob = (STROKE_TOPIC_LABELS[b] || {}).order || 99;
-    return oa - ob;
-  });
-  sorted.forEach(function(topic) {
-    var info = STROKE_TOPIC_LABELS[topic] || { label: topic };
-    var opt = document.createElement('option');
-    opt.value = topic;
-    opt.textContent = info.label;
-    sel.appendChild(opt);
-  });
-}
-
-function strokeSelectCatById(topic) {
-  if (!topic) {
-    strokeActiveTopic = '';
-    document.getElementById('stroke-cat-grid').classList.remove('hidden');
-    document.getElementById('stroke-list-wrap').classList.add('hidden');
-    var sel = document.getElementById('stroke-cat-sel');
-    if (sel) sel.value = '';
-    return;
-  }
-  strokeOpenTopic(topic);
-  var sel = document.getElementById('stroke-cat-sel');
-  if (sel) sel.value = topic;
-}
-
-function strokeOpenTopic(topic) {
-  strokeActiveTopic = topic;
-  var sel = document.getElementById('stroke-cat-sel');
-  if (sel) sel.value = topic;
-  document.getElementById('stroke-cat-grid').classList.add('hidden');
-  var wrap = document.getElementById('stroke-list-wrap');
-  wrap.classList.remove('hidden');
-  strokeRender();
-  wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-function strokeSearch(q) {
-  clearTimeout(strokeSearchDebounce);
-  strokeSearchDebounce = setTimeout(function() {
-    strokeSearchQ = q.trim();
-    if (strokeSearchQ.length >= 2) {
-      saveSearchHistory('stroke', strokeSearchQ);
-    }
-    var grid = document.getElementById('stroke-cat-grid');
-    var sel = document.getElementById('stroke-cat-sel');
-    if (strokeSearchQ) {
-      if (grid) grid.classList.add('search-overlay-active');
-      if (sel) sel.classList.add('search-overlay-active');
-      if (!strokeActiveTopic) {
-        if (grid) grid.classList.add('hidden');
-        document.getElementById('stroke-list-wrap').classList.remove('hidden');
-      }
-    } else {
-      if (grid) grid.classList.remove('search-overlay-active', 'hidden');
-      if (sel) sel.classList.remove('search-overlay-active');
-      if (!strokeActiveTopic) {
-        document.getElementById('stroke-list-wrap').classList.add('hidden');
-        return;
-      }
-    }
-    strokeRender();
-  }, 200);
-}
-
-function strokeRender() {
-  if (!STROKE_DATA) return;
-  var q = strokeSearchQ.toLowerCase();
-  var topic = strokeActiveTopic;
-
-  var filtered = STROKE_DATA.guidelines.filter(function(g) {
-    if (topic && g.topic !== topic) return false;
-    if (q) {
-      var titleMatch = (g.title || g.title_en || '').toLowerCase().indexOf(q) >= 0;
-      var topicMatch = (g.topic || '').toLowerCase().indexOf(q) >= 0;
-      var sectionMatch = sectionMatchesQuery(g.sections || [], q);
-      if (!titleMatch && !topicMatch && !sectionMatch) return false;
-    }
-    return true;
-  });
-
-  var headerEl = document.getElementById('stroke-list-header');
-  var entriesEl = document.getElementById('stroke-entries');
-  var noResEl = document.getElementById('stroke-no-results');
-
-  if (headerEl) {
-    headerEl.innerHTML = '';
-    var titleEl = document.createElement('div');
-    titleEl.className = 'drug-list-title';
-    if (topic) {
-      var info = STROKE_TOPIC_LABELS[topic] || { label: topic };
-      titleEl.textContent = info.label;
-    } else if (q) {
-      titleEl.textContent = '🔍 全指引搜尋：「' + q + '」';
-    } else {
-      titleEl.textContent = '全部指引';
-    }
-    headerEl.appendChild(titleEl);
-
-    if (topic) {
-      var backBtn = document.createElement('button');
-      backBtn.className = 'btn-drug-back';
-      backBtn.textContent = '← 返回分類';
-      backBtn.addEventListener('click', strokeBackToGrid);
-      headerEl.appendChild(backBtn);
-    }
-
-    var badge = document.createElement('span');
-    badge.className = 'drug-count-badge';
-    badge.textContent = filtered.length + ' 篇';
-    headerEl.appendChild(badge);
-  }
-
-  if (filtered.length === 0) {
-    if (entriesEl) entriesEl.innerHTML = '';
-    if (noResEl) noResEl.classList.remove('hidden');
-    return;
-  }
-  if (noResEl) noResEl.classList.add('hidden');
-
-  if (entriesEl) {
-    entriesEl.innerHTML = '';
-    filtered.forEach(function(g) {
-      entriesEl.appendChild(buildStrokeCard(g, q));
-    });
-  }
-}
-
-function sectionMatchesQuery(sections, q) {
-  return sections.some(function(s) {
-    return (s.heading || '').toLowerCase().indexOf(q) >= 0 ||
-           (s.content || '').toLowerCase().indexOf(q) >= 0 ||
-           sectionMatchesQuery(s.subsections || [], q);
-  });
-}
-
-function strokeBackToGrid() {
-  strokeActiveTopic = '';
-  strokeSearchQ = '';
-  var inp = document.getElementById('stroke-search');
-  if (inp) inp.value = '';
-  var sel = document.getElementById('stroke-cat-sel');
-  if (sel) sel.value = '';
-  var grid = document.getElementById('stroke-cat-grid');
-  if (grid) grid.classList.remove('hidden', 'search-overlay-active');
-  document.getElementById('stroke-list-wrap').classList.add('hidden');
-}
-
-// ---------------------------------------------------------------------------
-// Simple Markdown renderer for stroke content
-// ---------------------------------------------------------------------------
-function renderMarkdown(text) {
-  if (!text) return '';
-  var lines = text.split('\n');
-  var html = '';
-  var inList = false;
-  var inTable = false;
-  var tableHeaderSep = false;
-
-  function closeList() { if (inList) { html += '</ul>'; inList = false; } }
-  function closeTable() { if (inTable) { html += '</tbody></table>'; inTable = false; tableHeaderSep = false; } }
-
-  for (var i = 0; i < lines.length; i++) {
-    var line = lines[i];
-
-    // Markdown table row: starts and ends with |
-    var isTableRow = /^\s*\|/.test(line) && /\|\s*$/.test(line);
-    var isSepRow = isTableRow && /^\s*\|[\s|:-]+\|\s*$/.test(line);
-
-    if (isTableRow) {
-      closeList();
-      if (!inTable) {
-        html += '<div class="stroke-md-table-wrap"><table class="stroke-md-table"><thead><tr>';
-        inTable = true;
-        tableHeaderSep = false;
-        // Parse header cells
-        var cells = line.split('|').slice(1, -1);
-        cells.forEach(function(c) { html += '<th>' + mdInline(c.trim()) + '</th>'; });
-        html += '</tr></thead><tbody>';
-        continue;
-      }
-      if (!tableHeaderSep && isSepRow) {
-        // This is the header separator row (| --- | --- |) - skip it
-        tableHeaderSep = true;
-        continue;
-      }
-      // Data row
-      var cells = line.split('|').slice(1, -1);
-      html += '<tr>';
-      cells.forEach(function(c) { html += '<td>' + mdInline(c.trim()) + '</td>'; });
-      html += '</tr>';
-      continue;
-    }
-
-    closeTable();
-
-    // Horizontal rule
-    if (/^[-=]{3,}$/.test(line.trim())) {
-      closeList();
-      html += '<hr class="stroke-md-hr">';
-      continue;
-    }
-    // Headings
-    var hm = line.match(/^(#{1,4})\s+(.*)/);
-    if (hm) {
-      closeList();
-      var lvl = Math.min(hm[1].length + 2, 6);
-      html += '<h' + lvl + ' class="stroke-md-h' + lvl + '">' + mdInline(hm[2]) + '</h' + lvl + '>';
-      continue;
-    }
-    // Bullet list
-    var bm = line.match(/^[\s]*[-•]\s+(.*)/);
-    if (bm) {
-      if (!inList) { html += '<ul class="stroke-md-list">'; inList = true; }
-      html += '<li>' + mdInline(bm[1]) + '</li>';
-      continue;
-    }
-    // Numbered list
-    var nm = line.match(/^[\s]*(\d+)[.)]\s+(.*)/);
-    if (nm) {
-      if (!inList) { html += '<ul class="stroke-md-list stroke-md-olist">'; inList = true; }
-      html += '<li>' + mdInline(nm[2]) + '</li>';
-      continue;
-    }
-    closeList();
-    // Blank line
-    if (line.trim() === '') {
-      html += '<br>';
-      continue;
-    }
-    // Recommendation class (Class I / Class II / Level A etc.)
-    var recm = line.match(/^(Class\s+[IVX]+[ab]*|Level\s+[A-C][-\w]*|建議等級|證據等級|推薦等級)\s*[：:](.*)/i);
-    if (recm) {
-      html += '<div class="stroke-rec-line"><span class="stroke-rec-badge">' + escHtml(recm[1]) + '</span>' + mdInline(recm[2]) + '</div>';
-      continue;
-    }
-    // Normal paragraph
-    html += '<p class="stroke-md-p">' + mdInline(line) + '</p>';
-  }
-  closeList();
-  closeTable();
-  return html;
-}
-
-function mdInline(text) {
-  if (!text) return '';
-  // Bold
-  text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  text = text.replace(/__(.*?)__/g, '<strong>$1</strong>');
-  // Italic
-  text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
-  text = text.replace(/_(.*?)_/g, '<em>$1</em>');
-  // Inline code
-  text = text.replace(/`(.*?)`/g, '<code>$1</code>');
-  // References [1], [2,3]
-  text = text.replace(/\[(\d+(?:,\s*\d+)*)\]/g, function(m, nums) {
-    return '<sup class="stroke-ref-num">' + escHtml(m) + '</sup>';
-  });
-  // HTML escape remaining (but keep existing HTML)
-  return text;
-}
-
-function buildStrokeCard(g, q) {
-  var card = document.createElement('div');
-  card.className = 'drug-entry stroke-guideline-card';
-
-  var header = document.createElement('div');
-  header.className = 'drug-entry-header';
-
-  var yearBadge = document.createElement('span');
-  yearBadge.className = 'drug-entry-id stroke-year-badge';
-  yearBadge.textContent = g.year;
-
-  var langBadge = document.createElement('span');
-  langBadge.className = 'stroke-lang-badge';
-  langBadge.textContent = g.lang === 'zh' ? '中文' : 'EN';
-
-  var titleSpan = document.createElement('span');
-  titleSpan.className = 'drug-entry-name';
-  titleSpan.textContent = g.title || g.title_en || g.filename;
-
-  // PDF download link
-  var pdfId = g.id || g.filename.replace('.pdf', '');
-  var pdfName = g.filename && g.filename.endsWith('.pdf') ? g.filename : pdfId + '.pdf';
-  var pdfLink = document.createElement('a');
-  pdfLink.className = 'stroke-pdf-btn';
-  pdfLink.href = BASE + 'data/stroke_pdfs/' + encodeURIComponent(pdfName);
-  pdfLink.target = '_blank';
-  pdfLink.rel = 'noopener';
-  pdfLink.title = '下載 PDF';
-  pdfLink.textContent = '📄 PDF';
-  pdfLink.addEventListener('click', function(e) { e.stopPropagation(); });
-
-  var chevron = document.createElement('span');
-  chevron.className = 'drug-entry-chevron';
-  chevron.textContent = '▶';
-
-  header.appendChild(yearBadge);
-  header.appendChild(langBadge);
-  header.appendChild(titleSpan);
-  header.appendChild(pdfLink);
-  header.appendChild(chevron);
-  header.addEventListener('click', function() { card.classList.toggle('open'); });
-
-  var body = document.createElement('div');
-  body.className = 'drug-entry-content stroke-card-body';
-
-  // --- GARBLED NOTICE ---
-  if (g.garbled) {
-    var garbledNotice = document.createElement('div');
-    garbledNotice.className = 'stroke-garbled-notice';
-    garbledNotice.innerHTML = '⚠️ 此 PDF 使用非標準字體編碼，文字內容無法正常提取（亂碼）。' +
-      '請點擊上方「📄 PDF」按鈕下載原始 PDF 查閱完整內容。';
-    body.appendChild(garbledNotice);
-  }
-
-  // --- AUTHORS / AFFILIATIONS BLOCK at top ---
-  if (g.authors && g.authors.length > 0) {
-    var authorsBlock = document.createElement('div');
-    authorsBlock.className = 'stroke-authors-block';
-
-    var authorsTitle = document.createElement('div');
-    authorsTitle.className = 'stroke-authors-title';
-    authorsTitle.textContent = '作者群';
-    authorsBlock.appendChild(authorsTitle);
-
-    var authorsList = document.createElement('div');
-    authorsList.className = 'stroke-authors-list';
-    authorsList.textContent = g.authors.join('、');
-    authorsBlock.appendChild(authorsList);
-
-    if (g.affiliations && g.affiliations.length > 0) {
-      var affilList = document.createElement('div');
-      affilList.className = 'stroke-affiliations-list';
-      g.affiliations.forEach(function(aff) {
-        var affilItem = document.createElement('div');
-        affilItem.className = 'stroke-affil-item';
-        affilItem.textContent = aff;
-        affilList.appendChild(affilItem);
-      });
-      authorsBlock.appendChild(affilList);
-    }
-    body.appendChild(authorsBlock);
-  }
-
-  // Sections tree
-  var refsMap = {};
-  (g.references || []).forEach(function(r) { refsMap[String(r.num)] = r.text; });
-
-  var sectionsToShow = q ? filterSectionsForQuery(g.sections || [], q) : (g.sections || []);
-  sectionsToShow.forEach(function(s) {
-    if (!s.heading && !s.content) return;
-    body.appendChild(buildStrokeSection(s, refsMap, q, 1));
-  });
-
-  // --- REFERENCES at bottom ---
-  var refs = g.references || [];
-  if (refs.length > 0) {
-    var refsToggle = document.createElement('div');
-    refsToggle.className = 'stroke-refs-toggle';
-    refsToggle.textContent = '📚 參考文獻 (' + refs.length + ')';
-    var refsList = document.createElement('div');
-    refsList.className = 'stroke-refs-list';
-    refs.forEach(function(r) {
-      var item = document.createElement('div');
-      item.className = 'stroke-ref-item';
-      item.textContent = r.num + '. ' + (r.text || '');
-      refsList.appendChild(item);
-    });
-    refsToggle.addEventListener('click', function() {
-      refsList.classList.toggle('open');
-      refsToggle.textContent = refsList.classList.contains('open')
-        ? '📚 隱藏參考文獻' : '📚 參考文獻 (' + refs.length + ')';
-    });
-    body.appendChild(refsToggle);
-    body.appendChild(refsList);
-  }
-
-  card.appendChild(header);
-  card.appendChild(body);
-  if (q) card.classList.add('open');
-  return card;
-}
-
-function filterSectionsForQuery(sections, q) {
-  return sections.filter(function(s) {
-    return (s.heading || '').toLowerCase().indexOf(q) >= 0 ||
-           (s.content || '').toLowerCase().indexOf(q) >= 0 ||
-           filterSectionsForQuery(s.subsections || [], q).length > 0;
-  });
-}
-
-function buildStrokeSection(s, refsMap, q, level) {
-  var cls = level === 1 ? 'stroke-section' : level === 2 ? 'stroke-subsection' : 'stroke-sub3';
-  var hdrCls = level === 1 ? 'stroke-section-header' : level === 2 ? 'stroke-subsection-header' : 'stroke-sub3-header';
-  var bodyCls = level === 1 ? 'stroke-section-body' : level === 2 ? 'stroke-subsection-body' : 'stroke-sub3-body';
-
-  var sec = document.createElement('div');
-  sec.className = cls;
-
-  var hdr = document.createElement('div');
-  hdr.className = hdrCls;
-
-  var chevron = document.createElement('span');
-  chevron.className = 'stroke-section-chevron';
-  chevron.textContent = '▶';
-
-  var titleSpan = document.createElement('span');
-  titleSpan.textContent = s.heading || '';
-
-  var pageSpan = document.createElement('span');
-  pageSpan.className = 'stroke-section-page';
-  if (s.page) pageSpan.textContent = 'p.' + s.page;
-
-  hdr.appendChild(chevron);
-  hdr.appendChild(titleSpan);
-  hdr.appendChild(pageSpan);
-  hdr.addEventListener('click', function() { sec.classList.toggle('open'); });
-
-  var body = document.createElement('div');
-  body.className = bodyCls;
-
-  if (s.content) {
-    var contentEl = document.createElement('div');
-    contentEl.className = 'stroke-section-content stroke-md-content';
-    // Render as Markdown HTML
-    contentEl.innerHTML = renderMarkdown(s.content);
-    // Re-attach ref tooltips
-    contentEl.querySelectorAll('.stroke-ref-num').forEach(function(refEl) {
-      var m = refEl.textContent.match(/\[(\d+(?:,\s*\d+)*)\]/);
-      if (m) {
-        var nums = m[1].split(/,\s*/);
-        nums.forEach(function(n) {
-          var refText = refsMap[n.trim()];
-          if (refText) {
-            refEl.addEventListener('mouseenter', function(e) { showStrokeRefTooltip(e, refText); });
-            refEl.addEventListener('mouseleave', hideStrokeRefTooltip);
-          }
-        });
-      }
-    });
-    body.appendChild(contentEl);
-  }
-
-  (s.subsections || []).forEach(function(ss) {
-    if (!ss.heading && !ss.content) return;
-    body.appendChild(buildStrokeSection(ss, refsMap, q, level + 1));
-  });
-
-  sec.appendChild(hdr);
-  sec.appendChild(body);
-  if (q) sec.classList.add('open');
-  return sec;
-}
-
-function appendContentWithRefs(el, content, refNums, refsMap) {
-  var parts = content.split(/(\[\d+(?:,\s*\d+)*\])/g);
-  parts.forEach(function(part) {
-    var m = part.match(/^\[(\d+(?:,\s*\d+)*)\]$/);
-    if (m) {
-      var nums = m[1].split(/,\s*/);
-      nums.forEach(function(n) {
-        var refEl = document.createElement('sup');
-        refEl.className = 'stroke-ref-num';
-        refEl.textContent = '[' + n + ']';
-        var refText = refsMap[n.trim()];
-        if (refText) {
-          refEl.addEventListener('mouseenter', function(e) { showStrokeRefTooltip(e, refText); });
-          refEl.addEventListener('mouseleave', hideStrokeRefTooltip);
-        }
-        el.appendChild(refEl);
-      });
-    } else if (part) {
-      el.appendChild(document.createTextNode(part));
-    }
-  });
-}
-
-function showStrokeRefTooltip(e, text) {
-  var tip = document.getElementById('stroke-ref-tooltip');
-  if (!tip) return;
-  tip.textContent = text;
-  tip.classList.remove('hidden');
-  positionStrokeTooltip(e, tip);
-}
-
-function positionStrokeTooltip(e, tip) {
-  var x = e.clientX + 14;
-  var y = e.clientY - 10;
-  var w = tip.offsetWidth || 300;
-  var h = tip.offsetHeight || 80;
-  if (x + w > window.innerWidth - 10) x = e.clientX - w - 10;
-  if (y + h > window.innerHeight - 10) y = e.clientY - h - 5;
-  tip.style.left = Math.max(5, x) + 'px';
-  tip.style.top = Math.max(5, y) + 'px';
-}
-
-function hideStrokeRefTooltip() {
-  var tip = document.getElementById('stroke-ref-tooltip');
-  if (tip) tip.classList.add('hidden');
-}
-
-document.addEventListener('mousemove', function(e) {
-  var tip = document.getElementById('stroke-ref-tooltip');
-  if (tip && !tip.classList.contains('hidden')) positionStrokeTooltip(e, tip);
-});
 
 // ===========================================================================
 // Special Materials Tab (特材給付)
