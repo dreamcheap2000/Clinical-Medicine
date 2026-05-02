@@ -1155,37 +1155,54 @@ function eduSetSearchMode(mode) {
 // FastSR-like SOAP scoring
 // ---------------------------------------------------------------------------
 
-// Extract plain text from HTML string using DOMParser (safe, avoids incomplete regex stripping)
-function eduExtractText(html) {
-  try {
-    var doc = new DOMParser().parseFromString(html, 'text/html');
-    return doc.body.textContent || '';
-  } catch (e) {
-    return html;
-  }
-}
+// Allowed HTML tags and safe attributes for eduSetSafeHtml whitelist renderer
+var EDU_ALLOWED_TAGS = new Set(['p','br','strong','b','em','i','u','h1','h2','h3','h4',
+  'ul','ol','li','table','thead','tbody','tr','th','td','div','span','a','figure',
+  'figcaption','blockquote','hr','sup','sub']);
 
-// Set HTML content safely: parse with DOMParser, strip dangerous elements/attributes, then import nodes
+// Safe HTML renderer: reconstructs DOM from scratch using only whitelisted tags.
+// Never copies existing nodes from user-controlled sources — always creates new elements.
 function eduSetSafeHtml(container, html) {
-  try {
-    var doc = new DOMParser().parseFromString(html, 'text/html');
-    // Remove dangerous elements
-    doc.querySelectorAll('script,style,iframe,object,embed,form').forEach(function(el) { el.remove(); });
-    // Strip event handlers and javascript: hrefs
-    doc.querySelectorAll('*').forEach(function(el) {
-      [...el.attributes].forEach(function(attr) {
-        if (attr.name.startsWith('on') || (attr.name === 'href' && /^javascript:/i.test(attr.value))) {
-          el.removeAttribute(attr.name);
+  // Use a <template> element to parse HTML into an inert DocumentFragment
+  // (template content has no live document context; scripts don't execute)
+  var tpl = document.createElement('template');
+  tpl.innerHTML = String(html);
+
+  function cloneSafe(src, dest) {
+    src.childNodes.forEach(function(child) {
+      if (child.nodeType === 3 /* TEXT_NODE */) {
+        dest.appendChild(document.createTextNode(child.nodeValue));
+      } else if (child.nodeType === 1 /* ELEMENT_NODE */) {
+        var tag = child.tagName.toLowerCase();
+        if (!EDU_ALLOWED_TAGS.has(tag)) {
+          // Non-whitelisted element: recurse into children only
+          cloneSafe(child, dest);
+          return;
         }
-      });
+        var newEl = document.createElement(tag);
+        // Allow only safe attributes
+        child.getAttributeNames().forEach(function(name) {
+          if (name === 'href') {
+            var val = child.getAttribute('href') || '';
+            if (/^https?:\/\//i.test(val)) {
+              newEl.setAttribute('href', val);
+              newEl.setAttribute('target', '_blank');
+              newEl.setAttribute('rel', 'noopener noreferrer');
+            }
+          } else if (name === 'class' || name === 'style') {
+            // Allow class/style for formatting
+            newEl.setAttribute(name, child.getAttribute(name));
+          }
+          // All other attributes (on*, src with data:, etc.) are dropped
+        });
+        cloneSafe(child, newEl);
+        dest.appendChild(newEl);
+      }
     });
-    container.textContent = '';
-    [...doc.body.childNodes].forEach(function(node) {
-      container.appendChild(document.importNode(node, true));
-    });
-  } catch (e) {
-    container.textContent = eduExtractText(html);
   }
+
+  container.textContent = '';
+  cloneSafe(tpl.content, container);
 }
 
 function eduScoreAll(query) {
@@ -1241,13 +1258,8 @@ function eduScoreEntry(entry, tokens) {
     sectionScores[sec] = Math.round(Math.min(raw * sectionWeights[sec], 100));
   });
 
-  // Version text score (low weight) — extract plain text via DOMParser to avoid incomplete tag stripping
-  var versionText = eduExtractText(Object.values(entry.versions || {}).join(' ')).toLowerCase();
-  var vScore = 0;
-  tokens.forEach(function(t) { if (versionText.includes(t)) vScore += 0.8; });
-
-  var totalRaw = titleScore + tagScore + Object.values(sectionScores).reduce((a, b) => a + b, 0) + Math.min(vScore, 15);
-  var maxPossible = Math.max(tokens.length * (10 + 6 + 3 * 4 * sectionWeights['A'] + 15), 1);
+  var totalRaw = titleScore + tagScore + Object.values(sectionScores).reduce((a, b) => a + b, 0);
+  var maxPossible = Math.max(tokens.length * (10 + 6 + 3 * 4 * sectionWeights['A']), 1);
   var score = Math.min(Math.round((totalRaw / maxPossible) * 100 * 2.5), 100);
 
   // Per-section percentages for display
