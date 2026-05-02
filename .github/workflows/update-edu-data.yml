@@ -1,0 +1,38 @@
+name: Update Patient Education Data
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Patient education/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-edu-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install mammoth
+
+      - name: Generate patient_edu_data.json
+        run: python3 .github/scripts/build_edu_data.py
+
+      - name: Commit updated edu data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add PHCEP/data/edu/patient_edu_data.json
+          git diff --staged --quiet || git commit -m "chore: auto-update patient_edu_data.json from Patient education folder [skip ci]"
+          git push
