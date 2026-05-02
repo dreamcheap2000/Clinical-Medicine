@@ -565,26 +565,16 @@ function buildPcsSearchResults(q) {
 
 // ---------------------------------------------------------------------------
 // Keyboard Shortcuts
-// Shift+1…7 → jump to main tabs
-// Tabs: edu(1), drug(2), ref(3), cm(4), nhi(5), specmat(6), ebm(7)
+// Alt/Option+1…8 → jump to main tabs
+// Tabs: edu(1), drug(2), ref(3), cm(4), nhi(5), specmat(6), ebm(7), workflow(8)
 // Option/Alt + ↑/↓ → page up / page down
 // Cmd/Ctrl + ↑/↓  → scroll to top / bottom of page
 // ---------------------------------------------------------------------------
 (function() {
-  var TAB_SHORTCUTS = { '1': 'edu', '2': 'drug', '3': 'ref', '4': 'cm', '5': 'nhi', '6': 'specmat', '7': 'ebm' };
+  var TAB_SHORTCUTS = { '1': 'edu', '2': 'drug', '3': 'ref', '4': 'cm', '5': 'nhi', '6': 'specmat', '7': 'ebm', '8': 'workflow' };
   document.addEventListener('keydown', function(e) {
     var tag = (document.activeElement || {}).tagName;
     var inInput = (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
-
-    // Tab switching: Shift+1…7
-    if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
-      var key = e.key;
-      if (TAB_SHORTCUTS[key] && !inInput) {
-        e.preventDefault();
-        switchTab(TAB_SHORTCUTS[key]);
-      }
-      return;
-    }
 
     // Page scroll shortcuts (ignore when typing)
     if (inInput) return;
@@ -592,6 +582,16 @@ function buildPcsSearchResults(q) {
     var isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
     var isAlt = e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey;
     var isCmdCtrl = (isMac ? e.metaKey : e.ctrlKey) && !e.altKey && !e.shiftKey;
+
+    // Tab switching: Alt/Option + 1…8
+    if (isAlt) {
+      var digit = e.code && e.code.startsWith('Digit') ? e.code.slice(5) : null;
+      if (digit && TAB_SHORTCUTS[digit]) {
+        e.preventDefault();
+        switchTab(TAB_SHORTCUTS[digit]);
+        return;
+      }
+    }
 
     // Option/Alt + ↓ → page down
     if (isAlt && e.key === 'ArrowDown') {
@@ -2149,13 +2149,14 @@ function renderSettingsTab() {
     <div class="settings-group">
       <div class="settings-group-title">⌨️ 快速鍵說明</div>
       <div class="settings-shortcuts">
-        <div class="shortcut-row"><kbd>Shift+1</kbd> 衛教資源</div>
-        <div class="shortcut-row"><kbd>Shift+2</kbd> 藥品給付規定</div>
-        <div class="shortcut-row"><kbd>Shift+3</kbd> 參考資料</div>
-        <div class="shortcut-row"><kbd>Shift+4</kbd> ICD-10-CM</div>
-        <div class="shortcut-row"><kbd>Shift+5</kbd> NHI支付標準</div>
-        <div class="shortcut-row"><kbd>Shift+6</kbd> 特材給付</div>
-        <div class="shortcut-row"><kbd>Shift+7</kbd> EBM筆記</div>
+        <div class="shortcut-row"><kbd>Alt+1</kbd> 衛教資源</div>
+        <div class="shortcut-row"><kbd>Alt+2</kbd> 藥品給付規定</div>
+        <div class="shortcut-row"><kbd>Alt+3</kbd> 參考資料</div>
+        <div class="shortcut-row"><kbd>Alt+4</kbd> ICD-10-CM</div>
+        <div class="shortcut-row"><kbd>Alt+5</kbd> NHI支付標準</div>
+        <div class="shortcut-row"><kbd>Alt+6</kbd> 特材給付</div>
+        <div class="shortcut-row"><kbd>Alt+7</kbd> EBM筆記</div>
+        <div class="shortcut-row"><kbd>Alt+8</kbd> 治療流程</div>
         <div class="shortcut-row"><kbd class="key-combo">Option/Alt + ↑</kbd> 向上翻頁</div>
         <div class="shortcut-row"><kbd class="key-combo">Option/Alt + ↓</kbd> 向下翻頁</div>
         <div class="shortcut-row"><kbd class="key-combo">Cmd/Ctrl + ↑</kbd> 回到頁頂</div>
