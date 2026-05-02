@@ -39,7 +39,6 @@ async function boot() {
     initEduTab();
     initNhiTab();
     initDrugTab();
-    initStrokeTab();
     initSpecmatTab();
     // Load ICD-9 mapping in background
     fetchJson(BASE + 'data/icd9_mapping.json').then(d => { ICD9_MAP = d; }).catch(() => {});
@@ -103,7 +102,6 @@ function switchTab(name) {
   if (name === 'history') renderHistory();
   if (name === 'nhi') nhiOnTabShow();
   if (name === 'drug') drugOnTabShow();
-  if (name === 'stroke') strokeOnTabShow();
   if (name === 'specmat') specmatOnTabShow();
   if (name === 'ebm') renderEbmInlineHistory();
   if (name === 'soap') renderSoapInlineHistory();
@@ -567,18 +565,18 @@ function buildPcsSearchResults(q) {
 
 // ---------------------------------------------------------------------------
 // Keyboard Shortcuts
-// Shift+1…6 → jump to main tabs
-// Tabs: cm(1), nhi(2), drug(3), pcs(4), stroke(5), specmat(6)
+// Shift+1…7 → jump to main tabs
+// Tabs: edu(1), drug(2), ref(3), cm(4), nhi(5), specmat(6), ebm(7)
 // Option/Alt + ↑/↓ → page up / page down
 // Cmd/Ctrl + ↑/↓  → scroll to top / bottom of page
 // ---------------------------------------------------------------------------
 (function() {
-  var TAB_SHORTCUTS = { '1': 'cm', '2': 'nhi', '3': 'drug', '4': 'pcs', '5': 'stroke', '6': 'specmat' };
+  var TAB_SHORTCUTS = { '1': 'edu', '2': 'drug', '3': 'ref', '4': 'cm', '5': 'nhi', '6': 'specmat', '7': 'ebm' };
   document.addEventListener('keydown', function(e) {
     var tag = (document.activeElement || {}).tagName;
     var inInput = (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
 
-    // Tab switching: Shift+1…6
+    // Tab switching: Shift+1…7
     if (e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
       var key = e.key;
       if (TAB_SHORTCUTS[key] && !inInput) {
@@ -1455,6 +1453,9 @@ function applySearchHistory(type, query) {
   } else if (type === 'cm') {
     var inp = document.getElementById('cm-search');
     if (inp) { inp.value = query; cmSearch(query); }
+  } else if (type === 'specmat') {
+    var inp = document.getElementById('specmat-search');
+    if (inp) { inp.value = query; specmatSearch(query); }
   }
   hideSearchHistory(type, 0);
 }
@@ -1612,14 +1613,12 @@ function drugSearch(q) {
     saveSearchHistory('drug', drugSearchQ);
   }
   var grid = document.getElementById('drug-cat-grid');
-  var sel = document.getElementById('drug-cat-sel');
   var tagFilter = document.getElementById('drug-tag-filter');
   var searchResults = document.getElementById('drug-search-results');
   var listWrap = document.getElementById('drug-list-wrap');
 
   if (drugSearchQ) {
     if (grid) grid.classList.add('search-overlay-active');
-    if (sel) sel.classList.add('search-overlay-active');
     if (tagFilter) tagFilter.classList.add('search-overlay-active');
     if (!drugActiveCat) {
       // Global search: show results ABOVE the category grid
@@ -1636,7 +1635,6 @@ function drugSearch(q) {
     if (listWrap) listWrap.classList.remove('hidden');
   } else {
     if (grid) grid.classList.remove('search-overlay-active', 'hidden');
-    if (sel) sel.classList.remove('search-overlay-active');
     if (tagFilter) tagFilter.classList.remove('search-overlay-active');
     if (searchResults) searchResults.classList.add('hidden');
     if (!drugActiveCat) {
@@ -1852,7 +1850,7 @@ function drugBackToGrid() {
   var inp = document.getElementById('drug-search');
   if (inp) inp.value = '';
   var sel = document.getElementById('drug-cat-sel');
-  if (sel) { sel.value = ''; sel.classList.remove('search-overlay-active'); }
+  if (sel) sel.value = '';
   var grid = document.getElementById('drug-cat-grid');
   if (grid) grid.classList.remove('hidden', 'search-overlay-active');
   var tagFilter = document.getElementById('drug-tag-filter');
@@ -1862,49 +1860,6 @@ function drugBackToGrid() {
   document.getElementById('drug-list-wrap').classList.add('hidden');
 }
 // ===========================================================================
-
-// ===========================================================================
-// Stroke Guidelines Tab — simple PDF link buttons
-// ===========================================================================
-var STROKE_DATA = null;
-
-async function initStrokeTab() {
-  if (!STROKE_DATA) {
-    try {
-      STROKE_DATA = await fetchJson(BASE + 'data/stroke_guidelines.json');
-    } catch (e) {
-      console.error('Stroke guidelines load failed:', e);
-      var grid = document.getElementById('stroke-pdf-grid');
-      if (grid) grid.innerHTML = '<p style="padding:20px;color:var(--red)">⚠️ 無法載入腦中風指引資料：' + escHtml(String(e)) + '</p>';
-      return;
-    }
-  }
-  renderStrokePdfGrid();
-}
-
-function strokeOnTabShow() {
-  if (!STROKE_DATA) {
-    initStrokeTab();
-  }
-}
-
-function renderStrokePdfGrid() {
-  var grid = document.getElementById('stroke-pdf-grid');
-  if (!grid || !STROKE_DATA) return;
-  grid.innerHTML = '';
-  (STROKE_DATA.guidelines || []).forEach(function(g) {
-    var pdfName = g.filename && g.filename.endsWith('.pdf') ? g.filename : (g.id || g.filename) + '.pdf';
-    var label = g.title || g.title_en || pdfName;
-    var a = document.createElement('a');
-    a.className = 'stroke-pdf-link-btn';
-    a.href = BASE + 'data/stroke_pdfs/' + encodeURIComponent(pdfName);
-    a.target = '_blank';
-    a.rel = 'noopener';
-    a.textContent = '📄 ' + label;
-    a.title = label;
-    grid.appendChild(a);
-  });
-}
 
 // ===========================================================================
 // Special Materials Tab (特材給付)
@@ -2041,6 +1996,9 @@ function specmatBackToGrid() {
 
 function specmatSearch(q) {
   specmatSearchQ = q.trim();
+  if (specmatSearchQ.length >= 2) {
+    saveSearchHistory('specmat', specmatSearchQ);
+  }
   if (!specmatData) return;
   var grid = document.getElementById('specmat-cat-grid');
   var searchResults = document.getElementById('specmat-search-results');
@@ -2112,10 +2070,10 @@ function applySettings() {
   pcsBtns.forEach(function(btn) {
     btn.style.display = settings.showPcs ? '' : 'none';
   });
-  // If PCS tab was active and now hidden, switch to CM
+  // If PCS tab was active and now hidden, switch to edu
   var activePcsTab = document.querySelector('[data-tab="pcs"].active');
   if (!settings.showPcs && activePcsTab) {
-    switchTab('cm');
+    switchTab('edu');
   }
 
   // NHI points column visibility
@@ -2191,12 +2149,13 @@ function renderSettingsTab() {
     <div class="settings-group">
       <div class="settings-group-title">⌨️ 快速鍵說明</div>
       <div class="settings-shortcuts">
-        <div class="shortcut-row"><kbd>Shift+1</kbd> ICD-10-CM</div>
-        <div class="shortcut-row"><kbd>Shift+2</kbd> NHI支付標準</div>
-        <div class="shortcut-row"><kbd>Shift+3</kbd> 藥品給付規定</div>
-        <div class="shortcut-row"><kbd>Shift+4</kbd> ICD-10-PCS（需先啟用）</div>
-        <div class="shortcut-row"><kbd>Shift+5</kbd> 治療指引</div>
+        <div class="shortcut-row"><kbd>Shift+1</kbd> 衛教資源</div>
+        <div class="shortcut-row"><kbd>Shift+2</kbd> 藥品給付規定</div>
+        <div class="shortcut-row"><kbd>Shift+3</kbd> 參考資料</div>
+        <div class="shortcut-row"><kbd>Shift+4</kbd> ICD-10-CM</div>
+        <div class="shortcut-row"><kbd>Shift+5</kbd> NHI支付標準</div>
         <div class="shortcut-row"><kbd>Shift+6</kbd> 特材給付</div>
+        <div class="shortcut-row"><kbd>Shift+7</kbd> EBM筆記</div>
         <div class="shortcut-row"><kbd class="key-combo">Option/Alt + ↑</kbd> 向上翻頁</div>
         <div class="shortcut-row"><kbd class="key-combo">Option/Alt + ↓</kbd> 向下翻頁</div>
         <div class="shortcut-row"><kbd class="key-combo">Cmd/Ctrl + ↑</kbd> 回到頁頂</div>

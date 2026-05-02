@@ -43,21 +43,21 @@
 
   <!-- Tab bar -->
   <nav class="tab-bar">
-    <button class="tab-btn active" data-tab="cm" onclick="switchTab('cm')">ICD-10-CM (診斷)</button>
-    <button class="tab-btn" data-tab="nhi" onclick="switchTab('nhi')">💰 NHI支付標準</button>
+    <button class="tab-btn active" data-tab="edu" onclick="switchTab('edu')">📚 衛教資源</button>
     <button class="tab-btn" data-tab="drug" onclick="switchTab('drug')">💊 藥品給付規定</button>
+    <button class="tab-btn" data-tab="ref" onclick="switchTab('ref')">📖 參考資料</button>
+    <button class="tab-btn" data-tab="cm" onclick="switchTab('cm')">ICD-10-CM (診斷)</button>
+    <button class="tab-btn" data-tab="nhi" onclick="switchTab('nhi')">💰 NHI支付標準</button>
     <button class="tab-btn" data-tab="pcs" onclick="switchTab('pcs')">ICD-10-PCS (處置)</button>
-    <button class="tab-btn" data-tab="stroke" onclick="switchTab('stroke')">🧠 治療指引</button>
     <button class="tab-btn" data-tab="specmat" onclick="switchTab('specmat')">🔩 特材給付</button>
     <button class="tab-btn" data-tab="ebm" onclick="switchTab('ebm')">📝 EBM筆記</button>
     <button class="tab-btn" data-tab="soap" onclick="switchTab('soap')">🏥 SOAP病歷</button>
-    <button class="tab-btn" data-tab="edu" onclick="switchTab('edu')">📚 衛教資源</button>
     <button class="tab-btn" data-tab="history" onclick="switchTab('history')">🗂️ 歷史記錄</button>
     <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')">⚙️ 設定</button>
   </nav>
 
   <!-- CM Tab -->
-  <div id="tab-cm" class="tab-content active">
+  <div id="tab-cm" class="tab-content">
     <div class="section-header">
       <h2>ICD-10-CM 2023 中文版 — 診斷分類</h2>
       <p class="section-desc">依醫師專科相關性分類，相關領域顯示完整資訊，其他領域以精簡模式儲存</p>
@@ -66,9 +66,17 @@
       <div class="drug-search-wrap">
         <input id="cm-search" type="text" class="drug-search-input"
                placeholder="搜尋 ICD-10-CM 代碼或名稱（中英文）…"
-               oninput="cmSearch(this.value)"
-               onfocus="if(!this.value) cmSearch('')"
+               oninput="cmSearch(this.value); if(this.value.trim()) hideSearchHistory('cm',0); else showSearchHistory('cm')"
+               onfocus="if(!this.value.trim()) showSearchHistory('cm'); else cmSearch(this.value)"
+               onblur="hideSearchHistory('cm',200)"
                autocomplete="off" />
+        <div id="cm-search-history" class="search-history-dropdown">
+          <div class="search-history-header">
+            <span>最近搜尋</span>
+            <button class="search-history-clear" onclick="clearSearchHistory('cm')">清除</button>
+          </div>
+          <div id="cm-history-items"></div>
+        </div>
       </div>
       <select id="cm-cat-sel" class="drug-cat-sel" onchange="cmSelectCat(this.value)">
         <option value="">全部分類</option>
@@ -91,9 +99,17 @@
       <div class="nhi-search-wrap">
         <input id="nhi-search" type="text" class="nhi-search-input"
                placeholder="搜尋代碼或名稱（中英文）…"
-               oninput="nhiSearch(this.value)"
-               onfocus="if(!this.value) nhiSearch('')"
+               oninput="nhiSearch(this.value); if(this.value.trim()) hideSearchHistory('nhi',0); else showSearchHistory('nhi')"
+               onfocus="if(!this.value.trim()) showSearchHistory('nhi'); else nhiSearch(this.value)"
+               onblur="hideSearchHistory('nhi',200)"
                autocomplete="off" />
+        <div id="nhi-search-history" class="search-history-dropdown">
+          <div class="search-history-header">
+            <span>最近搜尋</span>
+            <button class="search-history-clear" onclick="clearSearchHistory('nhi')">清除</button>
+          </div>
+          <div id="nhi-history-items"></div>
+        </div>
       </div>
       <select id="nhi-cat-sel" class="nhi-cat-sel" onchange="nhiSelectCat(this.value)">
         <option value="">— 選擇分類 —</option>
@@ -145,9 +161,17 @@
       <div class="drug-search-wrap">
         <input id="drug-search" type="text" class="drug-search-input"
                placeholder="搜尋藥品名稱或給付規定（中英文）…"
-               oninput="drugSearch(this.value)"
-               onfocus="if(!this.value) drugSearch('')"
+               oninput="drugSearch(this.value); if(this.value.trim()) hideSearchHistory('drug',0); else showSearchHistory('drug')"
+               onfocus="if(!this.value.trim()) showSearchHistory('drug'); else drugSearch(this.value)"
+               onblur="hideSearchHistory('drug',200)"
                autocomplete="off" />
+        <div id="drug-search-history" class="search-history-dropdown">
+          <div class="search-history-header">
+            <span>最近搜尋</span>
+            <button class="search-history-clear" onclick="clearSearchHistory('drug')">清除</button>
+          </div>
+          <div id="drug-history-items"></div>
+        </div>
       </div>
       <select id="drug-cat-sel" class="drug-cat-sel" onchange="drugSelectCat(this.value)">
         <option value="">全部分類</option>
@@ -269,8 +293,8 @@
     </div>
   </div>
 
-  <!-- Patient Education Tab -->
-  <div id="tab-edu" class="tab-content">
+  <!-- Patient Education Tab (first, active by default) -->
+  <div id="tab-edu" class="tab-content active">
     <div class="section-header">
       <h2>📚 衛教資源庫</h2>
       <p class="section-desc">
@@ -288,13 +312,50 @@
     </div>
   </div>
 
-  <!-- Stroke Guidelines Tab -->
-  <div id="tab-stroke" class="tab-content">
+  <!-- Reference Tab (參考資料) -->
+  <div id="tab-ref" class="tab-content">
     <div class="section-header">
-      <h2>🧠 腦中風治療指引</h2>
-      <p class="section-desc">台灣腦中風學會歷年治療指引 PDF 文件。點選按鈕即可開啟或下載 PDF。</p>
+      <h2>📖 參考資料</h2>
+      <p class="section-desc">臨床常用參考資源與治療指引連結</p>
     </div>
-    <div id="stroke-pdf-grid" class="stroke-pdf-grid"></div>
+    <div class="ref-links-wrap" style="padding:20px;max-width:800px;margin:0 auto">
+      <h3 style="margin-bottom:12px;color:var(--primary)">🧠 神經科治療指引</h3>
+      <ul class="ref-link-list" style="list-style:none;padding:0;display:flex;flex-direction:column;gap:10px">
+        <li>
+          <a href="http://stroke.ehato.com.tw/guideline/" target="_blank" rel="noopener"
+             style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--text);transition:background .15s">
+            <span style="font-size:1.4rem">🧠</span>
+            <div>
+              <div style="font-weight:600;font-size:1rem">台灣腦中風學會治療指引</div>
+              <div style="font-size:0.82rem;color:var(--muted);margin-top:2px">腦中風及神經血管疾病臨床治療指引（TSOC/TSS Guidelines）</div>
+            </div>
+            <span style="margin-left:auto;color:var(--muted);font-size:0.8rem">↗ 開啟</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://www.nhi.gov.tw/Content_List.aspx?n=5082839B5600C079" target="_blank" rel="noopener"
+             style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--text);transition:background .15s">
+            <span style="font-size:1.4rem">💊</span>
+            <div>
+              <div style="font-weight:600;font-size:1rem">全民健康保險藥品給付規定</div>
+              <div style="font-size:0.82rem;color:var(--muted);margin-top:2px">衛生福利部中央健康保險署 — 最新藥品給付規定全文</div>
+            </div>
+            <span style="margin-left:auto;color:var(--muted);font-size:0.8rem">↗ 開啟</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://twcore.mohw.gov.tw/ig/twcore/" target="_blank" rel="noopener"
+             style="display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:8px;text-decoration:none;color:var(--text);transition:background .15s">
+            <span style="font-size:1.4rem">🔗</span>
+            <div>
+              <div style="font-weight:600;font-size:1rem">TW Core Implementation Guide (FHIR)</div>
+              <div style="font-size:0.82rem;color:var(--muted);margin-top:2px">台灣 FHIR 核心實作指引，含 ICD-10-CM/PCS 代碼系統規範</div>
+            </div>
+            <span style="margin-left:auto;color:var(--muted);font-size:0.8rem">↗ 開啟</span>
+          </a>
+        </li>
+      </ul>
+    </div>
   </div>
 
   <!-- Special Materials Tab -->
@@ -309,8 +370,17 @@
       <div class="drug-search-wrap">
         <input id="specmat-search" type="text" class="drug-search-input"
                placeholder="搜尋特材品名或給付規定…"
-               oninput="specmatSearch(this.value)"
+               oninput="specmatSearch(this.value); if(this.value.trim()) hideSearchHistory('specmat',0); else showSearchHistory('specmat')"
+               onfocus="if(!this.value.trim()) showSearchHistory('specmat'); else specmatSearch(this.value)"
+               onblur="hideSearchHistory('specmat',200)"
                autocomplete="off" />
+        <div id="specmat-search-history" class="search-history-dropdown">
+          <div class="search-history-header">
+            <span>最近搜尋</span>
+            <button class="search-history-clear" onclick="clearSearchHistory('specmat')">清除</button>
+          </div>
+          <div id="specmat-history-items"></div>
+        </div>
       </div>
       <select id="specmat-cat-sel" class="drug-cat-sel" onchange="specmatSelectCat(this.value)">
         <option value="">全部分類</option>
