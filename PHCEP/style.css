@@ -2083,6 +2083,33 @@ select.search-overlay-active {
 }
 .stroke-pdf-btn:hover { background: rgba(74,158,255,.22); text-decoration: none; }
 
+/* Stroke PDF link grid (new simple view) */
+.stroke-pdf-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px 16px;
+}
+.stroke-pdf-link-btn {
+  display: block;
+  padding: 12px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: background .13s, border-color .13s;
+  white-space: normal;
+  word-break: break-word;
+}
+.stroke-pdf-link-btn:hover {
+  background: rgba(74,158,255,.12);
+  border-color: var(--primary);
+  text-decoration: none;
+}
+
 /* ============================================================
    ICD Pagination
    ============================================================ */
