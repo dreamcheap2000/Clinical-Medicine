@@ -1613,7 +1613,6 @@ function drugSearch(q) {
     saveSearchHistory('drug', drugSearchQ);
   }
   var grid = document.getElementById('drug-cat-grid');
-  var sel = document.getElementById('drug-cat-sel');
   var tagFilter = document.getElementById('drug-tag-filter');
   var searchResults = document.getElementById('drug-search-results');
   var listWrap = document.getElementById('drug-list-wrap');

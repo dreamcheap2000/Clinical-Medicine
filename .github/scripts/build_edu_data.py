@@ -37,8 +37,11 @@ def docx_to_html(docx_path: Path) -> tuple[str, list[dict]]:
     """
     try:
         import mammoth
-    except ImportError:
-        return "<p>⚠️ mammoth 未安裝，無法轉換 Word 文件。</p>", []
+    except ImportError as exc:
+        raise ImportError(
+            "mammoth is required to convert .docx files. "
+            "Install it with: pip install mammoth"
+        ) from exc
 
     images = []
 
