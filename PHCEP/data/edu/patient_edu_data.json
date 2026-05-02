@@ -3,16 +3,7 @@
   "generated": "2026-05-02",
   "files": [
     {
-      "id": "edu001_exported_doc",
-      "filename": "exported_doc.pdf",
-      "title": "exported_doc",
-      "type": "pdf",
-      "htmlContent": "<p>📄 點擊下方按鈕開啟 PDF 文件：<br><a href=\"https://raw.githubusercontent.com/dreamcheap2000/Clinical-Medicine/main/Patient%20education/exported_doc.pdf\" target=\"_blank\" rel=\"noopener\" style=\"display:inline-block;margin-top:8px;padding:8px 16px;background:#1a73e8;color:#fff;border-radius:6px;text-decoration:none\">🔗 開啟 exported_doc.pdf</a></p>",
-      "images": [],
-      "pdfUrl": "https://raw.githubusercontent.com/dreamcheap2000/Clinical-Medicine/main/Patient%20education/exported_doc.pdf"
-    },
-    {
-      "id": "edu002________",
+      "id": "edu001________",
       "filename": "無痛關節鬆動術.docx",
       "title": "無痛關節鬆動術",
       "type": "docx",
