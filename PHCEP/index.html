@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PHCEP — Taiwan Core IG ICD-10 &amp; NHI Viewer</title>
   <link rel="stylesheet" href="style.css" />
+  <script>
+    // Apply color mode before first paint to avoid flash
+    (function(){
+      var m = localStorage.getItem('phcep_color_mode') || 'dark';
+      if (m === 'light') document.documentElement.classList.add('light-mode');
+    })();
+  </script>
 </head>
 <body>
 <div id="app">
@@ -19,6 +26,7 @@
         </div>
       </div>
       <div class="header-meta" id="ig-badge"></div>
+      <button id="btn-color-mode" class="btn-color-mode" onclick="toggleColorMode()" title="切換深色/淺色模式">🌙</button>
     </div>
   </header>
 
@@ -46,6 +54,7 @@
     <button class="tab-btn" data-tab="soap" onclick="switchTab('soap')">🏥 SOAP病歷</button>
     <button class="tab-btn" data-tab="edu" onclick="switchTab('edu')">📚 衛教資源</button>
     <button class="tab-btn" data-tab="history" onclick="switchTab('history')">🗂️ 歷史記錄</button>
+    <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')">⚙️ 設定</button>
   </nav>
 
   <!-- CM Tab -->
@@ -109,6 +118,10 @@
       <label class="nhi-toggle-label">
         <input type="checkbox" id="nhi-show-note" onchange="nhiRender()" checked />
         顯示申報規範（註）
+      </label>
+      <label class="nhi-toggle-label">
+        <input type="checkbox" id="nhi-show-pts" onchange="nhiTogglePts()" />
+        顯示支付點數
       </label>
     </div>
     <div id="nhi-cat-grid" class="nhi-cat-grid"></div>
@@ -373,6 +386,15 @@
       <button class="filter-btn" data-filter="soap" onclick="setHistoryFilter('soap')">🏥 SOAP</button>
     </div>
     <div id="history-list" class="history-list"></div>
+  </div>
+
+  <!-- Settings Tab -->
+  <div id="tab-settings" class="tab-content">
+    <div class="section-header">
+      <h2>⚙️ 設定</h2>
+      <p class="section-desc">調整應用程式顯示與行為偏好</p>
+    </div>
+    <div id="settings-content" class="settings-content"></div>
   </div>
 </div>
 
