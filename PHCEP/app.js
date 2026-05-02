@@ -1154,6 +1154,40 @@ function eduSetSearchMode(mode) {
 // ---------------------------------------------------------------------------
 // FastSR-like SOAP scoring
 // ---------------------------------------------------------------------------
+
+// Extract plain text from HTML string using DOMParser (safe, avoids incomplete regex stripping)
+function eduExtractText(html) {
+  try {
+    var doc = new DOMParser().parseFromString(html, 'text/html');
+    return doc.body.textContent || '';
+  } catch (e) {
+    return html;
+  }
+}
+
+// Set HTML content safely: parse with DOMParser, strip dangerous elements/attributes, then import nodes
+function eduSetSafeHtml(container, html) {
+  try {
+    var doc = new DOMParser().parseFromString(html, 'text/html');
+    // Remove dangerous elements
+    doc.querySelectorAll('script,style,iframe,object,embed,form').forEach(function(el) { el.remove(); });
+    // Strip event handlers and javascript: hrefs
+    doc.querySelectorAll('*').forEach(function(el) {
+      [...el.attributes].forEach(function(attr) {
+        if (attr.name.startsWith('on') || (attr.name === 'href' && /^javascript:/i.test(attr.value))) {
+          el.removeAttribute(attr.name);
+        }
+      });
+    });
+    container.textContent = '';
+    [...doc.body.childNodes].forEach(function(node) {
+      container.appendChild(document.importNode(node, true));
+    });
+  } catch (e) {
+    container.textContent = eduExtractText(html);
+  }
+}
+
 function eduScoreAll(query) {
   var tokens = eduTokenize(query);
   if (!tokens.length) return eduData.map(e => ({ entry: e, score: 0, sectionScores: { S: 0, O: 0, A: 0, P: 0 } }));
@@ -1207,8 +1241,8 @@ function eduScoreEntry(entry, tokens) {
     sectionScores[sec] = Math.round(Math.min(raw * sectionWeights[sec], 100));
   });
 
-  // Version text score (low weight)
-  var versionText = Object.values(entry.versions || {}).join(' ').replace(/<[^>]+>/g, '').toLowerCase();
+  // Version text score (low weight) — extract plain text via DOMParser to avoid incomplete tag stripping
+  var versionText = eduExtractText(Object.values(entry.versions || {}).join(' ')).toLowerCase();
   var vScore = 0;
   tokens.forEach(function(t) { if (versionText.includes(t)) vScore += 0.8; });
 
@@ -1303,7 +1337,7 @@ function eduRenderViewerContent() {
       </div>`;
   } else {
     var html = ((entry.versions || {})[v]) || '<p style="color:var(--muted);padding:8px">（此語言版本尚未提供）</p>';
-    content.innerHTML = html;
+    eduSetSafeHtml(content, html);
   }
 }
 
