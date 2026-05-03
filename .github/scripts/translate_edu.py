@@ -110,13 +110,17 @@ FASTSR_KW = {
 }
 
 
+# Minimum keyword length to receive a higher match weight
+KEYWORD_LENGTH_THRESHOLD = 3
+
+
 def classify_sentence(sentence: str) -> str:
     lower = sentence.lower()
     scores: dict[str, int] = {"S": 0, "O": 0, "A": 0, "P": 0}
     for cat, kws in FASTSR_KW.items():
         for kw in kws["zh"] + kws["en"]:
             if kw.lower() in lower:
-                scores[cat] += 2 if len(kw) > 3 else 1
+                scores[cat] += 2 if len(kw) > KEYWORD_LENGTH_THRESHOLD else 1
     best = max(scores, key=lambda k: scores[k])
     return best if scores[best] > 0 else "S"
 

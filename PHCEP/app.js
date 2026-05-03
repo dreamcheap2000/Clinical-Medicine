@@ -1387,9 +1387,9 @@ function eduCloseViewer() {
   if (list) list.classList.remove('hidden');
   if (toolbar) toolbar.classList.remove('hidden');
   eduCurrentEntry = null;
-  // Scroll back to the search bar
-  var searchInput = document.getElementById('edu-search');
-  if (searchInput) searchInput.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Scroll to the top of the education section (search bar area)
+  var eduTab = document.getElementById('tab-edu');
+  if (eduTab) eduTab.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ---------------------------------------------------------------------------

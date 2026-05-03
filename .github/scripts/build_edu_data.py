@@ -151,7 +151,10 @@ def build():
             processed_titles.add(stem)
             continue
 
-        # Check if this file was already processed (use stem as key)
+        # Check if this file was already processed.
+        # existing_by_stem uses the source_file stem as key.
+        # existing_by_title uses entry title; for docx-generated entries the
+        # title was historically set to the filename stem, so this also matches.
         existing_entry = existing_by_stem.get(stem) or existing_by_title.get(stem)
         existing_title = existing_entry.get("title") if existing_entry else None
 
