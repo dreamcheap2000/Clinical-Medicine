@@ -67,6 +67,92 @@ When a `.docx` or `.txt` file is pushed to `Patient education/`:
 5. URLs in the text are extracted and stored in `source_url`.
 6. The entry is merged into `PHCEP/data/edu/patient_edu_data.json` and committed automatically.
 
+#### How the automation pipeline works — step by step
+
+```
+Push .docx → GitHub Actions trigger → build_edu_data.py
+                                           │
+                          ┌────────────────┴────────────────────┐
+                          ▼                                      ▼
+              mammoth: .docx → HTML                 .meta.json sidecar
+              (style_map: H1/H2/H3)                 (source_urls, tags, title)
+                          │                                      │
+                          └────────────────┬────────────────────┘
+                                           ▼
+                             translate_edu.process_document()
+                                           │
+                          ┌────────────────┼────────────────────┐
+                          ▼                ▼                     ▼
+                   AI FastSR          AI Translation         URL extraction
+               (ai_classify_fastsr)   simple_zh ←→ en    (from plain text)
+               classify into S/O/A/P  if any version         source_url,
+               ~5 items per section   is missing/empty        source_urls
+                          │
+                          ▼ (fallback if AI unavailable)
+                   build_fastsr()        ← keyword-based classifier
+                          │
+                          └──────────────┬─────────────────────┘
+                                         ▼
+                          Compute 3 prototypes (global/semantic/fragment)
+                          for FastSR client-side scoring
+                                         │
+                                         ▼
+                          Merge with existing entries (preserve manual entries)
+                                         │
+                                         ▼
+                          Write patient_edu_data.json → git commit → push
+```
+
+**Trigger**: `.github/workflows/update-edu-data.yml` — fires on `push` to `main` when `Patient education/**` changes, or manually via `workflow_dispatch`.
+
+**Sidecar metadata** (optional): Place `<filename>.meta.json` next to the `.docx` to supply metadata that the pipeline cannot reliably extract from the document body:
+
+```json
+{
+  "source_urls": ["https://...", "https://..."],
+  "tags": ["TAME", "慢性疼痛"],
+  "title": "optional title override"
+}
+```
+
+#### Before vs. After: TAME pipeline comparison
+
+The `經動脈微細血管栓塞術` entry illustrates the difference between the raw pipeline output and a manually refined entry.
+
+> **Entry `edu004` (管線自動擷取版)** — what GitHub Actions produced when the `.docx` was first pushed:
+
+| Field | Pipeline output (before refinement) |
+|-------|--------------------------------------|
+| `simple_zh` | Raw `.docx` HTML (6,039 chars) — same as `professional_zh` |
+| `professional_zh` | Identical to `simple_zh` (AI translation did not produce a distinct version) |
+| `english` | **Empty** — AI translation not triggered |
+| `fastsr.S` | **110 sentences** — entire document classified as Subjective (keyword fallback) |
+| `fastsr.O` | 6 sentences (MRI / procedural features) |
+| `fastsr.A` | 2 items, both "主要病理機制" (table header text) |
+| `fastsr.P` | 8 sentences (mixed — some non-treatment sentences) |
+| Source URLs | ✅ Correctly extracted from sidecar `.meta.json` |
+| Tags | ✅ Correctly merged from sidecar `.meta.json` |
+
+> **Entry `edu003` (精校版)** — manually crafted after pipeline review:
+
+| Field | Manually refined output |
+|-------|------------------------|
+| `simple_zh` | 1,314 chars — patient-friendly, emoji headers, comparison table |
+| `professional_zh` | 1,845 chars — clinical tone, mechanism/indication/outcome tables |
+| `english` | 3,868 chars — full English clinical overview |
+| `fastsr.S` | **5 items** — patient symptoms, indications, refractory criteria |
+| `fastsr.O` | 5 items — MRI BMLs, neovascularization, VAS scores, success rates, provocation pain |
+| `fastsr.A` | 5 items — CIBAS mechanism, sTAME/TAME indications, contraindications, MRI criteria |
+| `fastsr.P` | 5 items — MRI pre-op, sTAME procedure, TAME procedure, post-care, expected recovery |
+| Source URLs | ✅ Both OpenEvidence + Okuno Y-Clinic |
+| Tags | ✅ Enriched with clinical and English terms |
+
+**What to do when the pipeline output is insufficient:**
+1. Review the auto-generated entry in the live site (衛教資源 tab → search by title).
+2. Edit `PHCEP/data/edu/patient_edu_data.json` directly to replace `simple_zh`, `professional_zh`, `english`, and `fastsr` with carefully authored content.
+3. The pipeline **preserves manually-crafted entries** (those without `source_file`) on subsequent runs — they will not be overwritten.
+4. To override a docx-sourced entry permanently, remove its `source_file` field after manual editing.
+
 ### Key features
 
 - Dark / light mode toggle (persisted in `localStorage`)
