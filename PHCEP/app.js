@@ -1300,7 +1300,7 @@ function eduScorePrototypes(tokens, protos) {
 
 /**
  * Compute proportional contributions (sum = 100%) from raw similarity scores.
- * If all zero, returns { global: 34, semantic: 33, fragment: 33 } as baseline.
+ * If all zero, returns { global: 0, semantic: 0, fragment: 0 } — no contribution.
  */
 function eduNormalizeProtoScores(raw) {
   var total = raw.global + raw.semantic + raw.fragment;
@@ -1392,7 +1392,7 @@ function eduTokenize(text) {
       }
     }
   });
-  return [...new Set(tokens)].filter(function(t) { return t.length >= 1; });
+  return Array.from(new Set(tokens)).filter(function(t) { return t.length >= 1; });
 }
 
 function eduScoreEntry(entry, tokens) {

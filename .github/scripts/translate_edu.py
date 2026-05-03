@@ -308,7 +308,7 @@ def process_document(
     """
     Process a document (text + HTML) and return a v2 edu entry dict.
 
-    If OPENAI_API_KEY is set, performs AI translation.
+    If GITHUB_TOKEN is set (always the case in GitHub Actions), performs AI translation via GitHub Models.
     Falls back to placeholder content if API is unavailable.
     """
     lang = detect_language(text)

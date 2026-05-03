@@ -61,7 +61,7 @@ Each education entry contains:
 When a `.docx` or `.txt` file is pushed to `Patient education/`:
 
 1. Content is treated as the **professional version** (`professional_zh` or `english` depending on detected language).
-2. The **GitHub Models API** (`https://models.inference.ai.azure.com`, model `gpt-4o-mini`) is called using the built-in `GITHUB_TOKEN` — **no external secrets required**.
+2. The **GitHub Models API** (`https://models.inference.ai.azure.com`, default model `gpt-4o-mini` — see [GitHub Models docs](https://docs.github.com/en/github-models) for available model names) is called using the built-in `GITHUB_TOKEN` — **no external secrets required**.
 3. FastSR auto-classifies sentences into S/O/A/P structure.
 4. **Three prototype representations** are pre-computed and stored in the JSON for fast client-side scoring.
 5. URLs in the text are extracted and stored in `source_url`.
