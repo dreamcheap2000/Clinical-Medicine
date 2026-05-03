@@ -24,9 +24,11 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install mammoth
+        run: pip install mammoth openai
 
       - name: Generate patient_edu_data.json
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: python3 .github/scripts/build_edu_data.py
 
       - name: Commit updated edu data

@@ -371,6 +371,26 @@ a:hover { text-decoration: underline; }
 }
 .toast.hidden { opacity: 0; pointer-events: none; }
 
+/* ---- Floating back button (衛教資源 viewer) ---- */
+.edu-back-float {
+  position: fixed;
+  bottom: 72px;
+  right: 24px;
+  z-index: 9990;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  padding: 10px 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,.4);
+  transition: opacity .2s, transform .2s, background .15s;
+}
+.edu-back-float:hover { background: var(--accent); transform: translateY(-2px); }
+.edu-back-float.hidden { opacity: 0; pointer-events: none; }
+
 /* ---- Responsive ---- */
 @media (max-width: 600px) {
   .cat-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }

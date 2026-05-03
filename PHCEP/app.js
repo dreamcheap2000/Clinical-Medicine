@@ -145,9 +145,7 @@ function cmSelectCat(id) {
 
 function cmSearch(q) {
   cmSearchQ = q.trim();
-  if (cmSearchQ.length >= 2) {
-    saveSearchHistory('cm', cmSearchQ);
-  }
+  scheduleSearchHistorySave('cm', cmSearchQ);
   const grid = document.getElementById('cm-cat-grid');
   const detail = document.getElementById('cm-detail');
   const resultsAbove = document.getElementById('cm-search-results');
@@ -567,11 +565,13 @@ function buildPcsSearchResults(q) {
 // Keyboard Shortcuts
 // Alt/Option+1…8 → jump to main tabs
 // Tabs: edu(1), drug(2), ref(3), cm(4), nhi(5), specmat(6), ebm(7), workflow(8)
+// Shift+9 → 歷史記錄, Shift+0 → 治療流程, Shift+- → 設定
 // Option/Alt + ↑/↓ → page up / page down
 // Cmd/Ctrl + ↑/↓  → scroll to top / bottom of page
 // ---------------------------------------------------------------------------
 (function() {
   var TAB_SHORTCUTS = { '1': 'edu', '2': 'drug', '3': 'ref', '4': 'cm', '5': 'nhi', '6': 'specmat', '7': 'ebm', '8': 'workflow' };
+  var SHIFT_SHORTCUTS = { 'Digit9': 'history', 'Digit0': 'workflow', 'Minus': 'settings' };
   document.addEventListener('keydown', function(e) {
     var tag = (document.activeElement || {}).tagName;
     var inInput = (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
@@ -582,6 +582,7 @@ function buildPcsSearchResults(q) {
     var isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
     var isAlt = e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey;
     var isCmdCtrl = (isMac ? e.metaKey : e.ctrlKey) && !e.altKey && !e.shiftKey;
+    var isShift = e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey;
 
     // Tab switching: Alt/Option + 1…8
     if (isAlt) {
@@ -591,6 +592,13 @@ function buildPcsSearchResults(q) {
         switchTab(TAB_SHORTCUTS[digit]);
         return;
       }
+    }
+
+    // Tab switching: Shift + 9 / 0 / -
+    if (isShift && e.code && SHIFT_SHORTCUTS[e.code]) {
+      e.preventDefault();
+      switchTab(SHIFT_SHORTCUTS[e.code]);
+      return;
     }
 
     // Option/Alt + ↓ → page down
@@ -1294,6 +1302,8 @@ function eduOpenEntry(id, version) {
   if (toolbar) toolbar.classList.add('hidden');
   if (addPanel) addPanel.classList.add('hidden');
   document.getElementById('edu-viewer').classList.remove('hidden');
+  var floatBtn = document.getElementById('edu-back-float');
+  if (floatBtn) floatBtn.classList.remove('hidden');
 
   document.querySelectorAll('.edu-vtab').forEach(function(btn) {
     btn.classList.toggle('active', btn.dataset.v === eduCurrentVersion);
@@ -1341,13 +1351,22 @@ function eduRenderViewerContent() {
         }).join('')}
       </div>`;
   } else if (v === 'source') {
+    var urlsHtml = '';
+    if (entry.source_urls && entry.source_urls.length > 1) {
+      urlsHtml = '<p><strong>來源連結：</strong></p><ul>' +
+        entry.source_urls.map(function(u) {
+          return '<li><a href="' + escHtml(u) + '" target="_blank" rel="noopener">' + escHtml(u) + '</a></li>';
+        }).join('') + '</ul>';
+    } else if (entry.source_url) {
+      urlsHtml = '<p><a href="' + escHtml(entry.source_url) + '" target="_blank" rel="noopener">' + escHtml(entry.source_url) + '</a></p>';
+    } else {
+      urlsHtml = '<p style="color:var(--muted)">（未提供來源連結）</p>';
+    }
     content.innerHTML = `
       <div class="edu-source-view">
         <h3>來源資訊</h3>
         ${entry.source_label ? `<p><strong>來源：</strong>${escHtml(entry.source_label)}</p>` : ''}
-        ${entry.source_url
-          ? `<p><a href="${escHtml(entry.source_url)}" target="_blank" rel="noopener">${escHtml(entry.source_url)}</a></p>`
-          : '<p style="color:var(--muted)">（未提供來源連結）</p>'}
+        ${urlsHtml}
         ${entry.tags && entry.tags.length
           ? `<p><strong>標籤：</strong>${entry.tags.map(t => `<span class="edu-tag">${escHtml(t)}</span>`).join(' ')}</p>`
           : ''}
@@ -1361,11 +1380,16 @@ function eduRenderViewerContent() {
 
 function eduCloseViewer() {
   document.getElementById('edu-viewer').classList.add('hidden');
+  var floatBtn = document.getElementById('edu-back-float');
+  if (floatBtn) floatBtn.classList.add('hidden');
   var list = document.getElementById('edu-list');
   var toolbar = document.querySelector('.edu-toolbar');
   if (list) list.classList.remove('hidden');
   if (toolbar) toolbar.classList.remove('hidden');
   eduCurrentEntry = null;
+  // Scroll back to the search bar
+  var searchInput = document.getElementById('edu-search');
+  if (searchInput) searchInput.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ---------------------------------------------------------------------------
@@ -1626,9 +1650,7 @@ function nhiOpenCat(id) {
 
 function nhiSearch(q) {
   nhiSearchQ = q.trim();
-  if (nhiSearchQ.length >= 2) {
-    saveSearchHistory('nhi', nhiSearchQ);
-  }
+  scheduleSearchHistorySave('nhi', nhiSearchQ);
   if (nhiSearchQ) {
     if (!nhiActiveCat) {
       document.getElementById('nhi-cat-grid').classList.add('hidden');
@@ -1728,8 +1750,9 @@ function nhiRender() {
   }
 
   tbody.innerHTML = codes.map(function(r) {
+    var expandItems = getSettings().defaultExpandItems;
     var noteHtml = (showNote && r.note)
-      ? '<tr class="nhi-note-row"><td colspan="4"><div class="nhi-note">' + escHtml(r.note) + '</div></td></tr>'
+      ? '<tr class="nhi-note-row' + (expandItems ? '' : ' hidden') + '"><td colspan="4"><div class="nhi-note">' + escHtml(r.note) + '</div></td></tr>'
       : '';
     var catBadge = r._cat
       ? '<span class="nhi-cat-inline">' + escHtml(r._cat) + '</span> ' : '';
@@ -1788,6 +1811,7 @@ function nhiFilterLevel(level) {
 // Search History
 // ---------------------------------------------------------------------------
 const SEARCH_HISTORY_MAX = 50;
+const _searchHistoryTimers = {};
 
 function searchHistoryKey(type) {
   return 'phcep_search_history_' + type;
@@ -1805,6 +1829,15 @@ function saveSearchHistory(type, query) {
   hist.unshift(query);
   if (hist.length > SEARCH_HISTORY_MAX) hist = hist.slice(0, SEARCH_HISTORY_MAX);
   storageSet(searchHistoryKey(type), hist);
+}
+
+// Auto-save search term to history if unchanged for 10 seconds
+function scheduleSearchHistorySave(type, query) {
+  if (_searchHistoryTimers[type]) clearTimeout(_searchHistoryTimers[type]);
+  if (!query || query.length < 2) return;
+  _searchHistoryTimers[type] = setTimeout(function() {
+    saveSearchHistory(type, query);
+  }, 10000);
 }
 
 function clearSearchHistory(type) {
@@ -2014,9 +2047,7 @@ function drugOpenCat(id) {
 
 function drugSearch(q) {
   drugSearchQ = q.trim();
-  if (drugSearchQ.length >= 2) {
-    saveSearchHistory('drug', drugSearchQ);
-  }
+  scheduleSearchHistorySave('drug', drugSearchQ);
   var grid = document.getElementById('drug-cat-grid');
   var tagFilter = document.getElementById('drug-tag-filter');
   var searchResults = document.getElementById('drug-search-results');
@@ -2190,7 +2221,7 @@ function drugRender() {
       }
 
       var entryDiv = document.createElement('div');
-      entryDiv.className = 'drug-entry';
+      entryDiv.className = 'drug-entry' + (getSettings().defaultExpandItems ? ' open' : '');
 
       var headerDiv = document.createElement('div');
       headerDiv.className = 'drug-entry-header';
@@ -2348,7 +2379,7 @@ function specmatOpenCat(catId) {
   entriesEl.innerHTML = '';
   cat.entries.forEach(function(e) {
     var entryDiv = document.createElement('div');
-    entryDiv.className = 'drug-entry specmat-entry';
+    entryDiv.className = 'drug-entry specmat-entry' + (getSettings().defaultExpandItems ? ' open' : '');
 
     var headerDiv = document.createElement('div');
     headerDiv.className = 'drug-entry-header';
@@ -2401,9 +2432,7 @@ function specmatBackToGrid() {
 
 function specmatSearch(q) {
   specmatSearchQ = q.trim();
-  if (specmatSearchQ.length >= 2) {
-    saveSearchHistory('specmat', specmatSearchQ);
-  }
+  scheduleSearchHistorySave('specmat', specmatSearchQ);
   if (!specmatData) return;
   var grid = document.getElementById('specmat-cat-grid');
   var searchResults = document.getElementById('specmat-search-results');
@@ -2460,7 +2489,7 @@ function buildSpecmatSearchResults(q) {
 const SETTINGS_KEY = 'phcep_settings';
 
 function getSettings() {
-  return storageGet(SETTINGS_KEY, { showPcs: false, showNhiPoints: false });
+  return storageGet(SETTINGS_KEY, { showPcs: false, showNhiPoints: false, defaultExpandItems: false });
 }
 
 function saveSettings(settings) {
@@ -2552,6 +2581,19 @@ function renderSettingsTab() {
     </div>
 
     <div class="settings-group">
+      <div class="settings-group-title">📋 特材給付 &amp; NHI支付標準</div>
+      <label class="settings-item">
+        <div class="settings-item-label">
+          <div class="settings-item-name">預設展開項目內容</div>
+          <div class="settings-item-desc">開啟後，特材給付和 NHI 支付標準的項目詳細內容預設展開；關閉則預設收合</div>
+        </div>
+        <input type="checkbox" class="settings-toggle" id="setting-default-expand"
+          ${settings.defaultExpandItems ? 'checked' : ''}
+          onchange="onSettingDefaultExpand(this.checked)" />
+      </label>
+    </div>
+
+    <div class="settings-group">
       <div class="settings-group-title">⌨️ 快速鍵說明</div>
       <div class="settings-shortcuts">
         <div class="shortcut-row"><kbd>Alt+1</kbd> 衛教資源</div>
@@ -2562,6 +2604,9 @@ function renderSettingsTab() {
         <div class="shortcut-row"><kbd>Alt+6</kbd> 特材給付</div>
         <div class="shortcut-row"><kbd>Alt+7</kbd> EBM筆記</div>
         <div class="shortcut-row"><kbd>Alt+8</kbd> 治療流程</div>
+        <div class="shortcut-row"><kbd>Shift+9</kbd> 歷史記錄</div>
+        <div class="shortcut-row"><kbd>Shift+0</kbd> 治療流程</div>
+        <div class="shortcut-row"><kbd>Shift+-</kbd> 設定</div>
         <div class="shortcut-row"><kbd class="key-combo">Option/Alt + ↑</kbd> 向上翻頁</div>
         <div class="shortcut-row"><kbd class="key-combo">Option/Alt + ↓</kbd> 向下翻頁</div>
         <div class="shortcut-row"><kbd class="key-combo">Cmd/Ctrl + ↑</kbd> 回到頁頂</div>
@@ -2584,6 +2629,12 @@ function onSettingShowNhiPts(checked) {
   var cb = document.getElementById('nhi-show-pts');
   if (cb) cb.checked = checked;
   applyNhiPtsVisibility();
+}
+
+function onSettingDefaultExpand(checked) {
+  var settings = getSettings();
+  settings.defaultExpandItems = checked;
+  saveSettings(settings);
 }
 // ===========================================================================
 
