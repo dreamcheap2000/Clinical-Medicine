@@ -119,7 +119,7 @@ Push .docx → GitHub Actions trigger → build_edu_data.py
 
 The `經動脈微細血管栓塞術` entry illustrates the difference between the raw pipeline output and a manually refined entry.
 
-> **Entry `edu004` (管線自動擷取版)** — what GitHub Actions produced when the `.docx` was first pushed:
+> **Entry `edu004` (管線自動產生版)** — what GitHub Actions produced when the `.docx` was first pushed:
 
 | Field | Pipeline output (before refinement) |
 |-------|--------------------------------------|
