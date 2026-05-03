@@ -304,15 +304,25 @@ def process_document(
     html: str,
     filename: str,
     existing_title: Optional[str] = None,
+    extra_urls: Optional[list] = None,
+    existing_versions: Optional[dict] = None,
 ) -> dict:
     """
     Process a document (text + HTML) and return a v2 edu entry dict.
 
     If GITHUB_TOKEN is set (always the case in GitHub Actions), performs AI translation via GitHub Models.
-    Falls back to placeholder content if API is unavailable.
+    Falls back to existing translated versions (if provided) or placeholder content if API is unavailable.
+
+    Args:
+        text: Plain text extracted from the document.
+        html: HTML conversion of the document.
+        filename: Stem of the source filename (used as title fallback).
+        existing_title: Title from an existing JSON entry (preserved if set).
+        extra_urls: Additional source URLs to merge in (e.g. from a sidecar .meta.json).
+        existing_versions: Existing translated versions dict to use as fallback when AI fails.
     """
     lang = detect_language(text)
-    urls = extract_urls(text)
+    urls = list(dict.fromkeys(extract_urls(text) + (extra_urls or [])))
     source_url = urls[0] if urls else ""
     source_label = ""
     # Try to infer source label from URL
@@ -320,42 +330,69 @@ def process_document(
         domain = re.sub(r"https?://(www\.)?", "", source_url).split("/")[0]
         source_label = domain
 
+    ev = existing_versions or {}
     client = _get_client()
+
+    # Determine which versions are already complete so we skip unnecessary AI calls
+    has_english   = bool(ev.get("english", "").strip())
+    has_simple_zh = bool(ev.get("simple_zh", "").strip())
 
     if lang == "zh":
         professional_zh = html
         if client:
+            # Only call AI for versions that are missing or match the raw HTML (not yet simplified)
             try:
-                simple_zh = ai_translate_to_simple_zh(client, html)
-                english = ai_translate_to_english(client, html)
+                if has_simple_zh and ev.get("simple_zh", "").strip() != html.strip():
+                    simple_zh = ev["simple_zh"]
+                    print("  ✔ Reusing existing simple_zh")
+                else:
+                    simple_zh = ai_translate_to_simple_zh(client, html)
+
+                if has_english:
+                    english = ev["english"]
+                    print("  ✔ Reusing existing english")
+                else:
+                    english = ai_translate_to_english(client, html)
+
                 title = existing_title or ai_extract_title(client, text)
             except Exception as e:
                 print(f"  ⚠️ AI translation failed: {e}")
-                simple_zh = html
-                english = ""
+                # Preserve existing translations; only fall back to raw HTML as last resort
+                simple_zh = ev.get("simple_zh") or html
+                english   = ev.get("english") or ""
                 title = existing_title or filename
         else:
-            simple_zh = html
-            english = ""
+            simple_zh = ev.get("simple_zh") or html
+            english   = ev.get("english") or ""
             title = existing_title or filename
     else:
         # English source
         professional_en = html
         if client:
             try:
-                professional_zh = ai_translate_zh_from_en(client, html)
-                simple_zh = ai_translate_to_simple_zh_from_en(client, html)
+                if ev.get("professional_zh", "").strip():
+                    professional_zh = ev["professional_zh"]
+                    print("  ✔ Reusing existing professional_zh")
+                else:
+                    professional_zh = ai_translate_zh_from_en(client, html)
+
+                if has_simple_zh:
+                    simple_zh = ev["simple_zh"]
+                    print("  ✔ Reusing existing simple_zh")
+                else:
+                    simple_zh = ai_translate_to_simple_zh_from_en(client, html)
+
                 english = professional_en
                 title = existing_title or ai_extract_title(client, text)
             except Exception as e:
                 print(f"  ⚠️ AI translation failed: {e}")
-                professional_zh = ""
-                simple_zh = ""
+                professional_zh = ev.get("professional_zh") or ""
+                simple_zh       = ev.get("simple_zh") or ""
                 english = professional_en
                 title = existing_title or filename
         else:
-            professional_zh = ""
-            simple_zh = ""
+            professional_zh = ev.get("professional_zh") or ""
+            simple_zh       = ev.get("simple_zh") or ""
             english = professional_en
             title = existing_title or filename
 

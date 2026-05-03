@@ -83,6 +83,39 @@ def load_existing() -> dict:
     return {"version": "2.0", "generated": "", "entries": []}
 
 
+SIDECAR_SUFFIX = ".meta.json"
+
+
+def load_sidecar(fpath: Path) -> dict:
+    """Load an optional sidecar <filename>.meta.json file next to the document.
+
+    The sidecar may contain:
+      source_urls  – list of URLs (merged with any URLs found in the document)
+      title        – override title string
+      tags         – list of tag strings
+      notes        – freeform notes (ignored by the pipeline)
+
+    Returns an empty dict if no sidecar exists or parsing fails.
+    """
+    sidecar = fpath.with_name(fpath.name + SIDECAR_SUFFIX)
+    if not sidecar.exists():
+        return {}
+    try:
+        return json.loads(sidecar.read_text(encoding="utf-8"))
+    except Exception as exc:
+        print(f"  ⚠️ Could not read sidecar {sidecar.name}: {exc}")
+        return {}
+
+
+def _needs_ai(versions: dict) -> bool:
+    """Return True if any language version is missing or incomplete."""
+    return not (
+        versions.get("simple_zh", "").strip()
+        and versions.get("professional_zh", "").strip()
+        and versions.get("english", "").strip()
+    )
+
+
 def build():
     if not EDU_FOLDER.exists():
         print(f"ERROR: Folder not found: {EDU_FOLDER}")
@@ -105,7 +138,6 @@ def build():
         if src:
             existing_by_stem[Path(src).stem] = e
 
-    supported = {".docx", ".txt"}
     file_list = sorted(
         f for f in EDU_FOLDER.iterdir()
         if f.is_file() and not f.name.startswith(".")
@@ -118,6 +150,10 @@ def build():
         suffix = fpath.suffix.lower()
         filename = fpath.name
         stem = fpath.stem
+
+        # Skip sidecar metadata files — they are helpers, not documents
+        if filename.endswith(SIDECAR_SUFFIX):
+            continue
 
         print(f"Processing [{suffix}]: {filename}")
 
@@ -151,18 +187,41 @@ def build():
             processed_titles.add(stem)
             continue
 
+        # Load optional sidecar metadata
+        sidecar = load_sidecar(fpath)
+        extra_urls: list[str] = sidecar.get("source_urls", [])
+        title_override: str = sidecar.get("title", "")
+        extra_tags: list[str] = sidecar.get("tags", [])
+
         # Check if this file was already processed.
         # existing_by_stem uses the source_file stem as key.
         # existing_by_title uses entry title; for docx-generated entries the
         # title was historically set to the filename stem, so this also matches.
         existing_entry = existing_by_stem.get(stem) or existing_by_title.get(stem)
-        existing_title = existing_entry.get("title") if existing_entry else None
+        existing_title = title_override or (existing_entry.get("title") if existing_entry else None)
+        existing_versions = (existing_entry or {}).get("versions") or {}
 
-        # Process via AI translation
-        doc_info = process_document(plain_text, html_content, stem, existing_title)
+        needs_ai = _needs_ai(existing_versions) or bool(extra_urls)
+        if not needs_ai:
+            print(f"  ✔ All versions present and no new URLs — skipping AI")
+
+        # Process via AI translation (passing existing versions as fallback)
+        doc_info = process_document(
+            plain_text,
+            html_content,
+            stem,
+            existing_title=existing_title,
+            extra_urls=extra_urls,
+            existing_versions=existing_versions,
+        )
 
         # Determine entry id
         entry_id = (existing_entry or {}).get("id") or sanitize_id(filename, idx)
+
+        # Merge tags: existing + sidecar (deduplicated)
+        merged_tags = list(dict.fromkeys(
+            ((existing_entry or {}).get("tags") or []) + extra_tags
+        ))
 
         # Merge: keep existing tags / added_date if available
         entry = {
@@ -174,7 +233,7 @@ def build():
             "source_urls": doc_info.get("source_urls", []),
             "original_lang": "zh-TW" if doc_info["versions"]["professional_zh"] else "en",
             "added_date": (existing_entry or {}).get("added_date") or datetime.date.today().isoformat(),
-            "tags": (existing_entry or {}).get("tags") or [],
+            "tags": merged_tags,
             "fastsr": doc_info["fastsr"],
             "prototype": doc_info.get("prototype", {}),
             "versions": doc_info["versions"],
