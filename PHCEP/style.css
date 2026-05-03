@@ -1732,6 +1732,35 @@ select.search-overlay-active {
 .edu-soap-a-pill { background: rgba(244,162,97,.15); color: var(--amber); }
 .edu-soap-p-pill { background: rgba(99,102,241,.15); color: var(--primary); }
 
+/* FastSR Prototype breakdown bar (G / S / F) */
+.edu-proto-bar {
+  display: flex;
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--surface2);
+  margin-top: 8px;
+  width: 100%;
+}
+.edu-proto-seg { display: block; height: 100%; transition: width .25s; min-width: 0; }
+.edu-proto-g { background: var(--accent); }
+.edu-proto-s { background: var(--amber); }
+.edu-proto-f { background: var(--green); }
+.edu-proto-legend {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+.edu-proto-lbl {
+  font-size: 0.68rem;
+  font-weight: 700;
+  opacity: 0.85;
+}
+.edu-proto-g-lbl { color: var(--accent); }
+.edu-proto-s-lbl { color: var(--amber); }
+.edu-proto-f-lbl { color: var(--green); }
+
 /* Version quick-buttons in cards */
 .edu-card-versions { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
 .edu-vbtn {

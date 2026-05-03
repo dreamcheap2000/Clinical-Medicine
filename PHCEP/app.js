@@ -1082,7 +1082,7 @@ function eduRenderList() {
     var scored = results.filter(r => r.score > 0);
     results = scored.length ? scored : results;
   } else {
-    results = eduData.map(e => ({ entry: e, score: 0, sectionScores: { S: 0, O: 0, A: 0, P: 0 } }));
+    results = eduData.map(function(e) { return { entry: e, score: 0, protoScores: { global: 0, semantic: 0, fragment: 0 }, sectionScores: { S: 0, O: 0, A: 0, P: 0 } }; });
   }
 
   if (results.length === 0) {
@@ -1091,7 +1091,7 @@ function eduRenderList() {
   }
 
   list.innerHTML = '';
-  results.forEach(function({ entry, score, sectionScores }) {
+  results.forEach(function({ entry, score, protoScores, sectionScores }) {
     var card = document.createElement('div');
     card.className = 'edu-entry-card';
 
@@ -1099,9 +1099,26 @@ function eduRenderList() {
     var scoreBadge = (query && score > 0)
       ? `<span class="edu-score-badge">${score}%</span>` : '';
 
-    // SOAP pills
-    var soapHtml = '';
+    // ── FastSR Prototype breakdown bar (G + S + F = 100%) ──────────────────
+    var protoHtml = '';
     if (query && score > 0) {
+      var gp = protoScores.global, sp = protoScores.semantic, fp = protoScores.fragment;
+      protoHtml = `
+        <div class="edu-proto-bar" title="Global ${gp}% · Semantic ${sp}% · Fragment ${fp}%">
+          <span class="edu-proto-seg edu-proto-g" style="width:${gp}%"></span>
+          <span class="edu-proto-seg edu-proto-s" style="width:${sp}%"></span>
+          <span class="edu-proto-seg edu-proto-f" style="width:${fp}%"></span>
+        </div>
+        <div class="edu-proto-legend">
+          <span class="edu-proto-lbl edu-proto-g-lbl" title="Global prototype: full-document term overlap">G ${gp}%</span>
+          <span class="edu-proto-lbl edu-proto-s-lbl" title="Semantic prototype: medical vocabulary overlap">S ${sp}%</span>
+          <span class="edu-proto-lbl edu-proto-f-lbl" title="Fragment prototype: best-sentence overlap">F ${fp}%</span>
+        </div>`;
+    }
+
+    // ── SOAP section pills (shown in SOAP-filter mode) ─────────────────────
+    var soapHtml = '';
+    if (query && score > 0 && eduSearchMode !== 'all') {
       var pills = [
         { k: 'S', label: 'S', cls: 'edu-soap-s-pill' },
         { k: 'O', label: 'O', cls: 'edu-soap-o-pill' },
@@ -1130,6 +1147,7 @@ function eduRenderList() {
         <div class="edu-card-info">
           <div class="edu-card-title">${escHtml(entry.title)}${scoreBadge}</div>
           ${entry.source_label ? `<div class="edu-card-source">來源：${escHtml(entry.source_label)}</div>` : ''}
+          ${protoHtml}
           ${soapHtml}
           <div class="edu-card-tags">${tagsHtml}</div>
         </div>
@@ -1160,8 +1178,138 @@ function eduSetSearchMode(mode) {
 }
 
 // ---------------------------------------------------------------------------
-// FastSR-like SOAP scoring
+// FastSR Three-Prototype Scoring
 // ---------------------------------------------------------------------------
+// Implements Global, Semantic, and Fragment prototypes as described in FastSR.
+// For each entry the three prototype representations are:
+//   Global   (G): bag-of-words vocabulary of the full document
+//   Semantic (S): domain-vocabulary keywords (FASTSR_KEYWORDS) found in doc
+//   Fragment (F): individual sentences from SOAP sections
+//
+// Similarity to each prototype = query-token recall against prototype terms.
+// Total score = mean(G_sim, S_sim, F_sim) × 100
+// Displayed breakdown G% + S% + F% = 100% (contribution proportions).
+// ---------------------------------------------------------------------------
+
+// In-memory prototype cache: entry.id → { globalSet, semanticSet, fragments[] }
+var _eduProtoCache = Object.create(null);
+
+/** Build and cache prototype representations for one entry. */
+function eduGetPrototypes(entry) {
+  if (_eduProtoCache[entry.id]) return _eduProtoCache[entry.id];
+
+  var fastsr = entry.fastsr || { S: [], O: [], A: [], P: [] };
+
+  // Use pre-computed prototype if stored in JSON (much faster)
+  var stored = entry.prototype || {};
+
+  // ----- Global prototype: all unique tokens from full document -----
+  var globalSet;
+  if (stored.global && stored.global.length) {
+    globalSet = new Set(stored.global.map(function(t) { return t.toLowerCase(); }));
+    // Also expand any multi-char tokens that are Chinese into bigrams
+    var extra = [];
+    stored.global.forEach(function(t) {
+      t = t.toLowerCase();
+      if (/[\u4e00-\u9fff]/.test(t) && t.length > 1) {
+        for (var i = 0; i < t.length - 1; i++) extra.push(t[i] + t[i+1]);
+      }
+    });
+    extra.forEach(function(t) { globalSet.add(t); });
+  } else {
+    var allSentences = ['S','O','A','P'].reduce(function(acc, k) {
+      return acc.concat(fastsr[k] || []);
+    }, []);
+    var allText = [entry.title || '', (entry.tags || []).join(' ')]
+      .concat(allSentences).join(' ');
+    globalSet = new Set(eduTokenize(allText));
+  }
+
+  // ----- Semantic prototype: domain vocab keywords present in document -----
+  var semanticSet;
+  if (stored.semantic && stored.semantic.length) {
+    semanticSet = new Set();
+    stored.semantic.forEach(function(kw) {
+      eduTokenize(kw).forEach(function(t) { semanticSet.add(t); });
+    });
+  } else {
+    var docLower = [entry.title || '', (entry.tags || []).join(' ')]
+      .concat(['S','O','A','P'].reduce(function(acc, k) { return acc.concat(fastsr[k] || []); }, []))
+      .join(' ').toLowerCase();
+    semanticSet = new Set();
+    Object.values(FASTSR_KEYWORDS).forEach(function(kws) {
+      kws.zh.concat(kws.en).forEach(function(kw) {
+        if (docLower.indexOf(kw.toLowerCase()) !== -1) {
+          eduTokenize(kw).forEach(function(t) { semanticSet.add(t); });
+        }
+      });
+    });
+  }
+
+  // ----- Fragment prototype: individual sentences as token sets -----
+  var fragmentSets;
+  if (stored.fragment && stored.fragment.length) {
+    fragmentSets = stored.fragment.map(function(s) {
+      return new Set(eduTokenize(s));
+    });
+  } else {
+    fragmentSets = [];
+    ['S','O','A','P'].forEach(function(k) {
+      (fastsr[k] || []).forEach(function(sent) {
+        if (sent.trim().length > 5) {
+          fragmentSets.push(new Set(eduTokenize(sent)));
+        }
+      });
+    });
+  }
+
+  var result = { globalSet: globalSet, semanticSet: semanticSet, fragmentSets: fragmentSets };
+  _eduProtoCache[entry.id] = result;
+  return result;
+}
+
+/**
+ * Score query tokens against the three prototypes.
+ * Returns { global, semantic, fragment } each in range 0–100 (% recall).
+ */
+function eduScorePrototypes(tokens, protos) {
+  if (!tokens.length) return { global: 0, semantic: 0, fragment: 0 };
+  var n = tokens.length;
+
+  // Global: fraction of query tokens in full-document vocabulary
+  var gHits = 0;
+  tokens.forEach(function(t) { if (protos.globalSet.has(t)) gHits++; });
+  var globalScore = (gHits / n) * 100;
+
+  // Semantic: fraction of query tokens in domain-vocabulary set
+  var sHits = 0;
+  tokens.forEach(function(t) { if (protos.semanticSet.has(t)) sHits++; });
+  var semanticScore = (sHits / n) * 100;
+
+  // Fragment: maximum recall in any single sentence fragment
+  var fragmentScore = 0;
+  protos.fragmentSets.forEach(function(fragSet) {
+    var hits = 0;
+    tokens.forEach(function(t) { if (fragSet.has(t)) hits++; });
+    var s = (hits / n) * 100;
+    if (s > fragmentScore) fragmentScore = s;
+  });
+
+  return { global: globalScore, semantic: semanticScore, fragment: fragmentScore };
+}
+
+/**
+ * Compute proportional contributions (sum = 100%) from raw similarity scores.
+ * If all zero, returns { global: 34, semantic: 33, fragment: 33 } as baseline.
+ */
+function eduNormalizeProtoScores(raw) {
+  var total = raw.global + raw.semantic + raw.fragment;
+  if (total <= 0) return { global: 0, semantic: 0, fragment: 0 };
+  var g = Math.round((raw.global / total) * 100);
+  var s = Math.round((raw.semantic / total) * 100);
+  var f = 100 - g - s; // ensure exact sum = 100
+  return { global: g, semantic: s, fragment: Math.max(f, 0) };
+}
 
 // Allowed HTML tags and safe attributes for eduSetSafeHtml whitelist renderer
 var EDU_ALLOWED_TAGS = new Set(['p','br','strong','b','em','i','u','h1','h2','h3','h4',
@@ -1221,11 +1369,13 @@ function eduSetSafeHtml(container, html) {
 
 function eduScoreAll(query) {
   var tokens = eduTokenize(query);
-  if (!tokens.length) return eduData.map(e => ({ entry: e, score: 0, sectionScores: { S: 0, O: 0, A: 0, P: 0 } }));
+  if (!tokens.length) return eduData.map(function(e) {
+    return { entry: e, score: 0, protoScores: { global: 0, semantic: 0, fragment: 0 }, sectionScores: { S: 0, O: 0, A: 0, P: 0 } };
+  });
   return eduData
     .map(function(entry) {
       var result = eduScoreEntry(entry, tokens);
-      return { entry, score: result.score, sectionScores: result.sectionScores };
+      return { entry: entry, score: result.score, protoScores: result.protoScores, sectionScores: result.sectionScores };
     })
     .sort(function(a, b) { return b.score - a.score; });
 }
@@ -1242,47 +1392,50 @@ function eduTokenize(text) {
       }
     }
   });
-  return [...new Set(tokens)].filter(t => t.length >= 1);
+  return [...new Set(tokens)].filter(function(t) { return t.length >= 1; });
 }
 
 function eduScoreEntry(entry, tokens) {
+  // ── Three-prototype scoring (FastSR) ─────────────────────────────────────
+  var protos = eduGetPrototypes(entry);
+  var protoRaw = eduScorePrototypes(tokens, protos);
+
+  // Title boost: direct title match contributes up to +50 raw points
+  var titleSet = new Set(eduTokenize((entry.title || '').toLowerCase()));
+  var titleHits = tokens.filter(function(t) { return titleSet.has(t); }).length;
+  var titleBoost = tokens.length > 0 ? (titleHits / tokens.length) * 50 : 0;
+
+  // Total score = mean of three prototype similarities + title boost, clamped 0–100
+  var avgProto = (protoRaw.global + protoRaw.semantic + protoRaw.fragment) / 3;
+  var score = Math.min(Math.round(avgProto + titleBoost), 100);
+
+  // Proportional breakdown (G + S + F = 100%)
+  var protoScores = eduNormalizeProtoScores(protoRaw);
+
+  // ── SOAP section scores (kept for section-filter mode display) ────────────
+  var sectionScores = eduComputeSoapSectionScores(entry, tokens);
+
+  return { score: score, protoScores: protoScores, sectionScores: sectionScores };
+}
+
+/** Compute per-SOAP-section match scores for filter-mode display. */
+function eduComputeSoapSectionScores(entry, tokens) {
   var sectionWeights = { S: 1.5, O: 1.0, A: 1.8, P: 1.5 };
   var sectionScores = { S: 0, O: 0, A: 0, P: 0 };
-  var titleScore = 0;
-  var tagScore = 0;
-
-  // Title score
-  var titleText = (entry.title || '').toLowerCase();
-  tokens.forEach(function(t) { if (titleText.includes(t)) titleScore += 10; });
-
-  // Tag score
-  var tagText = (entry.tags || []).join(' ').toLowerCase();
-  tokens.forEach(function(t) { if (tagText.includes(t)) tagScore += 6; });
-
-  // SOAP section scores
   var fastsr = entry.fastsr || { S: [], O: [], A: [], P: [] };
+  var secMax = Math.max(tokens.length * 3 * 1.8, 1);
+
   ['S', 'O', 'A', 'P'].forEach(function(sec) {
     var text = (fastsr[sec] || []).join(' ').toLowerCase();
     var raw = 0;
-    tokens.forEach(function(t) { if (text.includes(t)) raw += 3; });
-    // Search mode filter
+    tokens.forEach(function(t) { if (text.indexOf(t) !== -1) raw += 3; });
     if (eduSearchMode !== 'all') {
       raw = (eduSearchMode === sec) ? raw * 4 : raw * 0.05;
     }
-    sectionScores[sec] = Math.round(Math.min(raw * sectionWeights[sec], 100));
+    sectionScores[sec] = Math.min(Math.round((raw * sectionWeights[sec] / secMax) * 100 * 2), 100);
   });
 
-  var totalRaw = titleScore + tagScore + Object.values(sectionScores).reduce((a, b) => a + b, 0);
-  var maxPossible = Math.max(tokens.length * (10 + 6 + 3 * 4 * sectionWeights['A']), 1);
-  var score = Math.min(Math.round((totalRaw / maxPossible) * 100 * 2.5), 100);
-
-  // Per-section percentages for display
-  var secMax = Math.max(tokens.length * 3 * 1.8, 1);
-  ['S', 'O', 'A', 'P'].forEach(function(k) {
-    sectionScores[k] = Math.min(Math.round((sectionScores[k] / secMax) * 100 * 2), 100);
-  });
-
-  return { score, sectionScores };
+  return sectionScores;
 }
 
 // ---------------------------------------------------------------------------

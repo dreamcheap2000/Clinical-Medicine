@@ -5,8 +5,11 @@ translate_edu.py
 Helper module for AI-powered translation and FastSR classification of
 patient education content.
 
+Uses the GitHub Models API (https://models.inference.ai.azure.com) so no
+external secrets are needed — only the built-in GITHUB_TOKEN from Actions.
+
 Requires: openai>=1.0.0  (pip install openai)
-API key:  OPENAI_API_KEY environment variable (GitHub Actions secret)
+Auth:     GITHUB_TOKEN environment variable (automatically provided in Actions)
 """
 
 from __future__ import annotations
@@ -18,8 +21,11 @@ from typing import Optional
 
 
 # ---------------------------------------------------------------------------
-# OpenAI client (optional — falls back gracefully if not installed)
+# GitHub Models client (uses GITHUB_TOKEN — no external secret needed)
 # ---------------------------------------------------------------------------
+GITHUB_MODELS_BASE_URL = "https://models.inference.ai.azure.com"
+GITHUB_MODELS_DEFAULT  = "gpt-4o-mini"
+
 try:
     from openai import OpenAI
     _openai_available = True
@@ -28,16 +34,25 @@ except ImportError:
 
 
 def _get_client() -> Optional["OpenAI"]:
+    """Return an OpenAI-compatible client pointed at GitHub Models.
+
+    Falls back gracefully to None when:
+    - openai package is not installed, or
+    - GITHUB_TOKEN is not set (e.g., local dev without env var)
+    """
     if not _openai_available:
         return None
-    api_key = os.environ.get("OPENAI_API_KEY", "")
-    if not api_key:
+    token = os.environ.get("GITHUB_TOKEN", "")
+    if not token:
         return None
-    return OpenAI(api_key=api_key)
+    return OpenAI(
+        base_url=GITHUB_MODELS_BASE_URL,
+        api_key=token,
+    )
 
 
-def _chat(client: "OpenAI", system: str, user: str, model: str = "gpt-4o-mini") -> str:
-    """Call OpenAI chat completion; return response text."""
+def _chat(client: "OpenAI", system: str, user: str, model: str = GITHUB_MODELS_DEFAULT) -> str:
+    """Call GitHub Models chat completion; return response text."""
     resp = client.chat.completions.create(
         model=model,
         messages=[
@@ -134,6 +149,80 @@ def build_fastsr(text: str) -> dict[str, list[str]]:
     for sent in sentences:
         result[classify_sentence(sent)].append(sent)
     return result
+
+
+# ---------------------------------------------------------------------------
+# FastSR Prototype computation (Global / Semantic / Fragment)
+# ---------------------------------------------------------------------------
+
+def _simple_tokenize(text: str) -> list[str]:
+    """Basic tokenizer: lowercase words + Chinese bigrams (mirrors app.js eduTokenize)."""
+    lower = text.lower()
+    tokens: list[str] = []
+    words = re.split(r"[\s,，、；;。.!！?？\-\/]+", lower)
+    for w in words:
+        if not w:
+            continue
+        tokens.append(w)
+        if re.search(r"[\u4e00-\u9fff]", w) and len(w) > 1:
+            for i in range(len(w) - 1):
+                tokens.append(w[i] + w[i + 1])
+    return list(dict.fromkeys(t for t in tokens if t))
+
+
+def _top_tokens(text: str, k: int = 60) -> list[str]:
+    """Return the top-k most frequent tokens from text (global prototype terms)."""
+    from collections import Counter
+    tokens = _simple_tokenize(text)
+    # Remove single-char tokens that are not Chinese
+    filtered = [t for t in tokens if len(t) > 1 or re.search(r"[\u4e00-\u9fff]", t)]
+    counts = Counter(filtered)
+    return [t for t, _ in counts.most_common(k)]
+
+
+def build_prototypes(
+    title: str,
+    tags: list[str],
+    fastsr: dict[str, list[str]],
+) -> dict:
+    """Build the three FastSR prototype representations for an entry.
+
+    Returns a dict with keys:
+      global   – list of top terms from the full document (BOW approximation)
+      semantic – list of matched domain-vocabulary keywords
+      fragment – list of representative sentences (one per SOAP section + title)
+    """
+    # Full document text
+    all_sentences = [s for secs in fastsr.values() for s in secs]
+    full_text = " ".join([title] + tags + all_sentences)
+
+    # --- Global prototype: top-60 terms from full document ---
+    global_terms = _top_tokens(full_text, k=60)
+
+    # --- Semantic prototype: FASTSR domain keywords present in the document ---
+    full_lower = full_text.lower()
+    semantic_terms: list[str] = []
+    for kws in FASTSR_KW.values():
+        for kw in kws["zh"] + kws["en"]:
+            if kw.lower() in full_lower and kw not in semantic_terms:
+                semantic_terms.append(kw)
+
+    # --- Fragment prototype: one representative sentence per SOAP section ---
+    fragments: list[str] = []
+    if title.strip():
+        fragments.append(title)
+    for sec in ("S", "O", "A", "P"):
+        sents = fastsr.get(sec, [])
+        if sents:
+            # Pick the longest sentence as most information-dense representative
+            rep = max(sents, key=len)
+            fragments.append(rep)
+
+    return {
+        "global": global_terms,
+        "semantic": semantic_terms,
+        "fragment": fragments,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -271,6 +360,11 @@ def process_document(
             title = existing_title or filename
 
     fastsr = build_fastsr(text)
+    prototype = build_prototypes(
+        title=title,
+        tags=[],
+        fastsr=fastsr,
+    )
 
     return {
         "title": title,
@@ -278,6 +372,7 @@ def process_document(
         "source_label": source_label,
         "source_urls": urls,  # all URLs for multi-URL display
         "fastsr": fastsr,
+        "prototype": prototype,
         "versions": {
             "simple_zh": simple_zh,
             "professional_zh": professional_zh,

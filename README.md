@@ -47,20 +47,25 @@ Each education entry contains:
 
 #### Search optimization
 
-- **FastSR SOAP scoring**: Each search query is tokenized (Chinese bigrams + English words) and scored against all four SOAP sections with section-specific weights (`A: 1.8×`, `S/P: 1.5×`, `O: 1.0×`).
-- **Title & tag boosting**: Title matches score `10×`, tag matches score `6×`.
+- **FastSR 3-Prototype Scoring**: Every query is scored against three prototype representations per entry, and the total match score (0–100%) is decomposed into three proportional contributions that sum to 100%:
+  - **Global (G%)** — `blue bar`: query-token recall against the full document's bag-of-words vocabulary (Protocon)
+  - **Semantic (S%)** — `amber bar`: query-token recall against domain-specific medical vocabulary present in the entry (Protosem)
+  - **Fragment (F%)** — `green bar`: maximum per-sentence query-token recall across all SOAP sentences (Protofrag)
+- **Title boost**: +50 points added when query tokens match the entry title.
+- **SOAP section pills**: shown in section-filter mode (S/O/A/P buttons) to indicate which section matched.
 - **Search mode filter**: Users can restrict search to a single SOAP section (S / O / A / P).
 - **Search history**: Last 50 queries persisted per tab; auto-saved after 10 seconds of no change.
 
-#### GitHub Actions auto-translation (AI-assisted)
+#### GitHub Actions auto-translation (GitHub Models AI)
 
 When a `.docx` or `.txt` file is pushed to `Patient education/`:
 
 1. Content is treated as the **professional version** (`professional_zh` or `english` depending on detected language).
-2. An AI model (OpenAI API, configured via `OPENAI_API_KEY` repository secret) generates the other two language versions.
+2. The **GitHub Models API** (`https://models.inference.ai.azure.com`, model `gpt-4o-mini`) is called using the built-in `GITHUB_TOKEN` — **no external secrets required**.
 3. FastSR auto-classifies sentences into S/O/A/P structure.
-4. URLs in the text are extracted and stored in `source_url`.
-5. The entry is merged into `PHCEP/data/edu/patient_edu_data.json` and committed automatically.
+4. **Three prototype representations** are pre-computed and stored in the JSON for fast client-side scoring.
+5. URLs in the text are extracted and stored in `source_url`.
+6. The entry is merged into `PHCEP/data/edu/patient_edu_data.json` and committed automatically.
 
 ### Key features
 

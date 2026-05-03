@@ -28,7 +28,7 @@ jobs:
 
       - name: Generate patient_edu_data.json
         env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python3 .github/scripts/build_edu_data.py
 
       - name: Commit updated edu data

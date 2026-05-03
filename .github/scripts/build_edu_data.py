@@ -176,6 +176,7 @@ def build():
             "added_date": (existing_entry or {}).get("added_date") or datetime.date.today().isoformat(),
             "tags": (existing_entry or {}).get("tags") or [],
             "fastsr": doc_info["fastsr"],
+            "prototype": doc_info.get("prototype", {}),
             "versions": doc_info["versions"],
         }
         new_entries.append(entry)
