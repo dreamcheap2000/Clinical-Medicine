@@ -371,6 +371,26 @@ a:hover { text-decoration: underline; }
 }
 .toast.hidden { opacity: 0; pointer-events: none; }
 
+/* ---- Floating back button (衛教資源 viewer) ---- */
+.edu-back-float {
+  position: fixed;
+  bottom: 72px;
+  right: 24px;
+  z-index: 9990;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  padding: 10px 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,.4);
+  transition: opacity .2s, transform .2s, background .15s;
+}
+.edu-back-float:hover { background: var(--accent); transform: translateY(-2px); }
+.edu-back-float.hidden { opacity: 0; pointer-events: none; }
+
 /* ---- Responsive ---- */
 @media (max-width: 600px) {
   .cat-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
@@ -1711,6 +1731,35 @@ select.search-overlay-active {
 .edu-soap-o-pill { background: rgba(74,158,255,.15); color: var(--accent); }
 .edu-soap-a-pill { background: rgba(244,162,97,.15); color: var(--amber); }
 .edu-soap-p-pill { background: rgba(99,102,241,.15); color: var(--primary); }
+
+/* FastSR Prototype breakdown bar (G / S / F) */
+.edu-proto-bar {
+  display: flex;
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--surface2);
+  margin-top: 8px;
+  width: 100%;
+}
+.edu-proto-seg { display: block; height: 100%; transition: width .25s; min-width: 0; }
+.edu-proto-g { background: var(--accent); }
+.edu-proto-s { background: var(--amber); }
+.edu-proto-f { background: var(--green); }
+.edu-proto-legend {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+.edu-proto-lbl {
+  font-size: 0.68rem;
+  font-weight: 700;
+  opacity: 0.85;
+}
+.edu-proto-g-lbl { color: var(--accent); }
+.edu-proto-s-lbl { color: var(--amber); }
+.edu-proto-f-lbl { color: var(--green); }
 
 /* Version quick-buttons in cards */
 .edu-card-versions { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }

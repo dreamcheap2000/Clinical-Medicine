@@ -145,9 +145,7 @@ function cmSelectCat(id) {
 
 function cmSearch(q) {
   cmSearchQ = q.trim();
-  if (cmSearchQ.length >= 2) {
-    saveSearchHistory('cm', cmSearchQ);
-  }
+  scheduleSearchHistorySave('cm', cmSearchQ);
   const grid = document.getElementById('cm-cat-grid');
   const detail = document.getElementById('cm-detail');
   const resultsAbove = document.getElementById('cm-search-results');
@@ -567,11 +565,13 @@ function buildPcsSearchResults(q) {
 // Keyboard Shortcuts
 // Alt/Option+1…8 → jump to main tabs
 // Tabs: edu(1), drug(2), ref(3), cm(4), nhi(5), specmat(6), ebm(7), workflow(8)
+// Shift+9 → 歷史記錄, Shift+0 → 治療流程, Shift+- → 設定
 // Option/Alt + ↑/↓ → page up / page down
 // Cmd/Ctrl + ↑/↓  → scroll to top / bottom of page
 // ---------------------------------------------------------------------------
 (function() {
   var TAB_SHORTCUTS = { '1': 'edu', '2': 'drug', '3': 'ref', '4': 'cm', '5': 'nhi', '6': 'specmat', '7': 'ebm', '8': 'workflow' };
+  var SHIFT_SHORTCUTS = { 'Digit9': 'history', 'Digit0': 'workflow', 'Minus': 'settings' };
   document.addEventListener('keydown', function(e) {
     var tag = (document.activeElement || {}).tagName;
     var inInput = (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
@@ -582,6 +582,7 @@ function buildPcsSearchResults(q) {
     var isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
     var isAlt = e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey;
     var isCmdCtrl = (isMac ? e.metaKey : e.ctrlKey) && !e.altKey && !e.shiftKey;
+    var isShift = e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey;
 
     // Tab switching: Alt/Option + 1…8
     if (isAlt) {
@@ -591,6 +592,13 @@ function buildPcsSearchResults(q) {
         switchTab(TAB_SHORTCUTS[digit]);
         return;
       }
+    }
+
+    // Tab switching: Shift + 9 / 0 / -
+    if (isShift && e.code && SHIFT_SHORTCUTS[e.code]) {
+      e.preventDefault();
+      switchTab(SHIFT_SHORTCUTS[e.code]);
+      return;
     }
 
     // Option/Alt + ↓ → page down
@@ -1074,7 +1082,7 @@ function eduRenderList() {
     var scored = results.filter(r => r.score > 0);
     results = scored.length ? scored : results;
   } else {
-    results = eduData.map(e => ({ entry: e, score: 0, sectionScores: { S: 0, O: 0, A: 0, P: 0 } }));
+    results = eduData.map(function(e) { return { entry: e, score: 0, protoScores: { global: 0, semantic: 0, fragment: 0 }, sectionScores: { S: 0, O: 0, A: 0, P: 0 } }; });
   }
 
   if (results.length === 0) {
@@ -1083,7 +1091,7 @@ function eduRenderList() {
   }
 
   list.innerHTML = '';
-  results.forEach(function({ entry, score, sectionScores }) {
+  results.forEach(function({ entry, score, protoScores, sectionScores }) {
     var card = document.createElement('div');
     card.className = 'edu-entry-card';
 
@@ -1091,9 +1099,26 @@ function eduRenderList() {
     var scoreBadge = (query && score > 0)
       ? `<span class="edu-score-badge">${score}%</span>` : '';
 
-    // SOAP pills
-    var soapHtml = '';
+    // ── FastSR Prototype breakdown bar (G + S + F = 100%) ──────────────────
+    var protoHtml = '';
     if (query && score > 0) {
+      var gp = protoScores.global, sp = protoScores.semantic, fp = protoScores.fragment;
+      protoHtml = `
+        <div class="edu-proto-bar" title="Global ${gp}% · Semantic ${sp}% · Fragment ${fp}%">
+          <span class="edu-proto-seg edu-proto-g" style="width:${gp}%"></span>
+          <span class="edu-proto-seg edu-proto-s" style="width:${sp}%"></span>
+          <span class="edu-proto-seg edu-proto-f" style="width:${fp}%"></span>
+        </div>
+        <div class="edu-proto-legend">
+          <span class="edu-proto-lbl edu-proto-g-lbl" title="Global prototype: full-document term overlap">G ${gp}%</span>
+          <span class="edu-proto-lbl edu-proto-s-lbl" title="Semantic prototype: medical vocabulary overlap">S ${sp}%</span>
+          <span class="edu-proto-lbl edu-proto-f-lbl" title="Fragment prototype: best-sentence overlap">F ${fp}%</span>
+        </div>`;
+    }
+
+    // ── SOAP section pills (shown in SOAP-filter mode) ─────────────────────
+    var soapHtml = '';
+    if (query && score > 0 && eduSearchMode !== 'all') {
       var pills = [
         { k: 'S', label: 'S', cls: 'edu-soap-s-pill' },
         { k: 'O', label: 'O', cls: 'edu-soap-o-pill' },
@@ -1122,6 +1147,7 @@ function eduRenderList() {
         <div class="edu-card-info">
           <div class="edu-card-title">${escHtml(entry.title)}${scoreBadge}</div>
           ${entry.source_label ? `<div class="edu-card-source">來源：${escHtml(entry.source_label)}</div>` : ''}
+          ${protoHtml}
           ${soapHtml}
           <div class="edu-card-tags">${tagsHtml}</div>
         </div>
@@ -1152,8 +1178,138 @@ function eduSetSearchMode(mode) {
 }
 
 // ---------------------------------------------------------------------------
-// FastSR-like SOAP scoring
+// FastSR Three-Prototype Scoring
 // ---------------------------------------------------------------------------
+// Implements Global, Semantic, and Fragment prototypes as described in FastSR.
+// For each entry the three prototype representations are:
+//   Global   (G): bag-of-words vocabulary of the full document
+//   Semantic (S): domain-vocabulary keywords (FASTSR_KEYWORDS) found in doc
+//   Fragment (F): individual sentences from SOAP sections
+//
+// Similarity to each prototype = query-token recall against prototype terms.
+// Total score = mean(G_sim, S_sim, F_sim) × 100
+// Displayed breakdown G% + S% + F% = 100% (contribution proportions).
+// ---------------------------------------------------------------------------
+
+// In-memory prototype cache: entry.id → { globalSet, semanticSet, fragments[] }
+var _eduProtoCache = Object.create(null);
+
+/** Build and cache prototype representations for one entry. */
+function eduGetPrototypes(entry) {
+  if (_eduProtoCache[entry.id]) return _eduProtoCache[entry.id];
+
+  var fastsr = entry.fastsr || { S: [], O: [], A: [], P: [] };
+
+  // Use pre-computed prototype if stored in JSON (much faster)
+  var stored = entry.prototype || {};
+
+  // ----- Global prototype: all unique tokens from full document -----
+  var globalSet;
+  if (stored.global && stored.global.length) {
+    globalSet = new Set(stored.global.map(function(t) { return t.toLowerCase(); }));
+    // Also expand any multi-char tokens that are Chinese into bigrams
+    var extra = [];
+    stored.global.forEach(function(t) {
+      t = t.toLowerCase();
+      if (/[\u4e00-\u9fff]/.test(t) && t.length > 1) {
+        for (var i = 0; i < t.length - 1; i++) extra.push(t[i] + t[i+1]);
+      }
+    });
+    extra.forEach(function(t) { globalSet.add(t); });
+  } else {
+    var allSentences = ['S','O','A','P'].reduce(function(acc, k) {
+      return acc.concat(fastsr[k] || []);
+    }, []);
+    var allText = [entry.title || '', (entry.tags || []).join(' ')]
+      .concat(allSentences).join(' ');
+    globalSet = new Set(eduTokenize(allText));
+  }
+
+  // ----- Semantic prototype: domain vocab keywords present in document -----
+  var semanticSet;
+  if (stored.semantic && stored.semantic.length) {
+    semanticSet = new Set();
+    stored.semantic.forEach(function(kw) {
+      eduTokenize(kw).forEach(function(t) { semanticSet.add(t); });
+    });
+  } else {
+    var docLower = [entry.title || '', (entry.tags || []).join(' ')]
+      .concat(['S','O','A','P'].reduce(function(acc, k) { return acc.concat(fastsr[k] || []); }, []))
+      .join(' ').toLowerCase();
+    semanticSet = new Set();
+    Object.values(FASTSR_KEYWORDS).forEach(function(kws) {
+      kws.zh.concat(kws.en).forEach(function(kw) {
+        if (docLower.indexOf(kw.toLowerCase()) !== -1) {
+          eduTokenize(kw).forEach(function(t) { semanticSet.add(t); });
+        }
+      });
+    });
+  }
+
+  // ----- Fragment prototype: individual sentences as token sets -----
+  var fragmentSets;
+  if (stored.fragment && stored.fragment.length) {
+    fragmentSets = stored.fragment.map(function(s) {
+      return new Set(eduTokenize(s));
+    });
+  } else {
+    fragmentSets = [];
+    ['S','O','A','P'].forEach(function(k) {
+      (fastsr[k] || []).forEach(function(sent) {
+        if (sent.trim().length > 5) {
+          fragmentSets.push(new Set(eduTokenize(sent)));
+        }
+      });
+    });
+  }
+
+  var result = { globalSet: globalSet, semanticSet: semanticSet, fragmentSets: fragmentSets };
+  _eduProtoCache[entry.id] = result;
+  return result;
+}
+
+/**
+ * Score query tokens against the three prototypes.
+ * Returns { global, semantic, fragment } each in range 0–100 (% recall).
+ */
+function eduScorePrototypes(tokens, protos) {
+  if (!tokens.length) return { global: 0, semantic: 0, fragment: 0 };
+  var n = tokens.length;
+
+  // Global: fraction of query tokens in full-document vocabulary
+  var gHits = 0;
+  tokens.forEach(function(t) { if (protos.globalSet.has(t)) gHits++; });
+  var globalScore = (gHits / n) * 100;
+
+  // Semantic: fraction of query tokens in domain-vocabulary set
+  var sHits = 0;
+  tokens.forEach(function(t) { if (protos.semanticSet.has(t)) sHits++; });
+  var semanticScore = (sHits / n) * 100;
+
+  // Fragment: maximum recall in any single sentence fragment
+  var fragmentScore = 0;
+  protos.fragmentSets.forEach(function(fragSet) {
+    var hits = 0;
+    tokens.forEach(function(t) { if (fragSet.has(t)) hits++; });
+    var s = (hits / n) * 100;
+    if (s > fragmentScore) fragmentScore = s;
+  });
+
+  return { global: globalScore, semantic: semanticScore, fragment: fragmentScore };
+}
+
+/**
+ * Compute proportional contributions (sum = 100%) from raw similarity scores.
+ * If all zero, returns { global: 0, semantic: 0, fragment: 0 } — no contribution.
+ */
+function eduNormalizeProtoScores(raw) {
+  var total = raw.global + raw.semantic + raw.fragment;
+  if (total <= 0) return { global: 0, semantic: 0, fragment: 0 };
+  var g = Math.round((raw.global / total) * 100);
+  var s = Math.round((raw.semantic / total) * 100);
+  var f = 100 - g - s; // ensure exact sum = 100
+  return { global: g, semantic: s, fragment: Math.max(f, 0) };
+}
 
 // Allowed HTML tags and safe attributes for eduSetSafeHtml whitelist renderer
 var EDU_ALLOWED_TAGS = new Set(['p','br','strong','b','em','i','u','h1','h2','h3','h4',
@@ -1213,11 +1369,13 @@ function eduSetSafeHtml(container, html) {
 
 function eduScoreAll(query) {
   var tokens = eduTokenize(query);
-  if (!tokens.length) return eduData.map(e => ({ entry: e, score: 0, sectionScores: { S: 0, O: 0, A: 0, P: 0 } }));
+  if (!tokens.length) return eduData.map(function(e) {
+    return { entry: e, score: 0, protoScores: { global: 0, semantic: 0, fragment: 0 }, sectionScores: { S: 0, O: 0, A: 0, P: 0 } };
+  });
   return eduData
     .map(function(entry) {
       var result = eduScoreEntry(entry, tokens);
-      return { entry, score: result.score, sectionScores: result.sectionScores };
+      return { entry: entry, score: result.score, protoScores: result.protoScores, sectionScores: result.sectionScores };
     })
     .sort(function(a, b) { return b.score - a.score; });
 }
@@ -1234,47 +1392,50 @@ function eduTokenize(text) {
       }
     }
   });
-  return [...new Set(tokens)].filter(t => t.length >= 1);
+  return Array.from(new Set(tokens)).filter(function(t) { return t.length >= 1; });
 }
 
 function eduScoreEntry(entry, tokens) {
+  // ── Three-prototype scoring (FastSR) ─────────────────────────────────────
+  var protos = eduGetPrototypes(entry);
+  var protoRaw = eduScorePrototypes(tokens, protos);
+
+  // Title boost: direct title match contributes up to +50 raw points
+  var titleSet = new Set(eduTokenize((entry.title || '').toLowerCase()));
+  var titleHits = tokens.filter(function(t) { return titleSet.has(t); }).length;
+  var titleBoost = tokens.length > 0 ? (titleHits / tokens.length) * 50 : 0;
+
+  // Total score = mean of three prototype similarities + title boost, clamped 0–100
+  var avgProto = (protoRaw.global + protoRaw.semantic + protoRaw.fragment) / 3;
+  var score = Math.min(Math.round(avgProto + titleBoost), 100);
+
+  // Proportional breakdown (G + S + F = 100%)
+  var protoScores = eduNormalizeProtoScores(protoRaw);
+
+  // ── SOAP section scores (kept for section-filter mode display) ────────────
+  var sectionScores = eduComputeSoapSectionScores(entry, tokens);
+
+  return { score: score, protoScores: protoScores, sectionScores: sectionScores };
+}
+
+/** Compute per-SOAP-section match scores for filter-mode display. */
+function eduComputeSoapSectionScores(entry, tokens) {
   var sectionWeights = { S: 1.5, O: 1.0, A: 1.8, P: 1.5 };
   var sectionScores = { S: 0, O: 0, A: 0, P: 0 };
-  var titleScore = 0;
-  var tagScore = 0;
-
-  // Title score
-  var titleText = (entry.title || '').toLowerCase();
-  tokens.forEach(function(t) { if (titleText.includes(t)) titleScore += 10; });
-
-  // Tag score
-  var tagText = (entry.tags || []).join(' ').toLowerCase();
-  tokens.forEach(function(t) { if (tagText.includes(t)) tagScore += 6; });
-
-  // SOAP section scores
   var fastsr = entry.fastsr || { S: [], O: [], A: [], P: [] };
+  var secMax = Math.max(tokens.length * 3 * 1.8, 1);
+
   ['S', 'O', 'A', 'P'].forEach(function(sec) {
     var text = (fastsr[sec] || []).join(' ').toLowerCase();
     var raw = 0;
-    tokens.forEach(function(t) { if (text.includes(t)) raw += 3; });
-    // Search mode filter
+    tokens.forEach(function(t) { if (text.indexOf(t) !== -1) raw += 3; });
     if (eduSearchMode !== 'all') {
       raw = (eduSearchMode === sec) ? raw * 4 : raw * 0.05;
     }
-    sectionScores[sec] = Math.round(Math.min(raw * sectionWeights[sec], 100));
+    sectionScores[sec] = Math.min(Math.round((raw * sectionWeights[sec] / secMax) * 100 * 2), 100);
   });
 
-  var totalRaw = titleScore + tagScore + Object.values(sectionScores).reduce((a, b) => a + b, 0);
-  var maxPossible = Math.max(tokens.length * (10 + 6 + 3 * 4 * sectionWeights['A']), 1);
-  var score = Math.min(Math.round((totalRaw / maxPossible) * 100 * 2.5), 100);
-
-  // Per-section percentages for display
-  var secMax = Math.max(tokens.length * 3 * 1.8, 1);
-  ['S', 'O', 'A', 'P'].forEach(function(k) {
-    sectionScores[k] = Math.min(Math.round((sectionScores[k] / secMax) * 100 * 2), 100);
-  });
-
-  return { score, sectionScores };
+  return sectionScores;
 }
 
 // ---------------------------------------------------------------------------
@@ -1294,6 +1455,8 @@ function eduOpenEntry(id, version) {
   if (toolbar) toolbar.classList.add('hidden');
   if (addPanel) addPanel.classList.add('hidden');
   document.getElementById('edu-viewer').classList.remove('hidden');
+  var floatBtn = document.getElementById('edu-back-float');
+  if (floatBtn) floatBtn.classList.remove('hidden');
 
   document.querySelectorAll('.edu-vtab').forEach(function(btn) {
     btn.classList.toggle('active', btn.dataset.v === eduCurrentVersion);
@@ -1341,13 +1504,22 @@ function eduRenderViewerContent() {
         }).join('')}
       </div>`;
   } else if (v === 'source') {
+    var urlsHtml = '';
+    if (entry.source_urls && entry.source_urls.length > 1) {
+      urlsHtml = '<p><strong>來源連結：</strong></p><ul>' +
+        entry.source_urls.map(function(u) {
+          return '<li><a href="' + escHtml(u) + '" target="_blank" rel="noopener">' + escHtml(u) + '</a></li>';
+        }).join('') + '</ul>';
+    } else if (entry.source_url) {
+      urlsHtml = '<p><a href="' + escHtml(entry.source_url) + '" target="_blank" rel="noopener">' + escHtml(entry.source_url) + '</a></p>';
+    } else {
+      urlsHtml = '<p style="color:var(--muted)">（未提供來源連結）</p>';
+    }
     content.innerHTML = `
       <div class="edu-source-view">
         <h3>來源資訊</h3>
         ${entry.source_label ? `<p><strong>來源：</strong>${escHtml(entry.source_label)}</p>` : ''}
-        ${entry.source_url
-          ? `<p><a href="${escHtml(entry.source_url)}" target="_blank" rel="noopener">${escHtml(entry.source_url)}</a></p>`
-          : '<p style="color:var(--muted)">（未提供來源連結）</p>'}
+        ${urlsHtml}
         ${entry.tags && entry.tags.length
           ? `<p><strong>標籤：</strong>${entry.tags.map(t => `<span class="edu-tag">${escHtml(t)}</span>`).join(' ')}</p>`
           : ''}
@@ -1361,11 +1533,16 @@ function eduRenderViewerContent() {
 
 function eduCloseViewer() {
   document.getElementById('edu-viewer').classList.add('hidden');
+  var floatBtn = document.getElementById('edu-back-float');
+  if (floatBtn) floatBtn.classList.add('hidden');
   var list = document.getElementById('edu-list');
   var toolbar = document.querySelector('.edu-toolbar');
   if (list) list.classList.remove('hidden');
   if (toolbar) toolbar.classList.remove('hidden');
   eduCurrentEntry = null;
+  // Scroll to the top of the education section (search bar area)
+  var eduTab = document.getElementById('tab-edu');
+  if (eduTab) eduTab.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ---------------------------------------------------------------------------
@@ -1626,9 +1803,7 @@ function nhiOpenCat(id) {
 
 function nhiSearch(q) {
   nhiSearchQ = q.trim();
-  if (nhiSearchQ.length >= 2) {
-    saveSearchHistory('nhi', nhiSearchQ);
-  }
+  scheduleSearchHistorySave('nhi', nhiSearchQ);
   if (nhiSearchQ) {
     if (!nhiActiveCat) {
       document.getElementById('nhi-cat-grid').classList.add('hidden');
@@ -1728,8 +1903,9 @@ function nhiRender() {
   }
 
   tbody.innerHTML = codes.map(function(r) {
+    var expandItems = getSettings().defaultExpandItems;
     var noteHtml = (showNote && r.note)
-      ? '<tr class="nhi-note-row"><td colspan="4"><div class="nhi-note">' + escHtml(r.note) + '</div></td></tr>'
+      ? '<tr class="nhi-note-row' + (expandItems ? '' : ' hidden') + '"><td colspan="4"><div class="nhi-note">' + escHtml(r.note) + '</div></td></tr>'
       : '';
     var catBadge = r._cat
       ? '<span class="nhi-cat-inline">' + escHtml(r._cat) + '</span> ' : '';
@@ -1788,6 +1964,7 @@ function nhiFilterLevel(level) {
 // Search History
 // ---------------------------------------------------------------------------
 const SEARCH_HISTORY_MAX = 50;
+const _searchHistoryTimers = {};
 
 function searchHistoryKey(type) {
   return 'phcep_search_history_' + type;
@@ -1805,6 +1982,15 @@ function saveSearchHistory(type, query) {
   hist.unshift(query);
   if (hist.length > SEARCH_HISTORY_MAX) hist = hist.slice(0, SEARCH_HISTORY_MAX);
   storageSet(searchHistoryKey(type), hist);
+}
+
+// Auto-save search term to history if unchanged for 10 seconds
+function scheduleSearchHistorySave(type, query) {
+  if (_searchHistoryTimers[type]) clearTimeout(_searchHistoryTimers[type]);
+  if (!query || query.length < 2) return;
+  _searchHistoryTimers[type] = setTimeout(function() {
+    saveSearchHistory(type, query);
+  }, 10000);
 }
 
 function clearSearchHistory(type) {
@@ -2014,9 +2200,7 @@ function drugOpenCat(id) {
 
 function drugSearch(q) {
   drugSearchQ = q.trim();
-  if (drugSearchQ.length >= 2) {
-    saveSearchHistory('drug', drugSearchQ);
-  }
+  scheduleSearchHistorySave('drug', drugSearchQ);
   var grid = document.getElementById('drug-cat-grid');
   var tagFilter = document.getElementById('drug-tag-filter');
   var searchResults = document.getElementById('drug-search-results');
@@ -2190,7 +2374,7 @@ function drugRender() {
       }
 
       var entryDiv = document.createElement('div');
-      entryDiv.className = 'drug-entry';
+      entryDiv.className = 'drug-entry' + (getSettings().defaultExpandItems ? ' open' : '');
 
       var headerDiv = document.createElement('div');
       headerDiv.className = 'drug-entry-header';
@@ -2348,7 +2532,7 @@ function specmatOpenCat(catId) {
   entriesEl.innerHTML = '';
   cat.entries.forEach(function(e) {
     var entryDiv = document.createElement('div');
-    entryDiv.className = 'drug-entry specmat-entry';
+    entryDiv.className = 'drug-entry specmat-entry' + (getSettings().defaultExpandItems ? ' open' : '');
 
     var headerDiv = document.createElement('div');
     headerDiv.className = 'drug-entry-header';
@@ -2401,9 +2585,7 @@ function specmatBackToGrid() {
 
 function specmatSearch(q) {
   specmatSearchQ = q.trim();
-  if (specmatSearchQ.length >= 2) {
-    saveSearchHistory('specmat', specmatSearchQ);
-  }
+  scheduleSearchHistorySave('specmat', specmatSearchQ);
   if (!specmatData) return;
   var grid = document.getElementById('specmat-cat-grid');
   var searchResults = document.getElementById('specmat-search-results');
@@ -2460,7 +2642,7 @@ function buildSpecmatSearchResults(q) {
 const SETTINGS_KEY = 'phcep_settings';
 
 function getSettings() {
-  return storageGet(SETTINGS_KEY, { showPcs: false, showNhiPoints: false });
+  return storageGet(SETTINGS_KEY, { showPcs: false, showNhiPoints: false, defaultExpandItems: false });
 }
 
 function saveSettings(settings) {
@@ -2552,6 +2734,19 @@ function renderSettingsTab() {
     </div>
 
     <div class="settings-group">
+      <div class="settings-group-title">📋 特材給付 &amp; NHI支付標準</div>
+      <label class="settings-item">
+        <div class="settings-item-label">
+          <div class="settings-item-name">預設展開項目內容</div>
+          <div class="settings-item-desc">開啟後，特材給付和 NHI 支付標準的項目詳細內容預設展開；關閉則預設收合</div>
+        </div>
+        <input type="checkbox" class="settings-toggle" id="setting-default-expand"
+          ${settings.defaultExpandItems ? 'checked' : ''}
+          onchange="onSettingDefaultExpand(this.checked)" />
+      </label>
+    </div>
+
+    <div class="settings-group">
       <div class="settings-group-title">⌨️ 快速鍵說明</div>
       <div class="settings-shortcuts">
         <div class="shortcut-row"><kbd>Alt+1</kbd> 衛教資源</div>
@@ -2562,6 +2757,9 @@ function renderSettingsTab() {
         <div class="shortcut-row"><kbd>Alt+6</kbd> 特材給付</div>
         <div class="shortcut-row"><kbd>Alt+7</kbd> EBM筆記</div>
         <div class="shortcut-row"><kbd>Alt+8</kbd> 治療流程</div>
+        <div class="shortcut-row"><kbd>Shift+9</kbd> 歷史記錄</div>
+        <div class="shortcut-row"><kbd>Shift+0</kbd> 治療流程</div>
+        <div class="shortcut-row"><kbd>Shift+-</kbd> 設定</div>
         <div class="shortcut-row"><kbd class="key-combo">Option/Alt + ↑</kbd> 向上翻頁</div>
         <div class="shortcut-row"><kbd class="key-combo">Option/Alt + ↓</kbd> 向下翻頁</div>
         <div class="shortcut-row"><kbd class="key-combo">Cmd/Ctrl + ↑</kbd> 回到頁頂</div>
@@ -2584,6 +2782,12 @@ function onSettingShowNhiPts(checked) {
   var cb = document.getElementById('nhi-show-pts');
   if (cb) cb.checked = checked;
   applyNhiPtsVisibility();
+}
+
+function onSettingDefaultExpand(checked) {
+  var settings = getSettings();
+  settings.defaultExpandItems = checked;
+  saveSettings(settings);
 }
 // ===========================================================================
 
