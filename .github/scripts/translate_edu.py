@@ -90,6 +90,7 @@ def extract_urls(text: str) -> list[str]:
 # ---------------------------------------------------------------------------
 # FastSR keyword tables (mirrors FASTSR_KEYWORDS in app.js)
 # ---------------------------------------------------------------------------
+
 FASTSR_KW = {
     "S": {
         "zh": ["症狀", "主訴", "感覺", "疼痛", "患者", "病人", "病史", "不適", "適應症",
@@ -125,6 +126,7 @@ FASTSR_KW = {
 }
 
 
+
 # Minimum keyword length to receive a higher match weight
 KEYWORD_LENGTH_THRESHOLD = 3
 
@@ -151,9 +153,65 @@ def build_fastsr(text: str) -> dict[str, list[str]]:
     return result
 
 
+def _fastsr_needs_ai(fastsr: dict) -> bool:
+    """Return True when the existing FastSR data looks poor quality.
+
+    Heuristics:
+    - Any section (O or A) is empty → classification was too coarse
+    - S section holds >80% of all sentences and there are more than 5 total
+    """
+    s = fastsr.get("S", [])
+    o = fastsr.get("O", [])
+    a = fastsr.get("A", [])
+    p = fastsr.get("P", [])
+    total = len(s) + len(o) + len(a) + len(p)
+    if total == 0:
+        return True
+    if not o and not a:
+        return True
+    if len(s) > 0.8 * total and total > 5:
+        return True
+    return False
+
+
 # ---------------------------------------------------------------------------
-# FastSR Prototype computation (Global / Semantic / Fragment)
+# AI-powered FastSR classification
 # ---------------------------------------------------------------------------
+SYSTEM_FASTSR = (
+    "You are a clinical NLP classifier. Given medical patient education text in any language, "
+    "classify each meaningful sentence into one of four SOAP sections.\n"
+    "S (Subjective): patient symptoms, complaints, indications, who the procedure is for, patient background.\n"
+    "O (Objective): examination findings, measurements, test results, clinical statistics, study data.\n"
+    "A (Assessment): diagnosis, mechanism, pathology, disease analysis, rationale.\n"
+    "P (Plan): treatment steps, medications, procedures, pre/post-care instructions, what to do or avoid.\n"
+    "Rules: every sentence appears in exactly one section; skip sentences shorter than 8 characters.\n"
+    "Return ONLY a valid JSON object with keys \"S\", \"O\", \"A\", \"P\" each holding an array of strings. "
+    "No markdown fences, no extra text."
+)
+
+
+def ai_classify_fastsr(client: "OpenAI", text: str) -> dict[str, list[str]]:
+    """Use GitHub Models AI to classify text into S/O/A/P buckets.
+
+    Falls back to keyword-based classification if JSON parsing fails.
+    """
+    truncated = text[:3500]
+    raw = _chat(client, SYSTEM_FASTSR, truncated)
+    try:
+        # Strip possible markdown fences the model may still emit
+        json_str = re.sub(r"```json?\s*|\s*```", "", raw).strip()
+        data = json.loads(json_str)
+        return {
+            "S": [str(s) for s in data.get("S", []) if str(s).strip()],
+            "O": [str(s) for s in data.get("O", []) if str(s).strip()],
+            "A": [str(s) for s in data.get("A", []) if str(s).strip()],
+            "P": [str(s) for s in data.get("P", []) if str(s).strip()],
+        }
+    except Exception as exc:
+        print(f"  ⚠️ AI FastSR parse failed: {exc} — falling back to keyword classifier")
+        return build_fastsr(text)
+
+
 
 def _simple_tokenize(text: str) -> list[str]:
     """Basic tokenizer: lowercase words + Chinese bigrams (mirrors app.js eduTokenize)."""
@@ -306,6 +364,7 @@ def process_document(
     existing_title: Optional[str] = None,
     extra_urls: Optional[list] = None,
     existing_versions: Optional[dict] = None,
+    existing_fastsr: Optional[dict] = None,
 ) -> dict:
     """
     Process a document (text + HTML) and return a v2 edu entry dict.
@@ -320,6 +379,7 @@ def process_document(
         existing_title: Title from an existing JSON entry (preserved if set).
         extra_urls: Additional source URLs to merge in (e.g. from a sidecar .meta.json).
         existing_versions: Existing translated versions dict to use as fallback when AI fails.
+        existing_fastsr: Existing FastSR dict to reuse if quality is acceptable.
     """
     lang = detect_language(text)
     urls = list(dict.fromkeys(extract_urls(text) + (extra_urls or [])))
@@ -331,6 +391,7 @@ def process_document(
         source_label = domain
 
     ev = existing_versions or {}
+    ef = existing_fastsr or {}
     client = _get_client()
 
     # Determine which versions are already complete so we skip unnecessary AI calls
@@ -396,7 +457,20 @@ def process_document(
             english = professional_en
             title = existing_title or filename
 
-    fastsr = build_fastsr(text)
+    # FastSR classification — prefer AI when available; reuse existing if quality is OK
+    if ef and not _fastsr_needs_ai(ef):
+        fastsr = ef
+        print("  ✔ Reusing existing fastsr")
+    elif client:
+        try:
+            fastsr = ai_classify_fastsr(client, text)
+            print(f"  ✔ AI FastSR: S({len(fastsr['S'])}) O({len(fastsr['O'])}) A({len(fastsr['A'])}) P({len(fastsr['P'])})")
+        except Exception as e:
+            print(f"  ⚠️ AI FastSR failed: {e} — using keyword classifier")
+            fastsr = build_fastsr(text)
+    else:
+        fastsr = build_fastsr(text)
+
     prototype = build_prototypes(
         title=title,
         tags=[],

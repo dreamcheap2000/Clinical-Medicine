@@ -1020,6 +1020,7 @@ let eduData = [];
 let eduSearchMode = 'all';
 let eduCurrentEntry = null;
 let eduCurrentVersion = 'simple_zh';
+let eduDefaultVersion = 'simple_zh';
 
 function initEduTab() {
   loadEduData();
@@ -1159,7 +1160,7 @@ function eduRenderList() {
         ${srcBtn}${deleteBtn}
       </div>
     `;
-    card.addEventListener('click', function() { eduOpenEntry(entry.id, 'simple_zh'); });
+    card.addEventListener('click', function() { eduOpenEntry(entry.id, eduDefaultVersion); });
     list.appendChild(card);
   });
 }
@@ -1175,6 +1176,13 @@ function eduSetSearchMode(mode) {
   });
   var q = (document.getElementById('edu-search') || {}).value || '';
   if (q.trim()) eduSearch(q);
+}
+
+function eduSetDefaultVersion(v) {
+  eduDefaultVersion = v;
+  document.querySelectorAll('.edu-ver-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.ver === v);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -1445,14 +1453,16 @@ function eduOpenEntry(id, version) {
   var entry = eduData.find(e => e.id === id);
   if (!entry) return;
   eduCurrentEntry = entry;
-  eduCurrentVersion = version || 'simple_zh';
+  eduCurrentVersion = version || eduDefaultVersion;
 
   document.getElementById('edu-viewer-title').textContent = entry.title;
   var list = document.getElementById('edu-list');
   var toolbar = document.querySelector('.edu-toolbar');
+  var versionBar = document.getElementById('edu-version-bar');
   var addPanel = document.getElementById('edu-add-panel');
   if (list) list.classList.add('hidden');
   if (toolbar) toolbar.classList.add('hidden');
+  if (versionBar) versionBar.classList.add('hidden');
   if (addPanel) addPanel.classList.add('hidden');
   document.getElementById('edu-viewer').classList.remove('hidden');
   var floatBtn = document.getElementById('edu-back-float');
@@ -1482,18 +1492,18 @@ function eduRenderViewerContent() {
   if (v === 'fastsr') {
     var fastsr = entry.fastsr || { S: [], O: [], A: [], P: [] };
     var sections = [
-      { k: 'S', label: 'S — 症狀／主訴／適應症', cls: 'edu-soap-s' },
-      { k: 'O', label: 'O — 客觀發現／檢查結果', cls: 'edu-soap-o' },
-      { k: 'A', label: 'A — 評估／診斷', cls: 'edu-soap-a' },
-      { k: 'P', label: 'P — 計畫／治療', cls: 'edu-soap-p' }
+      { k: 'S', label: 'S — 症狀／主訴／適應症', cls: 'edu-soap-s', blk: 'fastsr-s' },
+      { k: 'O', label: 'O — 客觀發現／檢查結果', cls: 'edu-soap-o', blk: 'fastsr-o' },
+      { k: 'A', label: 'A — 評估／診斷', cls: 'edu-soap-a', blk: 'fastsr-a' },
+      { k: 'P', label: 'P — 計畫／治療', cls: 'edu-soap-p', blk: 'fastsr-p' }
     ];
     content.innerHTML = `
       <div class="edu-fastsr-view">
         <p class="edu-fastsr-desc">FastSR 結構 — 將原文依 SOAP 格式分類，用於精準搜尋與跨文件對比<br>
         此分類方式參考 FastSR 論文（EBM-NLP PICO 框架）映射至臨床 SOAP 格式。</p>
-        ${sections.map(function({ k, label, cls }) {
+        ${sections.map(function({ k, label, cls, blk }) {
           var items = fastsr[k] || [];
-          return `<div class="edu-fastsr-block">
+          return `<div class="edu-fastsr-block ${blk}">
             <div class="edu-fastsr-header ${cls}">${label}</div>
             <ul class="edu-fastsr-list">
               ${items.length
@@ -1537,8 +1547,10 @@ function eduCloseViewer() {
   if (floatBtn) floatBtn.classList.add('hidden');
   var list = document.getElementById('edu-list');
   var toolbar = document.querySelector('.edu-toolbar');
+  var versionBar = document.getElementById('edu-version-bar');
   if (list) list.classList.remove('hidden');
   if (toolbar) toolbar.classList.remove('hidden');
+  if (versionBar) versionBar.classList.remove('hidden');
   eduCurrentEntry = null;
   // Scroll to the top of the education section (search bar area)
   var eduTab = document.getElementById('tab-edu');
