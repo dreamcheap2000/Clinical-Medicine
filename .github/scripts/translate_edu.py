@@ -158,8 +158,12 @@ def _fastsr_needs_ai(fastsr: dict) -> bool:
 
     Heuristics:
     - Any section (O or A) is empty → classification was too coarse
-    - S section holds >80% of all sentences and there are more than 5 total
+    - S section holds >#FASTSR_S_RATIO_THRESHOLD of all sentences when total > #FASTSR_MIN_SENTENCES
     """
+    # Quality thresholds
+    FASTSR_S_RATIO_THRESHOLD = 0.8   # S-section dominance ratio above which quality is poor
+    FASTSR_MIN_SENTENCES     = 5     # minimum total sentences before ratio check applies
+
     s = fastsr.get("S", [])
     o = fastsr.get("O", [])
     a = fastsr.get("A", [])
@@ -169,7 +173,7 @@ def _fastsr_needs_ai(fastsr: dict) -> bool:
         return True
     if not o and not a:
         return True
-    if len(s) > 0.8 * total and total > 5:
+    if len(s) > FASTSR_S_RATIO_THRESHOLD * total and total > FASTSR_MIN_SENTENCES:
         return True
     return False
 
@@ -177,6 +181,10 @@ def _fastsr_needs_ai(fastsr: dict) -> bool:
 # ---------------------------------------------------------------------------
 # AI-powered FastSR classification
 # ---------------------------------------------------------------------------
+
+# Maximum input length passed to the AI classifier to stay within model context limits
+AI_FASTSR_MAX_INPUT_CHARS = 3500
+
 SYSTEM_FASTSR = (
     "You are a clinical NLP classifier. Given medical patient education text in any language, "
     "classify each meaningful sentence into one of four SOAP sections.\n"
@@ -195,7 +203,7 @@ def ai_classify_fastsr(client: "OpenAI", text: str) -> dict[str, list[str]]:
 
     Falls back to keyword-based classification if JSON parsing fails.
     """
-    truncated = text[:3500]
+    truncated = text[:AI_FASTSR_MAX_INPUT_CHARS]
     raw = _chat(client, SYSTEM_FASTSR, truncated)
     try:
         # Strip possible markdown fences the model may still emit
