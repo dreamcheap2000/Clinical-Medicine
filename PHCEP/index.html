@@ -319,6 +319,14 @@
       </div>
       <button class="edu-add-btn" onclick="eduToggleAddForm()">＋ 新增資源</button>
     </div>
+    <!-- Version selector row -->
+    <div class="edu-version-bar" id="edu-version-bar">
+      <span class="edu-ver-label">查看版本：</span>
+      <button class="edu-ver-btn active" data-ver="simple_zh" onclick="eduSetDefaultVersion('simple_zh')">🈸 簡易版</button>
+      <button class="edu-ver-btn" data-ver="professional_zh" onclick="eduSetDefaultVersion('professional_zh')">🏥 專業版</button>
+      <button class="edu-ver-btn" data-ver="english" onclick="eduSetDefaultVersion('english')">🔤 English</button>
+      <button class="edu-ver-btn" data-ver="fastsr" onclick="eduSetDefaultVersion('fastsr')">🔬 FastSR</button>
+    </div>
 
     <!-- Add entry form panel (hidden by default) -->
     <div id="edu-add-panel" class="edu-add-panel hidden">

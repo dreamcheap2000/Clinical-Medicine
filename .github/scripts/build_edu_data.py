@@ -67,6 +67,26 @@ def txt_to_html(txt_path: Path) -> tuple[str, str]:
     return html, raw
 
 
+def strip_leading_title_para(html: str, stem: str) -> str:
+    """Remove any leading <p>/<h1>/<h2> that is an exact duplicate of the document title/stem.
+
+    Docx files often include the document title as the first heading/paragraph, which
+    duplicates the ``title`` field shown in the viewer header.  This function strips that
+    redundant first element so it does not appear in the rendered content.
+    """
+    stripped = stem.strip()
+    if not stripped or not html:
+        return html
+    # Match a leading block-level tag whose text content equals the stem exactly.
+    pattern = re.compile(
+        r'^\s*<(p|h1|h2|h3)(?:\s[^>]*)?>\s*'
+        + re.escape(stripped)
+        + r'\s*</\1>\s*',
+        re.IGNORECASE,
+    )
+    return pattern.sub("", html).strip()
+
+
 def sanitize_id(filename: str, idx: int) -> str:
     stem = Path(filename).stem
     stem_ascii = re.sub(r"[^a-zA-Z0-9_\-]", "_", stem)[:30]
@@ -159,8 +179,11 @@ def build():
 
         if suffix == ".docx":
             html_content, plain_text = docx_to_html(fpath)
+            # Strip redundant leading title paragraph (docx often includes it as first element)
+            html_content = strip_leading_title_para(html_content, stem)
         elif suffix == ".txt":
             html_content, plain_text = txt_to_html(fpath)
+            html_content = strip_leading_title_para(html_content, stem)
         else:
             raw_url = GITHUB_RAW_BASE + filename.replace(" ", "%20")
             entry = {
@@ -213,6 +236,7 @@ def build():
             existing_title=existing_title,
             extra_urls=extra_urls,
             existing_versions=existing_versions,
+            existing_fastsr=(existing_entry or {}).get("fastsr"),
         )
 
         # Determine entry id
