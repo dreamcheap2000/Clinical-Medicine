@@ -115,40 +115,39 @@ Push .docx → GitHub Actions trigger → build_edu_data.py
 }
 ```
 
-#### Before vs. After: TAME pipeline comparison
+#### TAME entry comparison: pipeline-processed vs. manually refined
 
-The `經動脈微細血管栓塞術` entry illustrates the difference between the raw pipeline output and a manually refined entry.
+The `經動脈微細血管栓塞術` document is stored as two entries (`edu003` and `edu004_pipeline`), showing exactly what the automation pipeline produces from the uploaded `.docx` and how it compares to a manually refined version.
 
-> **Entry `edu004` (管線自動產生版)** — what GitHub Actions produced when the `.docx` was first pushed:
+> **Entry `edu004_pipeline` (管線處理版)** — what GitHub Actions produces when the `.docx` is pushed and the AI pipeline runs successfully:
 
-| Field | Pipeline output (before refinement) |
-|-------|--------------------------------------|
-| `simple_zh` | Raw `.docx` HTML (6,039 chars) — same as `professional_zh` |
-| `professional_zh` | Identical to `simple_zh` (AI translation did not produce a distinct version) |
-| `english` | **Empty** — AI translation not triggered |
-| `fastsr.S` | **110 sentences** — entire document classified as Subjective (keyword fallback) |
-| `fastsr.O` | 6 sentences (MRI / procedural features) |
-| `fastsr.A` | 2 items, both "主要病理機制" (table header text) |
-| `fastsr.P` | 8 sentences (mixed — some non-treatment sentences) |
-| Source URLs | ✅ Correctly extracted from sidecar `.meta.json` |
-| Tags | ✅ Correctly merged from sidecar `.meta.json` |
+| Field | Pipeline-processed output |
+|-------|--------------------------|
+| `simple_zh` | 1,208 chars — patient-friendly, emoji headers, sTAME vs TAME comparison table, who should/should not have it |
+| `professional_zh` | 2,942 chars — clinical tone, CIBAS mechanism, full indication/contraindication tables (sTAME 5 conditions + TAME 9 conditions), success rates |
+| `english` | 5,137 chars — complete clinical English with both indication tables and per-condition outcomes |
+| `fastsr.S` | **5 items** — refractory pain criteria (≥ 3–6 months), functional impact, condition list, contraindications |
+| `fastsr.O` | **5 items** — BML findings on MRI, knee OA success rates, frozen shoulder success rates, provocation pain sign, VAS/NRS scores per condition |
+| `fastsr.A` | **5 items** — CIBAS mechanism, sTAME indications, TAME indications, differential (BML+), safety profile |
+| `fastsr.P` | **5 items** — pre-op MRI, sTAME procedure, TAME DSA procedure, post-procedure compression, two-phase recovery 70–90% |
+| Source URLs | ✅ Both OpenEvidence + Okuno Y-Clinic (from sidecar `.meta.json`) |
+| Tags | ✅ 10 tags including CIBAS, sTAME, condition names (from sidecar) |
 
-> **Entry `edu003` (精校版)** — manually crafted after pipeline review:
+> **Entry `edu003` (精校版)** — manually refined shorter version for quick reading:
 
 | Field | Manually refined output |
 |-------|------------------------|
-| `simple_zh` | 1,314 chars — patient-friendly, emoji headers, comparison table |
-| `professional_zh` | 1,845 chars — clinical tone, mechanism/indication/outcome tables |
-| `english` | 3,868 chars — full English clinical overview |
-| `fastsr.S` | **5 items** — patient symptoms, indications, refractory criteria |
-| `fastsr.O` | 5 items — MRI BMLs, neovascularization, VAS scores, success rates, provocation pain |
-| `fastsr.A` | 5 items — CIBAS mechanism, sTAME/TAME indications, contraindications, MRI criteria |
-| `fastsr.P` | 5 items — MRI pre-op, sTAME procedure, TAME procedure, post-care, expected recovery |
+| `simple_zh` | 1,314 chars — concise patient guide, core sTAME/TAME difference |
+| `professional_zh` | 1,845 chars — condensed clinical summary (fewer tables, shorter) |
+| `english` | 3,868 chars — focused English overview |
+| `fastsr.S/O/A/P` | 5 items each — same clinical domains, shorter sentences |
 | Source URLs | ✅ Both OpenEvidence + Okuno Y-Clinic |
-| Tags | ✅ Enriched with clinical and English terms |
+| Tags | ✅ Core clinical terms |
+
+**Key difference**: `edu004_pipeline` preserves the full detail of the uploaded document (both complete indication tables with per-condition vessel targets, clinical success rates, and time-to-response data), while `edu003` is a condensed summary for faster reading.
 
 **What to do when the pipeline output is insufficient:**
-1. Review the auto-generated entry in the live site (衛教資源 tab → search by title).
+1. Review the pipeline-generated entry in the live site (衛教資源 tab → search by title).
 2. Edit `PHCEP/data/edu/patient_edu_data.json` directly to replace `simple_zh`, `professional_zh`, `english`, and `fastsr` with carefully authored content.
 3. The pipeline **preserves manually-crafted entries** (those without `source_file`) on subsequent runs — they will not be overwritten.
 4. To override a docx-sourced entry permanently, remove its `source_file` field after manual editing.

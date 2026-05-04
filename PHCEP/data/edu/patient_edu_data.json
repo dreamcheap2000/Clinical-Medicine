@@ -549,8 +549,8 @@
       }
     },
     {
-      "id": "edu004_auto_pipeline",
-      "title": "經動脈微細血管栓塞術治療慢性疼痛（管線自動產生版）",
+      "id": "edu004_pipeline",
+      "title": "經動脈微細血管栓塞術治療慢性疼痛（管線處理版）",
       "source_file": "經動脈微細血管栓塞術治療慢性疼痛.docx",
       "source_url": "https://www.openevidence.com/ask/90c65c20-a098-4b57-88e8-c4027408fbdf",
       "source_label": "openevidence.com",
@@ -562,51 +562,94 @@
       "added_date": "2026-05-03",
       "tags": [
         "TAME",
+        "sTAME",
         "栓塞術",
         "慢性疼痛",
         "微創治療",
         "異常血管新生",
-        "pipeline-demo",
-        "auto-generated"
+        "CIBAS",
+        "退化性關節炎",
+        "五十肩",
+        "足底筋膜炎"
       ],
-      "_pipeline_note": "此條目保留自 PR#37 之前管線自動生成版本，用於對比展示。三個語言版本中，simple_zh 與 professional_zh 內容相同（均為原始文件 HTML），英文版為空白。FastSR 的 S 分類收錄了文件全文所有句子（共 110 條），分類尚未精準。",
       "fastsr": {
         "S": [
-          "長期飽受關節炎、五十肩、足底筋膜炎折磨，吃藥復健卻無法斷根？",
-          "醫學研究發現，慢性疼痛的元凶往往是受損組織周邊長出的「異常新生血管」與伴隨的「敏感感覺神經」。",
-          "適合對象：疼痛持續超過 3 到 6 個月，且經過吃藥、復健、局部打針等「保守治療」均無效的中重度疼痛患者。",
-          "不適合對象 (禁忌症)：關節已「嚴重退化」（如膝關節第 4 期）、需開刀的嚴重肌腱/半月板斷裂、局部有活動性感染、嚴重動脈硬化或腫瘤患者。",
-          "簡易型 (sTAME)：適用部位（表淺/遠端）：手指與拇指關節炎、媽媽手 (狄奎凡氏症)、足底筋膜炎、拇趾外翻痛、腳趾蹠趾關節痛。",
-          "傳統型 (TAME)：適用部位（深層/大關節）：退化性膝關節炎、五十肩、網球肘/高爾夫球肘、跳躍膝、慢性下背痛、肩頸痠痛、骨盆腔痛，甚至幻肢痛。",
-          "（原始管線：S 分類共有 110 個句子，包含全文所有段落 — 此為 AI 分類未成功時的回退結果）"
+          "長期飽受關節炎、五十肩、足底筋膜炎等慢性疼痛困擾，藥物、復健及局部注射均無效超過 3–6 個月",
+          "疼痛嚴重影響睡眠、穿衣、工作等日常生活功能",
+          "患者主訴慢性關節疼痛、肌腱疼痛或術後幻肢痛，已嘗試所有保守治療",
+          "適應症：退化性膝關節炎、五十肩、網球肘/高爾夫球肘、跳躍膝、下背痛、骨盆腔痛、足底筋膜炎、拇趾外翻、幻肢痛",
+          "禁忌：末期關節病變（KL grade 4）、需手術之肌腱/半月板斷裂、局部感染、嚴重動脈硬化或腫瘤"
         ],
         "O": [
-          "特色：不需進開刀房，在一般門診透過超音波導引即可完成，無 X 光輻射，穿刺孔極小，便利性高。",
-          "在決定治療前，建議進行 MRI (核磁共振) 檢查。",
-          "MRI 不僅能排除需要開刀的嚴重破裂，還能精準揪出 X 光看不到的隱藏發炎病灶，例如「軟骨下骨髓病變」。",
-          "研究證實，若 MRI 顯示有這類發炎，接受 TAME 治療的止痛效果特別好，且術後病灶甚至會隨之縮小修復。",
-          "1 至 6 個月持續改善；MRI 顯示 2 年後肌腱結構修復。",
-          "治療後 6 個月成功率達 86.3%；3 年後仍有 79.8% 維持療效。"
+          "MRI 可偵測軟骨下骨髓病變 (BMLs)，BMLs 陽性患者 TAME 術後止痛效果更佳且病灶縮小",
+          "退化性膝關節炎：6 個月臨床成功率 86.3%，3 年維持 79.8%（膝部 Genicular 動脈栓塞）",
+          "五十肩：3 個月成功率 84%，術後 1–3 年 88–94% 完全無痛；67% 患者 1 週內夜間痛大幅減輕",
+          "術中誘發痛（Provocation Pain）：藥物注入異常血管時出現短暫發熱/痠痛，為精準栓塞的確認指標",
+          "VAS/NRS 疼痛指數：各適應症均呈現術後顯著下降（網球肘 88% 改善、跳躍膝 NRS 8→2–4）"
         ],
         "A": [
-          "主要病理機制（原始管線：A 分類僅含兩條「主要病理機制」表頭文字，AI 未成功提取實質診斷內容）",
-          "適應症 / 治療部位"
+          "CIBAS 機制：異常新生血管（neovascularization）伴隨敏感感覺神經共同增生，持續驅動慢性疼痛",
+          "sTAME（簡易型）：超音波導引，適用遠端/表淺病灶（指趾關節炎、媽媽手、足底筋膜炎等）",
+          "TAME（傳統型）：DSA 血管攝影導引，適用深層/大關節病灶（膝、肩、肘、脊椎旁、骨盆等）",
+          "鑑別：嚴重退化或結構性破壞需先排除手術適應症；BMLs 陽性為 TAME 較強適應症",
+          "安全性：無組織壞死、肌肉萎縮或永久神經損傷報告；傳統型需注意肝素/IPM-CS 過敏及穿刺點血腫"
         ],
         "P": [
-          "長期飽受關節炎、五十肩、足底筋膜炎折磨，吃藥復健卻無法斷根？",
-          "手術僅需局部麻醉。",
-          "傳統型 TAME 的特別注意事項：相較於簡易型，傳統型 TAME 雖然精準，但因流程需求，有以下幾點輕微風險需留意。",
-          "藥物過敏反應：Heparin / 肝素；IPM/CS 栓塞藥物（抗生素衍生物），兩者皆有極低機率引發輕微過敏。",
-          "局部血腫風險：傳統型穿刺孔較大，術後須確實加壓止血，少數可能形成假性動脈瘤。",
-          "止痛效果具備「兩階段」優勢：快速緩解期（術後 1 週）+ 長期修復期（1–6 個月）。",
-          "整體而言，術後半年至兩年的臨床成功率高達 70% 至 90%。",
-          "（原始管線：P 分類共 8 條，部分為非計畫相關句子）"
+          "術前 MRI 評估：確認軟骨下骨髓病變、排除手術病灶，並作為術後療效比較基準",
+          "sTAME 流程：門診超音波導引定位遠端動脈（橈動脈/尺動脈/脛後動脈等）→ 注射栓塞藥物 → 門診返家",
+          "TAME 流程：血管攝影室 DSA 導引 → 微導管精準定位異常血管 → 注射 IPM/CS 栓塞藥物 → 動脈鞘拔除加壓止血 4–6 小時",
+          "術後照護：傳統型需確實加壓止血（預防血腫/假性動脈瘤）；術後 24–48 小時避免劇烈活動",
+          "預後：兩階段止痛效果（術後 1 週早期緩解 ＋ 1–6 個月持續修復）；整體成功率 70–90%，追蹤半年至兩年"
+        ]
+      },
+      "prototype": {
+        "global": [
+          "TAME",
+          "sTAME",
+          "栓塞",
+          "慢性疼痛",
+          "微創",
+          "異常血管",
+          "CIBAS",
+          "neovascularization",
+          "退化性膝關節炎",
+          "五十肩",
+          "網球肘",
+          "足底筋膜炎",
+          "幻肢痛",
+          "下背痛"
+        ],
+        "semantic": [
+          "疼痛",
+          "患者",
+          "症狀",
+          "適應症",
+          "禁忌症",
+          "治療",
+          "手術",
+          "復健",
+          "MRI",
+          "超音波",
+          "DSA",
+          "血管",
+          "栓塞",
+          "神經",
+          "pain",
+          "chronic",
+          "embolization"
+        ],
+        "fragment": [
+          "長期飽受關節炎、五十肩、足底筋膜炎等慢性疼痛困擾，藥物、復健及局部注射均無效超過 3–6 個月",
+          "退化性膝關節炎：6 個月臨床成功率 86.3%，3 年維持 79.8%",
+          "CIBAS 機制：異常新生血管伴隨敏感感覺神經共同增生，持續驅動慢性疼痛",
+          "術前 MRI 評估：確認軟骨下骨髓病變、排除手術病灶",
+          "整體成功率 70–90%（術後半年至兩年）"
         ]
       },
       "versions": {
-        "simple_zh": "<p><strong>告別慢性疼痛：經動脈微細血管栓塞術 (TAME) 實用指南</strong></p><p>長期飽受關節炎、五十肩、足底筋膜炎折磨，吃藥復健卻無法斷根？醫學研究發現，慢性疼痛的元凶往往是受損組織周邊長出的「異常新生血管」與伴隨的「敏感感覺神經」。</p><p><strong>經微細動脈栓塞術 (TAME)</strong> 是一種微創治療，透過注入暫時性栓塞藥物，精準堵住這些異常血管，讓神經萎縮，從根源消除發炎與疼痛。</p><p><strong>一、 TAME 的兩大類型</strong></p><p>依據疼痛部位深淺，醫師會選擇最適合的方式：</p><ul><li><strong>簡易型 (sTAME)</strong>：</li></ul><p><strong>特色</strong>：不需進開刀房，在<strong>一般門診透過超音波導引</strong>即可完成，無 X 光輻射，穿刺孔極小，便利性高。</p><p><strong>適用部位（表淺/遠端）</strong>：手指與拇指關節炎、媽媽手 (狄奎凡氏症)、足底筋膜炎、拇趾外翻痛、腳趾蹠趾關節痛。</p><ul><li><strong>傳統型 (TAME)</strong>：</li></ul><p><strong>特色</strong>：需在醫院的 <strong>X 光血管攝影室</strong>進行，利用極細微導管與 X 光顯影揪出深層異常血管。</p><p><strong>適用部位（深層/大關節）</strong>：退化性膝關節炎、五十肩、網球肘/高爾夫球肘、跳躍膝、慢性下背痛、肩頸痠痛、骨盆腔痛，甚至幻肢痛。</p><p><strong>二、 誰適合做？ (病患篩選與禁忌症)</strong></p><ul><li><strong>適合對象</strong>：疼痛持續超過 3 到 6 個月，且經過吃藥、復健、局部打針等「保守治療」均無效的中重度疼痛患者。</li><li><strong>不適合對象 (禁忌症)</strong>：關節已「嚴重退化」（如膝關節第 4 期，通常需直接換人工關節）、需開刀的嚴重肌腱/半月板斷裂、局部有活動性感染、嚴重動脈硬化或腫瘤患者。</li></ul><p><strong>三、 術前評估：為何建議做 MRI？</strong></p><p>在決定治療前，建議進行 <strong>MRI (核磁共振)</strong> 檢查。MRI 不僅能排除上述需要開刀的嚴重破裂，還能精準揪出 X 光看不到的隱藏發炎病灶，例如「軟骨下骨髓病變」。研究證實，若 MRI 顯示有這類發炎，接受 TAME 治療的止痛效果特別好，且術後病灶甚至會隨之縮小修復。</p><p><strong>四、 治療感受、安全性與潛在風險</strong></p><ul><li><strong>什麼是「誘發痛」？</strong> 手術僅需局部麻醉。當藥物注入異常血管時，您平時的疼痛處會出現短暫的「發熱或痠痛感」，這稱為「誘發痛」，是<strong>好現象</strong>，代表醫師精確打擊到痛源。注射完幾分鐘內痠痛即會消失。</li><li><strong>安全性極高</strong>：臨床證實此技術<strong>無嚴重併發症</strong>，不會造成組織壞死、肌肉萎縮或永久神經損傷。</li></ul><p><strong>五、 治療預後與恢復時程</strong></p><ul><li><strong>快速緩解期</strong>：異常神經受阻斷，術後 1 週內即有感。</li><li><strong>長期修復期</strong>：隨著發炎細胞減少，術後 1 至 6 個月內疼痛持續下降。</li></ul><p>整體而言，術後半年至兩年的臨床成功率高達 70% 至 90%。</p><p><em>⚠️ 注意：此版本為 GitHub Actions 管線自動產生原始文件內容，尚未經過 AI 翻譯潤色。簡體版本與繁體版本內容相同，英文版本為空白，且 SOAP 分類尚未精準優化，僅供對比展示用途。</em></p>",
-        "professional_zh": "<p><strong>告別慢性疼痛：經動脈微細血管栓塞術 (TAME) 實用指南</strong></p><p>長期飽受關節炎、五十肩、足底筋膜炎折磨，吃藥復健卻無法斷根？醫學研究發現，慢性疼痛的元凶往往是受損組織周邊長出的「異常新生血管」與伴隨的「敏感感覺神經」。</p><p><strong>經微細動脈栓塞術 (TAME)</strong> 是一種微創治療，透過注入暫時性栓塞藥物，精準堵住這些異常血管，讓神經萎縮，從根源消除發炎與疼痛。</p><p><strong>一、 TAME 的兩大類型</strong></p><p>依據疼痛部位深淺，醫師會選擇最適合的方式：</p><ul><li><strong>簡易型 (sTAME)</strong>：</li></ul><p><strong>特色</strong>：不需進開刀房，在<strong>一般門診透過超音波導引</strong>即可完成，無 X 光輻射，穿刺孔極小，便利性高。</p><p><strong>適用部位（表淺/遠端）</strong>：手指與拇指關節炎、媽媽手 (狄奎凡氏症)、足底筋膜炎、拇趾外翻痛、腳趾蹠趾關節痛。</p><ul><li><strong>傳統型 (TAME)</strong>：</li></ul><p><strong>特色</strong>：需在醫院的 <strong>X 光血管攝影室</strong>進行，利用極細微導管與 X 光顯影揪出深層異常血管。</p><p><strong>適用部位（深層/大關節）</strong>：退化性膝關節炎、五十肩、網球肘/高爾夫球肘、跳躍膝、慢性下背痛、肩頸痠痛、骨盆腔痛，甚至幻肢痛。</p><p><strong>二、 誰適合做？ (病患篩選與禁忌症)</strong></p><ul><li><strong>適合對象</strong>：疼痛持續超過 3 到 6 個月，且經過吃藥、復健、局部打針等「保守治療」均無效的中重度疼痛患者。</li><li><strong>不適合對象 (禁忌症)</strong>：關節已「嚴重退化」（如膝關節第 4 期，通常需直接換人工關節）、需開刀的嚴重肌腱/半月板斷裂、局部有活動性感染、嚴重動脈硬化或腫瘤患者。</li></ul><p><strong>三、 術前評估：為何建議做 MRI？</strong></p><p>在決定治療前，建議進行 <strong>MRI (核磁共振)</strong> 檢查。MRI 不僅能排除上述需要開刀的嚴重破裂，還能精準揪出 X 光看不到的隱藏發炎病灶，例如「軟骨下骨髓病變」。研究證實，若 MRI 顯示有這類發炎，接受 TAME 治療的止痛效果特別好，且術後病灶甚至會隨之縮小修復。</p><p><strong>四、 治療感受、安全性與潛在風險</strong></p><ul><li><strong>什麼是「誘發痛」？</strong> 手術僅需局部麻醉。當藥物注入異常血管時，您平時的疼痛處會出現短暫的「發熱或痠痛感」，這稱為「誘發痛」，是<strong>好現象</strong>，代表醫師精確打擊到痛源。注射完幾分鐘內痠痛即會消失。</li><li><strong>安全性極高</strong>：臨床證實此技術<strong>無嚴重併發症</strong>，不會造成組織壞死、肌肉萎縮或永久神經損傷。</li></ul><p><strong>五、 治療預後與恢復時程</strong></p><ul><li><strong>快速緩解期</strong>：異常神經受阻斷，術後 1 週內即有感。</li><li><strong>長期修復期</strong>：隨著發炎細胞減少，術後 1 至 6 個月內疼痛持續下降。</li></ul><p>整體而言，術後半年至兩年的臨床成功率高達 70% 至 90%。</p><p><em>⚠️ 注意：此版本為 GitHub Actions 管線自動產生原始文件內容，尚未經過 AI 翻譯潤色。簡體版本與繁體版本內容相同，英文版本為空白，且 SOAP 分類尚未精準優化，僅供對比展示用途。</em></p>",
-        "english": ""
+        "simple_zh": "<h2>🩺 慢性疼痛的根治法：TAME 栓塞術</h2><p>長期關節炎、五十肩、足底筋膜炎吃藥打針都無效？問題的根源是受傷部位長出了<strong>異常小血管</strong>，這些血管帶著<strong>敏感神經</strong>不斷製造疼痛。TAME 透過注射微量藥物，精準阻斷這些異常血管，讓疼痛從根源消失。</p><h3>🔀 哪種 TAME 適合我？</h3><table><thead><tr><th>類型</th><th>適用部位</th><th>進行方式</th></tr></thead><tbody><tr><td><strong>sTAME（簡易型）</strong></td><td>手指/腳趾關節炎、媽媽手、足底筋膜炎、拇趾外翻</td><td>門診超音波導引，無輻射，快速方便</td></tr><tr><td><strong>TAME（傳統型）</strong></td><td>膝關節炎、五十肩、網球/高爾夫球肘、跳躍膝、下背痛、骨盆腔痛</td><td>醫院X光導引，精準處理深層血管</td></tr></tbody></table><h3>✅ 誰適合做？</h3><ul><li>疼痛持續<strong> 3–6 個月以上</strong>，藥物、復健、打針都沒有效果</li><li>疼痛已影響睡眠、日常活動或工作</li></ul><h3>⚠️ 哪些人不適合？</h3><ul><li>關節已嚴重退化需換人工關節（如膝關節第 4 期）</li><li>需要手術修補的嚴重韌帶/肌腱斷裂</li><li>局部有感染、嚴重動脈硬化或惡性腫瘤</li></ul><h3>🔍 為什麼術前要做 MRI？</h3><p>MRI 可以看到 X 光看不到的隱藏發炎（軟骨下骨髓病變），若有這種發炎，做 TAME 效果更好，而且術後病灶會一起縮小修復！</p><h3>💬 治療的感受</h3><ul><li><strong>誘發痛</strong>：藥物注入時，原本疼痛的地方會短暫感到熱熱、痠痠的——這是<strong>好現象</strong>，代表醫師打中了痛點。幾分鐘內就消失。</li><li><strong>非常安全</strong>：不會造成組織壞死、肌肉萎縮或永久神經損傷。</li></ul><h3>📊 效果有多好？</h3><ul><li><strong>第一週</strong>：異常神經被阻斷，疼痛明顯減輕（例如五十肩夜間痛大幅改善）</li><li><strong>1–6 個月</strong>：發炎持續消退，疼痛穩定下降</li><li><strong>整體成功率 70–90%</strong>（追蹤半年至兩年）</li></ul><p>各部位的詳細成功率請見下表（如退化性膝關節炎 6 個月成功率 86.3%、五十肩 1–3 年成功率 88–94%）。</p>",
+        "professional_zh": "<p><strong>告別慢性疼痛：經動脈微細血管栓塞術 (TAME) 臨床指引</strong></p><p>慢性疼痛的核心病理機制為「CIBAS（Chronic Inflammation with Blood-vessel And Sensory nerve）」：受損組織周邊長出<strong>異常新生血管</strong>，伴隨<strong>敏感感覺神經</strong>共同增生，造成持續性神經性疼痛。TAME 以暫時性栓塞藥物精準阻斷異常血管，使伴隨神經萎縮，從根源消除發炎與疼痛。</p><h3>一、兩大治療類型</h3><ul><li><strong>簡易型 (sTAME)</strong>：門診超音波導引，無X光輻射，穿刺孔極小。適用遠端/表淺病灶：手指與拇指關節炎、媽媽手（狄奎凡氏症）、足底筋膜炎、拇趾外翻痛、慢性蹠趾關節痛。</li><li><strong>傳統型 (TAME)</strong>：醫院X光血管攝影室（DSA）進行，利用極細導管辨識深層異常血管。適用深層/大關節病灶：退化性膝關節炎、五十肩、網球肘/高爾夫球肘、跳躍膝、慢性下背痛、肩頸痠痛、骨盆腔痛、幻肢痛。</li></ul><h3>二、適應症與禁忌症</h3><ul><li><strong>適合對象</strong>：疼痛持續 ≥ 3–6 個月，且藥物、復健、局部注射等保守治療均無效之中重度慢性疼痛患者。</li><li><strong>禁忌症</strong>：膝關節嚴重退化（第 4 期）、需手術之嚴重肌腱/半月板斷裂、局部活動性感染、嚴重動脈硬化或惡性腫瘤。</li></ul><h3>三、術前評估</h3><p>建議術前 MRI 檢查：可排除需手術之嚴重病灶，並偵測 X 光不可見的<strong>軟骨下骨髓病變 (BMLs)</strong>。研究顯示 BMLs 陽性患者術後止痛效果更佳，且術後病灶可隨之縮小修復。</p><h3>四、治療感受與安全性</h3><ul><li><strong>誘發痛（Provocation Pain）</strong>：藥物注入異常血管時，疼痛部位短暫出現發熱/痠痛感，數分鐘內消退，為治療精準的良好指標。</li><li><strong>安全性</strong>：無組織壞死、肌肉萎縮或永久神經損傷等嚴重併發症。</li><li><strong>傳統型特別注意</strong>：需肝素抗凝及 IPM/CS 栓塞藥（抗生素衍生物），極低機率輕微過敏；穿刺孔較大需確實加壓止血，少數可能局部血腫或假性動脈瘤。</li></ul><h3>五、治療預後</h3><p>止痛效果兩階段：<strong>快速緩解期</strong>（術後 1 週，異常神經阻斷）＋<strong>長期修復期</strong>（術後 1–6 個月，發炎細胞持續減少）。整體臨床成功率 <strong>70–90%</strong>（術後半年至兩年）。</p><h3>sTAME 適應症（遠端/表淺）</h3><table><thead><tr><th>適應症</th><th>栓塞標靶血管</th><th>臨床成效</th><th>緩解時程</th></tr></thead><tbody><tr><td>手指/拇指關節炎</td><td>橈動脈、尺動脈分支</td><td>拇指基部成功率 100%；指間關節疼痛降至 0 分</td><td>1–6 個月，療效維持 24 個月</td></tr><tr><td>狄奎凡氏症（媽媽手）</td><td>橈動脈遠端分支</td><td>疼痛完全緩解，MRI 示滑膜增厚改善</td><td>3 個月內顯著改善</td></tr><tr><td>足底筋膜炎</td><td>後脛骨動脈、腓骨動脈</td><td>疼痛由嚴重降至幾乎無痛</td><td>術後 1 週起，3 個月恢復正常活動</td></tr><tr><td>拇趾外翻疼痛</td><td>前脛骨動脈、第一蹠骨底動脈</td><td>VAS 由 8 降至 2，避免矯正手術</td><td>術後 2 週–2 個月顯著改善</td></tr><tr><td>慢性蹠趾關節痛</td><td>蹠骨動脈末梢血管</td><td>VAS 中位數下降 8 分，止痛藥需求降至 0</td><td>短期見效，追蹤 5 個月穩定</td></tr></tbody></table><h3>傳統 TAME 適應症（深層/大關節）</h3><table><thead><tr><th>適應症</th><th>栓塞標靶血管</th><th>臨床成效</th><th>緩解時程</th></tr></thead><tbody><tr><td>退化性膝關節炎</td><td>膝部動脈分支 (Genicular A.)</td><td>6 個月成功率 86.3%；3 年後仍有 79.8%</td><td>術後 1–4 個月顯著下降，效果持續數年</td></tr><tr><td>五十肩（沾黏性肩關節囊炎）</td><td>胸肩峰動脈、上肩胛動脈</td><td>3 個月成功率 84%；1–3 年 88–94% 完全無痛</td><td>67% 患者 1 週內夜間痛大幅減輕</td></tr><tr><td>網球肘（肱骨外上髁炎）</td><td>橈側迴返動脈</td><td>6 個月成功率 88%，改善無痛握力</td><td>1–6 個月持續改善，MRI 示 2 年後修復</td></tr><tr><td>高爾夫球肘（肱骨內上髁炎）</td><td>尺側迴返動脈</td><td>臨床成功率 85.7%</td><td>療效穩定維持 12 個月</td></tr><tr><td>跳躍膝（髕骨/股四頭肌肌腱炎）</td><td>膝上動脈、外下膝動脈</td><td>NRS 由 8 降至 2–4，MRI 示發炎消退</td><td>術後 2 週–2 個月顯著改善</td></tr><tr><td>慢性下背痛</td><td>腰部動脈、外側薦動脈</td><td>3 個月成功率 79%；24 個月 57%</td><td>術後 1、3、24 個月 BPI 均顯著下降</td></tr><tr><td>肩頸痠痛（斜方肌肌痛）</td><td>橫頸動脈、肩胛上動脈</td><td>6 個月成功率 71.4%</td><td>術後 1–6 個月疼痛及生活干擾指數下降</td></tr><tr><td>慢性骨盆腔疼痛症候群（CPPS）</td><td>前列腺動脈、內陰部動脈</td><td>6 個月成功率 70%；16 個月維持 64%</td><td>6 個月內 NIH-CPSI 分數穩定下降</td></tr><tr><td>幻肢痛</td><td>股深動脈分支（殘肢周邊）</td><td>VAS 由 7–10 劇降至 1–2，不再干擾睡眠</td><td>術後立即見效，持續 6 個月不再引發劇痛</td></tr></tbody></table>",
+        "english": "<h2>Transcatheter Arterial Microembolization (TAME) for Chronic Pain</h2><p><strong>TAME</strong> targets the <em>CIBAS</em> (Chronic Inflammation with Blood-vessel And Sensory nerve) mechanism: injured tissue sprouts <strong>abnormal neovessels</strong> accompanied by hypersensitive sensory nerves, sustaining chronic pain. TAME delivers temporary embolic agents (e.g., IMO/CS microspheres) to occlude these pathological vessels, causing co-localised nerve regression and resolving pain at its source.</p><h3>Types</h3><ul><li><strong>sTAME (simplified TAME)</strong>: Ultrasound-guided in an outpatient setting; no fluoroscopy, minimal puncture site. Indications: finger/thumb osteoarthritis, De Quervain tenosynovitis, plantar fasciitis, hallux valgus pain, chronic metatarsophalangeal joint pain.</li><li><strong>TAME (conventional)</strong>: Digital subtraction angiography (DSA)-guided in a catheterisation suite; microcatheter navigation to deep abnormal vessels. Indications: knee osteoarthritis, frozen shoulder (adhesive capsulitis), lateral/medial epicondylitis, patellar tendinitis (jumper's knee), chronic low back pain, trapezius myalgia, chronic pelvic pain syndrome (CPPS), phantom limb pain.</li></ul><h3>Patient Selection</h3><ul><li><strong>Indications</strong>: Moderate-to-severe chronic pain ≥ 3–6 months, refractory to conservative management (analgesics, physical therapy, local injections).</li><li><strong>Contraindications</strong>: End-stage joint degeneration requiring arthroplasty (e.g., Kellgren-Lawrence grade 4 knee OA), surgical-grade tendon/meniscal rupture, active local infection, severe atherosclerosis, or malignancy at the target site.</li></ul><h3>Pre-procedure MRI</h3><p>MRI is recommended before TAME to exclude surgical lesions and to detect <strong>bone marrow lesions (BMLs)</strong> invisible on radiograph. BML-positive patients demonstrate superior post-TAME pain relief and regression of BML signal on follow-up MRI.</p><h3>Procedural Experience and Safety</h3><ul><li><strong>Provocation pain</strong>: Transient burning/aching at the pain site during embolisation confirms accurate targeting; resolves within minutes.</li><li><strong>Safety</strong>: No reports of tissue necrosis, muscle atrophy, or permanent nerve injury across published cohorts.</li><li><strong>Conventional TAME risks</strong>: Heparin anticoagulation ± IPM/CS antibiotic-derived embolic agents carry a low risk of minor allergy or rash; arterial sheath placement at the groin or wrist requires adequate post-procedure compression to prevent haematoma or pseudoaneurysm.</li></ul><h3>Outcomes</h3><p>Pain relief follows a <strong>two-phase pattern</strong>: early relief within 1 week (nerve signal blockade) followed by progressive improvement over 1–6 months (inflammatory cell reduction). Overall clinical success rate: <strong>70–90%</strong> at 6 months to 2 years.</p><table><thead><tr><th>Condition</th><th>Target Vessel(s)</th><th>Clinical Success</th><th>Time to Response</th></tr></thead><tbody><tr><td>Knee osteoarthritis</td><td>Genicular arteries</td><td>86.3% at 6 mo; 79.8% at 3 yr</td><td>Peak effect 1–4 months</td></tr><tr><td>Frozen shoulder</td><td>Thoracoacromial / suprascapular A.</td><td>84% at 3 mo; 88–94% pain-free at 1–3 yr</td><td>67% reduce nocturnal pain within 1 wk</td></tr><tr><td>Lateral epicondylitis (tennis elbow)</td><td>Radial recurrent A.</td><td>88% at 6 mo; MRI tendon repair at 2 yr</td><td>Progressive over 1–6 months</td></tr><tr><td>Medial epicondylitis (golfer's elbow)</td><td>Ulnar recurrent A.</td><td>85.7%</td><td>Sustained ≥ 12 months</td></tr><tr><td>Patellar/quadriceps tendinitis</td><td>Superior/inferior genicular A.</td><td>NRS 8 → 2–4; MRI inflammation resolved</td><td>Effect within 2 wk–2 mo</td></tr><tr><td>Chronic low back pain</td><td>Lumbar / lateral sacral A.</td><td>79% at 3 mo; 57% at 24 mo</td><td>BPI score reduced at 1, 3, 24 mo</td></tr><tr><td>Trapezius myalgia</td><td>Transverse cervical / suprascapular A.</td><td>71.4% at 6 mo</td><td>Improvement over 1–6 months</td></tr><tr><td>CPPS / chronic prostatitis</td><td>Prostatic / internal pudendal A.</td><td>70% at 6 mo; 64% at 16 mo</td><td>NIH-CPSI scores decline progressively over 6 mo</td></tr><tr><td>Phantom limb pain</td><td>Deep femoral A. branches (residual limb)</td><td>VAS 7–10 → 1–2; sleep no longer disturbed</td><td>Immediate effect, sustained ≥ 6 months</td></tr><tr><td>Finger/thumb OA</td><td>Radial / ulnar A. branches</td><td>Thumb CMC success rate 100%; finger pain → 0</td><td>Swelling subsides 1–6 mo; efficacy ≥ 24 mo</td></tr><tr><td>Plantar fasciitis</td><td>Posterior tibial / peroneal A.</td><td>Severe pain → near-zero; normal activity restored</td><td>Onset within 1 wk; full recovery 3 mo</td></tr></tbody></table><p><strong>Sources:</strong> <a href=\"https://www.openevidence.com/ask/90c65c20-a098-4b57-88e8-c4027408fbdf\" target=\"_blank\" rel=\"noopener noreferrer\">OpenEvidence — TAME review</a>; <a href=\"https://okuno-y-clinic.com/tw/research-educations/\" target=\"_blank\" rel=\"noopener noreferrer\">Okuno Y Clinic — Research &amp; Education</a></p>"
       }
     }
   ]
