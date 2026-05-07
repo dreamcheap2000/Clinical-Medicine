@@ -576,15 +576,12 @@ function buildPcsSearchResults(q) {
     var tag = (document.activeElement || {}).tagName;
     var inInput = (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
 
-    // Page scroll shortcuts (ignore when typing)
-    if (inInput) return;
-
     var isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
     var isAlt = e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey;
     var isCmdCtrl = (isMac ? e.metaKey : e.ctrlKey) && !e.altKey && !e.shiftKey;
     var isShift = e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey;
 
-    // Tab switching: Alt/Option + 1…8
+    // Tab switching: Alt/Option + 1…8 (works even when an input is focused)
     if (isAlt) {
       var digit = e.code && e.code.startsWith('Digit') ? e.code.slice(5) : null;
       if (digit && TAB_SHORTCUTS[digit]) {
@@ -594,12 +591,15 @@ function buildPcsSearchResults(q) {
       }
     }
 
-    // Tab switching: Shift + 9 / 0 / -
+    // Tab switching: Shift + 9 / 0 / - (works even when an input is focused)
     if (isShift && e.code && SHIFT_SHORTCUTS[e.code]) {
       e.preventDefault();
       switchTab(SHIFT_SHORTCUTS[e.code]);
       return;
     }
+
+    // Page scroll shortcuts (ignore when typing in an input)
+    if (inInput) return;
 
     // Option/Alt + ↓ → page down
     if (isAlt && e.key === 'ArrowDown') {
@@ -823,6 +823,7 @@ function saveEbmEntry() {
   toast('✅ EBM 筆記已儲存');
   if (document.getElementById('tab-history').classList.contains('active')) renderHistory();
   renderEbmInlineHistory();
+  clearEbmForm();
 }
 
 function clearEbmForm() {
@@ -850,6 +851,7 @@ function renderEbmInlineHistory() {
       <div class="inline-history-preview">${escHtml(preview)}</div>
       <div class="inline-history-actions">
         <button class="btn-xs" onclick="loadEbmFromHistory('${escHtml(e.id)}')">📥 載入</button>
+        <button class="btn-xs" onclick="ebmConvertToEdu('${escHtml(e.id)}')">📚 轉為衛教</button>
       </div>
     </div>`;
   }).join('');
@@ -864,6 +866,102 @@ function loadEbmFromHistory(id) {
   document.getElementById('ebm-content').value = entry.content;
   document.getElementById('ebm-content').scrollIntoView({ behavior: 'smooth' });
   toast('📥 EBM 筆記已載入');
+}
+
+// ---------------------------------------------------------------------------
+// EBM → 衛教資源 helpers
+// ---------------------------------------------------------------------------
+function _ebmExtractTitle(entry) {
+  var firstLine = entry.content.split('\n').find(function(l) { return l.trim().length > 3; }) || '';
+  return entry.icdCat || firstLine.trim().substring(0, 50) || ('EBM筆記_' + entry.date);
+}
+
+function _ebmExtractUrl(content) {
+  var m = content.match(/https?:\/\/[^\s\n\u3000\uff09\uff08\u300a\u300b]+/);
+  return m ? m[0].replace(/[.,;）)》]+$/, '') : '';
+}
+
+function _ebmExtractSourceLabel(content) {
+  return /uptodate/i.test(content) ? 'UpToDate' : '';
+}
+
+// Convert a single EBM entry into a draft 衛教資源 (opens the edu add form pre-filled)
+function ebmConvertToEdu(id) {
+  var entries = storageGet(EBM_ENTRIES_KEY) || [];
+  var entry = entries.find(function(e) { return e.id === id; });
+  if (!entry) return;
+
+  var title = _ebmExtractTitle(entry);
+  var url = _ebmExtractUrl(entry.content);
+  var sourceLabel = _ebmExtractSourceLabel(entry.content);
+  var fastsr = eduEncodeFastSR(entry.content);
+
+  // Pre-fill the edu add form
+  var set = function(elId, val) { var el = document.getElementById(elId); if (el) el.value = val; };
+  set('edu-form-title', title);
+  set('edu-form-url', url);
+  set('edu-form-source-label', sourceLabel);
+  set('edu-form-tags', entry.icdCat || '');
+  set('edu-form-original', entry.content);
+  set('edu-form-simple-zh', entry.content);
+  set('edu-form-pro-zh', '');
+  set('edu-form-en', '');
+  set('edu-form-s', fastsr.S.join('\n'));
+  set('edu-form-o', fastsr.O.join('\n'));
+  set('edu-form-a', fastsr.A.join('\n'));
+  set('edu-form-p', fastsr.P.join('\n'));
+
+  // Switch to edu tab and open the add panel
+  switchTab('edu');
+  var panel = document.getElementById('edu-add-panel');
+  if (panel && panel.classList.contains('hidden')) eduToggleAddForm();
+
+  toast('📝 EBM 已轉為衛教草稿，請補充語言版本後儲存');
+}
+
+// Batch-convert the 4 most recent EBM entries to local 衛教資源 entries
+function ebmBatchConvertToEdu() {
+  var entries = (storageGet(EBM_ENTRIES_KEY) || []).slice(0, 4);
+  if (entries.length === 0) { toast('⚠️ 尚無 EBM 筆記'); return; }
+
+  var locals = eduLoadLocal();
+  var converted = 0;
+  entries.forEach(function(entry, idx) {
+    var title = _ebmExtractTitle(entry);
+
+    // Skip if an entry with the same title already exists locally
+    if (locals.find(function(e) { return e.title === title; })) return;
+
+    var url = _ebmExtractUrl(entry.content);
+    var sourceLabel = _ebmExtractSourceLabel(entry.content);
+    var fastsr = eduEncodeFastSR(entry.content);
+
+    var newEntry = {
+      id: 'edu_local_' + (Date.now() + idx) + '_' + Math.random().toString(36).slice(2, 7),
+      title,
+      source_url: url,
+      source_label: sourceLabel,
+      original_lang: 'zh-TW',
+      added_date: entry.date || new Date().toISOString().split('T')[0],
+      tags: entry.icdCat ? [entry.icdCat] : [],
+      fastsr,
+      versions: { simple_zh: entry.content, professional_zh: '', english: '' },
+      _local: true,
+      _from_ebm: true
+    };
+    locals.push(newEntry);
+    eduData.push(newEntry);
+    converted++;
+  });
+
+  eduSaveLocal(locals);
+  if (converted > 0) {
+    eduRenderList();
+    switchTab('edu');
+    toast('✅ 已批次轉存 ' + converted + ' 筆 EBM 筆記為衛教資源');
+  } else {
+    toast('ℹ️ 所有筆記已存在於衛教資源庫中');
+  }
 }
 
 // ---------------------------------------------------------------------------
