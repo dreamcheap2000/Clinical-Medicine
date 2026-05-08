@@ -572,7 +572,7 @@
       <div class="ebm-modal-field">
         <label for="ebm-gate-pw-input">密碼</label>
         <input id="ebm-gate-pw-input" type="password" placeholder="輸入密碼…"
-               onkeydown="if(event.key==='Enter'){ebmGateSubmit();}else if(event.key==='Escape'){ebmGateClose();}" autocomplete="off" />
+               onkeydown="ebmGateKeydown(event)" autocomplete="off" />
         <div class="ebm-pw-hint" id="ebm-gate-error" style="color:var(--red);display:none">密碼錯誤，請重試</div>
       </div>
     </div>

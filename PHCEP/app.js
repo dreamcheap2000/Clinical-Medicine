@@ -767,6 +767,9 @@ const EBM_TEMPLATES_KEY = 'phcep_ebm_templates';
 // EBM → 衛教資源 Gate (password: Dream1234)
 // ---------------------------------------------------------------------------
 const EBM_EDU_GATE_PW = 'Dream1234';
+// Note: This is a client-side access control gate intended to prevent accidental
+// use of the conversion feature. It is not a security boundary — users with
+// DevTools access can bypass it. The gate exists to prevent unintentional edits.
 var _ebmGatePendingCb = null;
 
 function ebmGateCheck(callback) {
@@ -802,6 +805,11 @@ function ebmGateClose() {
   var modal = document.getElementById('ebm-gate-modal');
   if (modal) modal.classList.add('hidden');
   _ebmGatePendingCb = null;
+}
+
+function ebmGateKeydown(e) {
+  if (e.key === 'Enter') { ebmGateSubmit(); }
+  else if (e.key === 'Escape') { ebmGateClose(); }
 }
 
 // ---------------------------------------------------------------------------
@@ -871,13 +879,18 @@ function ebmFormatToHtml(title, content) {
   return html;
 }
 
+// Minimum fraction of Chinese characters for content to be classified as Chinese
+const CHINESE_CONTENT_THRESHOLD = 0.15;
+
+// Emojis used as visual cues in simple_zh article headers
+const EBM_SIMPLE_ZH_EMOJIS = ['📋', '🩺', '💡', '🏥', '🔬', '💊', '🩹', '📖'];
+
 /** Generate all three article versions from EBM content. */
 function ebmGenerateVersions(title, content) {
   var professional_zh = '<h2>' + escHtml(title) + '</h2>\n' + ebmFormatToHtml(title, content);
 
   // simple_zh: add a patient-friendly intro + emoji header
-  var EMOJIS = ['📋','🩺','💡','🏥','🔬','💊','🩹','📖'];
-  var emoji = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+  var emoji = EBM_SIMPLE_ZH_EMOJIS[Math.floor(Math.random() * EBM_SIMPLE_ZH_EMOJIS.length)];
   var simple_zh = '<h2>' + emoji + ' ' + escHtml(title) + '</h2>\n'
     + '<p>以下為本主題的重點整理，供您參考使用。</p>\n'
     + ebmFormatToHtml(title, content);
@@ -885,7 +898,7 @@ function ebmGenerateVersions(title, content) {
   // english: if content is predominantly English, use it; otherwise placeholder
   var chCount = (content.match(/[\u4e00-\u9fff]/g) || []).length;
   var english = '';
-  if (chCount / Math.max(content.length, 1) < 0.15) {
+  if (chCount / Math.max(content.length, 1) < CHINESE_CONTENT_THRESHOLD) {
     // predominantly English
     english = '<h2>' + escHtml(title) + '</h2>\n' + ebmFormatToHtml(title, content);
   } else {
@@ -971,7 +984,7 @@ function ebmPreviewSave() {
   var entry = _ebmPreviewEntry || {};
   var fastsr = eduEncodeFastSR(
     (_ebmPreviewVersions.professional_zh || '').replace(/<[^>]+>/g, ' ')
-    + ' ' + entry.content || ''
+    + ' ' + (entry.content || '')
   );
 
   var newEdu = {
@@ -1472,13 +1485,12 @@ async function loadEduData() {
 function eduCleanupPoorEntries() {
   var locals = eduLoadLocal();
   var before = locals.length;
+  var htmlTagRe = /<[a-zA-Z]/;
   locals = locals.filter(function(e) {
     if (!e._from_ebm) return true; // keep manually-added entries
-    var sv = (e.versions || {}).simple_zh || '';
-    var pv = (e.versions || {}).professional_zh || '';
-    var ev = (e.versions || {}).english || '';
+    var v = e.versions || {};
     // Plain-text entry: none of the versions contain any HTML tag
-    var hasHtml = /<[a-zA-Z]/.test(sv) || /<[a-zA-Z]/.test(pv) || /<[a-zA-Z]/.test(ev);
+    var hasHtml = htmlTagRe.test(v.simple_zh || '') || htmlTagRe.test(v.professional_zh || '') || htmlTagRe.test(v.english || '');
     return hasHtml;
   });
   if (locals.length < before) {
