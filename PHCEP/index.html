@@ -311,8 +311,11 @@
         <input id="edu-search" type="text" class="edu-search-input"
                placeholder="搜尋衛教知識（症狀、診斷、治療…）"
                oninput="eduSearch(this.value)"
+               onkeydown="eduSearchKeydown(event)"
                autocomplete="off" />
-        <button class="edu-search-btn" onclick="eduSearch(document.getElementById('edu-search').value)">🔍</button>
+        <button class="edu-search-clear" id="edu-search-clear-btn"
+                onclick="eduClearSearch()" title="清除搜尋 (Esc)" style="display:none">×</button>
+        <button class="edu-search-btn" onclick="eduSearchSubmit()">🔍</button>
       </div>
       <div class="edu-soap-filters">
         <button class="edu-filter-btn active" data-mode="all" onclick="eduSetSearchMode('all')">全文</button>
@@ -554,6 +557,64 @@
       <p class="section-desc">調整應用程式顯示與行為偏好</p>
     </div>
     <div id="settings-content" class="settings-content"></div>
+  </div>
+</div>
+
+<!-- EBM Gate Modal — password check before 衛教 conversion -->
+<div id="ebm-gate-modal" class="ebm-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="ebm-gate-title">
+  <div class="ebm-modal-box ebm-modal-narrow">
+    <div class="ebm-modal-header">
+      <h3 id="ebm-gate-title">🔒 衛教資源管理員驗證</h3>
+      <button class="ebm-modal-close" onclick="ebmGateClose()" title="取消">✕</button>
+    </div>
+    <div class="ebm-modal-body">
+      <p>請輸入管理員密碼以繼續將 EBM 內容轉換為衛教資源文章</p>
+      <div class="ebm-modal-field">
+        <label for="ebm-gate-pw-input">密碼</label>
+        <input id="ebm-gate-pw-input" type="password" placeholder="輸入密碼…"
+               onkeydown="ebmGateKeydown(event)" autocomplete="off" />
+        <div class="ebm-pw-hint" id="ebm-gate-error" style="color:var(--red);display:none">密碼錯誤，請重試</div>
+      </div>
+    </div>
+    <div class="ebm-modal-actions">
+      <button class="btn-confirm" onclick="ebmGateSubmit()">確認</button>
+      <button onclick="ebmGateClose()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- EBM Preview Modal — edit article versions before saving/pushing -->
+<div id="ebm-preview-modal" class="ebm-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="ebm-preview-title">
+  <div class="ebm-modal-box">
+    <div class="ebm-modal-header">
+      <h3 id="ebm-preview-title">📚 衛教資源預覽 — 確認並儲存</h3>
+      <button class="ebm-modal-close" onclick="ebmPreviewClose()" title="關閉">✕</button>
+    </div>
+    <div class="ebm-preview-title-row">
+      <label for="ebm-preview-title-input">標題</label>
+      <input id="ebm-preview-title-input" type="text" placeholder="衛教資源標題…" />
+    </div>
+    <div class="ebm-preview-tabs">
+      <button class="ebm-preview-tab active" id="ebm-ptab-simple_zh" onclick="ebmPreviewSwitchTab('simple_zh')">🈸 簡易版</button>
+      <button class="ebm-preview-tab" id="ebm-ptab-professional_zh" onclick="ebmPreviewSwitchTab('professional_zh')">🏥 專業版</button>
+      <button class="ebm-preview-tab" id="ebm-ptab-english" onclick="ebmPreviewSwitchTab('english')">🔤 English</button>
+    </div>
+    <div class="ebm-preview-split">
+      <div>
+        <div class="ebm-preview-editor-label">HTML 編輯（可直接修改）</div>
+        <textarea class="ebm-preview-textarea" id="ebm-preview-textarea"
+                  oninput="ebmPreviewRefreshRender()"></textarea>
+      </div>
+      <div>
+        <div class="ebm-preview-render-label">預覽效果</div>
+        <div class="ebm-preview-rendered" id="ebm-preview-rendered"></div>
+      </div>
+    </div>
+    <div class="ebm-modal-actions">
+      <button class="btn-confirm" onclick="ebmPreviewSave()">💾 儲存至本機衛教資源</button>
+      <button class="btn-push" onclick="ebmPreviewPushToGithub()">☁️ 推送至 GitHub（AI 轉換）</button>
+      <button onclick="ebmPreviewClose()">取消</button>
+    </div>
   </div>
 </div>
 
