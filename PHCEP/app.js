@@ -884,6 +884,8 @@ const CHINESE_CONTENT_THRESHOLD = 0.15;
 
 // Emojis used as visual cues in simple_zh article headers
 const EBM_SIMPLE_ZH_EMOJIS = ['📋', '🩺', '💡', '🏥', '🔬', '💊', '🩹', '📖'];
+const EBM_PREVIEW_MAX_SOURCE_NOTE_LENGTH = 3500;
+const EBM_PREVIEW_MAX_ERROR_TEXT_LENGTH = 200;
 
 /** Generate all three article versions from EBM content. */
 function ebmGenerateVersions(title, content) {
@@ -1020,7 +1022,7 @@ async function ebmPreviewAiRefine() {
     var model = cfg.model || 'gpt-4o-mini';
     var endpoint = 'https://models.inference.ai.azure.com/chat/completions';
     var sectionLabel = _ebmPreviewTabLabel(_ebmPreviewTab);
-    var sourceNote = (_ebmPreviewEntry && _ebmPreviewEntry.content) ? _ebmPreviewEntry.content.slice(0, 3500) : '';
+    var sourceNote = (_ebmPreviewEntry && _ebmPreviewEntry.content) ? _ebmPreviewEntry.content.slice(0, EBM_PREVIEW_MAX_SOURCE_NOTE_LENGTH) : '';
     var systemPrompt = _ebmPreviewTab === 'english'
       ? 'You are a senior clinical editor. Revise the provided patient-education HTML while preserving factual content and structure quality. Return only valid HTML without markdown fences.'
       : '你是台灣臨床衛教編輯。請使用台灣繁體中文與台灣醫療語境（避免中國大陸用語），在不改變醫學事實前提下優化內容。只回傳合法 HTML，不要 markdown。';
@@ -1061,7 +1063,7 @@ async function ebmPreviewAiRefine() {
 
     if (!resp.ok) {
       var errText = await resp.text();
-      throw new Error('HTTP ' + resp.status + ' ' + errText.slice(0, 200));
+      throw new Error('HTTP ' + resp.status + ' ' + errText.slice(0, EBM_PREVIEW_MAX_ERROR_TEXT_LENGTH));
     }
     var data = await resp.json();
     var refined = (((data || {}).choices || [])[0] || {}).message;
@@ -1286,7 +1288,7 @@ function ebmBatchConvertToEdu() {
   ebmGateCheck(function() {
     var entries = storageGet(EBM_ENTRIES_KEY) || [];
     if (entries.length === 0) { toast('⚠️ 尚無 EBM 筆記'); return; }
-    if (!confirm('將嘗試把全部 ' + entries.length + ' 筆 EBM 筆記轉成衛教資源（已存在同名標題者會略過），是否繼續？')) return;
+    if (!confirm(`將嘗試把全部 ${entries.length} 筆 EBM 筆記轉成衛教資源（已存在同名標題者會略過），是否繼續？`)) return;
 
     var locals = eduLoadLocal();
     var converted = 0;

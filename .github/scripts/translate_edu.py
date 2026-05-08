@@ -129,6 +129,7 @@ FASTSR_KW = {
 
 # Minimum keyword length to receive a higher match weight
 KEYWORD_LENGTH_THRESHOLD = 3
+MAX_EBM_NOTE_PROMPT_CHARS = 4000
 
 
 def classify_sentence(sentence: str) -> str:
@@ -395,7 +396,7 @@ def ai_generate_professional_zh_from_note(client: "OpenAI", note_text: str) -> s
         "article with clear sections (e.g. background, indications, procedure, outcomes, "
         "post-care, contraindications). Use proper medical terminology and Taiwanese clinical wording "
         "(台灣醫療用語、繁體中文語氣). " + TAIWAN_LOCALE_GUIDANCE + " Return only HTML.\n\n"
-        + note_text[:4000]
+        + note_text[:MAX_EBM_NOTE_PROMPT_CHARS]
     )
     return _chat(client, SYSTEM_GENERATE_ARTICLE, prompt)
 
