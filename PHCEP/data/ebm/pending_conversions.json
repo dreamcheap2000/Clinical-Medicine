@@ -1,5 +1,13 @@
 {
-  "entries": [],
-  "_last_processed": "2026-05-08",
+  "entries": [
+    {
+      "id": "mox3bv6dgcw1",
+      "date": "2026-05-08",
+      "icdCat": "",
+      "content": "<Uptodate>\n\nYou are asking how to evaluate an 80-year-old female with thunderclap headache for 3 hours followed by dizziness and unsteady gait. I am assuming the patient is currently symptomatic and this is a nontraumatic presentation.\nIs there anything to add or change? \n \nThis presentation should be treated as a neurologic emergency because thunderclap headache requires immediate evaluation for subarachnoid hemorrhage and other secondary causes, and acute gait ataxia raises concern for posterior circulation stroke or cerebellar hemorrhage.\n+2\nImmediate priorities\nProceed with urgent neuroimaging and parallel neurologic assessment rather than symptomatic treatment alone.\n+1\nFirst-line imaging and SAH rule-out pathway\nObtain noncontrast head CT immediately to evaluate for subarachnoid hemorrhage and other causes (including ischemic stroke).\n+3\nIf CT is negative, lumbar puncture is recommended in most cases to evaluate CSF for subarachnoid hemorrhage, particularly when CT is performed more than 6 hours after onset.\n+3\nLumbar puncture may be omitted only in select patients when a technically adequate CT is obtained within 6 hours of onset and read as negative by an experienced radiologist, with appropriate caveats.\n+2\nNeurovascular imaging for alternative causes and posterior circulation process\nIf the cause remains uncertain after initial SAH evaluation, obtain additional brain and neurovascular imaging, with brain MRI favored when available.\n+1\nInclude MR venography or CT venography to evaluate for cerebral venous sinus thrombosis in patients presenting with thunderclap headache.\n+1\nGiven dizziness and gait ataxia, maintain high suspicion for posterior circulation ischemic stroke and pursue neuroimaging accordingly; MRI is often needed when CT is unrevealing and suspicion remains high.\n+2\nFocused bedside assessment elements that change pretest probability\nAssess for features associated with higher odds of subarachnoid hemorrhage (eg, impaired consciousness, neck stiffness, nausea/vomiting, exertional onset, elevated blood pressure, occipital location).\nA clearly abnormal neurologic examination or severely ataxic gait supports a central process and warrants neuroimaging and neurologic evaluation.\n+1",
+      "createdAt": "2026-05-08T15:49:22.454Z"
+    }
+  ],
+  "_pushed_at": "2026-05-08T15:52:07.256Z",
   "_comment": "EBM notes pushed from the PHCEP app for AI conversion to 衛教資源. Each entry must have: id, date, content (≥4 non-empty lines). The convert-ebm-to-edu workflow processes this file and clears it after success."
 }
