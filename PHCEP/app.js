@@ -763,6 +763,255 @@ function todayStr() {
 const EBM_ENTRIES_KEY   = 'phcep_ebm_entries';
 const EBM_TEMPLATES_KEY = 'phcep_ebm_templates';
 
+// ---------------------------------------------------------------------------
+// EBM → 衛教資源 Gate (password: Dream1234)
+// ---------------------------------------------------------------------------
+const EBM_EDU_GATE_PW = 'Dream1234';
+var _ebmGatePendingCb = null;
+
+function ebmGateCheck(callback) {
+  _ebmGatePendingCb = callback;
+  var modal = document.getElementById('ebm-gate-modal');
+  var input = document.getElementById('ebm-gate-pw-input');
+  var errEl = document.getElementById('ebm-gate-error');
+  if (!modal || !input) { callback(); return; }
+  input.value = '';
+  if (errEl) errEl.style.display = 'none';
+  modal.classList.remove('hidden');
+  setTimeout(function() { input.focus(); }, 80);
+}
+
+function ebmGateSubmit() {
+  var input = document.getElementById('ebm-gate-pw-input');
+  var errEl = document.getElementById('ebm-gate-error');
+  if (!input) return;
+  if (input.value === EBM_EDU_GATE_PW) {
+    document.getElementById('ebm-gate-modal').classList.add('hidden');
+    var cb = _ebmGatePendingCb;
+    _ebmGatePendingCb = null;
+    if (cb) cb();
+  } else {
+    if (errEl) errEl.style.display = 'block';
+    input.value = '';
+    input.focus();
+    toast('❌ 密碼錯誤，請重試');
+  }
+}
+
+function ebmGateClose() {
+  var modal = document.getElementById('ebm-gate-modal');
+  if (modal) modal.classList.add('hidden');
+  _ebmGatePendingCb = null;
+}
+
+// ---------------------------------------------------------------------------
+// EBM → HTML article formatter (no AI — produces structured HTML like existing 3 articles)
+// ---------------------------------------------------------------------------
+
+/** Bold medical terms found in text. */
+function _ebmBoldTerms(html) {
+  // Already escaped HTML: bold **text** markers and medical abbreviations in parentheses
+  return html
+    .replace(/\*\*([^<*]{1,60})\*\*/g, '<strong>$1</strong>')
+    .replace(/__([^<_]{1,60})__/g, '<strong>$1</strong>');
+}
+
+/** Convert a plain-text EBM note to structured HTML (professional_zh level). */
+function ebmFormatToHtml(title, content) {
+  var lines = content.split('\n');
+  var html = '';
+  var inUl = false, inOl = false;
+
+  function closeLists() {
+    if (inUl) { html += '</ul>'; inUl = false; }
+    if (inOl) { html += '</ol>'; inOl = false; }
+  }
+
+  lines.forEach(function(rawLine) {
+    var line = rawLine.trim();
+    if (!line) { closeLists(); return; }
+
+    // Skip if this line is a URL only
+    if (/^https?:\/\/\S+$/.test(line)) {
+      closeLists();
+      html += '<p><a href="' + escHtml(line) + '" target="_blank" rel="noopener">' + escHtml(line) + '</a></p>';
+      return;
+    }
+
+    // Section header: lines that are short, end with colon, or look like markdown headings
+    var hdMatch = line.match(/^#{1,4}\s+(.+)/) || (line.endsWith(':') && line.length < 60 && /[^\s]/.test(line) ? [null, line.replace(/:$/, '')] : null);
+    if (hdMatch) {
+      closeLists();
+      html += '<h3>' + escHtml(hdMatch[1].trim()) + '</h3>';
+      return;
+    }
+
+    // Ordered list
+    var olMatch = line.match(/^(\d+)[.)]\s+(.+)/);
+    if (olMatch) {
+      if (!inOl) { closeLists(); html += '<ol>'; inOl = true; }
+      html += '<li>' + _ebmBoldTerms(escHtml(olMatch[2])) + '</li>';
+      return;
+    }
+
+    // Unordered list
+    var ulMatch = line.match(/^[-*•›·]\s+(.+)/);
+    if (ulMatch) {
+      if (!inUl) { closeLists(); html += '<ul>'; inUl = true; }
+      html += '<li>' + _ebmBoldTerms(escHtml(ulMatch[1])) + '</li>';
+      return;
+    }
+
+    // Regular paragraph
+    closeLists();
+    html += '<p>' + _ebmBoldTerms(escHtml(line)) + '</p>';
+  });
+
+  closeLists();
+  return html;
+}
+
+/** Generate all three article versions from EBM content. */
+function ebmGenerateVersions(title, content) {
+  var professional_zh = '<h2>' + escHtml(title) + '</h2>\n' + ebmFormatToHtml(title, content);
+
+  // simple_zh: add a patient-friendly intro + emoji header
+  var EMOJIS = ['📋','🩺','💡','🏥','🔬','💊','🩹','📖'];
+  var emoji = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+  var simple_zh = '<h2>' + emoji + ' ' + escHtml(title) + '</h2>\n'
+    + '<p>以下為本主題的重點整理，供您參考使用。</p>\n'
+    + ebmFormatToHtml(title, content);
+
+  // english: if content is predominantly English, use it; otherwise placeholder
+  var chCount = (content.match(/[\u4e00-\u9fff]/g) || []).length;
+  var english = '';
+  if (chCount / Math.max(content.length, 1) < 0.15) {
+    // predominantly English
+    english = '<h2>' + escHtml(title) + '</h2>\n' + ebmFormatToHtml(title, content);
+  } else {
+    english = '<p><em>(English version not yet generated. Use GitHub Actions push to auto-translate.)</em></p>';
+  }
+
+  return { simple_zh: simple_zh, professional_zh: professional_zh, english: english };
+}
+
+// ---------------------------------------------------------------------------
+// EBM Preview Modal
+// ---------------------------------------------------------------------------
+var _ebmPreviewEntry = null;   // the source EBM entry
+var _ebmPreviewTab   = 'simple_zh';
+var _ebmPreviewVersions = {};  // { simple_zh, professional_zh, english }
+
+function ebmShowPreviewModal(entry, title, versions) {
+  _ebmPreviewEntry = entry;
+  _ebmPreviewTab   = 'simple_zh';
+  _ebmPreviewVersions = {
+    simple_zh:      versions.simple_zh || '',
+    professional_zh: versions.professional_zh || '',
+    english:         versions.english || '',
+  };
+
+  var titleInput = document.getElementById('ebm-preview-title-input');
+  if (titleInput) titleInput.value = title || '';
+
+  ebmPreviewSwitchTab('simple_zh');
+  var modal = document.getElementById('ebm-preview-modal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+function ebmPreviewSwitchTab(tab) {
+  // Save current textarea content before switching
+  if (_ebmPreviewTab && _ebmPreviewVersions) {
+    var prev = document.getElementById('ebm-preview-textarea');
+    if (prev) _ebmPreviewVersions[_ebmPreviewTab] = prev.value;
+  }
+  _ebmPreviewTab = tab;
+
+  // Update tab button styles
+  ['simple_zh', 'professional_zh', 'english'].forEach(function(t) {
+    var btn = document.getElementById('ebm-ptab-' + t);
+    if (btn) btn.classList.toggle('active', t === tab);
+  });
+
+  // Populate textarea
+  var ta = document.getElementById('ebm-preview-textarea');
+  if (ta) ta.value = _ebmPreviewVersions[tab] || '';
+
+  ebmPreviewRefreshRender();
+}
+
+function ebmPreviewRefreshRender() {
+  // Sync textarea content to versions
+  var ta = document.getElementById('ebm-preview-textarea');
+  if (ta && _ebmPreviewTab) _ebmPreviewVersions[_ebmPreviewTab] = ta.value;
+
+  var rendered = document.getElementById('ebm-preview-rendered');
+  if (!rendered || !ta) return;
+  // Render via the same safe-html mechanism used in the edu viewer
+  eduSetSafeHtml(rendered, ta.value || '<p style="color:var(--muted)">(空白)</p>');
+}
+
+function ebmPreviewClose() {
+  var modal = document.getElementById('ebm-preview-modal');
+  if (modal) modal.classList.add('hidden');
+  _ebmPreviewEntry = null;
+  _ebmPreviewVersions = {};
+}
+
+function _ebmPreviewFlushTextarea() {
+  var ta = document.getElementById('ebm-preview-textarea');
+  if (ta && _ebmPreviewTab) _ebmPreviewVersions[_ebmPreviewTab] = ta.value;
+}
+
+function ebmPreviewSave() {
+  _ebmPreviewFlushTextarea();
+  var titleInput = document.getElementById('ebm-preview-title-input');
+  var title = (titleInput ? titleInput.value.trim() : '') || (_ebmPreviewEntry ? _ebmExtractTitle(_ebmPreviewEntry) : '未命名');
+
+  var entry = _ebmPreviewEntry || {};
+  var fastsr = eduEncodeFastSR(
+    (_ebmPreviewVersions.professional_zh || '').replace(/<[^>]+>/g, ' ')
+    + ' ' + entry.content || ''
+  );
+
+  var newEdu = {
+    id: 'edu_local_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    title: title,
+    source_url: _ebmExtractUrl(entry.content || ''),
+    source_label: _ebmExtractSourceLabel(entry.content || ''),
+    original_lang: 'zh-TW',
+    added_date: entry.date || todayStr(),
+    tags: entry.icdCat ? [entry.icdCat] : [],
+    fastsr: fastsr,
+    versions: {
+      simple_zh:       _ebmPreviewVersions.simple_zh || '',
+      professional_zh: _ebmPreviewVersions.professional_zh || '',
+      english:         _ebmPreviewVersions.english || '',
+    },
+    _local: true,
+    _from_ebm: true,
+  };
+
+  var locals = eduLoadLocal();
+  locals.push(newEdu);
+  eduSaveLocal(locals);
+  eduData.push(newEdu);
+
+  ebmPreviewClose();
+  switchTab('edu');
+  eduRenderList();
+  toast('✅ 已儲存「' + title + '」至衛教資源庫');
+}
+
+function ebmPreviewPushToGithub() {
+  _ebmPreviewFlushTextarea();
+  ebmPreviewClose();
+  // Delegate to the existing GitHub push flow (uses the EBM entry content)
+  ebmPushToGithubDirect();
+}
+
+
+
 function initEbmTab() {
   document.getElementById('ebm-date').value = todayStr();
   renderEbmCatOptions();
@@ -885,83 +1134,62 @@ function _ebmExtractSourceLabel(content) {
   return /uptodate/i.test(content) ? 'UpToDate' : '';
 }
 
-// Convert a single EBM entry into a draft 衛教資源 (opens the edu add form pre-filled)
+// Convert a single EBM entry into a 衛教資源 — gate-guarded, shows preview modal
 function ebmConvertToEdu(id) {
-  var entries = storageGet(EBM_ENTRIES_KEY) || [];
-  var entry = entries.find(function(e) { return e.id === id; });
-  if (!entry) return;
-
-  var title = _ebmExtractTitle(entry);
-  var url = _ebmExtractUrl(entry.content);
-  var sourceLabel = _ebmExtractSourceLabel(entry.content);
-  var fastsr = eduEncodeFastSR(entry.content);
-
-  // Pre-fill the edu add form
-  var set = function(elId, val) { var el = document.getElementById(elId); if (el) el.value = val; };
-  set('edu-form-title', title);
-  set('edu-form-url', url);
-  set('edu-form-source-label', sourceLabel);
-  set('edu-form-tags', entry.icdCat || '');
-  set('edu-form-original', entry.content);
-  set('edu-form-simple-zh', entry.content);
-  set('edu-form-pro-zh', '');
-  set('edu-form-en', '');
-  set('edu-form-s', fastsr.S.join('\n'));
-  set('edu-form-o', fastsr.O.join('\n'));
-  set('edu-form-a', fastsr.A.join('\n'));
-  set('edu-form-p', fastsr.P.join('\n'));
-
-  // Switch to edu tab and open the add panel
-  switchTab('edu');
-  var panel = document.getElementById('edu-add-panel');
-  if (panel && panel.classList.contains('hidden')) eduToggleAddForm();
-
-  toast('📝 EBM 已轉為衛教草稿，請補充語言版本後儲存');
+  ebmGateCheck(function() {
+    var entries = storageGet(EBM_ENTRIES_KEY) || [];
+    var entry = entries.find(function(e) { return e.id === id; });
+    if (!entry) return;
+    var title = _ebmExtractTitle(entry);
+    var versions = ebmGenerateVersions(title, entry.content);
+    ebmShowPreviewModal(entry, title, versions);
+  });
 }
 
-// Batch-convert the 4 most recent EBM entries to local 衛教資源 entries
+// Batch-convert the 4 most recent EBM entries — gate-guarded, uses formatter
 function ebmBatchConvertToEdu() {
-  var entries = (storageGet(EBM_ENTRIES_KEY) || []).slice(0, 4);
-  if (entries.length === 0) { toast('⚠️ 尚無 EBM 筆記'); return; }
+  ebmGateCheck(function() {
+    var entries = (storageGet(EBM_ENTRIES_KEY) || []).slice(0, 4);
+    if (entries.length === 0) { toast('⚠️ 尚無 EBM 筆記'); return; }
 
-  var locals = eduLoadLocal();
-  var converted = 0;
-  entries.forEach(function(entry, idx) {
-    var title = _ebmExtractTitle(entry);
+    var locals = eduLoadLocal();
+    var converted = 0;
+    entries.forEach(function(entry, idx) {
+      var title = _ebmExtractTitle(entry);
+      if (locals.find(function(e) { return e.title === title; })) return;
 
-    // Skip if an entry with the same title already exists locally
-    if (locals.find(function(e) { return e.title === title; })) return;
+      var url = _ebmExtractUrl(entry.content);
+      var sourceLabel = _ebmExtractSourceLabel(entry.content);
+      var fastsr = eduEncodeFastSR(entry.content);
+      var versions = ebmGenerateVersions(title, entry.content);
 
-    var url = _ebmExtractUrl(entry.content);
-    var sourceLabel = _ebmExtractSourceLabel(entry.content);
-    var fastsr = eduEncodeFastSR(entry.content);
+      var newEntry = {
+        id: 'edu_local_' + (Date.now() + idx) + '_' + Math.random().toString(36).slice(2, 7),
+        title: title,
+        source_url: url,
+        source_label: sourceLabel,
+        original_lang: 'zh-TW',
+        added_date: entry.date || todayStr(),
+        tags: entry.icdCat ? [entry.icdCat] : [],
+        fastsr: fastsr,
+        versions: versions,
+        _local: true,
+        _from_ebm: true,
+      };
+      locals.push(newEntry);
+      eduData.push(newEntry);
+      converted++;
+    });
 
-    var newEntry = {
-      id: 'edu_local_' + (Date.now() + idx) + '_' + Math.random().toString(36).slice(2, 7),
-      title,
-      source_url: url,
-      source_label: sourceLabel,
-      original_lang: 'zh-TW',
-      added_date: entry.date || new Date().toISOString().split('T')[0],
-      tags: entry.icdCat ? [entry.icdCat] : [],
-      fastsr,
-      versions: { simple_zh: entry.content, professional_zh: '', english: '' },
-      _local: true,
-      _from_ebm: true
-    };
-    locals.push(newEntry);
-    eduData.push(newEntry);
-    converted++;
+    eduSaveLocal(locals);
+    if (converted > 0) {
+      eduRenderList();
+      switchTab('edu');
+      toast('✅ 已批次轉存 ' + converted + ' 筆 EBM 筆記為衛教資源（已套用結構化格式）');
+    } else {
+      toast('ℹ️ 所有筆記已存在於衛教資源庫中');
+    }
   });
-
-  eduSaveLocal(locals);
-  if (converted > 0) {
-    eduRenderList();
-    switchTab('edu');
-    toast('✅ 已批次轉存 ' + converted + ' 筆 EBM 筆記為衛教資源');
-  } else {
-    toast('ℹ️ 所有筆記已存在於衛教資源庫中');
-  }
 }
 
 // ---------------------------------------------------------------------------
@@ -978,7 +1206,12 @@ function encodeGitHubFileContent(obj) {
   return btoa(unescape(encodeURIComponent(JSON.stringify(obj, null, 2))));
 }
 
+// Gate-guarded wrapper for the GitHub push button in the EBM inline history
 async function ebmPushToGithub() {
+  ebmGateCheck(function() { ebmPushToGithubDirect(); });
+}
+
+async function ebmPushToGithubDirect() {
   var cfg = getGithubSync();
   if (!cfg.token) {
     toast('⚠️ 請先在設定中填入 GitHub Personal Access Token');
@@ -1222,13 +1455,37 @@ async function loadEduData() {
     const baseEntries = jsonData.entries
       ? jsonData.entries
       : (jsonData.files || []).map(eduConvertV1);
-    const localEntries = eduLoadLocal();
+    const localEntries = eduCleanupPoorEntries();
     eduData = [...baseEntries, ...localEntries];
   } catch (e) {
     console.error('edu data load failed:', e);
-    eduData = eduLoadLocal();
+    eduData = eduCleanupPoorEntries();
   }
   eduRenderList();
+}
+
+/**
+ * Remove locally-stored EBM-generated entries whose content has no HTML structure
+ * (plain-text articles from before the structured formatter was introduced).
+ * Returns the cleaned local-entries array.
+ */
+function eduCleanupPoorEntries() {
+  var locals = eduLoadLocal();
+  var before = locals.length;
+  locals = locals.filter(function(e) {
+    if (!e._from_ebm) return true; // keep manually-added entries
+    var sv = (e.versions || {}).simple_zh || '';
+    var pv = (e.versions || {}).professional_zh || '';
+    var ev = (e.versions || {}).english || '';
+    // Plain-text entry: none of the versions contain any HTML tag
+    var hasHtml = /<[a-zA-Z]/.test(sv) || /<[a-zA-Z]/.test(pv) || /<[a-zA-Z]/.test(ev);
+    return hasHtml;
+  });
+  if (locals.length < before) {
+    eduSaveLocal(locals);
+    console.log('[PHCEP] Removed ' + (before - locals.length) + ' poorly-formatted EBM article(s) from localStorage');
+  }
+  return locals;
 }
 
 function eduConvertV1(file) {
@@ -1353,7 +1610,44 @@ function eduRenderList() {
 }
 
 function eduSearch(query) {
+  // Show/hide the clear button
+  var clearBtn = document.getElementById('edu-search-clear-btn');
+  if (clearBtn) clearBtn.style.display = query ? 'block' : 'none';
   eduRenderList();
+}
+
+/** Handle keyboard events in the edu search bar. */
+function eduSearchKeydown(e) {
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    eduClearSearch();
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    eduScrollToResults();
+  }
+}
+
+/** Submit search and scroll to results (used by 🔍 button). */
+function eduSearchSubmit() {
+  var q = (document.getElementById('edu-search') || {}).value || '';
+  eduSearch(q);
+  eduScrollToResults();
+}
+
+/** Clear the search query and jump back to the filter buttons. */
+function eduClearSearch() {
+  var input = document.getElementById('edu-search');
+  if (input) { input.value = ''; input.focus(); }
+  eduSearch('');
+  // Scroll to filter buttons (top of edu toolbar)
+  var toolbar = document.querySelector('.edu-toolbar');
+  if (toolbar) toolbar.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/** Scroll to the edu results list. */
+function eduScrollToResults() {
+  var list = document.getElementById('edu-list');
+  if (list) list.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function eduSetSearchMode(mode) {
@@ -2995,6 +3289,8 @@ function renderSettingsTab() {
         <div class="shortcut-row"><kbd class="key-combo">Option/Alt + ↓</kbd> 向下翻頁</div>
         <div class="shortcut-row"><kbd class="key-combo">Cmd/Ctrl + ↑</kbd> 回到頁頂</div>
         <div class="shortcut-row"><kbd class="key-combo">Cmd/Ctrl + ↓</kbd> 前往頁底</div>
+        <div class="shortcut-row"><kbd>Esc</kbd> 衛教搜尋欄：清除並回到篩選列</div>
+        <div class="shortcut-row"><kbd>Enter</kbd> 衛教搜尋欄：跳至搜尋結果</div>
       </div>
     </div>
 

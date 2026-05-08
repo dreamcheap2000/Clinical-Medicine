@@ -2651,3 +2651,228 @@ select.search-overlay-active {
 .workflow-images figure { margin: 0; text-align: center; }
 .workflow-images figcaption { margin-top: 6px; font-size: 0.85rem; color: var(--text2); }
 .workflow-img { max-width: 100%; border: 1px solid var(--border); border-radius: 8px; cursor: zoom-in; }
+
+/* ============================================================
+   EBM Gate & Preview Modals
+   ============================================================ */
+.ebm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.65);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.ebm-modal-overlay.hidden { display: none; }
+
+.ebm-modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 820px;
+  max-height: 92vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 40px rgba(0,0,0,.7);
+  display: flex;
+  flex-direction: column;
+}
+.ebm-modal-box.ebm-modal-narrow { max-width: 400px; }
+
+.ebm-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.ebm-modal-header h3 { font-size: 1rem; font-weight: 700; color: var(--heading); }
+.ebm-modal-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+.ebm-modal-close:hover { color: var(--text); background: var(--surface2); }
+
+.ebm-modal-body { padding: 16px 20px; flex: 1; }
+.ebm-modal-body p { margin-bottom: 12px; font-size: 0.88rem; color: var(--text); }
+
+.ebm-modal-field { margin-bottom: 14px; }
+.ebm-modal-field label {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+.ebm-modal-field input[type=text],
+.ebm-modal-field input[type=password] {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+.ebm-modal-field input:focus { outline: none; border-color: var(--accent); }
+
+.ebm-pw-hint { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+
+.ebm-modal-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 12px 20px 16px;
+  border-top: 1px solid var(--border);
+  align-items: center;
+}
+.ebm-modal-actions button {
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  transition: all .15s;
+}
+.ebm-modal-actions button:hover { border-color: var(--accent); color: var(--accent); }
+.ebm-modal-actions .btn-confirm {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.ebm-modal-actions .btn-confirm:hover { opacity: .85; color: #fff; }
+.ebm-modal-actions .btn-push {
+  background: var(--green);
+  color: #fff;
+  border-color: var(--green);
+}
+.ebm-modal-actions .btn-push:hover { opacity: .85; color: #fff; }
+
+/* Preview modal title field */
+.ebm-preview-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.ebm-preview-title-row label { font-size: 0.82rem; color: var(--muted); white-space: nowrap; }
+.ebm-preview-title-row input {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+.ebm-preview-title-row input:focus { outline: none; border-color: var(--accent); }
+
+/* Preview modal version tabs */
+.ebm-preview-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 10px 20px 0;
+  border-bottom: 1px solid var(--border);
+}
+.ebm-preview-tab {
+  padding: 7px 16px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  background: var(--surface2);
+  color: var(--muted);
+  transition: all .12s;
+}
+.ebm-preview-tab:hover { color: var(--text); }
+.ebm-preview-tab.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* Preview split: left = editor, right = rendered */
+.ebm-preview-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 14px 20px;
+  min-height: 260px;
+}
+@media (max-width: 640px) {
+  .ebm-preview-split { grid-template-columns: 1fr; }
+}
+.ebm-preview-editor-label,
+.ebm-preview-render-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+.ebm-preview-textarea {
+  width: 100%;
+  height: 220px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  resize: vertical;
+  line-height: 1.6;
+}
+.ebm-preview-textarea:focus { outline: none; border-color: var(--accent); }
+.ebm-preview-rendered {
+  height: 220px;
+  overflow-y: auto;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+.ebm-preview-rendered h2 { font-size: 1rem; margin-bottom: 8px; color: var(--heading); }
+.ebm-preview-rendered h3 { font-size: 0.9rem; margin: 10px 0 6px; color: var(--accent2); }
+.ebm-preview-rendered p { margin-bottom: 8px; }
+.ebm-preview-rendered ul, .ebm-preview-rendered ol { padding-left: 18px; margin-bottom: 8px; }
+.ebm-preview-rendered li { margin-bottom: 4px; }
+.ebm-preview-rendered strong { color: var(--heading); }
+.ebm-preview-rendered table { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
+.ebm-preview-rendered th, .ebm-preview-rendered td { padding: 5px 8px; border: 1px solid var(--border); }
+
+/* ============================================================
+   Edu Search — clear button
+   ============================================================ */
+.edu-search-clear {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-left: none;
+  color: var(--muted);
+  padding: 8px 10px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  line-height: 1;
+  transition: color .12s;
+  flex-shrink: 0;
+}
+.edu-search-clear:hover { color: var(--red); }
+/* Reattach right-radius to search button when clear button is present */
+.edu-search-wrap .edu-search-btn {
+  border-radius: 0;
+}
+.edu-search-wrap .edu-search-btn:last-child {
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
