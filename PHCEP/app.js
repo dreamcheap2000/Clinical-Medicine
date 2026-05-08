@@ -1846,8 +1846,8 @@ function eduGetPrototypes(entry) {
     stored.global.forEach(function(t) {
       t = t.toLowerCase();
       if (/[\u4e00-\u9fff]/.test(t) && t.length > 1) {
-        for (var j = 0; j < t.length; j++) extra.push(t[j]);
-        for (var i = 0; i < t.length - 1; i++) extra.push(t[i] + t[i+1]);
+        for (var charIndex = 0; charIndex < t.length; charIndex++) extra.push(t[charIndex]);
+        for (var bigramIndex = 0; bigramIndex < t.length - 1; bigramIndex++) extra.push(t[bigramIndex] + t[bigramIndex + 1]);
       }
     });
     extra.forEach(function(t) { globalSet.add(t); });
@@ -2022,11 +2022,11 @@ function eduTokenize(text) {
   words.forEach(function(w) {
     tokens.push(w);
     if (/[\u4e00-\u9fff]/.test(w) && w.length > 1) {
-      for (var j = 0; j < w.length; j++) {
-        tokens.push(w[j]); // Chinese character-level matching
+      for (var charIndex = 0; charIndex < w.length; charIndex++) {
+        tokens.push(w[charIndex]); // Chinese character-level matching
       }
-      for (var i = 0; i < w.length - 1; i++) {
-        tokens.push(w[i] + w[i + 1]); // Chinese bigrams
+      for (var bigramIndex = 0; bigramIndex < w.length - 1; bigramIndex++) {
+        tokens.push(w[bigramIndex] + w[bigramIndex + 1]); // Chinese bigrams
       }
     }
   });
