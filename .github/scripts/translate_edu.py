@@ -339,7 +339,8 @@ def ai_translate_zh_from_en(client: "OpenAI", professional_en_html: str) -> str:
     """Translate professional English HTML to professional Traditional Chinese HTML."""
     prompt = (
         "Translate the following professional English medical content into professional "
-        "Traditional Chinese (繁體中文). Maintain all medical terminology and structure. "
+        "Traditional Chinese (繁體中文, 台灣用語與語氣). Maintain all medical terminology and structure. "
+        "Prefer Taiwanese clinical wording and avoid Mainland China expressions. "
         "Return only HTML.\n\n"
         + professional_en_html
     )
@@ -350,8 +351,8 @@ def ai_translate_to_simple_zh_from_en(client: "OpenAI", professional_en_html: st
     """Generate patient-friendly Simple Chinese from professional English HTML."""
     prompt = (
         "Translate the following professional English medical content into patient-friendly "
-        "Traditional Chinese (繁體中文簡易版). Use plain language, add relevant emojis as "
-        "section headers. Return only HTML.\n\n"
+        "Traditional Chinese (繁體中文簡易版, 台灣用語與語氣). Use plain language, add relevant emojis as "
+        "section headers, and avoid Mainland China wording. Return only HTML.\n\n"
         + professional_en_html
     )
     return _chat(client, SYSTEM_TRANSLATE_EN, prompt)
@@ -387,7 +388,8 @@ def ai_generate_professional_zh_from_note(client: "OpenAI", note_text: str) -> s
         "Based on the following raw EBM/clinical note (may be a mix of Chinese and English), "
         "write a complete professional-level Traditional Chinese (繁體中文) patient education "
         "article with clear sections (e.g. background, indications, procedure, outcomes, "
-        "post-care, contraindications). Use proper medical terminology. Return only HTML.\n\n"
+        "post-care, contraindications). Use proper medical terminology and Taiwanese clinical wording "
+        "(台灣醫療用語、繁體中文語氣，避免中國大陸用語). Return only HTML.\n\n"
         + note_text[:4000]
     )
     return _chat(client, SYSTEM_GENERATE_ARTICLE, prompt)
@@ -399,7 +401,8 @@ def ai_generate_simple_zh_from_note(client: "OpenAI", professional_zh_html: str)
         "Rewrite the following professional Traditional Chinese medical content into a "
         "patient-friendly version (簡易版). Use plain everyday language, add relevant emojis "
         "as visual cues for section headers. Structure: brief intro sentence, bullet-point "
-        "key facts, what to expect, and key instructions. Return only HTML.\n\n"
+        "key facts, what to expect, and key instructions. Use Taiwanese Traditional Chinese "
+        "wording and avoid Mainland China expressions. Return only HTML.\n\n"
         + professional_zh_html
     )
     return _chat(client, SYSTEM_GENERATE_ARTICLE, prompt)
