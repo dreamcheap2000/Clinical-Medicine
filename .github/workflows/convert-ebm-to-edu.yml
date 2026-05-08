@@ -36,6 +36,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add PHCEP/data/edu/patient_edu_data.json PHCEP/data/ebm/pending_conversions.json
-          git diff --staged --quiet || git commit -m "chore: auto-convert EBM notes to patient education articles [skip ci]"
+          git diff --staged --quiet || git commit -m "chore: auto-convert EBM notes to patient education articles"
           git pull --rebase origin main
           git push
