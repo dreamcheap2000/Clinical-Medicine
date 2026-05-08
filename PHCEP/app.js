@@ -1841,11 +1841,12 @@ function eduGetPrototypes(entry) {
   var globalSet;
   if (stored.global && stored.global.length) {
     globalSet = new Set(stored.global.map(function(t) { return t.toLowerCase(); }));
-    // Also expand any multi-char tokens that are Chinese into bigrams
+    // Also expand any multi-char Chinese tokens into unigram+bigrams
     var extra = [];
     stored.global.forEach(function(t) {
       t = t.toLowerCase();
       if (/[\u4e00-\u9fff]/.test(t) && t.length > 1) {
+        for (var j = 0; j < t.length; j++) extra.push(t[j]);
         for (var i = 0; i < t.length - 1; i++) extra.push(t[i] + t[i+1]);
       }
     });
@@ -2021,6 +2022,9 @@ function eduTokenize(text) {
   words.forEach(function(w) {
     tokens.push(w);
     if (/[\u4e00-\u9fff]/.test(w) && w.length > 1) {
+      for (var j = 0; j < w.length; j++) {
+        tokens.push(w[j]); // Chinese character-level matching
+      }
       for (var i = 0; i < w.length - 1; i++) {
         tokens.push(w[i] + w[i + 1]); // Chinese bigrams
       }
@@ -2098,6 +2102,8 @@ function eduOpenEntry(id, version) {
     btn.classList.toggle('active', btn.dataset.v === eduCurrentVersion);
   });
   eduRenderViewerContent();
+  var viewer = document.getElementById('edu-viewer');
+  if (viewer) viewer.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function eduSwitchVersion(v) {
