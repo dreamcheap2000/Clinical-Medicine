@@ -1799,6 +1799,137 @@
       "_ebm_source_id": "movkmhpzcf3m",
       "_from_ebm": true,
       "modified_date": "2026-05-08"
+    },
+    {
+      "id": "edu_ebm_mox3bv6dgcw1",
+      "title": "<Uptodate>",
+      "source_url": "",
+      "source_label": "",
+      "source_urls": [],
+      "original_lang": "zh-TW",
+      "added_date": "2026-05-08",
+      "version": "1.0",
+      "tags": [],
+      "fastsr": {
+        "S": [
+          "<Uptodate>",
+          "I am assuming the patient is currently symptomatic and this is a nontraumatic presentation.",
+          "Is there anything to add or change?",
+          "Immediate priorities",
+          "Proceed with urgent neuroimaging and parallel neurologic assessment rather than symptomatic treatment alone.",
+          "First-line imaging and SAH rule-out pathway",
+          "Assess for features associated with higher odds of subarachnoid hemorrhage (eg, impaired consciousness, neck stiffness, nausea/vomiting, exertional onset, elevated blood pressure, occipital location)."
+        ],
+        "O": [
+          "Obtain noncontrast head CT immediately to evaluate for subarachnoid hemorrhage and other causes (including ischemic stroke).",
+          "If CT is negative, lumbar puncture is recommended in most cases to evaluate CSF for subarachnoid hemorrhage, particularly when CT is performed more than 6 hours after onset.",
+          "Lumbar puncture may be omitted only in select patients when a technically adequate CT is obtained within 6 hours of onset and read as negative by an experienced radiologist, with appropriate caveats.",
+          "If the cause remains uncertain after initial SAH evaluation, obtain additional brain and neurovascular imaging, with brain MRI favored when available.",
+          "Include MR venography or CT venography to evaluate for cerebral venous sinus thrombosis in patients presenting with thunderclap headache.",
+          "Given dizziness and gait ataxia, maintain high suspicion for posterior circulation ischemic stroke and pursue neuroimaging accordingly; MRI is often needed when CT is unrevealing and suspicion remains high.",
+          "Focused bedside assessment elements that change pretest probability",
+          "A clearly abnormal neurologic examination or severely ataxic gait supports a central process and warrants neuroimaging and neurologic evaluation."
+        ],
+        "A": [
+          "This presentation should be treated as a neurologic emergency because thunderclap headache requires immediate evaluation for subarachnoid hemorrhage and other secondary causes, and acute gait ataxia raises concern for posterior circulation stroke or cerebellar hemorrhage.",
+          "Neurovascular imaging for alternative causes and posterior circulation process"
+        ],
+        "P": [
+          "You are asking how to evaluate an 80-year-old female with thunderclap headache for 3 hours followed by dizziness and unsteady gait."
+        ]
+      },
+      "prototype": {
+        "global": [
+          "<uptodate>",
+          "am",
+          "assuming",
+          "the",
+          "patient",
+          "is",
+          "currently",
+          "symptomatic",
+          "and",
+          "this",
+          "nontraumatic",
+          "presentation",
+          "there",
+          "anything",
+          "to",
+          "add",
+          "or",
+          "change",
+          "immediate",
+          "priorities",
+          "proceed",
+          "with",
+          "urgent",
+          "neuroimaging",
+          "parallel",
+          "neurologic",
+          "assessment",
+          "rather",
+          "than",
+          "treatment",
+          "alone",
+          "first",
+          "line",
+          "imaging",
+          "sah",
+          "rule",
+          "out",
+          "pathway",
+          "assess",
+          "for",
+          "features",
+          "associated",
+          "higher",
+          "odds",
+          "of",
+          "subarachnoid",
+          "hemorrhage",
+          "(eg",
+          "impaired",
+          "consciousness",
+          "neck",
+          "stiffness",
+          "nausea",
+          "vomiting",
+          "exertional",
+          "onset",
+          "elevated",
+          "blood",
+          "pressure",
+          "occipital"
+        ],
+        "semantic": [
+          "symptom",
+          "MRI",
+          "CT",
+          "examination",
+          "test",
+          "negative",
+          "cases",
+          "assessment",
+          "cause",
+          "treatment",
+          "recommend",
+          "follow"
+        ],
+        "fragment": [
+          "<Uptodate>",
+          "Assess for features associated with higher odds of subarachnoid hemorrhage (eg, impaired consciousness, neck stiffness, nausea/vomiting, exertional onset, elevated blood pressure, occipital location).",
+          "Given dizziness and gait ataxia, maintain high suspicion for posterior circulation ischemic stroke and pursue neuroimaging accordingly; MRI is often needed when CT is unrevealing and suspicion remains high.",
+          "This presentation should be treated as a neurologic emergency because thunderclap headache requires immediate evaluation for subarachnoid hemorrhage and other secondary causes, and acute gait ataxia raises concern for posterior circulation stroke or cerebellar hemorrhage.",
+          "You are asking how to evaluate an 80-year-old female with thunderclap headache for 3 hours followed by dizziness and unsteady gait."
+        ]
+      },
+      "versions": {
+        "simple_zh": "<p><Uptodate>\n\nYou are asking how to evaluate an 80-year-old female with thunderclap headache for 3 hours followed by dizziness and unsteady gait. I am assuming the patient is currently symptomatic and this is a nontraumatic presentation.\nIs there anything to add or change? \n \nThis presentation should be treated as a neurologic emergency because thunderclap headache requires immediate evaluation for subarachnoid hemorrhage and other secondary causes, and acute gait ataxia raises concern for posterior circulation stroke or cerebellar hemorrhage.\n+2\nImmediate priorities\nProceed with urgent neuroimaging and parallel neurologic assessment rather than symptomatic treatment alone.\n+1\nFirst-line imaging and SAH rule-out pathway\nObtain noncontrast head CT immediately to evaluate for subarachnoid hemorrhage and other causes (including ischemic stroke).\n+3\nIf CT is negative, lumbar puncture is recommended in most cases to evaluate CSF for subarachnoid hemorrhage, particularly when CT is performed more than 6 hours after onset.\n+3\nLumbar puncture may be omitted only in select patients when a technically adequate CT is obtained within 6 hours of onset and read as negative by an experienced radiologist, with appropriate caveats.\n+2\nNeurovascular imaging for alternative causes and posterior circulation process\nIf the cause remains uncertain after initial SAH evaluation, obtain additional brain and neurovascular imaging, with brain MRI favored when available.\n+1\nInclude MR venography or CT venography to evaluate for cerebral venous sinus thrombosis in patients presenting with thunderclap headache.\n+1\nGiven dizziness and gait ataxia, maintain high suspicion for posterior circulation ischemic stroke and pursue neuroimaging accordingly; MRI is often needed when CT is unrevealing and suspicion remains high.\n+2\nFocused bedside assessment elements that change pretest probability\nAssess for features associated with higher odds of subarachnoid hemorrhage (eg, impaired consciousness, neck stiffness, nausea/vomiting, exertional onset, elevated blood pressure, occipital location).\nA clearly abnormal neurologic examination or severely ataxic gait supports a central process and warrants neuroimaging and neurologic evaluation.\n+1</p>",
+        "professional_zh": "<p><Uptodate>\n\nYou are asking how to evaluate an 80-year-old female with thunderclap headache for 3 hours followed by dizziness and unsteady gait. I am assuming the patient is currently symptomatic and this is a nontraumatic presentation.\nIs there anything to add or change? \n \nThis presentation should be treated as a neurologic emergency because thunderclap headache requires immediate evaluation for subarachnoid hemorrhage and other secondary causes, and acute gait ataxia raises concern for posterior circulation stroke or cerebellar hemorrhage.\n+2\nImmediate priorities\nProceed with urgent neuroimaging and parallel neurologic assessment rather than symptomatic treatment alone.\n+1\nFirst-line imaging and SAH rule-out pathway\nObtain noncontrast head CT immediately to evaluate for subarachnoid hemorrhage and other causes (including ischemic stroke).\n+3\nIf CT is negative, lumbar puncture is recommended in most cases to evaluate CSF for subarachnoid hemorrhage, particularly when CT is performed more than 6 hours after onset.\n+3\nLumbar puncture may be omitted only in select patients when a technically adequate CT is obtained within 6 hours of onset and read as negative by an experienced radiologist, with appropriate caveats.\n+2\nNeurovascular imaging for alternative causes and posterior circulation process\nIf the cause remains uncertain after initial SAH evaluation, obtain additional brain and neurovascular imaging, with brain MRI favored when available.\n+1\nInclude MR venography or CT venography to evaluate for cerebral venous sinus thrombosis in patients presenting with thunderclap headache.\n+1\nGiven dizziness and gait ataxia, maintain high suspicion for posterior circulation ischemic stroke and pursue neuroimaging accordingly; MRI is often needed when CT is unrevealing and suspicion remains high.\n+2\nFocused bedside assessment elements that change pretest probability\nAssess for features associated with higher odds of subarachnoid hemorrhage (eg, impaired consciousness, neck stiffness, nausea/vomiting, exertional onset, elevated blood pressure, occipital location).\nA clearly abnormal neurologic examination or severely ataxic gait supports a central process and warrants neuroimaging and neurologic evaluation.\n+1</p>",
+        "english": ""
+      },
+      "_ebm_source_id": "mox3bv6dgcw1",
+      "_from_ebm": true
     }
   ]
 }
