@@ -1005,7 +1005,7 @@ async function ebmPreviewAiRefine() {
   var titleInput = document.getElementById('ebm-preview-title-input');
   var title = (titleInput ? titleInput.value.trim() : '') || (_ebmPreviewEntry ? _ebmExtractTitle(_ebmPreviewEntry) : '未命名');
   var baseHtml = _ebmPreviewVersions[_ebmPreviewTab] || '';
-  if (!baseHtml.trim()) {
+  if (!baseHtml || !baseHtml.trim()) {
     toast('⚠️ 目前版本內容為空白，請先輸入內容再微調');
     return;
   }
@@ -1023,7 +1023,7 @@ async function ebmPreviewAiRefine() {
     var sourceNote = (_ebmPreviewEntry && _ebmPreviewEntry.content) ? _ebmPreviewEntry.content.slice(0, 3500) : '';
     var systemPrompt = _ebmPreviewTab === 'english'
       ? 'You are a senior clinical editor. Revise the provided patient-education HTML while preserving factual content and structure quality. Return only valid HTML without markdown fences.'
-      : '你是台灣臨床衛教編輯。請使用臺灣繁體中文與台灣醫療語境（避免中國大陸用語），在不改變醫學事實前提下優化內容。只回傳合法 HTML，不要 markdown。';
+      : '你是台灣臨床衛教編輯。請使用台灣繁體中文與台灣醫療語境（避免中國大陸用語），在不改變醫學事實前提下優化內容。只回傳合法 HTML，不要 markdown。';
     var userContent = [
       '請微調下列衛教內容。',
       '標題：' + title,
@@ -1286,7 +1286,7 @@ function ebmBatchConvertToEdu() {
   ebmGateCheck(function() {
     var entries = storageGet(EBM_ENTRIES_KEY) || [];
     if (entries.length === 0) { toast('⚠️ 尚無 EBM 筆記'); return; }
-    if (!confirm('將嘗試把全部 EBM 筆記轉成衛教資源（已存在同名標題者會略過），是否繼續？')) return;
+    if (!confirm('將嘗試把全部 ' + entries.length + ' 筆 EBM 筆記轉成衛教資源（已存在同名標題者會略過），是否繼續？')) return;
 
     var locals = eduLoadLocal();
     var converted = 0;
