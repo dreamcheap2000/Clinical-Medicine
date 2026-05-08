@@ -1808,7 +1808,7 @@
       "source_urls": [],
       "original_lang": "zh-TW",
       "added_date": "2026-05-08",
-      "version": "1.0",
+      "version": "1.1",
       "tags": [],
       "fastsr": {
         "S": [
@@ -1929,7 +1929,8 @@
         "english": ""
       },
       "_ebm_source_id": "mox3bv6dgcw1",
-      "_from_ebm": true
+      "_from_ebm": true,
+      "modified_date": "2026-05-08"
     }
   ]
 }
