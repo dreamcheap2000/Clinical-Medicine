@@ -1024,8 +1024,8 @@ async function ebmPreviewAiRefine() {
     var sectionLabel = _ebmPreviewTabLabel(_ebmPreviewTab);
     var sourceNote = (_ebmPreviewEntry && _ebmPreviewEntry.content) ? _ebmPreviewEntry.content.slice(0, EBM_PREVIEW_MAX_SOURCE_NOTE_LENGTH) : '';
     var systemPrompt = _ebmPreviewTab === 'english'
-      ? 'You are a senior clinical editor. Revise the provided patient-education HTML while preserving factual content and structure quality. Return only valid HTML without markdown fences.'
-      : '你是台灣臨床衛教編輯。請使用台灣繁體中文與台灣醫療語境（避免中國大陸用語），在不改變醫學事實前提下優化內容。只回傳合法 HTML，不要 markdown。';
+      ? 'You are a senior clinical editor. Revise the provided patient-education HTML while preserving factual content and structure quality. Return only valid HTML without Markdown fences.'
+      : '你是台灣臨床衛教編輯。請使用台灣繁體中文與台灣醫療語境（避免中國大陸用語），在不改變醫學事實前提下優化內容。只回傳合法 HTML，不要 Markdown。';
     var userContent = [
       '請微調下列衛教內容。',
       '標題：' + title,
