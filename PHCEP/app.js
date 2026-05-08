@@ -965,8 +965,97 @@ function ebmBatchConvertToEdu() {
 }
 
 // ---------------------------------------------------------------------------
-// SOAP Notes
+// EBM → GitHub push (triggers GitHub Actions AI conversion)
 // ---------------------------------------------------------------------------
+
+/** Decode base64-encoded UTF-8 content returned by the GitHub Contents API. */
+function decodeGitHubFileContent(b64) {
+  return JSON.parse(decodeURIComponent(escape(atob(b64.replace(/\n/g, '')))));
+}
+
+/** Encode a JSON object to base64 UTF-8 for the GitHub Contents API PUT body. */
+function encodeGitHubFileContent(obj) {
+  return btoa(unescape(encodeURIComponent(JSON.stringify(obj, null, 2))));
+}
+
+async function ebmPushToGithub() {
+  var cfg = getGithubSync();
+  if (!cfg.token) {
+    toast('⚠️ 請先在設定中填入 GitHub Personal Access Token');
+    switchTab('settings');
+    return;
+  }
+
+  var owner = cfg.owner || 'dreamcheap2000';
+  var repo  = cfg.repo  || 'Clinical-Medicine';
+  var path  = 'PHCEP/data/ebm/pending_conversions.json';
+  var apiBase = 'https://api.github.com/repos/' + owner + '/' + repo;
+
+  // Only push entries with > 3 non-empty lines
+  var entries = storageGet(EBM_ENTRIES_KEY) || [];
+  var qualifying = entries.filter(function(e) {
+    var lines = (e.content || '').split('\n').filter(function(l) { return l.trim().length > 0; });
+    return lines.length > 3;
+  });
+  if (qualifying.length === 0) {
+    toast('⚠️ 沒有符合條件的 EBM 筆記（需超過3行非空白內容）');
+    return;
+  }
+
+  toast('⏳ 正在推送 ' + qualifying.length + ' 筆 EBM 筆記至 GitHub…');
+  try {
+    // Fetch current file for SHA + content
+    var fetchRes = await fetch(apiBase + '/contents/' + path, {
+      headers: {
+        'Authorization': 'Bearer ' + cfg.token,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+    if (!fetchRes.ok) throw new Error('無法讀取現有檔案: HTTP ' + fetchRes.status);
+    var fileData = await fetchRes.json();
+    var sha = fileData.sha;
+    var existing = decodeGitHubFileContent(fileData.content);
+
+    // Merge: skip entries already in pending
+    var existingIds = new Set((existing.entries || []).map(function(e) { return e.id; }));
+    var toAdd = qualifying.filter(function(e) { return !existingIds.has(e.id); });
+    if (toAdd.length === 0) {
+      toast('ℹ️ 所有符合條件的筆記已在待轉換清單中');
+      return;
+    }
+
+    var merged = {
+      entries: (existing.entries || []).concat(toAdd),
+      _pushed_at: new Date().toISOString(),
+      _comment: existing._comment || ''
+    };
+
+    var putRes = await fetch(apiBase + '/contents/' + path, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'Bearer ' + cfg.token,
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github.v3+json'
+      },
+      body: JSON.stringify({
+        message: 'feat: push ' + toAdd.length + ' EBM note(s) for AI conversion to 衛教資源',
+        content: encodeGitHubFileContent(merged),
+        sha: sha
+      })
+    });
+    if (putRes.ok) {
+      toast('✅ 已推送 ' + toAdd.length + ' 筆 EBM 筆記至 GitHub！GitHub Actions 即將自動轉換為衛教資源…');
+    } else {
+      var err = await putRes.json();
+      toast('❌ 推送失敗: ' + (err.message || putRes.status));
+
+    }
+  } catch (e) {
+    toast('❌ 推送失敗: ' + e.message);
+  }
+}
+
+
 const SOAP_ENTRIES_KEY   = 'phcep_soap_entries';
 const SOAP_TEMPLATES_KEY = 'phcep_soap_templates';
 
@@ -2759,6 +2848,38 @@ function saveSettings(settings) {
   storageSet(SETTINGS_KEY, settings);
 }
 
+// ---------------------------------------------------------------------------
+// GitHub Sync settings (PAT + repo info for pushing EBM entries)
+// ---------------------------------------------------------------------------
+const GITHUB_SYNC_KEY = 'phcep_github_sync';
+
+function getGithubSync() {
+  try { return JSON.parse(localStorage.getItem(GITHUB_SYNC_KEY) || '{}'); }
+  catch (e) { return {}; }
+}
+
+function saveGithubSync(cfg) {
+  localStorage.setItem(GITHUB_SYNC_KEY, JSON.stringify(cfg));
+}
+
+function onGithubSyncTokenChange(val) {
+  var cfg = getGithubSync();
+  cfg.token = val.trim();
+  saveGithubSync(cfg);
+}
+
+function onGithubSyncOwnerChange(val) {
+  var cfg = getGithubSync();
+  cfg.owner = val.trim();
+  saveGithubSync(cfg);
+}
+
+function onGithubSyncRepoChange(val) {
+  var cfg = getGithubSync();
+  cfg.repo = val.trim();
+  saveGithubSync(cfg);
+}
+
 function applySettings() {
   var settings = getSettings();
 
@@ -2874,6 +2995,36 @@ function renderSettingsTab() {
         <div class="shortcut-row"><kbd class="key-combo">Option/Alt + ↓</kbd> 向下翻頁</div>
         <div class="shortcut-row"><kbd class="key-combo">Cmd/Ctrl + ↑</kbd> 回到頁頂</div>
         <div class="shortcut-row"><kbd class="key-combo">Cmd/Ctrl + ↓</kbd> 前往頁底</div>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-title">☁️ GitHub 自動轉換設定</div>
+      <div class="settings-item-desc" style="padding:0 0 10px">
+        填入 GitHub Personal Access Token（PAT）後，EBM 筆記可一鍵推送至 GitHub，<br>
+        由 GitHub Actions 呼叫 AI 自動分類、翻譯並產生衛教資源文章。<br>
+        所需 PAT 權限：<code>contents: write</code>（Settings → Developer settings → Fine-grained tokens）。<br>
+        Token 僅儲存於此瀏覽器 localStorage，不會傳送至其他第三方服務。
+      </div>
+      <div class="settings-item" style="flex-direction:column;align-items:flex-start;gap:8px">
+        <label style="font-size:0.85em;color:var(--muted)">GitHub Token（PAT）</label>
+        <input type="password" id="github-sync-token"
+          placeholder="github_pat_xxxx…"
+          value="${escHtml(getGithubSync().token || '')}"
+          oninput="onGithubSyncTokenChange(this.value)"
+          style="width:100%;max-width:420px;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-family:monospace;font-size:0.82em" />
+        <label style="font-size:0.85em;color:var(--muted)">Repository Owner（預設：dreamcheap2000）</label>
+        <input type="text" id="github-sync-owner"
+          placeholder="dreamcheap2000"
+          value="${escHtml(getGithubSync().owner || '')}"
+          oninput="onGithubSyncOwnerChange(this.value)"
+          style="width:200px;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--input-bg);color:var(--text)" />
+        <label style="font-size:0.85em;color:var(--muted)">Repository Name（預設：Clinical-Medicine）</label>
+        <input type="text" id="github-sync-repo"
+          placeholder="Clinical-Medicine"
+          value="${escHtml(getGithubSync().repo || '')}"
+          oninput="onGithubSyncRepoChange(this.value)"
+          style="width:200px;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--input-bg);color:var(--text)" />
       </div>
     </div>`;
 }

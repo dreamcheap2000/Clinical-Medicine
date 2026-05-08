@@ -250,6 +250,9 @@
         <span>📋 最近 EBM 筆記</span>
         <button class="filter-btn active" onclick="renderEbmInlineHistory()">🔄 重新整理</button>
         <button class="filter-btn" onclick="ebmBatchConvertToEdu()">📚 批次轉存最近4筆為衛教</button>
+        <button class="filter-btn" onclick="ebmPushToGithub()"
+          aria-label="推送符合條件的EBM筆記至GitHub，由AI自動轉換為衛教資源"
+          title="推送符合條件的筆記至GitHub，由AI自動轉換為衛教資源（需在設定中填入GitHub Token）">☁️ 推送至GitHub自動轉換</button>
       </div>
       <div id="ebm-inline-history" class="inline-history-list"></div>
     </div>
