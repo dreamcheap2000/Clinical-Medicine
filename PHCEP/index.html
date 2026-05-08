@@ -249,7 +249,7 @@
       <div class="inline-history-header">
         <span>📋 最近 EBM 筆記</span>
         <button class="filter-btn active" onclick="renderEbmInlineHistory()">🔄 重新整理</button>
-        <button class="filter-btn" onclick="ebmBatchConvertToEdu()">📚 批次轉存最近4筆為衛教</button>
+        <button class="filter-btn" onclick="ebmBatchConvertToEdu()">📚 一鍵轉存全部為衛教</button>
         <button class="filter-btn" onclick="ebmPushToGithub()"
           aria-label="推送符合條件的EBM筆記至GitHub，由AI自動轉換為衛教資源"
           title="推送符合條件的筆記至GitHub，由AI自動轉換為衛教資源（需在設定中填入GitHub Token）">☁️ 推送至GitHub自動轉換</button>
@@ -599,6 +599,11 @@
       <button class="ebm-preview-tab" id="ebm-ptab-professional_zh" onclick="ebmPreviewSwitchTab('professional_zh')">🏥 專業版</button>
       <button class="ebm-preview-tab" id="ebm-ptab-english" onclick="ebmPreviewSwitchTab('english')">🔤 English</button>
     </div>
+    <div class="ebm-preview-ai-row">
+      <input id="ebm-preview-ai-prompt" type="text" placeholder="輸入想要 AI 微調的方向（可重複修訂到滿意）…" />
+      <button class="ebm-preview-ai-btn" onclick="ebmPreviewAiRefine()">🤖 AI 微調目前版本</button>
+    </div>
+    <div id="ebm-preview-progress" class="ebm-preview-progress hidden"></div>
     <div class="ebm-preview-split">
       <div>
         <div class="ebm-preview-editor-label">HTML 編輯（可直接修改）</div>

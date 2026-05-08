@@ -884,6 +884,8 @@ const CHINESE_CONTENT_THRESHOLD = 0.15;
 
 // Emojis used as visual cues in simple_zh article headers
 const EBM_SIMPLE_ZH_EMOJIS = ['📋', '🩺', '💡', '🏥', '🔬', '💊', '🩹', '📖'];
+const EBM_PREVIEW_MAX_SOURCE_NOTE_LENGTH = 3500;
+const EBM_PREVIEW_MAX_ERROR_TEXT_LENGTH = 200;
 
 /** Generate all three article versions from EBM content. */
 function ebmGenerateVersions(title, content) {
@@ -914,6 +916,7 @@ function ebmGenerateVersions(title, content) {
 var _ebmPreviewEntry = null;   // the source EBM entry
 var _ebmPreviewTab   = 'simple_zh';
 var _ebmPreviewVersions = {};  // { simple_zh, professional_zh, english }
+var _ebmPreviewAiBusy = false;
 
 function ebmShowPreviewModal(entry, title, versions) {
   _ebmPreviewEntry = entry;
@@ -964,11 +967,131 @@ function ebmPreviewRefreshRender() {
   eduSetSafeHtml(rendered, ta.value || '<p style="color:var(--muted)">(空白)</p>');
 }
 
+function _ebmPreviewSetProgress(lines, isError) {
+  var box = document.getElementById('ebm-preview-progress');
+  if (!box) return;
+  if (!lines || !lines.length) {
+    box.classList.add('hidden');
+    box.textContent = '';
+    box.classList.remove('error');
+    return;
+  }
+  box.classList.remove('hidden');
+  box.classList.toggle('error', !!isError);
+  box.innerHTML = lines.map(function(line) { return '<div>' + escHtml(line) + '</div>'; }).join('');
+}
+
+function _ebmPreviewTabLabel(tab) {
+  if (tab === 'simple_zh') return '簡易版（台灣用語）';
+  if (tab === 'professional_zh') return '專業版（台灣用語）';
+  return 'English';
+}
+
+async function ebmPreviewAiRefine() {
+  if (_ebmPreviewAiBusy) return;
+  _ebmPreviewFlushTextarea();
+  var cfg = getGithubSync();
+  if (!cfg.token) {
+    toast('⚠️ 請先在設定中填入 GitHub Token 才能進行 AI 微調');
+    switchTab('settings');
+    return;
+  }
+
+  var promptInput = document.getElementById('ebm-preview-ai-prompt');
+  var userPrompt = (promptInput ? promptInput.value.trim() : '');
+  if (!userPrompt) {
+    toast('⚠️ 請先輸入想要 AI 微調的方向');
+    return;
+  }
+
+  var titleInput = document.getElementById('ebm-preview-title-input');
+  var title = (titleInput ? titleInput.value.trim() : '') || (_ebmPreviewEntry ? _ebmExtractTitle(_ebmPreviewEntry) : '未命名');
+  var baseHtml = _ebmPreviewVersions[_ebmPreviewTab] || '';
+  if (!baseHtml || !baseHtml.trim()) {
+    toast('⚠️ 目前版本內容為空白，請先輸入內容再微調');
+    return;
+  }
+
+  _ebmPreviewAiBusy = true;
+  _ebmPreviewSetProgress([
+    '🧠 正在整理微調指令…',
+    '⏳ 準備呼叫 GitHub Models API…'
+  ]);
+
+  try {
+    var model = cfg.model || 'gpt-4o-mini';
+    var endpoint = 'https://models.inference.ai.azure.com/chat/completions';
+    var sectionLabel = _ebmPreviewTabLabel(_ebmPreviewTab);
+    var sourceNote = (_ebmPreviewEntry && _ebmPreviewEntry.content) ? _ebmPreviewEntry.content.slice(0, EBM_PREVIEW_MAX_SOURCE_NOTE_LENGTH) : '';
+    var systemPrompt = _ebmPreviewTab === 'english'
+      ? 'You are a senior clinical editor. Revise the provided patient-education HTML while preserving factual content and structure quality. Return only valid HTML without Markdown fences.'
+      : '你是台灣臨床衛教編輯。請使用台灣繁體中文與台灣醫療語境（避免中國大陸用語），在不改變醫學事實前提下優化內容。只回傳合法 HTML，不要 Markdown。';
+    var userContent = [
+      '請微調下列衛教內容。',
+      '標題：' + title,
+      '版本：' + sectionLabel,
+      '微調需求：' + userPrompt,
+      '',
+      '【原始 EBM 筆記（節錄）】',
+      sourceNote,
+      '',
+      '【目前 HTML 內容】',
+      baseHtml
+    ].join('\n');
+
+    _ebmPreviewSetProgress([
+      '✅ 指令準備完成',
+      '🤖 正在產生內容（GitHub Models）…',
+      '📝 完成後會自動更新編輯區與預覽'
+    ]);
+
+    var resp = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + cfg.token,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userContent }
+        ],
+        temperature: 0.2
+      })
+    });
+
+    if (!resp.ok) {
+      var errText = await resp.text();
+      throw new Error('HTTP ' + resp.status + ' ' + errText.slice(0, EBM_PREVIEW_MAX_ERROR_TEXT_LENGTH));
+    }
+    var data = await resp.json();
+    var refined = (((data || {}).choices || [])[0] || {}).message;
+    refined = refined && refined.content ? String(refined.content).trim() : '';
+    if (!refined) throw new Error('模型未回傳可用內容');
+    refined = refined.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+
+    _ebmPreviewVersions[_ebmPreviewTab] = refined;
+    var ta = document.getElementById('ebm-preview-textarea');
+    if (ta) ta.value = refined;
+    ebmPreviewRefreshRender();
+    _ebmPreviewSetProgress(['✅ AI 微調完成，可繼續輸入新需求反覆修訂，滿意後再儲存。']);
+    toast('✅ AI 已更新目前版本，可繼續微調');
+  } catch (e) {
+    _ebmPreviewSetProgress(['❌ AI 微調失敗：' + (e && e.message ? e.message : String(e))], true);
+    toast('❌ AI 微調失敗，請稍後重試');
+  } finally {
+    _ebmPreviewAiBusy = false;
+  }
+}
+
 function ebmPreviewClose() {
   var modal = document.getElementById('ebm-preview-modal');
   if (modal) modal.classList.add('hidden');
   _ebmPreviewEntry = null;
   _ebmPreviewVersions = {};
+  _ebmPreviewAiBusy = false;
+  _ebmPreviewSetProgress(null);
 }
 
 function _ebmPreviewFlushTextarea() {
@@ -1013,6 +1136,7 @@ function ebmPreviewSave() {
   ebmPreviewClose();
   switchTab('edu');
   eduRenderList();
+  eduOpenEntry(newEdu.id, 'simple_zh');
   toast('✅ 已儲存「' + title + '」至衛教資源庫');
 }
 
@@ -1159,11 +1283,12 @@ function ebmConvertToEdu(id) {
   });
 }
 
-// Batch-convert the 4 most recent EBM entries — gate-guarded, uses formatter
+// Batch-convert all EBM entries — gate-guarded, uses formatter
 function ebmBatchConvertToEdu() {
   ebmGateCheck(function() {
-    var entries = (storageGet(EBM_ENTRIES_KEY) || []).slice(0, 4);
+    var entries = storageGet(EBM_ENTRIES_KEY) || [];
     if (entries.length === 0) { toast('⚠️ 尚無 EBM 筆記'); return; }
+    if (!confirm(`將嘗試把全部 ${entries.length} 筆 EBM 筆記轉成衛教資源（已存在同名標題者會略過），是否繼續？`)) return;
 
     var locals = eduLoadLocal();
     var converted = 0;
@@ -1573,9 +1698,16 @@ function eduRenderList() {
         </div>`;
     }
 
-    // ── SOAP section pills (shown in SOAP-filter mode) ─────────────────────
+    // ── SOAP section pills and score summary ────────────────────────────────
+    var scoreBreakdownHtml = '';
+    if (query && score > 0) {
+      scoreBreakdownHtml = `<div class="edu-score-breakdown" title="搜尋匹配度與 SOAP 區段匹配比例">
+        匹配度 ${score}% · S ${sectionScores.S || 0}% · O ${sectionScores.O || 0}% · A ${sectionScores.A || 0}% · P ${sectionScores.P || 0}%
+      </div>`;
+    }
+
     var soapHtml = '';
-    if (query && score > 0 && eduSearchMode !== 'all') {
+    if (query && score > 0) {
       var pills = [
         { k: 'S', label: 'S', cls: 'edu-soap-s-pill' },
         { k: 'O', label: 'O', cls: 'edu-soap-o-pill' },
@@ -1605,6 +1737,7 @@ function eduRenderList() {
           <div class="edu-card-title">${escHtml(entry.title)}${scoreBadge}</div>
           ${entry.source_label ? `<div class="edu-card-source">來源：${escHtml(entry.source_label)}</div>` : ''}
           ${protoHtml}
+          ${scoreBreakdownHtml}
           ${soapHtml}
           <div class="edu-card-tags">${tagsHtml}</div>
         </div>
@@ -3359,4 +3492,3 @@ function onSettingDefaultExpand(checked) {
   saveSettings(settings);
 }
 // ===========================================================================
-

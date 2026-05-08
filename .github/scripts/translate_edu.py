@@ -129,6 +129,7 @@ FASTSR_KW = {
 
 # Minimum keyword length to receive a higher match weight
 KEYWORD_LENGTH_THRESHOLD = 3
+MAX_EBM_NOTE_PROMPT_CHARS = 4000
 
 
 def classify_sentence(sentence: str) -> str:
@@ -311,6 +312,11 @@ SYSTEM_EXTRACT_TITLE = (
     "medical text. Return ONLY the title text, no punctuation, no quotes."
 )
 
+TAIWAN_LOCALE_GUIDANCE = (
+    "Use Taiwanese Traditional Chinese wording and tone (台灣用語與語氣), "
+    "and avoid Mainland China expressions."
+)
+
 
 def ai_translate_to_simple_zh(client: "OpenAI", professional_zh_html: str) -> str:
     """Generate patient-friendly Simple Chinese from professional Chinese."""
@@ -318,7 +324,7 @@ def ai_translate_to_simple_zh(client: "OpenAI", professional_zh_html: str) -> st
         "Convert the following professional Traditional Chinese medical content into "
         "a patient-friendly version (簡易版). Use plain language, add relevant emojis as "
         "section headers. Structure: brief intro, bullet-list key points, assessment bullet list, "
-        "treatment/RICE instructions. Return only HTML.\n\n"
+        "treatment/RICE instructions. " + TAIWAN_LOCALE_GUIDANCE + " Return only HTML.\n\n"
         + professional_zh_html
     )
     return _chat(client, SYSTEM_TRANSLATE_ZH, prompt)
@@ -339,7 +345,8 @@ def ai_translate_zh_from_en(client: "OpenAI", professional_en_html: str) -> str:
     """Translate professional English HTML to professional Traditional Chinese HTML."""
     prompt = (
         "Translate the following professional English medical content into professional "
-        "Traditional Chinese (繁體中文). Maintain all medical terminology and structure. "
+        "Traditional Chinese (繁體中文, 台灣用語與語氣). Maintain all medical terminology and structure. "
+        + TAIWAN_LOCALE_GUIDANCE + " "
         "Return only HTML.\n\n"
         + professional_en_html
     )
@@ -350,8 +357,8 @@ def ai_translate_to_simple_zh_from_en(client: "OpenAI", professional_en_html: st
     """Generate patient-friendly Simple Chinese from professional English HTML."""
     prompt = (
         "Translate the following professional English medical content into patient-friendly "
-        "Traditional Chinese (繁體中文簡易版). Use plain language, add relevant emojis as "
-        "section headers. Return only HTML.\n\n"
+        "Traditional Chinese (繁體中文簡易版, 台灣用語與語氣). Use plain language, add relevant emojis as "
+        "section headers. " + TAIWAN_LOCALE_GUIDANCE + " Return only HTML.\n\n"
         + professional_en_html
     )
     return _chat(client, SYSTEM_TRANSLATE_EN, prompt)
@@ -387,8 +394,9 @@ def ai_generate_professional_zh_from_note(client: "OpenAI", note_text: str) -> s
         "Based on the following raw EBM/clinical note (may be a mix of Chinese and English), "
         "write a complete professional-level Traditional Chinese (繁體中文) patient education "
         "article with clear sections (e.g. background, indications, procedure, outcomes, "
-        "post-care, contraindications). Use proper medical terminology. Return only HTML.\n\n"
-        + note_text[:4000]
+        "post-care, contraindications). Use proper medical terminology and Taiwanese clinical wording "
+        "(台灣醫療用語、繁體中文語氣). " + TAIWAN_LOCALE_GUIDANCE + " Return only HTML.\n\n"
+        + note_text[:MAX_EBM_NOTE_PROMPT_CHARS]
     )
     return _chat(client, SYSTEM_GENERATE_ARTICLE, prompt)
 
@@ -399,7 +407,8 @@ def ai_generate_simple_zh_from_note(client: "OpenAI", professional_zh_html: str)
         "Rewrite the following professional Traditional Chinese medical content into a "
         "patient-friendly version (簡易版). Use plain everyday language, add relevant emojis "
         "as visual cues for section headers. Structure: brief intro sentence, bullet-point "
-        "key facts, what to expect, and key instructions. Return only HTML.\n\n"
+        "key facts, what to expect, and key instructions. Use Taiwanese Traditional Chinese "
+        "wording. " + TAIWAN_LOCALE_GUIDANCE + " Return only HTML.\n\n"
         + professional_zh_html
     )
     return _chat(client, SYSTEM_GENERATE_ARTICLE, prompt)
