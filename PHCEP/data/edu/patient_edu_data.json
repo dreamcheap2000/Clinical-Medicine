@@ -708,7 +708,7 @@
       ],
       "original_lang": "zh-TW",
       "added_date": "2026-05-07",
-      "version": "1.0",
+      "version": "1.1",
       "tags": [],
       "fastsr": {
         "S": [
@@ -860,7 +860,8 @@
         "english": ""
       },
       "_ebm_source_id": "movo33xgskze",
-      "_from_ebm": true
+      "_from_ebm": true,
+      "modified_date": "2026-05-08"
     },
     {
       "id": "edu_ebm_movmz546mz12",
@@ -872,7 +873,7 @@
       ],
       "original_lang": "zh-TW",
       "added_date": "2026-05-07",
-      "version": "1.0",
+      "version": "1.1",
       "tags": [],
       "fastsr": {
         "S": [
@@ -1179,7 +1180,8 @@
         "english": ""
       },
       "_ebm_source_id": "movmz546mz12",
-      "_from_ebm": true
+      "_from_ebm": true,
+      "modified_date": "2026-05-08"
     },
     {
       "id": "edu_ebm_movmybbkce1x",
@@ -1191,7 +1193,7 @@
       ],
       "original_lang": "zh-TW",
       "added_date": "2026-05-07",
-      "version": "1.0",
+      "version": "1.1",
       "tags": [],
       "fastsr": {
         "S": [
@@ -1488,7 +1490,8 @@
         "english": ""
       },
       "_ebm_source_id": "movmybbkce1x",
-      "_from_ebm": true
+      "_from_ebm": true,
+      "modified_date": "2026-05-08"
     },
     {
       "id": "edu_ebm_movkmhpzcf3m",
@@ -1500,7 +1503,7 @@
       ],
       "original_lang": "zh-TW",
       "added_date": "2026-05-07",
-      "version": "1.0",
+      "version": "1.1",
       "tags": [],
       "fastsr": {
         "S": [
@@ -1794,7 +1797,8 @@
         "english": ""
       },
       "_ebm_source_id": "movkmhpzcf3m",
-      "_from_ebm": true
+      "_from_ebm": true,
+      "modified_date": "2026-05-08"
     }
   ]
 }
