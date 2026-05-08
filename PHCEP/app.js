@@ -576,15 +576,12 @@ function buildPcsSearchResults(q) {
     var tag = (document.activeElement || {}).tagName;
     var inInput = (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
 
-    // Page scroll shortcuts (ignore when typing)
-    if (inInput) return;
-
     var isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
     var isAlt = e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey;
     var isCmdCtrl = (isMac ? e.metaKey : e.ctrlKey) && !e.altKey && !e.shiftKey;
     var isShift = e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey;
 
-    // Tab switching: Alt/Option + 1…8
+    // Tab switching: Alt/Option + 1…8 (works even when an input is focused)
     if (isAlt) {
       var digit = e.code && e.code.startsWith('Digit') ? e.code.slice(5) : null;
       if (digit && TAB_SHORTCUTS[digit]) {
@@ -594,12 +591,15 @@ function buildPcsSearchResults(q) {
       }
     }
 
-    // Tab switching: Shift + 9 / 0 / -
+    // Tab switching: Shift + 9 / 0 / - (works even when an input is focused)
     if (isShift && e.code && SHIFT_SHORTCUTS[e.code]) {
       e.preventDefault();
       switchTab(SHIFT_SHORTCUTS[e.code]);
       return;
     }
+
+    // Page scroll shortcuts (ignore when typing in an input)
+    if (inInput) return;
 
     // Option/Alt + ↓ → page down
     if (isAlt && e.key === 'ArrowDown') {
@@ -823,6 +823,7 @@ function saveEbmEntry() {
   toast('✅ EBM 筆記已儲存');
   if (document.getElementById('tab-history').classList.contains('active')) renderHistory();
   renderEbmInlineHistory();
+  clearEbmForm();
 }
 
 function clearEbmForm() {
@@ -850,6 +851,7 @@ function renderEbmInlineHistory() {
       <div class="inline-history-preview">${escHtml(preview)}</div>
       <div class="inline-history-actions">
         <button class="btn-xs" onclick="loadEbmFromHistory('${escHtml(e.id)}')">📥 載入</button>
+        <button class="btn-xs" onclick="ebmConvertToEdu('${escHtml(e.id)}')">📚 轉為衛教</button>
       </div>
     </div>`;
   }).join('');
@@ -867,8 +869,193 @@ function loadEbmFromHistory(id) {
 }
 
 // ---------------------------------------------------------------------------
-// SOAP Notes
+// EBM → 衛教資源 helpers
 // ---------------------------------------------------------------------------
+function _ebmExtractTitle(entry) {
+  var firstLine = entry.content.split('\n').find(function(l) { return l.trim().length > 3; }) || '';
+  return entry.icdCat || firstLine.trim().substring(0, 50) || ('EBM筆記_' + entry.date);
+}
+
+function _ebmExtractUrl(content) {
+  var m = content.match(/https?:\/\/[^\s\n\u3000\uff09\uff08\u300a\u300b]+/);
+  return m ? m[0].replace(/[.,;）)》]+$/, '') : '';
+}
+
+function _ebmExtractSourceLabel(content) {
+  return /uptodate/i.test(content) ? 'UpToDate' : '';
+}
+
+// Convert a single EBM entry into a draft 衛教資源 (opens the edu add form pre-filled)
+function ebmConvertToEdu(id) {
+  var entries = storageGet(EBM_ENTRIES_KEY) || [];
+  var entry = entries.find(function(e) { return e.id === id; });
+  if (!entry) return;
+
+  var title = _ebmExtractTitle(entry);
+  var url = _ebmExtractUrl(entry.content);
+  var sourceLabel = _ebmExtractSourceLabel(entry.content);
+  var fastsr = eduEncodeFastSR(entry.content);
+
+  // Pre-fill the edu add form
+  var set = function(elId, val) { var el = document.getElementById(elId); if (el) el.value = val; };
+  set('edu-form-title', title);
+  set('edu-form-url', url);
+  set('edu-form-source-label', sourceLabel);
+  set('edu-form-tags', entry.icdCat || '');
+  set('edu-form-original', entry.content);
+  set('edu-form-simple-zh', entry.content);
+  set('edu-form-pro-zh', '');
+  set('edu-form-en', '');
+  set('edu-form-s', fastsr.S.join('\n'));
+  set('edu-form-o', fastsr.O.join('\n'));
+  set('edu-form-a', fastsr.A.join('\n'));
+  set('edu-form-p', fastsr.P.join('\n'));
+
+  // Switch to edu tab and open the add panel
+  switchTab('edu');
+  var panel = document.getElementById('edu-add-panel');
+  if (panel && panel.classList.contains('hidden')) eduToggleAddForm();
+
+  toast('📝 EBM 已轉為衛教草稿，請補充語言版本後儲存');
+}
+
+// Batch-convert the 4 most recent EBM entries to local 衛教資源 entries
+function ebmBatchConvertToEdu() {
+  var entries = (storageGet(EBM_ENTRIES_KEY) || []).slice(0, 4);
+  if (entries.length === 0) { toast('⚠️ 尚無 EBM 筆記'); return; }
+
+  var locals = eduLoadLocal();
+  var converted = 0;
+  entries.forEach(function(entry, idx) {
+    var title = _ebmExtractTitle(entry);
+
+    // Skip if an entry with the same title already exists locally
+    if (locals.find(function(e) { return e.title === title; })) return;
+
+    var url = _ebmExtractUrl(entry.content);
+    var sourceLabel = _ebmExtractSourceLabel(entry.content);
+    var fastsr = eduEncodeFastSR(entry.content);
+
+    var newEntry = {
+      id: 'edu_local_' + (Date.now() + idx) + '_' + Math.random().toString(36).slice(2, 7),
+      title,
+      source_url: url,
+      source_label: sourceLabel,
+      original_lang: 'zh-TW',
+      added_date: entry.date || new Date().toISOString().split('T')[0],
+      tags: entry.icdCat ? [entry.icdCat] : [],
+      fastsr,
+      versions: { simple_zh: entry.content, professional_zh: '', english: '' },
+      _local: true,
+      _from_ebm: true
+    };
+    locals.push(newEntry);
+    eduData.push(newEntry);
+    converted++;
+  });
+
+  eduSaveLocal(locals);
+  if (converted > 0) {
+    eduRenderList();
+    switchTab('edu');
+    toast('✅ 已批次轉存 ' + converted + ' 筆 EBM 筆記為衛教資源');
+  } else {
+    toast('ℹ️ 所有筆記已存在於衛教資源庫中');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// EBM → GitHub push (triggers GitHub Actions AI conversion)
+// ---------------------------------------------------------------------------
+
+/** Decode base64-encoded UTF-8 content returned by the GitHub Contents API. */
+function decodeGitHubFileContent(b64) {
+  return JSON.parse(decodeURIComponent(escape(atob(b64.replace(/\n/g, '')))));
+}
+
+/** Encode a JSON object to base64 UTF-8 for the GitHub Contents API PUT body. */
+function encodeGitHubFileContent(obj) {
+  return btoa(unescape(encodeURIComponent(JSON.stringify(obj, null, 2))));
+}
+
+async function ebmPushToGithub() {
+  var cfg = getGithubSync();
+  if (!cfg.token) {
+    toast('⚠️ 請先在設定中填入 GitHub Personal Access Token');
+    switchTab('settings');
+    return;
+  }
+
+  var owner = cfg.owner || 'dreamcheap2000';
+  var repo  = cfg.repo  || 'Clinical-Medicine';
+  var path  = 'PHCEP/data/ebm/pending_conversions.json';
+  var apiBase = 'https://api.github.com/repos/' + owner + '/' + repo;
+
+  // Only push entries with > 3 non-empty lines
+  var entries = storageGet(EBM_ENTRIES_KEY) || [];
+  var qualifying = entries.filter(function(e) {
+    var lines = (e.content || '').split('\n').filter(function(l) { return l.trim().length > 0; });
+    return lines.length > 3;
+  });
+  if (qualifying.length === 0) {
+    toast('⚠️ 沒有符合條件的 EBM 筆記（需超過3行非空白內容）');
+    return;
+  }
+
+  toast('⏳ 正在推送 ' + qualifying.length + ' 筆 EBM 筆記至 GitHub…');
+  try {
+    // Fetch current file for SHA + content
+    var fetchRes = await fetch(apiBase + '/contents/' + path, {
+      headers: {
+        'Authorization': 'Bearer ' + cfg.token,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+    if (!fetchRes.ok) throw new Error('無法讀取現有檔案: HTTP ' + fetchRes.status);
+    var fileData = await fetchRes.json();
+    var sha = fileData.sha;
+    var existing = decodeGitHubFileContent(fileData.content);
+
+    // Merge: skip entries already in pending
+    var existingIds = new Set((existing.entries || []).map(function(e) { return e.id; }));
+    var toAdd = qualifying.filter(function(e) { return !existingIds.has(e.id); });
+    if (toAdd.length === 0) {
+      toast('ℹ️ 所有符合條件的筆記已在待轉換清單中');
+      return;
+    }
+
+    var merged = {
+      entries: (existing.entries || []).concat(toAdd),
+      _pushed_at: new Date().toISOString(),
+      _comment: existing._comment || ''
+    };
+
+    var putRes = await fetch(apiBase + '/contents/' + path, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'Bearer ' + cfg.token,
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github.v3+json'
+      },
+      body: JSON.stringify({
+        message: 'feat: push ' + toAdd.length + ' EBM note(s) for AI conversion to 衛教資源',
+        content: encodeGitHubFileContent(merged),
+        sha: sha
+      })
+    });
+    if (putRes.ok) {
+      toast('✅ 已推送 ' + toAdd.length + ' 筆 EBM 筆記至 GitHub！GitHub Actions 即將自動轉換為衛教資源…');
+    } else {
+      var err = await putRes.json();
+      toast('❌ 推送失敗: ' + (err.message || putRes.status));
+
+    }
+  } catch (e) {
+    toast('❌ 推送失敗: ' + e.message);
+  }
+}
+
+
 const SOAP_ENTRIES_KEY   = 'phcep_soap_entries';
 const SOAP_TEMPLATES_KEY = 'phcep_soap_templates';
 
@@ -2661,6 +2848,38 @@ function saveSettings(settings) {
   storageSet(SETTINGS_KEY, settings);
 }
 
+// ---------------------------------------------------------------------------
+// GitHub Sync settings (PAT + repo info for pushing EBM entries)
+// ---------------------------------------------------------------------------
+const GITHUB_SYNC_KEY = 'phcep_github_sync';
+
+function getGithubSync() {
+  try { return JSON.parse(localStorage.getItem(GITHUB_SYNC_KEY) || '{}'); }
+  catch (e) { return {}; }
+}
+
+function saveGithubSync(cfg) {
+  localStorage.setItem(GITHUB_SYNC_KEY, JSON.stringify(cfg));
+}
+
+function onGithubSyncTokenChange(val) {
+  var cfg = getGithubSync();
+  cfg.token = val.trim();
+  saveGithubSync(cfg);
+}
+
+function onGithubSyncOwnerChange(val) {
+  var cfg = getGithubSync();
+  cfg.owner = val.trim();
+  saveGithubSync(cfg);
+}
+
+function onGithubSyncRepoChange(val) {
+  var cfg = getGithubSync();
+  cfg.repo = val.trim();
+  saveGithubSync(cfg);
+}
+
 function applySettings() {
   var settings = getSettings();
 
@@ -2776,6 +2995,36 @@ function renderSettingsTab() {
         <div class="shortcut-row"><kbd class="key-combo">Option/Alt + ↓</kbd> 向下翻頁</div>
         <div class="shortcut-row"><kbd class="key-combo">Cmd/Ctrl + ↑</kbd> 回到頁頂</div>
         <div class="shortcut-row"><kbd class="key-combo">Cmd/Ctrl + ↓</kbd> 前往頁底</div>
+      </div>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-title">☁️ GitHub 自動轉換設定</div>
+      <div class="settings-item-desc" style="padding:0 0 10px">
+        填入 GitHub Personal Access Token（PAT）後，EBM 筆記可一鍵推送至 GitHub，<br>
+        由 GitHub Actions 呼叫 AI 自動分類、翻譯並產生衛教資源文章。<br>
+        所需 PAT 權限：<code>contents: write</code>（Settings → Developer settings → Fine-grained tokens）。<br>
+        Token 僅儲存於此瀏覽器 localStorage，不會傳送至其他第三方服務。
+      </div>
+      <div class="settings-item" style="flex-direction:column;align-items:flex-start;gap:8px">
+        <label style="font-size:0.85em;color:var(--muted)">GitHub Token（PAT）</label>
+        <input type="password" id="github-sync-token"
+          placeholder="github_pat_xxxx…"
+          value="${escHtml(getGithubSync().token || '')}"
+          oninput="onGithubSyncTokenChange(this.value)"
+          style="width:100%;max-width:420px;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-family:monospace;font-size:0.82em" />
+        <label style="font-size:0.85em;color:var(--muted)">Repository Owner（預設：dreamcheap2000）</label>
+        <input type="text" id="github-sync-owner"
+          placeholder="dreamcheap2000"
+          value="${escHtml(getGithubSync().owner || '')}"
+          oninput="onGithubSyncOwnerChange(this.value)"
+          style="width:200px;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--input-bg);color:var(--text)" />
+        <label style="font-size:0.85em;color:var(--muted)">Repository Name（預設：Clinical-Medicine）</label>
+        <input type="text" id="github-sync-repo"
+          placeholder="Clinical-Medicine"
+          value="${escHtml(getGithubSync().repo || '')}"
+          oninput="onGithubSyncRepoChange(this.value)"
+          style="width:200px;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--input-bg);color:var(--text)" />
       </div>
     </div>`;
 }

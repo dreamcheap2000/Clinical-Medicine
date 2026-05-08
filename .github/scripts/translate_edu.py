@@ -363,8 +363,188 @@ def ai_extract_title(client: "OpenAI", text: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Main entry: process a single document text
+# AI helpers for EBM note → 衛教資源 article conversion
 # ---------------------------------------------------------------------------
+
+SYSTEM_GENERATE_ARTICLE = (
+    "You are a senior clinical educator creating patient education materials. "
+    "Based on the raw medical/EBM note provided, write a well-structured article. "
+    "Return only valid HTML (using only: p, ul, ol, li, h2, h3, h4, strong, em, table, thead, "
+    "tbody, tr, th, td). Do not include ```html fences or markdown."
+)
+
+SYSTEM_GENERATE_TAGS = (
+    "You are a medical taxonomy specialist. Extract 5–10 concise medical keyword tags from "
+    "the provided clinical/EBM text. Tags should be in Traditional Chinese (繁體中文) or "
+    "standard medical English abbreviations (e.g. MCL, ACL, NSAIDs). "
+    "Return ONLY a JSON array of strings, no extra text, no markdown fences."
+)
+
+
+def ai_generate_professional_zh_from_note(client: "OpenAI", note_text: str) -> str:
+    """Generate a professional Traditional Chinese patient education article from a raw EBM note."""
+    prompt = (
+        "Based on the following raw EBM/clinical note (may be a mix of Chinese and English), "
+        "write a complete professional-level Traditional Chinese (繁體中文) patient education "
+        "article with clear sections (e.g. background, indications, procedure, outcomes, "
+        "post-care, contraindications). Use proper medical terminology. Return only HTML.\n\n"
+        + note_text[:4000]
+    )
+    return _chat(client, SYSTEM_GENERATE_ARTICLE, prompt)
+
+
+def ai_generate_simple_zh_from_note(client: "OpenAI", professional_zh_html: str) -> str:
+    """Generate patient-friendly Simple Chinese from a professional Chinese article."""
+    prompt = (
+        "Rewrite the following professional Traditional Chinese medical content into a "
+        "patient-friendly version (簡易版). Use plain everyday language, add relevant emojis "
+        "as visual cues for section headers. Structure: brief intro sentence, bullet-point "
+        "key facts, what to expect, and key instructions. Return only HTML.\n\n"
+        + professional_zh_html
+    )
+    return _chat(client, SYSTEM_GENERATE_ARTICLE, prompt)
+
+
+def ai_generate_english_from_professional_zh(client: "OpenAI", professional_zh_html: str) -> str:
+    """Translate a professional Traditional Chinese article to professional English."""
+    prompt = (
+        "Translate the following professional Traditional Chinese patient education article "
+        "into professional English. Maintain all medical accuracy, structure, and terminology. "
+        "Return only HTML.\n\n"
+        + professional_zh_html
+    )
+    return _chat(client, SYSTEM_GENERATE_ARTICLE, prompt)
+
+
+def ai_generate_tags(client: "OpenAI", text: str, title: str = "") -> list:
+    """Use AI to extract 5–10 relevant medical tags from the text."""
+    snippet = (title + "\n\n" + text)[:2500]
+    raw = _chat(client, SYSTEM_GENERATE_TAGS, snippet)
+    try:
+        json_str = re.sub(r"```json?\s*|\s*```", "", raw).strip()
+        tags = json.loads(json_str)
+        if isinstance(tags, list):
+            return [str(t).strip() for t in tags if str(t).strip()]
+    except Exception as exc:
+        print(f"  ⚠️ AI tags parse failed: {exc} — falling back to empty list")
+    return []
+
+
+def convert_ebm_note(
+    client: "OpenAI | None",
+    note_text: str,
+    existing_title: str = "",
+    existing_versions: "dict | None" = None,
+    existing_fastsr: "dict | None" = None,
+    existing_tags: "list | None" = None,
+) -> dict:
+    """Convert a raw EBM note into a full v2 衛教資源 entry dict.
+
+    Returns a dict with keys: title, tags, fastsr, prototype, versions,
+    source_url, source_label, source_urls.
+    Falls back gracefully when no AI client is available.
+    """
+    ev = existing_versions or {}
+    ef = existing_fastsr or {}
+
+    urls = list(dict.fromkeys(extract_urls(note_text)))
+    source_url = urls[0] if urls else ""
+    source_label = ""
+    if source_url:
+        domain = re.sub(r"https?://(www\.)?", "", source_url).split("/")[0]
+        source_label = domain
+
+    if client:
+        try:
+            title = existing_title or ai_extract_title(client, note_text)
+            print(f"  ✔ Title: {title}")
+        except Exception as e:
+            print(f"  ⚠️ AI title failed: {e}")
+            title = existing_title or note_text.strip().splitlines()[0][:50]
+    else:
+        title = existing_title or note_text.strip().splitlines()[0][:50]
+
+    # Generate 3 article versions
+    if client:
+        try:
+            professional_zh = ev.get("professional_zh", "") or ai_generate_professional_zh_from_note(client, note_text)
+            print("  ✔ professional_zh generated")
+        except Exception as e:
+            print(f"  ⚠️ professional_zh failed: {e}")
+            professional_zh = ev.get("professional_zh", "") or f"<p>{note_text}</p>"
+
+        try:
+            if ev.get("simple_zh", "").strip():
+                simple_zh = ev["simple_zh"]
+                print("  ✔ Reusing existing simple_zh")
+            else:
+                simple_zh = ai_generate_simple_zh_from_note(client, professional_zh)
+                print("  ✔ simple_zh generated")
+        except Exception as e:
+            print(f"  ⚠️ simple_zh failed: {e}")
+            simple_zh = ev.get("simple_zh", "") or professional_zh
+
+        try:
+            if ev.get("english", "").strip():
+                english = ev["english"]
+                print("  ✔ Reusing existing english")
+            else:
+                english = ai_generate_english_from_professional_zh(client, professional_zh)
+                print("  ✔ english generated")
+        except Exception as e:
+            print(f"  ⚠️ english failed: {e}")
+            english = ev.get("english", "")
+    else:
+        professional_zh = ev.get("professional_zh", "") or f"<p>{note_text}</p>"
+        simple_zh = ev.get("simple_zh", "") or professional_zh
+        english = ev.get("english", "")
+
+    # FastSR classification
+    if ef and not _fastsr_needs_ai(ef):
+        fastsr = ef
+        print("  ✔ Reusing existing fastsr")
+    elif client:
+        try:
+            fastsr = ai_classify_fastsr(client, note_text)
+            print(f"  ✔ AI FastSR: S({len(fastsr['S'])}) O({len(fastsr['O'])}) A({len(fastsr['A'])}) P({len(fastsr['P'])})")
+        except Exception as e:
+            print(f"  ⚠️ AI FastSR failed: {e}")
+            fastsr = build_fastsr(note_text)
+    else:
+        fastsr = build_fastsr(note_text)
+
+    # Tags
+    if existing_tags and len(existing_tags) >= 3:
+        tags = existing_tags
+        print("  ✔ Reusing existing tags")
+    elif client:
+        try:
+            tags = ai_generate_tags(client, note_text, title)
+            print(f"  ✔ AI tags: {tags}")
+        except Exception as e:
+            print(f"  ⚠️ AI tags failed: {e}")
+            tags = existing_tags or []
+    else:
+        tags = existing_tags or []
+
+    prototype = build_prototypes(title=title, tags=tags, fastsr=fastsr)
+
+    return {
+        "title": title,
+        "tags": tags,
+        "source_url": source_url,
+        "source_label": source_label,
+        "source_urls": urls,
+        "fastsr": fastsr,
+        "prototype": prototype,
+        "versions": {
+            "simple_zh": simple_zh,
+            "professional_zh": professional_zh,
+            "english": english,
+        },
+    }
+
+
 def process_document(
     text: str,
     html: str,
