@@ -1488,9 +1488,73 @@ function eduRenderViewerContent() {
   } else {
     var html = ((entry.versions || {})[v]) || '<p style="color:var(--muted);padding:8px">（此語言版本尚未提供）</p>';
     eduSetSafeHtml(content, html);
+    eduEnhanceDomainTables(content, entry);
     eduWrapContentTables(content);
     eduMountInteractiveWidgets(content, entry);
   }
+}
+
+function eduEnhanceDomainTables(content, entry) {
+  if (!content || !entry) return;
+  if (entry.id === 'edu001_CDR') eduCollapseCdrDomainTable(content);
+  if (entry.id === 'edu003_ASCOD') eduCollapseAscodDomainTables(content);
+}
+
+function eduCollapseCdrDomainTable(content) {
+  var heading = Array.from(content.querySelectorAll('h3')).find(function(h) {
+    return /六向度分級標準|Domain Scoring Criteria/i.test(h.textContent || '');
+  });
+  if (!heading) return;
+  var table = heading.nextElementSibling;
+  if (!table || table.tagName !== 'TABLE') return;
+  var ths = Array.from(table.querySelectorAll('thead th')).map(function(th) { return th.textContent.trim(); });
+  var rows = Array.from(table.querySelectorAll('tbody tr'));
+  if (ths.length < 2 || !rows.length) return;
+  var wrap = document.createElement('div');
+  wrap.className = 'edu-domain-accordion-group';
+  rows.forEach(function(row) {
+    var tds = row.querySelectorAll('td');
+    if (!tds.length) return;
+    var details = document.createElement('details');
+    details.className = 'edu-domain-accordion';
+    var summary = document.createElement('summary');
+    summary.textContent = (tds[0].textContent || '').trim();
+    details.appendChild(summary);
+    var mini = document.createElement('table');
+    var tb = document.createElement('tbody');
+    for (var i = 1; i < Math.min(ths.length, tds.length); i++) {
+      var tr = document.createElement('tr');
+      var k = document.createElement('th');
+      k.textContent = ths[i];
+      var v = document.createElement('td');
+      v.textContent = (tds[i].textContent || '').trim();
+      tr.appendChild(k);
+      tr.appendChild(v);
+      tb.appendChild(tr);
+    }
+    mini.appendChild(tb);
+    details.appendChild(mini);
+    wrap.appendChild(details);
+  });
+  table.parentNode.replaceChild(wrap, table);
+}
+
+function eduCollapseAscodDomainTables(content) {
+  var domainHeaders = Array.from(content.querySelectorAll('h3')).filter(function(h) {
+    return /^[A-Z]\s*[-—]\s*/.test((h.textContent || '').trim());
+  });
+  domainHeaders.forEach(function(h) {
+    var table = h.nextElementSibling;
+    if (!table || table.tagName !== 'TABLE') return;
+    var details = document.createElement('details');
+    details.className = 'edu-domain-accordion';
+    var summary = document.createElement('summary');
+    summary.textContent = (h.textContent || '').trim();
+    details.appendChild(summary);
+    h.parentNode.insertBefore(details, h);
+    details.appendChild(table);
+    h.parentNode.removeChild(h);
+  });
 }
 
 function eduWrapContentTables(container) {
@@ -1506,24 +1570,102 @@ function eduWrapContentTables(container) {
   var bar = document.createElement('div');
   bar.className = 'edu-table-toggle-bar';
   bar.innerHTML =
-    '<span style="font-size:0.82rem;color:var(--muted)">表格顯示：</span>' +
-    '<button class="edu-table-toggle-btn active" onclick="eduSetTableMode(this,\'scroll\')">↔ 橫向捲動</button>' +
-    '<button class="edu-table-toggle-btn" onclick="eduSetTableMode(this,\'fit\')">⬜ 縮放至頁寬</button>';
+    '<span style="font-size:0.82rem;color:var(--muted)">表格尺寸：</span>' +
+    '<button class="edu-table-toggle-btn edu-table-size-btn" data-dir="-1">A−</button>' +
+    '<span class="edu-table-size-label" data-size-label>100%</span>' +
+    '<button class="edu-table-toggle-btn edu-table-size-btn" data-dir="1">A+</button>';
   container.insertBefore(bar, container.firstChild);
+  var levels = [-2, -1, 0, 1, 2];
+  var pctMap = { '-2': '85%', '-1': '92%', '0': '100%', '1': '108%', '2': '116%' };
+  var size = 0;
+  var label = bar.querySelector('[data-size-label]');
+  function updateScale() {
+    levels.forEach(function(lv) { container.classList.remove('edu-table-scale-' + String(lv).replace('-', 'n')); });
+    container.classList.add('edu-table-scale-' + String(size).replace('-', 'n'));
+    if (label) label.textContent = pctMap[size];
+  }
+  bar.querySelectorAll('.edu-table-size-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var dir = Number(btn.dataset.dir || 0);
+      size = Math.max(-2, Math.min(2, size + dir));
+      updateScale();
+    });
+  });
+  updateScale();
 }
 
-function eduSetTableMode(btn, mode) {
-  var content = document.getElementById('edu-viewer-content');
-  if (!content) return;
-  content.querySelectorAll('.edu-table-toggle-btn').forEach(function(b) { b.classList.remove('active'); });
-  btn.classList.add('active');
-  content.querySelectorAll('.edu-table-wrap').forEach(function(wrap) {
-    if (mode === 'fit') {
-      wrap.classList.add('edu-table-fit');
-    } else {
-      wrap.classList.remove('edu-table-fit');
-    }
+var _eduCalcDropdownOutsideCloseBound = false;
+function eduEnsureCalcDropdownOutsideClose() {
+  if (_eduCalcDropdownOutsideCloseBound) return;
+  _eduCalcDropdownOutsideCloseBound = true;
+  document.addEventListener('click', function(e) {
+    document.querySelectorAll('.edu-calc-dropdown.open').forEach(function(root) {
+      if (!root.contains(e.target)) root.classList.remove('open');
+    });
   });
+}
+
+function eduCreateCalcDropdown(opts) {
+  eduEnsureCalcDropdownOutsideClose();
+  var options = opts.options || [];
+  var current = String(opts.value);
+  var root = document.createElement('div');
+  root.className = 'edu-calc-dropdown';
+  var trigger = document.createElement('button');
+  trigger.type = 'button';
+  trigger.className = 'edu-calc-dd-trigger';
+  var menu = document.createElement('div');
+  menu.className = 'edu-calc-dd-menu';
+  var list = document.createElement('div');
+  list.className = 'edu-calc-dd-list';
+  var ghost = document.createElement('div');
+  ghost.className = 'edu-calc-dd-ghost';
+  menu.appendChild(list);
+  menu.appendChild(ghost);
+  root.appendChild(trigger);
+  root.appendChild(menu);
+
+  function setGhost(opt) {
+    ghost.textContent = (opt && opt.desc) ? opt.desc : '將滑鼠移到選項可預覽說明';
+  }
+  function setValue(v, emitChange) {
+    current = String(v);
+    var selected = options.find(function(o) { return String(o.value) === current; }) || options[0];
+    if (!selected) return;
+    trigger.textContent = selected.label + ' ▾';
+    setGhost(selected);
+    if (emitChange && typeof opts.onChange === 'function') opts.onChange(selected.value, selected);
+  }
+  function open() { root.classList.add('open'); }
+  function close() { root.classList.remove('open'); }
+
+  options.forEach(function(opt) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'edu-calc-dd-option';
+    b.textContent = opt.label;
+    b.dataset.value = String(opt.value);
+    b.addEventListener('mouseenter', function() { setGhost(opt); });
+    b.addEventListener('focus', function() { setGhost(opt); });
+    b.addEventListener('click', function() {
+      setValue(opt.value, true);
+      close();
+    });
+    list.appendChild(b);
+  });
+
+  trigger.addEventListener('mouseenter', open);
+  trigger.addEventListener('click', function(e) {
+    e.preventDefault();
+    root.classList.toggle('open');
+  });
+  root.addEventListener('mouseleave', close);
+  setValue(current, false);
+  return {
+    el: root,
+    getValue: function() { return Number(current); },
+    setValue: function(v) { setValue(v, false); }
+  };
 }
 
 function eduMountInteractiveWidgets(content, entry) {
@@ -1588,48 +1730,65 @@ function eduRenderCdrCalculator(el) {
   ];
   el.innerHTML = `
     <div class="edu-calc-box">
-      <p style="color:var(--muted);margin-bottom:10px">請為六個向度選擇分數，系統將依 CDR 規則自動計算 Global CDR。選擇後可見各等級說明。</p>
+      <p style="color:var(--muted);margin-bottom:10px">請為六個向度選擇分數，系統將依 CDR 規則自動計算 Global CDR。滑鼠移到選項可預覽各等級說明。</p>
       <div class="edu-calc-grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
         ${rows.map(function(r) {
           return `<div class="edu-domain-row">
-            <label style="font-size:0.82rem;color:var(--muted)">${escHtml(r.label)}
-              <select class="edu-cdr-sel" data-key="${escHtml(r.key)}">
-                ${grades.map(function(g) { return `<option value="${g.v}">${g.t}</option>`; }).join('')}
-              </select>
-            </label>
+            <label style="font-size:0.82rem;color:var(--muted)">${escHtml(r.label)}</label>
+            <div class="edu-cdr-dd" data-key="${escHtml(r.key)}"></div>
             <div class="edu-domain-info" data-cdr-info="${escHtml(r.key)}">—</div>
           </div>`;
         }).join('')}
       </div>
       <div class="edu-calc-result" data-cdr-result style="margin-top:14px">CDR = 0（無失智）</div>
+      <div class="edu-calc-rules">
+        <h4>CDR® 完整計分邏輯（依 Morris 1993）</h4>
+        <ol>
+          <li>Memory（M）為主向度，其餘 O/JPS/CA/HH/PC 為次向度。</li>
+          <li>若至少 3 個次向度與 M 同分，則 Global CDR = M。</li>
+          <li>若至少 3 個次向度落在 M 以上或 M 以下，則取次向度多數側的分數；若該側分數有並列，取最接近 M 者。</li>
+          <li>若一側 3 個、另一側 2 個，則 Global CDR = M。</li>
+          <li>M = 0.5 時，若其他向度中至少 3 項 ≥1，則 CDR = 1；否則為 0.5（不可為 0）。</li>
+          <li>M = 0 時，除非次向度中有至少 2 項 ≥0.5，否則 CDR = 0；若有則 CDR = 0.5。</li>
+          <li>M ≥ 1 時，Global CDR 不可為 0；即使次向度多數為 0，最低仍為 0.5。</li>
+          <li>若僅 1–2 個次向度與 M 同分，且 M 兩側各不超過 2 個次向度，則 CDR = M。</li>
+        </ol>
+      </div>
     </div>`;
-
-  var selEls = el.querySelectorAll('.edu-cdr-sel');
   var resultEl = el.querySelector('[data-cdr-result]');
-
-  // Build lookup for domain descriptions
+  var scores = {};
   var descMap = {};
-  rows.forEach(function(r) { descMap[r.key] = r.desc; });
+  rows.forEach(function(r) {
+    descMap[r.key] = r.desc;
+    scores[r.key] = 0;
+    var host = el.querySelector('.edu-cdr-dd[data-key="' + r.key + '"]');
+    if (!host) return;
+    var dd = eduCreateCalcDropdown({
+      value: 0,
+      options: grades.map(function(g) {
+        return { value: g.v, label: r.key + g.t, desc: r.desc[g.v] || '—' };
+      }),
+      onChange: function(v) {
+        scores[r.key] = Number(v);
+        updateInfo(r.key);
+        recalc();
+      }
+    });
+    host.appendChild(dd.el);
+    updateInfo(r.key);
+  });
 
-  function updateInfo(sel) {
-    var key = sel.dataset.key;
-    var val = parseFloat(sel.value);
+  function updateInfo(key) {
     var info = el.querySelector('[data-cdr-info="' + key + '"]');
+    var val = Number(scores[key] || 0);
     if (info && descMap[key]) {
       var txt = descMap[key][val] || '—';
-      info.innerHTML = '<strong>' + escHtml(key) + escHtml(String(val)) + ':</strong> ' + escHtml(txt);
+      info.innerHTML = '<strong>' + escHtml(key + String(val)) + ':</strong> ' + escHtml(txt);
     }
   }
-
-  selEls.forEach(function(sel) {
-    sel.addEventListener('change', function() { updateInfo(sel); recalc(); });
-    updateInfo(sel);
-  });
   recalc();
 
   function recalc() {
-    var scores = {};
-    selEls.forEach(function(sel) { scores[sel.dataset.key] = parseFloat(sel.value); });
     var cdr = eduComputeCdrScore(scores);
     var labelMap = {
       0: '無失智', 0.5: '可疑／極輕度失智', 1: '輕度失智', 2: '中度失智', 3: '重度失智'
@@ -1660,33 +1819,37 @@ function eduComputeCdrScore(scores) {
     return candidates.length ? candidates[0] : M;
   }
 
+  var result;
   if (eq(M, 0)) {
     var impairedSec = secondary.filter(function(v) { return v >= 0.5; }).length;
-    return impairedSec >= 2 ? 0.5 : 0;
+    result = impairedSec >= 2 ? 0.5 : 0;
+    return result;
   }
 
   if (eq(M, 0.5)) {
     var secOneOrMore = secondary.filter(function(v) { return v >= 1; }).length;
-    return secOneOrMore >= 3 ? 1 : 0.5;
+    result = secOneOrMore >= 3 ? 1 : 0.5;
+    return result;
   }
 
   var same = secondary.filter(function(v) { return eq(v, M); }).length;
   var higher = secondary.filter(function(v) { return v > M; });
   var lower = secondary.filter(function(v) { return v < M; });
 
-  if (same >= 3) return M;
+  if (same >= 3) result = M;
 
-  if (higher.length >= 3 || lower.length >= 3) {
-    if (higher.length > lower.length) return modeClosestToM(higher);
-    if (lower.length > higher.length) return modeClosestToM(lower);
-    return M;
+  if (typeof result === 'undefined' && (higher.length >= 3 || lower.length >= 3)) {
+    if (higher.length > lower.length) result = modeClosestToM(higher);
+    else if (lower.length > higher.length) result = modeClosestToM(lower);
+    else result = M;
   }
 
-  if (same <= 2 && higher.length <= 2 && lower.length <= 2) return M;
+  if (typeof result === 'undefined' && same <= 2 && higher.length <= 2 && lower.length <= 2) result = M;
 
-  var fallback = modeClosestToM(secondary.concat([M]));
-  if (M >= 1 && eq(fallback, 0)) return 0.5;
-  return fallback;
+  if (typeof result === 'undefined') result = modeClosestToM(secondary.concat([M]));
+  if (M >= 1 && eq(result, 0)) result = 0.5;
+  if (typeof result === 'undefined' || Number.isNaN(Number(result))) result = M >= 1 ? 0.5 : 0;
+  return Number(result);
 }
 
 function eduRenderAscodCalculator(el) {
@@ -1757,7 +1920,7 @@ function eduRenderAscodCalculator(el) {
 
   el.innerHTML = `
     <div class="edu-calc-box">
-      <p style="color:var(--muted);margin-bottom:10px">請選擇每一類別分級，系統會輸出 ASCOD phenotype 字串。選擇分級後可見各域臨床標準。</p>
+      <p style="color:var(--muted);margin-bottom:10px">請選擇每一類別分級，系統會輸出 ASCOD phenotype 字串。將滑鼠移到選項即可預覽該等級意義。</p>
       <div class="edu-calc-grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
         <div class="edu-domain-row">
           <label style="font-size:0.82rem;color:var(--muted)">年齡 Age
@@ -1766,11 +1929,8 @@ function eduRenderAscodCalculator(el) {
         </div>
         ${domains.map(function(d) {
           return `<div class="edu-domain-row">
-            <label style="font-size:0.82rem;color:var(--muted)">${escHtml(domainCriteria[d].label)}
-              <select class="edu-ascod-sel" data-key="${d}">
-                ${gradeOptions.map(function(g) { return `<option value="${g.v}">${g.t}</option>`; }).join('')}
-              </select>
-            </label>
+            <label style="font-size:0.82rem;color:var(--muted)">${escHtml(domainCriteria[d].label)}</label>
+            <div class="edu-ascod-dd" data-key="${d}"></div>
             <div class="edu-domain-info" data-ascod-info="${d}">—</div>
           </div>`;
         }).join('')}
@@ -1780,13 +1940,12 @@ function eduRenderAscodCalculator(el) {
     </div>`;
 
   var ageEl = el.querySelector('.edu-ascod-age');
-  var selEls = el.querySelectorAll('.edu-ascod-sel');
   var mainEl = el.querySelector('[data-ascod-main]');
   var noteEl = el.querySelector('[data-ascod-note]');
+  var g = {};
 
-  function updateInfo(sel) {
-    var key = sel.dataset.key;
-    var val = Number(sel.value);
+  function updateInfo(key) {
+    var val = Number(g[key] || 0);
     var info = el.querySelector('[data-ascod-info="' + key + '"]');
     if (info && domainCriteria[key]) {
       var txt = domainCriteria[key].grades[val] || '—';
@@ -1795,15 +1954,27 @@ function eduRenderAscodCalculator(el) {
   }
 
   ageEl.addEventListener('input', recalc);
-  selEls.forEach(function(sel) {
-    sel.addEventListener('change', function() { updateInfo(sel); recalc(); });
-    updateInfo(sel);
+  domains.forEach(function(d) {
+    g[d] = 0;
+    var host = el.querySelector('.edu-ascod-dd[data-key="' + d + '"]');
+    if (!host) return;
+    var dd = eduCreateCalcDropdown({
+      value: 0,
+      options: gradeOptions.map(function(opt) {
+        return { value: opt.v, label: d + opt.v, desc: domainCriteria[d].grades[opt.v] || '—' };
+      }),
+      onChange: function(v) {
+        g[d] = Number(v);
+        updateInfo(d);
+        recalc();
+      }
+    });
+    host.appendChild(dd.el);
+    updateInfo(d);
   });
   recalc();
 
   function recalc() {
-    var g = {};
-    selEls.forEach(function(sel) { g[sel.dataset.key] = Number(sel.value); });
     var age = Number(ageEl.value || 0);
     var phenotype = domains.map(function(d) { return d + g[d]; }).join('-');
     var potential = domains.filter(function(d) { return g[d] === 1; });
