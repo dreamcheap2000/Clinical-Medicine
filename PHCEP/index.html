@@ -65,8 +65,8 @@
       <div class="drug-search-wrap">
         <input id="cm-search" type="text" class="drug-search-input"
                placeholder="搜尋 ICD-10-CM 代碼或名稱（中英文）…"
-               oninput="cmSearch(this.value); if(this.value.trim()) hideSearchHistory('cm',0); else showSearchHistory('cm')"
-               onfocus="if(!this.value.trim()) showSearchHistory('cm'); else cmSearch(this.value)"
+               oninput="cmSearch(this.value); hideSearchHistory('cm',0)"
+               onfocus="hideSearchHistory('cm',0); if(this.value.trim()) cmSearch(this.value)"
                onblur="hideSearchHistory('cm',200)"
                autocomplete="off" />
         <div id="cm-search-history" class="search-history-dropdown">
@@ -81,6 +81,7 @@
         <option value="">全部分類</option>
       </select>
     </div>
+    <div id="cm-frequent-wrap" class="frequent-used-wrap"></div>
     <div id="cm-search-results" class="search-results-above hidden"></div>
     <div class="cat-grid" id="cm-cat-grid"></div>
     <div id="cm-detail" class="detail-panel hidden"></div>
@@ -98,8 +99,8 @@
       <div class="nhi-search-wrap">
         <input id="nhi-search" type="text" class="nhi-search-input"
                placeholder="搜尋代碼或名稱（中英文）…"
-               oninput="nhiSearch(this.value); if(this.value.trim()) hideSearchHistory('nhi',0); else showSearchHistory('nhi')"
-               onfocus="if(!this.value.trim()) showSearchHistory('nhi'); else nhiSearch(this.value)"
+               oninput="nhiSearch(this.value); hideSearchHistory('nhi',0)"
+               onfocus="hideSearchHistory('nhi',0); if(this.value.trim()) nhiSearch(this.value)"
                onblur="hideSearchHistory('nhi',200)"
                autocomplete="off" />
         <div id="nhi-search-history" class="search-history-dropdown">
@@ -129,6 +130,7 @@
         顯示支付點數
       </label>
     </div>
+    <div id="nhi-frequent-wrap" class="frequent-used-wrap"></div>
     <div id="nhi-cat-grid" class="nhi-cat-grid"></div>
     <div id="nhi-table-wrap" class="nhi-table-wrap hidden">
       <div class="nhi-table-header" id="nhi-table-header"></div>
@@ -160,8 +162,8 @@
       <div class="drug-search-wrap">
         <input id="drug-search" type="text" class="drug-search-input"
                placeholder="搜尋藥品名稱或給付規定（中英文）…"
-               oninput="drugSearch(this.value); if(this.value.trim()) hideSearchHistory('drug',0); else showSearchHistory('drug')"
-               onfocus="if(!this.value.trim()) showSearchHistory('drug'); else drugSearch(this.value)"
+               oninput="drugSearch(this.value); hideSearchHistory('drug',0)"
+               onfocus="hideSearchHistory('drug',0); if(this.value.trim()) drugSearch(this.value)"
                onblur="hideSearchHistory('drug',200)"
                autocomplete="off" />
         <div id="drug-search-history" class="search-history-dropdown">
@@ -176,6 +178,7 @@
         <option value="">全部分類</option>
       </select>
     </div>
+    <div id="drug-frequent-wrap" class="frequent-used-wrap"></div>
     <div class="drug-tag-filter" id="drug-tag-filter"></div>
     <div id="drug-search-results" class="search-results-above hidden"></div>
     <div id="drug-cat-grid" class="drug-cat-grid"></div>
@@ -395,8 +398,8 @@
       <div class="drug-search-wrap">
         <input id="specmat-search" type="text" class="drug-search-input"
                placeholder="搜尋特材品名或給付規定…"
-               oninput="specmatSearch(this.value); if(this.value.trim()) hideSearchHistory('specmat',0); else showSearchHistory('specmat')"
-               onfocus="if(!this.value.trim()) showSearchHistory('specmat'); else specmatSearch(this.value)"
+               oninput="specmatSearch(this.value); hideSearchHistory('specmat',0)"
+               onfocus="hideSearchHistory('specmat',0); if(this.value.trim()) specmatSearch(this.value)"
                onblur="hideSearchHistory('specmat',200)"
                autocomplete="off" />
         <div id="specmat-search-history" class="search-history-dropdown">

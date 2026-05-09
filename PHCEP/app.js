@@ -38,6 +38,9 @@ async function boot() {
     initNhiTab();
     initDrugTab();
     initSpecmatTab();
+    renderFrequentUsed('cm');
+    renderFrequentUsed('nhi');
+    renderFrequentUsed('drug');
     // Load ICD-9 mapping in background
     fetchJson(BASE + 'data/icd9_mapping.json').then(d => { ICD9_MAP = d; }).catch(() => {});
   } catch (e) {
@@ -164,6 +167,37 @@ function cmSearch(q) {
   }
 }
 
+function findCmCodeItem(code) {
+  if (!code || !META) return null;
+  for (var i = 0; i < META.cm_categories.length; i++) {
+    var cat = META.cm_categories[i];
+    if (cat.id === 'others') {
+      if (cmOthers) {
+        for (var j = 0; j < cmOthers.length; j++) {
+          if (cmOthers[j][0] === code) {
+            return { code: code, zh: cmOthers[j][1] || '', en: '' };
+          }
+        }
+      }
+    } else {
+      var data = cmLoaded[cat.id];
+      if (!data || !data.codes) continue;
+      for (var k = 0; k < data.codes.length; k++) {
+        if (data.codes[k].code === code) {
+          return { code: code, en: data.codes[k].en || '', zh: data.codes[k].zh || '' };
+        }
+      }
+    }
+  }
+  return null;
+}
+
+function rememberCmCode(code) {
+  var item = findCmCodeItem(code);
+  if (!item) return;
+  rememberFrequentUsed('cm', item, item.code);
+}
+
 function buildCmSearchResults(q) {
   const ql = q.toLowerCase();
   const results = [];
@@ -201,7 +235,7 @@ function buildCmSearchResults(q) {
     const icd9Html = icd9s.length > 0
       ? `<span class="icd9-code">(ICD-9: ${escHtml(icd9s.slice(0,3).join(', '))})</span>` : '';
     return `
-    <tr>
+    <tr onclick="rememberCmCode('${escHtml(r.code)}')">
       <td class="code-cell">${escHtml(r.code)}${icd9Html}</td>
       <td class="en-cell">${escHtml(r.en)}</td>
       <td class="zh-cell">${escHtml(r.zh)}</td>
@@ -390,7 +424,7 @@ function fillDetailTable(type, catId, filterStr, pageOverride) {
   const alphaNav = !needsPaging ? buildAlphaNav(pageItems.map(r => r.code)) : '';
 
   // Build table rows
-  const rows = buildGroupedRows(pageItems, isCompactMode);
+  const rows = buildGroupedRows(pageItems, isCompactMode, type);
 
   // Pagination controls
   var pagingHtml = '';
@@ -440,7 +474,7 @@ function buildAlphaNav(codes) {
   return `<div class="alpha-nav">${links}</div>`;
 }
 
-function buildGroupedRows(items, isCompact) {
+function buildGroupedRows(items, isCompact, type) {
   if (items.length === 0) return '';
   let html = '';
   let lastLetter = null;
@@ -451,13 +485,15 @@ function buildGroupedRows(items, isCompact) {
       lastLetter = letter;
     }
     if (isCompact) {
-      html += `<tr><td class="code-cell">${escHtml(item.code)}</td><td class="zh-cell">${escHtml(item.zh)}</td></tr>`;
+      var compactOnclick = type === 'cm' ? ` onclick="rememberCmCode('${escHtml(item.code)}')"` : '';
+      html += `<tr${compactOnclick}><td class="code-cell">${escHtml(item.code)}</td><td class="zh-cell">${escHtml(item.zh)}</td></tr>`;
     } else {
       // Show ICD-9 code if available
       const icd9s = ICD9_MAP ? (ICD9_MAP[item.code] || []) : [];
       const icd9Html = icd9s.length > 0
         ? ` <span class="icd9-code">${escHtml(icd9s.join(', '))}</span>` : '';
-      html += `<tr><td class="code-cell">${escHtml(item.code)}${icd9Html}</td><td class="en-cell">${escHtml(item.en)}</td><td class="zh-cell">${escHtml(item.zh)}</td></tr>`;
+      var rowOnclick = type === 'cm' ? ` onclick="rememberCmCode('${escHtml(item.code)}')"` : '';
+      html += `<tr${rowOnclick}><td class="code-cell">${escHtml(item.code)}${icd9Html}</td><td class="en-cell">${escHtml(item.en)}</td><td class="zh-cell">${escHtml(item.zh)}</td></tr>`;
     }
   }
   return html;
@@ -743,6 +779,74 @@ function genId() {
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
+}
+
+const FREQUENT_USED_MAX = 50;
+
+function frequentUsedKey(type) {
+  return 'phcep_frequent_used_' + type;
+}
+
+function getFrequentUsed(type) {
+  return storageGet(frequentUsedKey(type), []);
+}
+
+function saveFrequentUsed(type, items) {
+  storageSet(frequentUsedKey(type), (items || []).slice(0, FREQUENT_USED_MAX));
+}
+
+function rememberFrequentUsed(type, item, idKey) {
+  if (!item || !idKey) return;
+  var list = getFrequentUsed(type).filter(function(x) { return x._idKey !== idKey; });
+  list.unshift(Object.assign({}, item, { _idKey: idKey }));
+  saveFrequentUsed(type, list);
+  renderFrequentUsed(type);
+}
+
+function renderFrequentUsed(type) {
+  var wrap = document.getElementById(type + '-frequent-wrap');
+  if (!wrap) return;
+  var list = getFrequentUsed(type);
+  if (!list.length) {
+    wrap.innerHTML = '';
+    wrap.classList.add('hidden');
+    return;
+  }
+  var title = type === 'cm' ? 'Frequent used ICD10'
+    : (type === 'nhi' ? 'Frequent used 支付代碼' : 'Frequent used 藥品');
+  wrap.classList.remove('hidden');
+  wrap.innerHTML = `
+    <div class="frequent-used-inner">
+      <div class="frequent-used-title">${escHtml(title)}</div>
+      <div class="frequent-used-chips">
+        ${list.map(function(item, idx) {
+          var text = item.code
+            ? (item.code + ' ' + (item.name || item.zh || ''))
+            : (item.id + ' ' + (item.name || ''));
+          return `<button class="frequent-used-chip" onclick="applyFrequentUsed('${escHtml(type)}',${idx})">${escHtml(text.trim())}</button>`;
+        }).join('')}
+      </div>
+    </div>`;
+}
+
+function applyFrequentUsed(type, idx) {
+  var list = getFrequentUsed(type);
+  var item = list[idx];
+  if (!item) return;
+  if (type === 'cm') {
+    var cmInp = document.getElementById('cm-search');
+    if (cmInp) cmInp.value = item.code || '';
+    cmSearch(item.code || '');
+  } else if (type === 'nhi') {
+    var nhiInp = document.getElementById('nhi-search');
+    if (nhiInp) nhiInp.value = item.code || '';
+    nhiSearch(item.code || '');
+  } else if (type === 'drug') {
+    var drugInp = document.getElementById('drug-search');
+    var q = item.id || item.name || '';
+    if (drugInp) drugInp.value = q;
+    drugSearch(q);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1384,6 +1488,177 @@ function eduRenderViewerContent() {
   } else {
     var html = ((entry.versions || {})[v]) || '<p style="color:var(--muted);padding:8px">（此語言版本尚未提供）</p>';
     eduSetSafeHtml(content, html);
+    eduMountInteractiveWidgets(content, entry);
+  }
+}
+
+function eduMountInteractiveWidgets(content, entry) {
+  if (!content || !entry) return;
+  if (content.querySelector('.edu-cdr-calculator')) {
+    content.querySelectorAll('.edu-cdr-calculator').forEach(function(el) {
+      eduRenderCdrCalculator(el);
+    });
+  }
+  if (content.querySelector('.edu-ascod-calculator')) {
+    content.querySelectorAll('.edu-ascod-calculator').forEach(function(el) {
+      eduRenderAscodCalculator(el);
+    });
+  }
+}
+
+function eduRenderCdrCalculator(el) {
+  if (!el) return;
+  var rows = [
+    { key: 'M', label: 'Memory (M)' },
+    { key: 'O', label: 'Orientation' },
+    { key: 'JPS', label: 'Judgment & Problem Solving' },
+    { key: 'CA', label: 'Community Affairs' },
+    { key: 'HH', label: 'Home & Hobbies' },
+    { key: 'PC', label: 'Personal Care' }
+  ];
+  var grades = [
+    { v: 0, t: '0' }, { v: 0.5, t: '0.5' }, { v: 1, t: '1' }, { v: 2, t: '2' }, { v: 3, t: '3' }
+  ];
+  el.innerHTML = `
+    <div class="edu-calc-box">
+      <h3>CDR 評估計算器</h3>
+      <p style="color:var(--muted)">請為六個向度選擇分數，系統將依 CDR 規則自動計算 Global CDR。</p>
+      <div class="edu-calc-grid">
+        ${rows.map(function(r) {
+          return `<label>${escHtml(r.label)}
+            <select class="edu-cdr-sel" data-key="${escHtml(r.key)}">
+              ${grades.map(function(g) { return `<option value="${g.v}">${g.t}</option>`; }).join('')}
+            </select>
+          </label>`;
+        }).join('')}
+      </div>
+      <div class="edu-calc-result" data-cdr-result>CDR = 0（無失智）</div>
+    </div>`;
+
+  var selEls = el.querySelectorAll('.edu-cdr-sel');
+  var resultEl = el.querySelector('[data-cdr-result]');
+  selEls.forEach(function(sel) { sel.addEventListener('change', recalc); });
+  recalc();
+
+  function recalc() {
+    var scores = {};
+    selEls.forEach(function(sel) { scores[sel.dataset.key] = parseFloat(sel.value); });
+    var cdr = eduComputeCdrScore(scores);
+    var labelMap = {
+      0: '無失智', 0.5: '可疑／極輕度失智', 1: '輕度失智', 2: '中度失智', 3: '重度失智'
+    };
+    resultEl.textContent = 'CDR = ' + cdr + '（' + (labelMap[cdr] || '未分級') + '）';
+  }
+}
+
+function eduComputeCdrScore(scores) {
+  var M = Number(scores.M || 0);
+  var secondary = [scores.O, scores.JPS, scores.CA, scores.HH, scores.PC].map(function(x) { return Number(x || 0); });
+  var eps = 1e-9;
+
+  function eq(a, b) { return Math.abs(a - b) < eps; }
+  function modeClosestToM(values) {
+    var counts = {};
+    values.forEach(function(v) { counts[v] = (counts[v] || 0) + 1; });
+    var maxCount = 0;
+    Object.keys(counts).forEach(function(k) { if (counts[k] > maxCount) maxCount = counts[k]; });
+    var candidates = Object.keys(counts)
+      .filter(function(k) { return counts[k] === maxCount; })
+      .map(function(k) { return Number(k); })
+      .sort(function(a, b) {
+        var da = Math.abs(a - M);
+        var db = Math.abs(b - M);
+        return da - db;
+      });
+    return candidates.length ? candidates[0] : M;
+  }
+
+  if (eq(M, 0)) {
+    var impairedSec = secondary.filter(function(v) { return v >= 0.5; }).length;
+    return impairedSec >= 2 ? 0.5 : 0;
+  }
+
+  if (eq(M, 0.5)) {
+    var secOneOrMore = secondary.filter(function(v) { return v >= 1; }).length;
+    return secOneOrMore >= 3 ? 1 : 0.5;
+  }
+
+  var same = secondary.filter(function(v) { return eq(v, M); }).length;
+  var higher = secondary.filter(function(v) { return v > M; });
+  var lower = secondary.filter(function(v) { return v < M; });
+
+  if (same >= 3) return M;
+
+  if (higher.length >= 3 || lower.length >= 3) {
+    if (higher.length > lower.length) return modeClosestToM(higher);
+    if (lower.length > higher.length) return modeClosestToM(lower);
+    return M;
+  }
+
+  if (same <= 2 && higher.length <= 2 && lower.length <= 2) return M;
+
+  var fallback = modeClosestToM(secondary.concat([M]));
+  if (M >= 1 && eq(fallback, 0)) return 0.5;
+  return fallback;
+}
+
+function eduRenderAscodCalculator(el) {
+  if (!el) return;
+  var gradeOptions = [
+    { v: 0, t: '0 — absent' },
+    { v: 1, t: '1 — potentially causal' },
+    { v: 2, t: '2 — uncertain causality' },
+    { v: 3, t: '3 — unlikely causal but present' },
+    { v: 9, t: '9 — insufficient workup' }
+  ];
+  var domains = ['A', 'S', 'C', 'O', 'D'];
+  el.innerHTML = `
+    <div class="edu-calc-box">
+      <h3>ASCOD 評估計算器</h3>
+      <p style="color:var(--muted)">請選擇每一類別分級，系統會輸出 ASCOD phenotype 字串與重點提醒。</p>
+      <div class="edu-calc-grid">
+        <label>Age
+          <input type="number" min="0" max="120" step="1" class="edu-ascod-age" value="65" />
+        </label>
+        ${domains.map(function(d) {
+          return `<label>${d} grade
+            <select class="edu-ascod-sel" data-key="${d}">
+              ${gradeOptions.map(function(g) { return `<option value="${g.v}">${g.t}</option>`; }).join('')}
+            </select>
+          </label>`;
+        }).join('')}
+      </div>
+      <div class="edu-calc-result" data-ascod-main></div>
+      <div class="edu-calc-note" data-ascod-note></div>
+    </div>`;
+
+  var ageEl = el.querySelector('.edu-ascod-age');
+  var selEls = el.querySelectorAll('.edu-ascod-sel');
+  var mainEl = el.querySelector('[data-ascod-main]');
+  var noteEl = el.querySelector('[data-ascod-note]');
+  ageEl.addEventListener('input', recalc);
+  selEls.forEach(function(sel) { sel.addEventListener('change', recalc); });
+  recalc();
+
+  function recalc() {
+    var g = {};
+    selEls.forEach(function(sel) { g[sel.dataset.key] = Number(sel.value); });
+    var age = Number(ageEl.value || 0);
+    var phenotype = `A${g.A}-S${g.S}-C${g.C}-O${g.O}-D${g.D}`;
+    var potential = domains.filter(function(d) { return g[d] === 1; });
+    var uncertain = domains.filter(function(d) { return g[d] === 2; });
+    var incomplete = domains.filter(function(d) { return g[d] === 9; });
+    mainEl.textContent = 'ASCOD phenotype: ' + phenotype;
+
+    var notes = [];
+    if (potential.length) notes.push('Potentially causal: ' + potential.join(', '));
+    if (uncertain.length) notes.push('Uncertain causal link: ' + uncertain.join(', '));
+    if (incomplete.length) notes.push('Incomplete workup: ' + incomplete.join(', '));
+    if (age < 60 && g.A !== 1 && g.A !== 2 && g.S !== 1 && g.C !== 1 && g.O !== 1 && g.D === 0) {
+      notes.push('Rule check: age <60 without A1/A2/S1/C1/O1 should confirm dissection workup; if not completed, consider D9.');
+    }
+    if (!notes.length) notes.push('No high-probability causal domain selected (grade 1).');
+    noteEl.innerHTML = notes.map(function(n) { return `<div>• ${escHtml(n)}</div>`; }).join('');
   }
 }
 
@@ -1536,11 +1811,38 @@ async function initNhiTab() {
     NHI_DATA = await fetchJson(BASE + 'data/nhi/nhi.json');
     renderNhiCatGrid();
     populateNhiCatSelect();
+    renderFrequentUsed('nhi');
   } catch (e) {
     console.error('NHI load failed:', e);
     document.getElementById('nhi-cat-grid').innerHTML =
       '<p class="nhi-load-error">⚠️ 無法載入 NHI 支付標準資料：' + escHtml(String(e)) + '</p>';
   }
+}
+
+function findNhiCodeItem(code) {
+  if (!NHI_DATA || !code) return null;
+  for (var i = 0; i < NHI_DATA.categories.length; i++) {
+    var cat = NHI_DATA.categories[i];
+    for (var j = 0; j < cat.codes.length; j++) {
+      var c = cat.codes[j];
+      if (c.code === code) {
+        return {
+          code: c.code,
+          name: c.nameZh || '',
+          nameEn: c.nameEn || '',
+          points: c.points || '',
+          cat: cat.nameZh || ''
+        };
+      }
+    }
+  }
+  return null;
+}
+
+function rememberNhiCode(code) {
+  var item = findNhiCodeItem(code);
+  if (!item) return;
+  rememberFrequentUsed('nhi', item, item.code);
 }
 
 function nhiOnTabShow() {
@@ -1710,7 +2012,7 @@ function nhiRender() {
       : '';
     var catBadge = r._cat
       ? '<span class="nhi-cat-inline">' + escHtml(r._cat) + '</span> ' : '';
-    return '<tr class="nhi-code-row" onclick="nhiToggleNote(this)">' +
+    return '<tr class="nhi-code-row" onclick="nhiToggleNote(this); rememberNhiCode(\'' + escHtml(r.code) + '\')">' +
       '<td class="col-code"><code class="nhi-code">' + escHtml(r.code) + '</code></td>' +
       '<td class="col-name">' + catBadge + escHtml(r.nameZh) +
         (r.nameEn ? '<br><span class="nhi-en">' + escHtml(r.nameEn) + '</span>' : '') +
@@ -1879,6 +2181,7 @@ async function initDrugTab() {
     renderDrugCatGrid();
     populateDrugCatSelect();
     renderDrugTagFilter();
+    renderFrequentUsed('drug');
   } catch (e) {
     console.error('Drug benefits load failed:', e);
     var el = document.getElementById('drug-cat-grid');
@@ -2211,15 +2514,21 @@ function drugRender() {
       contentDiv.className = 'drug-entry-content';
 
       // Only add expand functionality if there's content
+      headerDiv.addEventListener('click', function() {
+        rememberFrequentUsed('drug', {
+          id: e.id,
+          name: e.name || '',
+          cat: e._cat || ''
+        }, e.id);
+        if (e.content) entryDiv.classList.toggle('open');
+      });
+
       if (e.content) {
         var chevronSpan = document.createElement('span');
         chevronSpan.className = 'drug-entry-chevron';
         chevronSpan.textContent = '▶';
         headerDiv.appendChild(chevronSpan);
         contentDiv.textContent = e.content;
-        headerDiv.addEventListener('click', function() {
-          entryDiv.classList.toggle('open');
-        });
       }
 
       entryDiv.appendChild(headerDiv);
