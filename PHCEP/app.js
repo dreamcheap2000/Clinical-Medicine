@@ -1488,56 +1488,143 @@ function eduRenderViewerContent() {
   } else {
     var html = ((entry.versions || {})[v]) || '<p style="color:var(--muted);padding:8px">（此語言版本尚未提供）</p>';
     eduSetSafeHtml(content, html);
+    eduWrapContentTables(content);
     eduMountInteractiveWidgets(content, entry);
   }
 }
 
+function eduWrapContentTables(container) {
+  var tables = container.querySelectorAll('table');
+  if (!tables.length) return;
+  tables.forEach(function(table) {
+    if (table.parentElement && table.parentElement.classList.contains('edu-table-wrap')) return;
+    var wrap = document.createElement('div');
+    wrap.className = 'edu-table-wrap';
+    table.parentNode.insertBefore(wrap, table);
+    wrap.appendChild(table);
+  });
+  var bar = document.createElement('div');
+  bar.className = 'edu-table-toggle-bar';
+  bar.innerHTML =
+    '<span style="font-size:0.82rem;color:var(--muted)">表格顯示：</span>' +
+    '<button class="edu-table-toggle-btn active" onclick="eduSetTableMode(this,\'scroll\')">↔ 橫向捲動</button>' +
+    '<button class="edu-table-toggle-btn" onclick="eduSetTableMode(this,\'fit\')">⬜ 縮放至頁寬</button>';
+  container.insertBefore(bar, container.firstChild);
+}
+
+function eduSetTableMode(btn, mode) {
+  var content = document.getElementById('edu-viewer-content');
+  if (!content) return;
+  content.querySelectorAll('.edu-table-toggle-btn').forEach(function(b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  content.querySelectorAll('.edu-table-wrap').forEach(function(wrap) {
+    if (mode === 'fit') {
+      wrap.classList.add('edu-table-fit');
+    } else {
+      wrap.classList.remove('edu-table-fit');
+    }
+  });
+}
+
 function eduMountInteractiveWidgets(content, entry) {
   if (!content || !entry) return;
-  if (content.querySelector('.edu-cdr-calculator')) {
-    content.querySelectorAll('.edu-cdr-calculator').forEach(function(el) {
-      eduRenderCdrCalculator(el);
+  content.querySelectorAll('.edu-cdr-calculator').forEach(function(el) {
+    eduWrapCalculator(el, 'cdr', '🧮 臨床失智評估量表計算器 (CDR Calculator)', function(inner) {
+      eduRenderCdrCalculator(inner);
     });
-  }
-  if (content.querySelector('.edu-ascod-calculator')) {
-    content.querySelectorAll('.edu-ascod-calculator').forEach(function(el) {
-      eduRenderAscodCalculator(el);
+  });
+  content.querySelectorAll('.edu-ascod-calculator').forEach(function(el) {
+    eduWrapCalculator(el, 'ascod', '🧮 腦中風原因分類計算器 (ASCOD Calculator)', function(inner) {
+      eduRenderAscodCalculator(inner);
     });
-  }
+  });
+}
+
+function eduWrapCalculator(el, type, label, renderFn) {
+  var section = document.createElement('div');
+  section.className = 'edu-calc-section';
+  var inner = document.createElement('div');
+  var btn = document.createElement('button');
+  btn.className = 'edu-calc-toggle-btn';
+  btn.innerHTML = label + ' <span class="edu-calc-toggle-icon">▼</span>';
+  var panel = document.createElement('div');
+  panel.className = 'edu-calc-panel';
+  panel.style.display = 'none';
+  var rendered = false;
+  btn.addEventListener('click', function() {
+    var open = panel.style.display !== 'none';
+    panel.style.display = open ? 'none' : '';
+    btn.classList.toggle('open', !open);
+    if (!open && !rendered) {
+      rendered = true;
+      renderFn(inner);
+    }
+  });
+  panel.appendChild(inner);
+  section.appendChild(btn);
+  section.appendChild(panel);
+  el.parentNode.insertBefore(section, el);
+  el.parentNode.removeChild(el);
 }
 
 function eduRenderCdrCalculator(el) {
   if (!el) return;
   var rows = [
-    { key: 'M', label: 'Memory (M)' },
-    { key: 'O', label: 'Orientation' },
-    { key: 'JPS', label: 'Judgment & Problem Solving' },
-    { key: 'CA', label: 'Community Affairs' },
-    { key: 'HH', label: 'Home & Hobbies' },
-    { key: 'PC', label: 'Personal Care' }
+    { key: 'M', label: 'Memory（記憶）',
+      desc: { 0: '無記憶缺損，或輕微偶發性健忘', 0.5: '持續輕度健忘，部分事件回憶不全（良性健忘）', 1: '近期記憶中度受損，影響日常生活', 2: '重度記憶受損，僅保留高度熟悉資訊，新資訊迅速遺忘', 3: '僅剩片段記憶' } },
+    { key: 'O', label: 'Orientation（定向）',
+      desc: { 0: '定向力完整', 0.5: '時間關係輕度困難，其餘定向正常', 1: '中度時間定向困難，就診時地點定向尚存', 2: '常有時間／地點定向差', 3: '僅對人有定向' } },
+    { key: 'JPS', label: 'Judgment & Problem Solving（判斷）',
+      desc: { 0: '解決日常問題能力佳，判斷力正常', 0.5: '解決問題、類比、辨差能力輕度受損', 1: '中度受損，社交判斷通常尚存', 2: '重度受損，社交判斷通常已損害', 3: '無法判斷或解決問題' } },
+    { key: 'CA', label: 'Community Affairs（社區事務）',
+      desc: { 0: '可維持原本工作、購物、社交功能', 0.5: '輕度受限', 1: '無法在外獨立處理，但外觀尚可', 2: '無家庭外獨立功能', 3: '病況過重，無法外出參與活動' } },
+    { key: 'HH', label: 'Home & Hobbies（居家生活）',
+      desc: { 0: '居家生活及嗜好維持良好', 0.5: '輕度受限', 1: '較困難的家務及嗜好已放棄', 2: '僅保留簡單活動，興趣極度受限', 3: '無有效居家功能' } },
+    { key: 'PC', label: 'Personal Care（個人照護）',
+      desc: { 0: '可完全自理', 0.5: '可完全自理', 1: '需提醒', 2: '需協助穿衣及個人衛生', 3: '高度依賴照顧，常有失禁' } }
   ];
   var grades = [
     { v: 0, t: '0' }, { v: 0.5, t: '0.5' }, { v: 1, t: '1' }, { v: 2, t: '2' }, { v: 3, t: '3' }
   ];
   el.innerHTML = `
     <div class="edu-calc-box">
-      <h3>CDR 評估計算器</h3>
-      <p style="color:var(--muted)">請為六個向度選擇分數，系統將依 CDR 規則自動計算 Global CDR。</p>
-      <div class="edu-calc-grid">
+      <p style="color:var(--muted);margin-bottom:10px">請為六個向度選擇分數，系統將依 CDR 規則自動計算 Global CDR。選擇後可見各等級說明。</p>
+      <div class="edu-calc-grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
         ${rows.map(function(r) {
-          return `<label>${escHtml(r.label)}
-            <select class="edu-cdr-sel" data-key="${escHtml(r.key)}">
-              ${grades.map(function(g) { return `<option value="${g.v}">${g.t}</option>`; }).join('')}
-            </select>
-          </label>`;
+          return `<div class="edu-domain-row">
+            <label style="font-size:0.82rem;color:var(--muted)">${escHtml(r.label)}
+              <select class="edu-cdr-sel" data-key="${escHtml(r.key)}">
+                ${grades.map(function(g) { return `<option value="${g.v}">${g.t}</option>`; }).join('')}
+              </select>
+            </label>
+            <div class="edu-domain-info" data-cdr-info="${escHtml(r.key)}">—</div>
+          </div>`;
         }).join('')}
       </div>
-      <div class="edu-calc-result" data-cdr-result>CDR = 0（無失智）</div>
+      <div class="edu-calc-result" data-cdr-result style="margin-top:14px">CDR = 0（無失智）</div>
     </div>`;
 
   var selEls = el.querySelectorAll('.edu-cdr-sel');
   var resultEl = el.querySelector('[data-cdr-result]');
-  selEls.forEach(function(sel) { sel.addEventListener('change', recalc); });
+
+  // Build lookup for domain descriptions
+  var descMap = {};
+  rows.forEach(function(r) { descMap[r.key] = r.desc; });
+
+  function updateInfo(sel) {
+    var key = sel.dataset.key;
+    var val = parseFloat(sel.value);
+    var info = el.querySelector('[data-cdr-info="' + key + '"]');
+    if (info && descMap[key]) {
+      var txt = descMap[key][val] || '—';
+      info.innerHTML = '<strong>' + escHtml(key) + val + ':</strong> ' + escHtml(txt);
+    }
+  }
+
+  selEls.forEach(function(sel) {
+    sel.addEventListener('change', function() { updateInfo(sel); recalc(); });
+    updateInfo(sel);
+  });
   recalc();
 
   function recalc() {
@@ -1604,6 +1691,61 @@ function eduComputeCdrScore(scores) {
 
 function eduRenderAscodCalculator(el) {
   if (!el) return;
+
+  // Per-domain grade criteria for tooltips
+  var domainCriteria = {
+    A: {
+      label: 'A — Atherosclerosis（動脈粥樣硬化）',
+      grades: {
+        0: 'A0：無動脈粥樣硬化',
+        1: 'A1：≥50% 狹窄、潰瘍性斑塊，或主動脈弓斑塊 ≥4mm（位於供血動脈）— potentially causal',
+        2: 'A2：30–49% 狹窄，或不規則/非梗阻性斑塊（供血動脈相關）— uncertain causality',
+        3: 'A3：<30% 狹窄，或與梗塞灶供血區不符部位之斑塊 — unlikely causal',
+        9: 'A9：頸動脈/顱內血管影像學未完成 — insufficient workup'
+      }
+    },
+    S: {
+      label: 'S — Small-vessel disease（小血管病變）',
+      grades: {
+        0: 'S0：無小血管病變證據',
+        1: 'S1：腔隙性症候群 + DWI 示 ≤15mm 深部急性梗塞，合併高血壓或糖尿病 — potentially causal',
+        2: 'S2：腔隙模式但有其他可能病因，或 SVD 評估不完整 — uncertain causality',
+        3: 'S3：僅有白質高信號（WMH），無急性腔隙性梗塞 — unlikely causal',
+        9: 'S9：MRI 未完成 — insufficient workup'
+      }
+    },
+    C: {
+      label: 'C — Cardiac pathology（心臟病變）',
+      grades: {
+        0: 'C0：無心臟病變',
+        1: 'C1：高風險心源性栓塞 — AF、機械瓣膜、感染性心內膜炎、病竇症候群、近期 MI（<4週）、擴張型心肌病、心腔內血栓 — potentially causal',
+        2: 'C2：中度風險 — PFO、心房中隔瘤（ASA）、自發性迴聲增強、複雜主動脈弓斑塊 — uncertain causality',
+        3: 'C3：低風險心臟病變（較不可能為主因）',
+        9: 'C9：心臟超音波或長程心律監測未完成 — insufficient workup'
+      }
+    },
+    O: {
+      label: 'O — Other causes（其他病因）',
+      grades: {
+        0: 'O0：無其他特定病因',
+        1: 'O1：明確少見病因 — CNS 血管炎、抗磷脂抗體症候群、鐮刀型血球貧血、CADASIL、Moyamoya、高凝狀態、MELAS 等 — potentially causal',
+        2: 'O2：疑似少見病因，尚未確診 — uncertain causality',
+        3: 'O3：少見病因存在，但較不可能為本次中風主因',
+        9: 'O9：特殊病因相關檢查未完成 — insufficient workup'
+      }
+    },
+    D: {
+      label: 'D — Dissection（動脈剝離）',
+      grades: {
+        0: 'D0：無動脈剝離',
+        1: 'D1：動脈剝離確診（MRI/MRA 顯示壁內血腫/雙腔影，或 DSA 確認）— potentially causal',
+        2: 'D2：疑似動脈剝離，尚未影像確診 — uncertain causality',
+        3: 'D3：舊發/癒合剝離，較不可能為本次主因',
+        9: 'D9：血管壁影像（vessel-wall MRI）未完成 — insufficient workup'
+      }
+    }
+  };
+
   var gradeOptions = [
     { v: 0, t: '0 — absent' },
     { v: 1, t: '1 — potentially causal' },
@@ -1612,23 +1754,28 @@ function eduRenderAscodCalculator(el) {
     { v: 9, t: '9 — insufficient workup' }
   ];
   var domains = ['A', 'S', 'C', 'O', 'D'];
+
   el.innerHTML = `
     <div class="edu-calc-box">
-      <h3>ASCOD 評估計算器</h3>
-      <p style="color:var(--muted)">請選擇每一類別分級，系統會輸出 ASCOD phenotype 字串與重點提醒。</p>
-      <div class="edu-calc-grid">
-        <label>Age
-          <input type="number" min="0" max="120" step="1" class="edu-ascod-age" value="65" />
-        </label>
+      <p style="color:var(--muted);margin-bottom:10px">請選擇每一類別分級，系統會輸出 ASCOD phenotype 字串。選擇分級後可見各域臨床標準。</p>
+      <div class="edu-calc-grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+        <div class="edu-domain-row">
+          <label style="font-size:0.82rem;color:var(--muted)">年齡 Age
+            <input type="number" min="0" max="120" step="1" class="edu-ascod-age" value="65" />
+          </label>
+        </div>
         ${domains.map(function(d) {
-          return `<label>${d} grade
-            <select class="edu-ascod-sel" data-key="${d}">
-              ${gradeOptions.map(function(g) { return `<option value="${g.v}">${g.t}</option>`; }).join('')}
-            </select>
-          </label>`;
+          return `<div class="edu-domain-row">
+            <label style="font-size:0.82rem;color:var(--muted)">${escHtml(domainCriteria[d].label)}
+              <select class="edu-ascod-sel" data-key="${d}">
+                ${gradeOptions.map(function(g) { return `<option value="${g.v}">${g.t}</option>`; }).join('')}
+              </select>
+            </label>
+            <div class="edu-domain-info" data-ascod-info="${d}">—</div>
+          </div>`;
         }).join('')}
       </div>
-      <div class="edu-calc-result" data-ascod-main></div>
+      <div class="edu-calc-result" data-ascod-main style="margin-top:14px"></div>
       <div class="edu-calc-note" data-ascod-note></div>
     </div>`;
 
@@ -1636,15 +1783,29 @@ function eduRenderAscodCalculator(el) {
   var selEls = el.querySelectorAll('.edu-ascod-sel');
   var mainEl = el.querySelector('[data-ascod-main]');
   var noteEl = el.querySelector('[data-ascod-note]');
+
+  function updateInfo(sel) {
+    var key = sel.dataset.key;
+    var val = Number(sel.value);
+    var info = el.querySelector('[data-ascod-info="' + key + '"]');
+    if (info && domainCriteria[key]) {
+      var txt = domainCriteria[key].grades[val] || '—';
+      info.innerHTML = escHtml(txt);
+    }
+  }
+
   ageEl.addEventListener('input', recalc);
-  selEls.forEach(function(sel) { sel.addEventListener('change', recalc); });
+  selEls.forEach(function(sel) {
+    sel.addEventListener('change', function() { updateInfo(sel); recalc(); });
+    updateInfo(sel);
+  });
   recalc();
 
   function recalc() {
     var g = {};
     selEls.forEach(function(sel) { g[sel.dataset.key] = Number(sel.value); });
     var age = Number(ageEl.value || 0);
-    var phenotype = `A${g.A}-S${g.S}-C${g.C}-O${g.O}-D${g.D}`;
+    var phenotype = 'A' + g.A + '-S' + g.S + '-C' + g.C + '-O' + g.O + '-D' + g.D;
     var potential = domains.filter(function(d) { return g[d] === 1; });
     var uncertain = domains.filter(function(d) { return g[d] === 2; });
     var incomplete = domains.filter(function(d) { return g[d] === 9; });
@@ -1658,7 +1819,7 @@ function eduRenderAscodCalculator(el) {
       notes.push('Rule check: age <60 without A1/A2/S1/C1/O1 should confirm dissection workup; if not completed, consider D9.');
     }
     if (!notes.length) notes.push('No high-probability causal domain selected (grade 1).');
-    noteEl.innerHTML = notes.map(function(n) { return `<div>• ${escHtml(n)}</div>`; }).join('');
+    noteEl.innerHTML = notes.map(function(n) { return '<div>• ' + escHtml(n) + '</div>'; }).join('');
   }
 }
 
