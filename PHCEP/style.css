@@ -2000,7 +2000,123 @@ select.search-overlay-active {
   font-size: 0.82rem;
 }
 
-/* FastSR structure view */
+/* Table scroll wrapper with fit/scroll toggle */
+.edu-table-toggle-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  padding: 6px 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.edu-table-toggle-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.edu-table-toggle-btn.active,
+.edu-table-toggle-btn:hover {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+.edu-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1em;
+  border-radius: 8px;
+}
+.edu-table-wrap.edu-table-fit {
+  overflow-x: hidden;
+}
+.edu-table-wrap.edu-table-fit table {
+  width: 100%;
+  table-layout: fixed;
+  font-size: 0.75rem;
+}
+.edu-table-wrap.edu-table-fit td,
+.edu-table-wrap.edu-table-fit th {
+  word-break: break-word;
+  white-space: normal;
+  padding: 5px 7px;
+}
+
+/* Collapsible calculator section */
+.edu-calc-section {
+  margin: 16px 0;
+}
+.edu-calc-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 18px;
+  background: linear-gradient(135deg, var(--primary) 0%, #818cf8 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 2px 8px rgba(99,102,241,.35);
+  transition: opacity .15s, box-shadow .15s;
+}
+.edu-calc-toggle-btn:hover {
+  opacity: 0.92;
+  box-shadow: 0 4px 14px rgba(99,102,241,.50);
+}
+.edu-calc-toggle-btn .edu-calc-toggle-icon {
+  margin-left: auto;
+  font-size: 0.85rem;
+  transition: transform .2s;
+}
+.edu-calc-toggle-btn.open .edu-calc-toggle-icon {
+  transform: rotate(180deg);
+}
+.edu-calc-panel {
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  background: var(--surface2);
+  padding: 14px;
+  animation: eduCalcSlideIn .18s ease;
+}
+@keyframes eduCalcSlideIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ASCOD / CDR domain info tooltip panel */
+.edu-domain-info {
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: rgba(99,102,241,.1);
+  border-left: 3px solid var(--primary);
+  border-radius: 0 6px 6px 0;
+  font-size: 0.8rem;
+  color: var(--text);
+  line-height: 1.5;
+  min-height: 2.5em;
+}
+.edu-domain-info strong {
+  color: var(--accent2);
+}
+.edu-domain-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+
 .edu-fastsr-view { padding: 4px 0; }
 .edu-fastsr-desc {
   font-size: 0.82rem;
