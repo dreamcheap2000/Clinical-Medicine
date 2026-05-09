@@ -50,8 +50,6 @@
     <button class="tab-btn" data-tab="nhi" onclick="switchTab('nhi')">💰 NHI支付標準</button>
     <button class="tab-btn" data-tab="pcs" onclick="switchTab('pcs')">ICD-10-PCS (處置)</button>
     <button class="tab-btn" data-tab="specmat" onclick="switchTab('specmat')">🔩 特材給付</button>
-    <button class="tab-btn" data-tab="ebm" onclick="switchTab('ebm')">📝 EBM筆記</button>
-    <button class="tab-btn" data-tab="soap" onclick="switchTab('soap')">🏥 SOAP病歷</button>
     <button class="tab-btn" data-tab="history" onclick="switchTab('history')">🗂️ 歷史記錄</button>
     <button class="tab-btn" data-tab="workflow" onclick="switchTab('workflow')">🩺 治療流程</button>
     <button class="tab-btn" data-tab="settings" onclick="switchTab('settings')">⚙️ 設定</button>
@@ -208,94 +206,6 @@
     <div id="pcs-search-results" class="search-results-above hidden"></div>
     <div class="cat-grid" id="pcs-cat-grid"></div>
     <div id="pcs-detail" class="detail-panel hidden"></div>
-  </div>
-
-  <!-- EBM Tab -->
-  <div id="tab-ebm" class="tab-content">
-    <div class="section-header">
-      <h2>📝 EBM 實證醫學筆記</h2>
-      <p class="section-desc">貼上或輸入實證醫學文獻摘要，自動記錄日期，可存為範本重複使用</p>
-    </div>
-    <div class="entry-form">
-      <div class="form-row">
-        <div class="form-field">
-          <label>日期</label>
-          <input type="date" id="ebm-date" />
-        </div>
-        <div class="form-field" style="flex:2">
-          <label>ICD 類別（選填）</label>
-          <select id="ebm-icd-cat"></select>
-        </div>
-      </div>
-      <div class="form-row template-row">
-        <div class="form-field" style="flex:2">
-          <label>載入範本</label>
-          <select id="ebm-template-sel" onchange="loadEbmTemplate()"></select>
-        </div>
-        <button class="btn-secondary" onclick="saveEbmTemplate()">💾 存為範本</button>
-        <button class="btn-secondary" onclick="deleteEbmTemplate()">🗑️ 刪除範本</button>
-      </div>
-      <div class="form-field" style="margin-top:4px">
-        <label>EBM 內容</label>
-        <textarea id="ebm-content" class="entry-textarea" rows="14"
-          placeholder="在此貼上或輸入 EBM 文獻摘要、臨床指引或實證內容…"></textarea>
-      </div>
-      <div class="form-actions">
-        <button class="btn-primary" onclick="saveEbmEntry()">💾 儲存筆記</button>
-        <button class="btn-secondary" onclick="clearEbmForm()">🗑️ 清除</button>
-      </div>
-    </div>
-    <div class="inline-history-section">
-      <div class="inline-history-header">
-        <span>📋 最近 EBM 筆記</span>
-        <button class="filter-btn active" onclick="renderEbmInlineHistory()">🔄 重新整理</button>
-        <button class="filter-btn" onclick="ebmBatchConvertToEdu()">📚 一鍵轉存全部為衛教</button>
-        <button class="filter-btn" onclick="ebmPushToGithub()"
-          aria-label="推送符合條件的EBM筆記至GitHub，由AI自動轉換為衛教資源"
-          title="推送符合條件的筆記至GitHub，由AI自動轉換為衛教資源（需在設定中填入GitHub Token）">☁️ 推送至GitHub自動轉換</button>
-      </div>
-      <div id="ebm-inline-history" class="inline-history-list"></div>
-    </div>
-  </div>
-
-  <!-- SOAP Tab -->
-  <div id="tab-soap" class="tab-content">
-    <div class="section-header">
-      <h2>🏥 SOAP 病歷記錄</h2>
-      <p class="section-desc">輸入病患 SOAP 病歷，可儲存自訂範本</p>
-    </div>
-    <div class="entry-form">
-      <div class="form-row">
-        <div class="form-field">
-          <label>日期</label>
-          <input type="date" id="soap-date" />
-        </div>
-      </div>
-      <div class="form-row template-row">
-        <div class="form-field" style="flex:2">
-          <label>載入範本</label>
-          <select id="soap-template-sel" onchange="loadSoapTemplate()"></select>
-        </div>
-        <button class="btn-secondary" onclick="saveSoapTemplate()">💾 存為範本</button>
-        <button class="btn-secondary" onclick="deleteSoapTemplate()">🗑️ 刪除範本</button>
-      </div>
-      <div class="form-field" style="margin-top:4px">
-        <label>SOAP 記錄</label>
-        <textarea id="soap-content" class="entry-textarea" rows="16"
-          placeholder="輸入 SOAP 病歷…"></textarea>
-      </div>
-      <div class="form-actions">
-        <button class="btn-primary" onclick="saveSoapEntry()">💾 儲存病歷</button>
-        <button class="btn-secondary" onclick="clearSoapForm()">🔄 重置為預設範本</button>
-      </div>
-    </div>
-    <div class="inline-history-section">
-      <div class="inline-history-header">
-        <span>📋 最近 SOAP 病歷</span>
-        <button class="filter-btn active" onclick="renderSoapInlineHistory()">🔄 重新整理</button>
-      </div>
-      <div id="soap-inline-history" class="inline-history-list"></div>
-    </div>
   </div>
 
   <!-- Patient Education Tab (first, active by default) -->
@@ -514,12 +424,7 @@
   <div id="tab-history" class="tab-content">
     <div class="section-header">
       <h2>🗂️ 歷史記錄</h2>
-      <p class="section-desc">瀏覽過去儲存的 EBM 筆記與 SOAP 病歷，依日期排序</p>
-    </div>
-    <div class="filter-bar">
-      <button class="filter-btn active" data-filter="all" onclick="setHistoryFilter('all')">全部</button>
-      <button class="filter-btn" data-filter="ebm" onclick="setHistoryFilter('ebm')">📝 EBM</button>
-      <button class="filter-btn" data-filter="soap" onclick="setHistoryFilter('soap')">🏥 SOAP</button>
+      <p class="section-desc">瀏覽過去的記錄，依日期排序</p>
     </div>
     <div id="history-list" class="history-list"></div>
   </div>
@@ -557,69 +462,6 @@
       <p class="section-desc">調整應用程式顯示與行為偏好</p>
     </div>
     <div id="settings-content" class="settings-content"></div>
-  </div>
-</div>
-
-<!-- EBM Gate Modal — password check before 衛教 conversion -->
-<div id="ebm-gate-modal" class="ebm-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="ebm-gate-title">
-  <div class="ebm-modal-box ebm-modal-narrow">
-    <div class="ebm-modal-header">
-      <h3 id="ebm-gate-title">🔒 衛教資源管理員驗證</h3>
-      <button class="ebm-modal-close" onclick="ebmGateClose()" title="取消">✕</button>
-    </div>
-    <div class="ebm-modal-body">
-      <p>請輸入管理員密碼以繼續將 EBM 內容轉換為衛教資源文章</p>
-      <div class="ebm-modal-field">
-        <label for="ebm-gate-pw-input">密碼</label>
-        <input id="ebm-gate-pw-input" type="password" placeholder="輸入密碼…"
-               onkeydown="ebmGateKeydown(event)" autocomplete="off" />
-        <div class="ebm-pw-hint" id="ebm-gate-error" style="color:var(--red);display:none">密碼錯誤，請重試</div>
-      </div>
-    </div>
-    <div class="ebm-modal-actions">
-      <button class="btn-confirm" onclick="ebmGateSubmit()">確認</button>
-      <button onclick="ebmGateClose()">取消</button>
-    </div>
-  </div>
-</div>
-
-<!-- EBM Preview Modal — edit article versions before saving/pushing -->
-<div id="ebm-preview-modal" class="ebm-modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="ebm-preview-title">
-  <div class="ebm-modal-box">
-    <div class="ebm-modal-header">
-      <h3 id="ebm-preview-title">📚 衛教資源預覽 — 確認並儲存</h3>
-      <button class="ebm-modal-close" onclick="ebmPreviewClose()" title="關閉">✕</button>
-    </div>
-    <div class="ebm-preview-title-row">
-      <label for="ebm-preview-title-input">標題</label>
-      <input id="ebm-preview-title-input" type="text" placeholder="衛教資源標題…" />
-    </div>
-    <div class="ebm-preview-tabs">
-      <button class="ebm-preview-tab active" id="ebm-ptab-simple_zh" onclick="ebmPreviewSwitchTab('simple_zh')">🈸 簡易版</button>
-      <button class="ebm-preview-tab" id="ebm-ptab-professional_zh" onclick="ebmPreviewSwitchTab('professional_zh')">🏥 專業版</button>
-      <button class="ebm-preview-tab" id="ebm-ptab-english" onclick="ebmPreviewSwitchTab('english')">🔤 English</button>
-    </div>
-    <div class="ebm-preview-ai-row">
-      <input id="ebm-preview-ai-prompt" type="text" placeholder="輸入想要 AI 微調的方向（可重複修訂到滿意）…" />
-      <button class="ebm-preview-ai-btn" onclick="ebmPreviewAiRefine()">🤖 AI 微調目前版本</button>
-    </div>
-    <div id="ebm-preview-progress" class="ebm-preview-progress hidden"></div>
-    <div class="ebm-preview-split">
-      <div>
-        <div class="ebm-preview-editor-label">HTML 編輯（可直接修改）</div>
-        <textarea class="ebm-preview-textarea" id="ebm-preview-textarea"
-                  oninput="ebmPreviewRefreshRender()"></textarea>
-      </div>
-      <div>
-        <div class="ebm-preview-render-label">預覽效果</div>
-        <div class="ebm-preview-rendered" id="ebm-preview-rendered"></div>
-      </div>
-    </div>
-    <div class="ebm-modal-actions">
-      <button class="btn-confirm" onclick="ebmPreviewSave()">💾 儲存至本機衛教資源</button>
-      <button class="btn-push" onclick="ebmPreviewPushToGithub()">☁️ 推送至 GitHub（AI 轉換）</button>
-      <button onclick="ebmPreviewClose()">取消</button>
-    </div>
   </div>
 </div>
 

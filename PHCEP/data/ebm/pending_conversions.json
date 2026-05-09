@@ -1,5 +1,0 @@
-{
-  "entries": [],
-  "_last_processed": "2026-05-08",
-  "_comment": "EBM notes pushed from the PHCEP app for AI conversion to 衛教資源. Each entry must have: id, date, content (≥4 non-empty lines). The convert-ebm-to-edu workflow processes this file and clears it after success."
-}
