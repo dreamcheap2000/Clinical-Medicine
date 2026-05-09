@@ -1594,7 +1594,19 @@ function eduWrapContentTables(container) {
   updateScale();
 }
 
+var _eduCalcDropdownOutsideCloseBound = false;
+function eduEnsureCalcDropdownOutsideClose() {
+  if (_eduCalcDropdownOutsideCloseBound) return;
+  _eduCalcDropdownOutsideCloseBound = true;
+  document.addEventListener('click', function(e) {
+    document.querySelectorAll('.edu-calc-dropdown.open').forEach(function(root) {
+      if (!root.contains(e.target)) root.classList.remove('open');
+    });
+  });
+}
+
 function eduCreateCalcDropdown(opts) {
+  eduEnsureCalcDropdownOutsideClose();
   var options = opts.options || [];
   var current = String(opts.value);
   var root = document.createElement('div');
@@ -1648,9 +1660,6 @@ function eduCreateCalcDropdown(opts) {
     root.classList.toggle('open');
   });
   root.addEventListener('mouseleave', close);
-  document.addEventListener('click', function(e) {
-    if (!root.contains(e.target)) close();
-  });
   setValue(current, false);
   return {
     el: root,
@@ -1839,7 +1848,6 @@ function eduComputeCdrScore(scores) {
 
   if (typeof result === 'undefined') result = modeClosestToM(secondary.concat([M]));
   if (M >= 1 && eq(result, 0)) result = 0.5;
-  if (eq(M, 0.5) && eq(result, 0)) result = 0.5;
   return Number(result);
 }
 
