@@ -4987,6 +4987,524 @@
           "note": "註：\n1.限個案符合轉診條件，並經轉診至參與「全民健康保險\n末期腎臟病前期(Pre-ESRD)病人照護與衛教計畫」院所，\n確認經該計畫收案後方可申報，每人限申報一次。\n2.跨院需填寫「全民健康保險轉診單」(同附表8.2.8，一\n份留存院所)，並提供患者腎臟功能相關資料(如：初期慢\n性腎臟病患者追蹤管理紀錄參考表及初期慢性腎臟病患者\n結案參考表等)予被轉診機構參考。若為院內跨科轉診，\n則須保留院內轉診單於病歷內，且於腎臟科收案追蹤後方\n予支付。(鼓勵跨院或跨科轉診，但排除已參加Pre-ESRD\n計畫同一院所的腎臟科互轉)\n3.結案原因為恢復正常、長期失聯(一百八十天以上)、拒\n絕再接受治療或死亡者，不可申報本項。\n4.執行前述及其餘轉診相關事宜，應依全民健康保險轉診\n實施辦法各項規定辦理。"
         }
       ]
+    },
+    {
+      "id": "psychiatric",
+      "nameZh": "精神醫療治療費",
+      "nameEn": "Psychiatric Treatment Fee",
+      "icon": "🧠",
+      "section": "第二部第二章第五節 (45001–45104)",
+      "fhir_resource": "Procedure",
+      "fhir_profile": "https://twcore.mohw.gov.tw/ig/twcore/StructureDefinition-Procedure-twcore.html",
+      "codes": [
+        {
+          "code": "45004C",
+          "nameZh": "痙攣性電療法 Electroconvulsive therapy",
+          "nameEn": "Electroconvulsive therapy",
+          "points": "1718",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "麻醉、護理、藥物費包含在內。"
+        },
+        {
+          "code": "45010C",
+          "nameZh": "支持性心理治療 Supportive individual psychotherapy",
+          "nameEn": "Supportive individual psychotherapy",
+          "points": "97",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "利用支持性心理治療技巧，以減輕症狀影響病人的程度，協助精神疾病病人了解疾病及相關治療，應於精神科醫師指導下由精神治療團隊之各專業成員執行。"
+        },
+        {
+          "code": "45087C",
+          "nameZh": "特殊心理治療—成人 Re-educative individual psychotherapy (adult)",
+          "nameEn": "Re-educative individual psychotherapy (adult)",
+          "points": "344",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "利用特殊心理治療技術，以協助病人了解自我、形成病識感、提升病人適應環境技巧、降低病人的主觀挫折及不良行為，本項治療限由精神科醫師或臨床心理師執行，申報時並應附精神科專科醫師之醫囑及簽名。"
+        },
+        {
+          "code": "45088C",
+          "nameZh": "特殊心理治療—6至未滿16歲 Re-educative individual psychotherapy (6–15 yr)",
+          "nameEn": "Re-educative individual psychotherapy (6–15 yr)",
+          "points": "430",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "同45087C。"
+        },
+        {
+          "code": "45089C",
+          "nameZh": "特殊心理治療—未滿6歲 Re-educative individual psychotherapy (under 6 yr)",
+          "nameEn": "Re-educative individual psychotherapy (under 6 yr)",
+          "points": "515",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "同45087C。"
+        },
+        {
+          "code": "45013C",
+          "nameZh": "深度心理治療（每40分鐘）—成人 Intensive individual psychotherapy (adult)",
+          "nameEn": "Intensive individual psychotherapy (adult, per 40 min)",
+          "points": "1203",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "利用深度心理治療技術，以協助病人改善客體關係（object relation）、強化心理防衛機轉、解決內在衝突或改善其認知行為偏差。本項治療限由精神科專科醫師執行，申報時並應附治療紀錄。"
+        },
+        {
+          "code": "45090C",
+          "nameZh": "深度心理治療—6至未滿16歲 Intensive individual psychotherapy (6–15 yr)",
+          "nameEn": "Intensive individual psychotherapy (6–15 yr, per 40 min)",
+          "points": "1460",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "同45013C。"
+        },
+        {
+          "code": "45091C",
+          "nameZh": "深度心理治療—未滿6歲 Intensive individual psychotherapy (under 6 yr)",
+          "nameEn": "Intensive individual psychotherapy (under 6 yr, per 40 min)",
+          "points": "1718",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "同45013C。"
+        },
+        {
+          "code": "45016C",
+          "nameZh": "支持性團體心理治療（每人次）Supportive group psychotherapy",
+          "nameEn": "Supportive group psychotherapy (per person)",
+          "points": "64",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "利用一般團體治療技巧以協助病人了解疾病及相關治療，或引導病人面對現實的生活，作出負責的行為。本項治療應由精神科治療團隊之各專業成員執行。一次最多以二十五人為限。"
+        },
+        {
+          "code": "45094C",
+          "nameZh": "特殊團體心理治療（每人次）Re-educative group psychotherapy",
+          "nameEn": "Re-educative group psychotherapy (per person)",
+          "points": "129",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "利用特殊團體心理治療技術及治療因子，以協助團體中的病人了解自我、形成病識感。本項治療限由精神科醫師或臨床心理師執行。申報時應附精神科專科醫師之醫囑及簽名，一次最多以十五人為限。"
+        },
+        {
+          "code": "45019C",
+          "nameZh": "深度團體心理治療（每人次）Intensive group psychotherapy",
+          "nameEn": "Intensive group psychotherapy (per person)",
+          "points": "344",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "利用深度團體心理治療技術及治療因子，以協助團體中的病人洞察心理發展過程。本項治療限由精神科專科醫師執行，申報時並應附治療紀錄。一次最多以十人為限。"
+        },
+        {
+          "code": "45022C",
+          "nameZh": "活動治療（天）Activity therapy",
+          "nameEn": "Activity therapy (per day)",
+          "points": "108",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "45031C",
+          "nameZh": "一般職能治療（次）General Occupational therapy",
+          "nameEn": "General Occupational therapy (per session)",
+          "points": "299",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "1.一般治療項目1~2項。\n2.合計治療時間40分鐘者。\n3.一般治療項目包含：(1)娛樂治療；(2)產業治療；(3)日常生活功能訓練；(4)手眼協調訓練；(5)社交功能訓練；(6)休閒運動功能訓練；(7)運動感覺訓練；(8)平衡訓練。"
+        },
+        {
+          "code": "45095C",
+          "nameZh": "特殊職能治療（次）Special Occupational therapy",
+          "nameEn": "Special Occupational therapy (per session)",
+          "points": "325",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "1.一般治療項目3項或特殊治療項目1項。\n2.合計治療時間達80分鐘者。\n3.特殊治療項目包含：(1)感覺統合治療；(2)心理調適功能訓練；(3)知覺認知訓練；(4)執行功能訓練；(5)職業復健；(6)環境改造；(7)兒童職能治療。"
+        },
+        {
+          "code": "45034C",
+          "nameZh": "精神科藥物治療特別處理費（每日）Psychiatric special drug therapy",
+          "nameEn": "Psychiatric special drug therapy (per day)",
+          "points": "86",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "1.為增強不合作個案服藥順從性所需之相關處置。\n2.本項治療限醫師醫囑執行。"
+        },
+        {
+          "code": "45037C",
+          "nameZh": "精神科住院病人特別處理費（每日）Psychiatric inpatient special care",
+          "nameEn": "Psychiatric inpatient special care (per day)",
+          "points": "1547",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "1.病人因受精神症狀影響，有攻擊或自傷之虞，治療團隊必須經常照護，並提供必要之心理、行為或藥物處置，以避免危險行為之發生。\n2.本項治療限精神科專科醫師之醫囑執行。\n3.不得同時申報45034C、45040C。"
+        },
+        {
+          "code": "45040C",
+          "nameZh": "精神科特別護理（每日）Psychiatric nursing care",
+          "nameEn": "Psychiatric nursing care (per day)",
+          "points": "129",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "1.針對精神科住院病患之行為問題、自我照顧、情緒障礙、知覺障礙、思考障礙等，實施具體的護理照護。\n2.本項治療限由精神專科醫師醫囑及簽名才能申報。\n3.加護病房病人不另申報本項目。\n4.不得同時申報45037C、45070C。"
+        },
+        {
+          "code": "45043C",
+          "nameZh": "生理回饋治療之執行（每次）Biofeedback therapy",
+          "nameEn": "Biofeedback therapy (per session)",
+          "points": "258",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "限曾經受過精神醫療訓練之醫事人員或社工師執行，每次療程限申報12次。申報時並需附個別之生理回饋儀之數據報告。"
+        },
+        {
+          "code": "45096C",
+          "nameZh": "生理回饋治療之評估與計劃 Biofeedback therapy assessment and planning",
+          "nameEn": "Biofeedback therapy assessment and planning",
+          "points": "1031",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "限精神科醫師或臨床心理師執行，每次療程限申報一次，申報時並應附紀錄及精神科專科醫師簽章。"
+        },
+        {
+          "code": "45097C",
+          "nameZh": "團體生理回饋治療之執行（每次）Group Biofeedback therapy",
+          "nameEn": "Group Biofeedback therapy (per session)",
+          "points": "129",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "限精神科專科醫師指導下由精神治療團隊之各專業成員執行，每次療程限申報12次。一次治療最多以五人為限。申報時並需附個別之生理回饋儀之數據報告。"
+        },
+        {
+          "code": "45046C",
+          "nameZh": "生理心理功能檢查—成人 Psychophysiological function examination (adult)",
+          "nameEn": "Psychophysiological function examination (adult)",
+          "points": "344",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "包括MSE (Mini Mental State Examination)、BDI等。"
+        },
+        {
+          "code": "45098C",
+          "nameZh": "生理心理功能檢查—6至未滿16歲 Psychophysiological function examination (6–15 yr)",
+          "nameEn": "Psychophysiological function examination (6–15 yr)",
+          "points": "387",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "同45046C。"
+        },
+        {
+          "code": "45099C",
+          "nameZh": "生理心理功能檢查—未滿6歲 Psychophysiological function examination (under 6 yr)",
+          "nameEn": "Psychophysiological function examination (under 6 yr)",
+          "points": "430",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "同45046C。"
+        },
+        {
+          "code": "45049C",
+          "nameZh": "職能評鑑（每次）Occupational assessment",
+          "nameEn": "Occupational assessment (per session)",
+          "points": "687",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "每月最多申報一次，病歷上應有紀錄。"
+        },
+        {
+          "code": "45052C",
+          "nameZh": "智能評鑑（每次）Intelligence assessment",
+          "nameEn": "Intelligence assessment (per session)",
+          "points": "687",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "包括CDR (Clinical Dementia Rating)、Memory test、ADAS (Alzheimer's Disease Assessment Scale)。"
+        },
+        {
+          "code": "45055C",
+          "nameZh": "人格特質評鑑 Personality assessment",
+          "nameEn": "Personality assessment",
+          "points": "859",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "1.限由精神科醫師、神經科醫師或臨床心理師施行。\n2.包括NPI (Neuropsychiatric Inventory)、NPI-Q等。"
+        },
+        {
+          "code": "45058C",
+          "nameZh": "心理測驗（全套）Multiphasic psychological test",
+          "nameEn": "Multiphasic psychological test",
+          "points": "1375",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "包括CASI (Cognitive Abilities Screening Instrument)。"
+        },
+        {
+          "code": "45064C",
+          "nameZh": "心理劇治療（每次）Psychodrama therapy",
+          "nameEn": "Psychodrama therapy (per session)",
+          "points": "219",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "利用心理劇特殊的治療理論及治療技巧，以團體中的病人釋放掩飾的情感、探討人際關係、心理衝突，以洞察自我並尋求解決之道。本項治療限於精神科醫師指導下，由精神治療團隊之各專業成員執行。一次最多以二十人為限。"
+        },
+        {
+          "code": "45070C",
+          "nameZh": "住院個案行為治療（每日）Inpatient Behavior therapy",
+          "nameEn": "Inpatient Behavior therapy (per day)",
+          "points": "52",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "限精神科住院個案，針對一般性行為問題之矯正，每日限申報一次，由精神醫療團隊成員執行，需詳記於病歷。"
+        },
+        {
+          "code": "45100C",
+          "nameZh": "行為治療評估 Behavior modification assessment",
+          "nameEn": "Behavior modification assessment",
+          "points": "301",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "本項為實施行為治療計畫之定期追蹤評估，由曾經受過精神醫療訓練之醫事人員或社工師執行，申報時須附評估報告，每療程限申報一次，最多三次。"
+        },
+        {
+          "code": "45101C",
+          "nameZh": "行為治療計畫（60分鐘）Behavior modification planning",
+          "nameEn": "Behavior modification planning (60 min)",
+          "points": "1203",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "針對精神科病患之行為問題，或肢體傷殘、中樞神經系統損傷、發展異常、慢性疼痛或其他先天後天疾患，經評估有心智功能下降、情緒困擾或行為異常，導致社會適應功能不良需心理治療者，實施行為治療計畫，如行為修正、認知行為治療等。本項計畫限精神專科、復健專科醫師或臨床心理師執行，需附精神專科或復健專科醫師簽章及計畫書，每療程限申報一次。"
+        },
+        {
+          "code": "45079C",
+          "nameZh": "腦圖譜分析 Brain mapping",
+          "nameEn": "Brain mapping",
+          "points": "855",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "45082B",
+          "nameZh": "家族治療（60分鐘）Family therapy",
+          "nameEn": "Family therapy (60 min)",
+          "points": "800",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "運用家庭動力或系統等理論，以治療精神疾病病人。限精神科醫師或精神科社工師(員)申報，並需附精神科專科醫師之醫囑及簽名。"
+        },
+        {
+          "code": "45102C",
+          "nameZh": "精神科社會生活功能評估 Psychiatric social function assessment",
+          "nameEn": "Psychiatric social function assessment",
+          "points": "344",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "1.針對精神疾病患者之家庭與社會功能進行整體評估，包括社交技巧、社會角色行使能力、社會網路支持及個案對相關資源的運用等進行評估。\n2.本項治療限精神科醫師或社工師(員)申報，並詳細記錄於病歷。\n3.不得同時申報45103B。"
+        },
+        {
+          "code": "45085B",
+          "nameZh": "精神科診斷性會談—成人（次）Psychiatric diagnostic interview (adult)",
+          "nameEn": "Psychiatric diagnostic interview (adult, per session)",
+          "points": "1031",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "1.包括病史、心理狀態評估、社會功能評估及病人治療之計畫(安置)等。\n2.限精神科初診(含新住院病人)或他科要求會診時申報。\n3.限由精神專科醫師施行並於病歷詳細記載治療情形。\n4.申報時須附載有該精神科專科醫師簽名之治療紀錄。"
+        },
+        {
+          "code": "45092B",
+          "nameZh": "精神科診斷性會談—6至未滿16歲（次）Psychiatric diagnostic interview (6–15 yr)",
+          "nameEn": "Psychiatric diagnostic interview (6–15 yr, per session)",
+          "points": "1203",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "同45085B。"
+        },
+        {
+          "code": "45093B",
+          "nameZh": "精神科診斷性會談—未滿6歲（次）Psychiatric diagnostic interview (under 6 yr)",
+          "nameEn": "Psychiatric diagnostic interview (under 6 yr, per session)",
+          "points": "1375",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "同45085B。"
+        },
+        {
+          "code": "45103B",
+          "nameZh": "學齡前之兒童特殊家庭功能評估 Family functional assessment of Preschool Children",
+          "nameEn": "Family functional assessment of Preschool Children",
+          "points": "1254",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "1.限門診病人符合適應症：兒童精神疾患或發展障礙兒童(F70-F99、G80-G83、G12、G71、H53-H54、H90-H91、Q86-Q87)。\n2.執行人員：限兒童發展聯合評估中心及與各縣市政府簽約之兒童發展評估鑑定醫院之兒童青少年精神科醫師或曾經受過精神醫療訓練之社工師。\n3.每年申報一次為原則，若有特殊情形每年至多申報二次。\n4.應檢附三種評估面向量表（家庭互動關係、親職功能、資源需求）評估報告或於病歷紀錄。\n5.不得同時申報45102C。"
+        },
+        {
+          "code": "45104B",
+          "nameZh": "學齡前之兒童社會情緒發展團體心理治療 Social Emotional Development Group Psychotherapy for Preschool Children",
+          "nameEn": "Social Emotional Development Group Psychotherapy for Preschool Children",
+          "points": "564",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "1.適用對象：符合任一診斷碼F84、F90、F91、F95、F98、F06、F20、F25、F34、F41、F43、F44、F45、F40、F63.3、F88、F89、F93、F94，且符合二項以上功能障礙（自理生活、人際互動、家庭生活或學校生活），及一項以上症狀（傷人及暴力行為、情緒和焦慮症狀、創傷症狀或精神症狀）。\n2.執行人員：限兒童青少年精神科醫師或臨床心理師。\n3.應檢附團體治療計畫或評估報告等相關紀錄。\n4.一次以八對親子進行團體治療為限。"
+        }
+      ]
     }
   ]
 }
