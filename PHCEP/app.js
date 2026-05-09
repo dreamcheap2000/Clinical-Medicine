@@ -1379,7 +1379,7 @@ function eduRenderViewerContent() {
         ${entry.tags && entry.tags.length
           ? `<p><strong>標籤：</strong>${entry.tags.map(t => `<span class="edu-tag">${escHtml(t)}</span>`).join(' ')}</p>`
           : ''}
-        ${entry.added_date ? `<p style="color:var(--muted);font-size:0.85rem;margin-top:12px">新增日期：${escHtml(entry.added_date)}</p>` : ''}
+        ${entry.added_date ? `<p style="color:var(--muted);font-size:0.85rem;margin-top:12px">新增日期：${escHtml(entry.added_date)}${entry.version ? `　版本：v${escHtml(String(entry.version))}` : ''}</p>` : ''}
       </div>`;
   } else {
     var html = ((entry.versions || {})[v]) || '<p style="color:var(--muted);padding:8px">（此語言版本尚未提供）</p>';

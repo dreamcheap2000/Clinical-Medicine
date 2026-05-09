@@ -247,7 +247,7 @@ def build():
             ((existing_entry or {}).get("tags") or []) + extra_tags
         ))
 
-        # Merge: keep existing tags / added_date if available
+        # Merge: keep existing tags / added_date / version if available
         entry = {
             "id": entry_id,
             "title": doc_info["title"],
@@ -257,6 +257,7 @@ def build():
             "source_urls": doc_info.get("source_urls", []),
             "original_lang": "zh-TW" if doc_info["versions"]["professional_zh"] else "en",
             "added_date": (existing_entry or {}).get("added_date") or datetime.date.today().isoformat(),
+            "version": (existing_entry or {}).get("version", "1"),
             "tags": merged_tags,
             "fastsr": doc_info["fastsr"],
             "prototype": doc_info.get("prototype", {}),
