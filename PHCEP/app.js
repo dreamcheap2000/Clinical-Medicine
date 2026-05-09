@@ -723,14 +723,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Preload specialty categories in background (enables search without clicking)
   preloadSpecialtyCm();
-
-  // Event delegation for history-list (toggle / delete buttons)
-  document.getElementById('history-list').addEventListener('click', e => {
-    const btn = e.target.closest('[data-action]');
-    if (!btn) return;
-    if (btn.dataset.action === 'toggle-entry') toggleHistoryEntry(btn.dataset.id);
-    if (btn.dataset.action === 'delete-entry') deleteHistoryEntry(btn.dataset.type, btn.dataset.id);
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -1528,16 +1520,6 @@ function eduDeleteEntry(id) {
 function renderHistory() {
   const container = document.getElementById('history-list');
   container.innerHTML = '<p class="empty-msg">尚無記錄</p>';
-}
-
-function toggleHistoryEntry(id) {
-  const el = document.getElementById('hfull-' + id);
-  if (el) el.classList.toggle('hidden');
-}
-
-function deleteHistoryEntry(type, id) {
-  renderHistory();
-  toast('🗑️ 已刪除');
 }
 
 // ===========================================================================
