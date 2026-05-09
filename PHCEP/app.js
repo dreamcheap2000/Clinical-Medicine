@@ -1848,6 +1848,7 @@ function eduComputeCdrScore(scores) {
 
   if (typeof result === 'undefined') result = modeClosestToM(secondary.concat([M]));
   if (M >= 1 && eq(result, 0)) result = 0.5;
+  if (typeof result === 'undefined' || Number.isNaN(Number(result))) result = M >= 1 ? 0.5 : 0;
   return Number(result);
 }
 
