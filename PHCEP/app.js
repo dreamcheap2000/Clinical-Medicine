@@ -1617,7 +1617,7 @@ function eduRenderCdrCalculator(el) {
     var info = el.querySelector('[data-cdr-info="' + key + '"]');
     if (info && descMap[key]) {
       var txt = descMap[key][val] || '—';
-      info.innerHTML = '<strong>' + escHtml(key) + val + ':</strong> ' + escHtml(txt);
+      info.innerHTML = '<strong>' + escHtml(key) + escHtml(String(val)) + ':</strong> ' + escHtml(txt);
     }
   }
 
@@ -1805,7 +1805,7 @@ function eduRenderAscodCalculator(el) {
     var g = {};
     selEls.forEach(function(sel) { g[sel.dataset.key] = Number(sel.value); });
     var age = Number(ageEl.value || 0);
-    var phenotype = 'A' + g.A + '-S' + g.S + '-C' + g.C + '-O' + g.O + '-D' + g.D;
+    var phenotype = domains.map(function(d) { return d + g[d]; }).join('-');
     var potential = domains.filter(function(d) { return g[d] === 1; });
     var uncertain = domains.filter(function(d) { return g[d] === 2; });
     var incomplete = domains.filter(function(d) { return g[d] === 9; });
