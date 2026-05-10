@@ -1640,11 +1640,14 @@ function eduEnsureCalcDropdownOutsideClose() {
 
 function eduCreateCalcDropdown(opts) {
   eduEnsureCalcDropdownOutsideClose();
+  var EDU_CALC_MENU_MAX_WIDTH = 520;
+  var EDU_CALC_MENU_MIN_WIDTH = 320;
+  var EDU_CALC_MENU_VIEWPORT_MARGIN = 24;
   var options = opts.options || [];
   var current = String(opts.value);
   var root = document.createElement('div');
   root.className = 'edu-calc-dropdown';
-  var closeTimer = 0;
+  var closeTimerId = 0;
   var trigger = document.createElement('button');
   trigger.type = 'button';
   trigger.className = 'edu-calc-dd-trigger';
@@ -1663,14 +1666,17 @@ function eduCreateCalcDropdown(opts) {
     ghost.textContent = (opt && opt.desc) ? opt.desc : (opts.placeholderText || '將滑鼠移到選項可預覽說明');
   }
   function cancelClose() {
-    if (closeTimer) {
-      clearTimeout(closeTimer);
-      closeTimer = 0;
+    if (closeTimerId) {
+      clearTimeout(closeTimerId);
+      closeTimerId = 0;
     }
   }
   function positionMenu() {
-    var viewportWidth = Math.max(window.innerWidth || 0, 320);
-    var maxWidth = Math.min(520, Math.max(320, viewportWidth - 24));
+    var viewportWidth = Math.max(window.innerWidth || 0, EDU_CALC_MENU_MIN_WIDTH);
+    var maxWidth = Math.min(
+      EDU_CALC_MENU_MAX_WIDTH,
+      Math.max(EDU_CALC_MENU_MIN_WIDTH, viewportWidth - EDU_CALC_MENU_VIEWPORT_MARGIN)
+    );
     var rect = root.getBoundingClientRect();
     root.style.setProperty('--edu-calc-menu-width', maxWidth + 'px');
     root.classList.toggle('ghost-left', rect.left + maxWidth > viewportWidth - 16);
@@ -1694,7 +1700,7 @@ function eduCreateCalcDropdown(opts) {
   }
   function scheduleClose() {
     cancelClose();
-    closeTimer = setTimeout(close, 140);
+    closeTimerId = setTimeout(close, 140);
   }
 
   options.forEach(function(opt) {
