@@ -1647,7 +1647,7 @@ function eduCreateCalcDropdown(opts) {
   var current = String(opts.value);
   var root = document.createElement('div');
   root.className = 'edu-calc-dropdown';
-  var closeTimerId = 0;
+  var closeTimerId = null;
   var trigger = document.createElement('button');
   trigger.type = 'button';
   trigger.className = 'edu-calc-dd-trigger';
@@ -1668,7 +1668,7 @@ function eduCreateCalcDropdown(opts) {
   function cancelClose() {
     if (closeTimerId) {
       clearTimeout(closeTimerId);
-      closeTimerId = 0;
+      closeTimerId = null;
     }
   }
   function positionMenu() {
