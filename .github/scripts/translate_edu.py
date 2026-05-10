@@ -640,18 +640,22 @@ def process_document(
                 else:
                     simple_zh = ai_translate_to_simple_zh_from_en(client, html)
 
-                english = professional_en
+                if has_english and ev.get("english", "").strip() != html.strip():
+                    english = ev["english"]
+                    print("  ✔ Reusing existing english")
+                else:
+                    english = professional_en
                 title = existing_title or ai_extract_title(client, text)
             except Exception as e:
                 print(f"  ⚠️ AI translation failed: {e}")
                 professional_zh = ev.get("professional_zh") or ""
                 simple_zh       = ev.get("simple_zh") or ""
-                english = professional_en
+                english = ev.get("english") or professional_en
                 title = existing_title or filename
         else:
             professional_zh = ev.get("professional_zh") or ""
             simple_zh       = ev.get("simple_zh") or ""
-            english = professional_en
+            english = ev.get("english") or professional_en
             title = existing_title or filename
 
     # FastSR classification — prefer AI when available; reuse existing if quality is OK

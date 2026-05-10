@@ -144,7 +144,7 @@ def build():
     # Import translation helper
     import sys
     sys.path.insert(0, str(Path(__file__).parent))
-    from translate_edu import process_document
+    from translate_edu import process_document, build_prototypes
 
     existing_data = load_existing()
     existing_entries = existing_data.get("entries") or []
@@ -194,11 +194,14 @@ def build():
             html_content = strip_leading_title_para(html_content, stem)
         else:
             raw_url = GITHUB_RAW_BASE + filename.replace(" ", "%20")
+            merged_tags = list(dict.fromkeys(((existing_entry or {}).get("tags") or []) + extra_tags))
+            title = title_override or (existing_entry or {}).get("title") or stem
+            fastsr = (existing_entry or {}).get("fastsr") or {"S": [], "O": [], "A": [], "P": []}
             source_urls = list(dict.fromkeys(extra_urls + ((existing_entry or {}).get("source_urls") or [raw_url])))
             source_url = source_urls[0] if source_urls else raw_url
             entry = {
                 "id": (existing_entry or {}).get("id") or sanitize_id(filename, idx),
-                "title": title_override or (existing_entry or {}).get("title") or stem,
+                "title": title,
                 "source_file": filename,
                 "source_url": source_url,
                 "source_label": (existing_entry or {}).get("source_label", ""),
@@ -206,9 +209,13 @@ def build():
                 "original_lang": (existing_entry or {}).get("original_lang", "zh-TW"),
                 "added_date": (existing_entry or {}).get("added_date") or datetime.date.today().isoformat(),
                 "version": (existing_entry or {}).get("version", "1"),
-                "tags": list(dict.fromkeys(((existing_entry or {}).get("tags") or []) + extra_tags)),
-                "fastsr": (existing_entry or {}).get("fastsr") or {"S": [], "O": [], "A": [], "P": []},
-                "prototype": (existing_entry or {}).get("prototype"),
+                "tags": merged_tags,
+                "fastsr": fastsr,
+                "prototype": (existing_entry or {}).get("prototype") or build_prototypes(
+                    title=title,
+                    tags=merged_tags,
+                    fastsr=fastsr,
+                ),
                 "versions": (existing_entry or {}).get("versions") or {
                     "simple_zh": (
                         f'<p>📎 <a href="{raw_url}" target="_blank" rel="noopener">'
@@ -258,14 +265,18 @@ def build():
             "title": doc_info["title"],
             "source_file": filename,
             "source_url": doc_info["source_url"],
-            "source_label": doc_info["source_label"],
+            "source_label": (existing_entry or {}).get("source_label") or doc_info["source_label"],
             "source_urls": doc_info.get("source_urls", []),
-            "original_lang": "zh-TW" if doc_info["versions"]["professional_zh"] else "en",
+            "original_lang": (existing_entry or {}).get("original_lang") or ("zh-TW" if doc_info["versions"]["professional_zh"] else "en"),
             "added_date": (existing_entry or {}).get("added_date") or datetime.date.today().isoformat(),
             "version": (existing_entry or {}).get("version", "1"),
             "tags": merged_tags,
             "fastsr": doc_info["fastsr"],
-            "prototype": doc_info.get("prototype", {}),
+            "prototype": build_prototypes(
+                title=doc_info["title"],
+                tags=merged_tags,
+                fastsr=doc_info["fastsr"],
+            ),
             "versions": doc_info["versions"],
         }
         new_entries.append(entry)
