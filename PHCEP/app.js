@@ -1488,7 +1488,7 @@ function eduRenderViewerContent() {
   } else {
     var html = ((entry.versions || {})[v]) || '<p style="color:var(--muted);padding:8px">（此語言版本尚未提供）</p>';
     eduSetSafeHtml(content, html);
-    eduEnhanceDomainTables(content, entry, v);
+    eduEnhanceDomainTables(content, entry);
     eduWrapContentTables(content, entry, v);
     eduMountInteractiveWidgets(content, entry, v);
   }
@@ -1518,10 +1518,10 @@ function eduCollapseAdjacentBlock(heading, opts) {
   heading.parentNode.removeChild(heading);
 }
 
-function eduEnhanceDomainTables(content, entry, version) {
+function eduEnhanceDomainTables(content, entry) {
   if (!content || !entry) return;
   if (entry.id === 'edu001_CDR') eduCollapseCdrDomainTable(content);
-  if (entry.id === 'edu001_CDR') eduCollapseCdrReferenceTables(content, version);
+  if (entry.id === 'edu001_CDR') eduCollapseCdrReferenceTables(content);
   if (eduIsAscodEntry(entry)) eduCollapseAscodDomainTables(content);
 }
 
@@ -1564,7 +1564,7 @@ function eduCollapseCdrDomainTable(content) {
   table.parentNode.replaceChild(wrap, table);
 }
 
-function eduCollapseCdrReferenceTables(content, version) {
+function eduCollapseCdrReferenceTables(content) {
   Array.from(content.querySelectorAll('h3')).forEach(function(heading) {
     var txt = (heading.textContent || '').trim();
     if (/Global CDR 等級|Global CDR Score/i.test(txt)) {

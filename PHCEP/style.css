@@ -2224,7 +2224,6 @@ select.search-overlay-active {
 }
 .edu-calc-dropdown {
   position: relative;
-  --edu-calc-menu-width: min(520px, calc(100vw - 24px));
 }
 .edu-calc-dd-trigger {
   width: 100%;
@@ -2254,7 +2253,7 @@ select.search-overlay-active {
   background: var(--surface);
   box-shadow: 0 12px 26px rgba(0,0,0,.34);
   overflow: hidden;
-  width: var(--edu-calc-menu-width);
+  width: var(--edu-calc-menu-width, min(520px, calc(100vw - 24px)));
   max-width: min(520px, calc(100vw - 24px));
   display: none;
   grid-template-columns: minmax(150px, 1fr) minmax(180px, 0.9fr);
