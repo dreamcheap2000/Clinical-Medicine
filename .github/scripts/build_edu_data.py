@@ -144,7 +144,7 @@ def build():
     # Import translation helper
     import sys
     sys.path.insert(0, str(Path(__file__).parent))
-    from translate_edu import process_document
+    from translate_edu import process_document, build_prototypes
 
     existing_data = load_existing()
     existing_entries = existing_data.get("entries") or []
@@ -177,6 +177,14 @@ def build():
 
         print(f"Processing [{suffix}]: {filename}")
 
+        # Load optional sidecar metadata
+        sidecar = load_sidecar(fpath)
+        extra_urls: list[str] = sidecar.get("source_urls", [])
+        title_override: str = sidecar.get("title", "")
+        extra_tags: list[str] = sidecar.get("tags", [])
+
+        existing_entry = existing_by_stem.get(stem) or existing_by_title.get(stem)
+
         if suffix == ".docx":
             html_content, plain_text = docx_to_html(fpath)
             # Strip redundant leading title paragraph (docx often includes it as first element)
@@ -186,18 +194,29 @@ def build():
             html_content = strip_leading_title_para(html_content, stem)
         else:
             raw_url = GITHUB_RAW_BASE + filename.replace(" ", "%20")
+            merged_tags = list(dict.fromkeys(((existing_entry or {}).get("tags") or []) + extra_tags))
+            title = title_override or (existing_entry or {}).get("title") or stem
+            fastsr = (existing_entry or {}).get("fastsr") or {"S": [], "O": [], "A": [], "P": []}
+            source_urls = list(dict.fromkeys(extra_urls + ((existing_entry or {}).get("source_urls") or [raw_url])))
+            source_url = source_urls[0] if source_urls else raw_url
             entry = {
-                "id": sanitize_id(filename, idx),
-                "title": stem,
+                "id": (existing_entry or {}).get("id") or sanitize_id(filename, idx),
+                "title": title,
                 "source_file": filename,
-                "source_url": raw_url,
-                "source_label": "",
-                "source_urls": [raw_url],
-                "original_lang": "zh-TW",
-                "added_date": datetime.date.today().isoformat(),
-                "tags": [],
-                "fastsr": {"S": [], "O": [], "A": [], "P": []},
-                "versions": {
+                "source_url": source_url,
+                "source_label": (existing_entry or {}).get("source_label", ""),
+                "source_urls": source_urls,
+                "original_lang": (existing_entry or {}).get("original_lang", "zh-TW"),
+                "added_date": (existing_entry or {}).get("added_date") or datetime.date.today().isoformat(),
+                "version": (existing_entry or {}).get("version", "1"),
+                "tags": merged_tags,
+                "fastsr": fastsr,
+                "prototype": (existing_entry or {}).get("prototype") or build_prototypes(
+                    title=title,
+                    tags=merged_tags,
+                    fastsr=fastsr,
+                ),
+                "versions": (existing_entry or {}).get("versions") or {
                     "simple_zh": (
                         f'<p>📎 <a href="{raw_url}" target="_blank" rel="noopener">'
                         f'下載 {filename}</a></p>'
@@ -207,20 +226,13 @@ def build():
                 },
             }
             new_entries.append(entry)
-            processed_titles.add(stem)
+            processed_titles.add(entry["title"])
             continue
-
-        # Load optional sidecar metadata
-        sidecar = load_sidecar(fpath)
-        extra_urls: list[str] = sidecar.get("source_urls", [])
-        title_override: str = sidecar.get("title", "")
-        extra_tags: list[str] = sidecar.get("tags", [])
 
         # Check if this file was already processed.
         # existing_by_stem uses the source_file stem as key.
         # existing_by_title uses entry title; for docx-generated entries the
         # title was historically set to the filename stem, so this also matches.
-        existing_entry = existing_by_stem.get(stem) or existing_by_title.get(stem)
         existing_title = title_override or (existing_entry.get("title") if existing_entry else None)
         existing_versions = (existing_entry or {}).get("versions") or {}
 
@@ -253,14 +265,18 @@ def build():
             "title": doc_info["title"],
             "source_file": filename,
             "source_url": doc_info["source_url"],
-            "source_label": doc_info["source_label"],
+            "source_label": (existing_entry or {}).get("source_label") or doc_info["source_label"],
             "source_urls": doc_info.get("source_urls", []),
-            "original_lang": "zh-TW" if doc_info["versions"]["professional_zh"] else "en",
+            "original_lang": (existing_entry or {}).get("original_lang") or ("zh-TW" if doc_info["versions"]["professional_zh"] else "en"),
             "added_date": (existing_entry or {}).get("added_date") or datetime.date.today().isoformat(),
             "version": (existing_entry or {}).get("version", "1"),
             "tags": merged_tags,
             "fastsr": doc_info["fastsr"],
-            "prototype": doc_info.get("prototype", {}),
+            "prototype": build_prototypes(
+                title=doc_info["title"],
+                tags=merged_tags,
+                fastsr=doc_info["fastsr"],
+            ),
             "versions": doc_info["versions"],
         }
         new_entries.append(entry)
@@ -292,4 +308,3 @@ def build():
 
 if __name__ == "__main__":
     build()
-

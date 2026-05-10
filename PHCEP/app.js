@@ -1489,15 +1489,40 @@ function eduRenderViewerContent() {
     var html = ((entry.versions || {})[v]) || '<p style="color:var(--muted);padding:8px">（此語言版本尚未提供）</p>';
     eduSetSafeHtml(content, html);
     eduEnhanceDomainTables(content, entry);
-    eduWrapContentTables(content);
-    eduMountInteractiveWidgets(content, entry);
+    eduWrapContentTables(content, entry, v);
+    eduMountInteractiveWidgets(content, entry, v);
   }
+}
+
+function eduIsAscodEntry(entry) {
+  return !!(entry && (
+    entry.id === 'edu003_ASCOD' ||
+    entry.id === 'edu002_ASCOD_classification' ||
+    /ASCOD/i.test(entry.title || '')
+  ));
+}
+
+function eduCollapseAdjacentBlock(heading, opts) {
+  if (!heading || !heading.parentNode) return;
+  var next = heading.nextElementSibling;
+  if (!next) return;
+  if (heading.parentNode.tagName === 'SUMMARY') return;
+  var details = document.createElement('details');
+  details.className = 'edu-inline-collapse' + (opts && opts.className ? ' ' + opts.className : '');
+  if (opts && opts.open) details.open = true;
+  var summary = document.createElement('summary');
+  summary.textContent = (opts && opts.summaryText) || (heading.textContent || '').trim();
+  details.appendChild(summary);
+  details.appendChild(next);
+  heading.parentNode.insertBefore(details, heading);
+  heading.parentNode.removeChild(heading);
 }
 
 function eduEnhanceDomainTables(content, entry) {
   if (!content || !entry) return;
   if (entry.id === 'edu001_CDR') eduCollapseCdrDomainTable(content);
-  if (entry.id === 'edu003_ASCOD') eduCollapseAscodDomainTables(content);
+  if (entry.id === 'edu001_CDR') eduCollapseCdrReferenceTables(content);
+  if (eduIsAscodEntry(entry)) eduCollapseAscodDomainTables(content);
 }
 
 function eduCollapseCdrDomainTable(content) {
@@ -1539,6 +1564,18 @@ function eduCollapseCdrDomainTable(content) {
   table.parentNode.replaceChild(wrap, table);
 }
 
+function eduCollapseCdrReferenceTables(content) {
+  Array.from(content.querySelectorAll('h3')).forEach(function(heading) {
+    var txt = (heading.textContent || '').trim();
+    if (/Global CDR 等級|Global CDR Score/i.test(txt)) {
+      eduCollapseAdjacentBlock(heading, {
+        summaryText: txt,
+        className: 'edu-inline-collapse-compact'
+      });
+    }
+  });
+}
+
 function eduCollapseAscodDomainTables(content) {
   var domainHeaders = Array.from(content.querySelectorAll('h3')).filter(function(h) {
     return /^[A-Z]\s*[-—]\s*/.test((h.textContent || '').trim());
@@ -1546,18 +1583,14 @@ function eduCollapseAscodDomainTables(content) {
   domainHeaders.forEach(function(h) {
     var table = h.nextElementSibling;
     if (!table || table.tagName !== 'TABLE') return;
-    var details = document.createElement('details');
-    details.className = 'edu-domain-accordion';
-    var summary = document.createElement('summary');
-    summary.textContent = (h.textContent || '').trim();
-    details.appendChild(summary);
-    h.parentNode.insertBefore(details, h);
-    details.appendChild(table);
-    h.parentNode.removeChild(h);
+    eduCollapseAdjacentBlock(h, {
+      summaryText: (h.textContent || '').trim(),
+      className: 'edu-domain-accordion'
+    });
   });
 }
 
-function eduWrapContentTables(container) {
+function eduWrapContentTables(container, entry, version) {
   var tables = container.querySelectorAll('table');
   if (!tables.length) return;
   tables.forEach(function(table) {
@@ -1570,13 +1603,13 @@ function eduWrapContentTables(container) {
   var bar = document.createElement('div');
   bar.className = 'edu-table-toggle-bar';
   bar.innerHTML =
-    '<span style="font-size:0.82rem;color:var(--muted)">表格尺寸：</span>' +
+    '<span style="font-size:0.82rem;color:var(--muted)">' + (version === 'english' ? 'Table size:' : '表格尺寸：') + '</span>' +
     '<button class="edu-table-toggle-btn edu-table-size-btn" data-dir="-1">A−</button>' +
     '<span class="edu-table-size-label" data-size-label>100%</span>' +
     '<button class="edu-table-toggle-btn edu-table-size-btn" data-dir="1">A+</button>';
   container.insertBefore(bar, container.firstChild);
-  var levels = [-2, -1, 0, 1, 2];
-  var pctMap = { '-2': '85%', '-1': '92%', '0': '100%', '1': '108%', '2': '116%' };
+  var levels = [-5, -4, -3, -2, -1, 0, 1, 2];
+  var pctMap = { '-5': '50%', '-4': '60%', '-3': '70%', '-2': '80%', '-1': '90%', '0': '100%', '1': '110%', '2': '120%' };
   var size = 0;
   var label = bar.querySelector('[data-size-label]');
   function updateScale() {
@@ -1607,10 +1640,14 @@ function eduEnsureCalcDropdownOutsideClose() {
 
 function eduCreateCalcDropdown(opts) {
   eduEnsureCalcDropdownOutsideClose();
+  var EDU_CALC_MENU_MAX_WIDTH = 520;
+  var EDU_CALC_MENU_MIN_WIDTH = 320;
+  var EDU_CALC_MENU_VIEWPORT_MARGIN = 24;
   var options = opts.options || [];
   var current = String(opts.value);
   var root = document.createElement('div');
   root.className = 'edu-calc-dropdown';
+  var closeTimerId = null;
   var trigger = document.createElement('button');
   trigger.type = 'button';
   trigger.className = 'edu-calc-dd-trigger';
@@ -1626,7 +1663,23 @@ function eduCreateCalcDropdown(opts) {
   root.appendChild(menu);
 
   function setGhost(opt) {
-    ghost.textContent = (opt && opt.desc) ? opt.desc : '將滑鼠移到選項可預覽說明';
+    ghost.textContent = (opt && opt.desc) ? opt.desc : (opts.placeholderText || '將滑鼠移到選項可預覽說明');
+  }
+  function cancelClose() {
+    if (closeTimerId) {
+      clearTimeout(closeTimerId);
+      closeTimerId = null;
+    }
+  }
+  function positionMenu() {
+    var viewportWidth = Math.max(window.innerWidth || 0, EDU_CALC_MENU_MIN_WIDTH);
+    var maxWidth = Math.min(
+      EDU_CALC_MENU_MAX_WIDTH,
+      Math.max(EDU_CALC_MENU_MIN_WIDTH, viewportWidth - EDU_CALC_MENU_VIEWPORT_MARGIN)
+    );
+    var rect = root.getBoundingClientRect();
+    root.style.setProperty('--edu-calc-menu-width', maxWidth + 'px');
+    root.classList.toggle('ghost-left', rect.left + maxWidth > viewportWidth - 16);
   }
   function setValue(v, emitChange) {
     current = String(v);
@@ -1636,8 +1689,19 @@ function eduCreateCalcDropdown(opts) {
     setGhost(selected);
     if (emitChange && typeof opts.onChange === 'function') opts.onChange(selected.value, selected);
   }
-  function open() { root.classList.add('open'); }
-  function close() { root.classList.remove('open'); }
+  function open() {
+    cancelClose();
+    positionMenu();
+    root.classList.add('open');
+  }
+  function close() {
+    cancelClose();
+    root.classList.remove('open');
+  }
+  function scheduleClose() {
+    cancelClose();
+    closeTimerId = setTimeout(close, 140);
+  }
 
   options.forEach(function(opt) {
     var b = document.createElement('button');
@@ -1654,12 +1718,20 @@ function eduCreateCalcDropdown(opts) {
     list.appendChild(b);
   });
 
-  trigger.addEventListener('mouseenter', open);
+  root.addEventListener('pointerenter', open);
+  root.addEventListener('pointerleave', scheduleClose);
+  root.addEventListener('focusin', open);
+  root.addEventListener('focusout', function(e) {
+    if (!root.contains(e.relatedTarget)) scheduleClose();
+  });
   trigger.addEventListener('click', function(e) {
     e.preventDefault();
-    root.classList.toggle('open');
+    if (root.classList.contains('open')) close();
+    else open();
   });
-  root.addEventListener('mouseleave', close);
+  window.addEventListener('resize', function() {
+    if (root.classList.contains('open')) positionMenu();
+  });
   setValue(current, false);
   return {
     el: root,
@@ -1668,15 +1740,16 @@ function eduCreateCalcDropdown(opts) {
   };
 }
 
-function eduMountInteractiveWidgets(content, entry) {
+function eduMountInteractiveWidgets(content, entry, version) {
   if (!content || !entry) return;
+  var english = version === 'english';
   content.querySelectorAll('.edu-cdr-calculator').forEach(function(el) {
-    eduWrapCalculator(el, 'cdr', '🧮 臨床失智評估量表計算器 (CDR Calculator)', function(inner) {
+    eduWrapCalculator(el, 'cdr', english ? '🧮 Clinical Dementia Rating Calculator' : '🧮 臨床失智評估量表計算器', function(inner) {
       eduRenderCdrCalculator(inner);
     });
   });
   content.querySelectorAll('.edu-ascod-calculator').forEach(function(el) {
-    eduWrapCalculator(el, 'ascod', '🧮 腦中風原因分類計算器 (ASCOD Calculator)', function(inner) {
+    eduWrapCalculator(el, 'ascod', english ? '🧮 ASCOD Phenotype Calculator' : '🧮 腦中風原因分類計算器', function(inner) {
       eduRenderAscodCalculator(inner);
     });
   });
@@ -1684,10 +1757,10 @@ function eduMountInteractiveWidgets(content, entry) {
 
 function eduWrapCalculator(el, type, label, renderFn) {
   var section = document.createElement('div');
-  section.className = 'edu-calc-section';
+  section.className = 'edu-calc-section edu-calc-section-' + type;
   var inner = document.createElement('div');
   var btn = document.createElement('button');
-  btn.className = 'edu-calc-toggle-btn';
+  btn.className = 'edu-calc-toggle-btn edu-calc-toggle-btn-' + type;
   btn.innerHTML = label + ' <span class="edu-calc-toggle-icon">▼</span>';
   var panel = document.createElement('div');
   panel.className = 'edu-calc-panel';
@@ -1711,49 +1784,75 @@ function eduWrapCalculator(el, type, label, renderFn) {
 
 function eduRenderCdrCalculator(el) {
   if (!el) return;
+  var english = eduCurrentVersion === 'english';
   var rows = [
-    { key: 'M', label: 'Memory（記憶）',
-      desc: { 0: '無記憶缺損，或輕微偶發性健忘', 0.5: '持續輕度健忘，部分事件回憶不全（良性健忘）', 1: '近期記憶中度受損，影響日常生活', 2: '重度記憶受損，僅保留高度熟悉資訊，新資訊迅速遺忘', 3: '僅剩片段記憶' } },
-    { key: 'O', label: 'Orientation（定向）',
-      desc: { 0: '定向力完整', 0.5: '時間關係輕度困難，其餘定向正常', 1: '中度時間定向困難，就診時地點定向尚存', 2: '常有時間／地點定向差', 3: '僅對人有定向' } },
-    { key: 'JPS', label: 'Judgment & Problem Solving（判斷）',
-      desc: { 0: '解決日常問題能力佳，判斷力正常', 0.5: '解決問題、類比、辨差能力輕度受損', 1: '中度受損，社交判斷通常尚存', 2: '重度受損，社交判斷通常已損害', 3: '無法判斷或解決問題' } },
-    { key: 'CA', label: 'Community Affairs（社區事務）',
-      desc: { 0: '可維持原本工作、購物、社交功能', 0.5: '輕度受限', 1: '無法在外獨立處理，但外觀尚可', 2: '無家庭外獨立功能', 3: '病況過重，無法外出參與活動' } },
-    { key: 'HH', label: 'Home & Hobbies（居家生活）',
-      desc: { 0: '居家生活及嗜好維持良好', 0.5: '輕度受限', 1: '較困難的家務及嗜好已放棄', 2: '僅保留簡單活動，興趣極度受限', 3: '無有效居家功能' } },
-    { key: 'PC', label: 'Personal Care（個人照護）',
-      desc: { 0: '可完全自理', 0.5: '可完全自理', 1: '需提醒', 2: '需協助穿衣及個人衛生', 3: '高度依賴照顧，常有失禁' } }
+    { key: 'M', label: english ? 'Memory' : 'Memory（記憶）',
+      desc: english
+        ? { 0: 'No memory loss or only slight inconsistent forgetfulness.', 0.5: 'Consistent slight forgetfulness with partial recollection of events.', 1: 'Moderate recent memory loss that interferes with daily function.', 2: 'Severe memory loss; only highly learned material is retained and new material is rapidly lost.', 3: 'Only fragments of memory remain.' }
+        : { 0: '無記憶缺損，或輕微偶發性健忘', 0.5: '持續輕度健忘，部分事件回憶不全（良性健忘）', 1: '近期記憶中度受損，影響日常生活', 2: '重度記憶受損，僅保留高度熟悉資訊，新資訊迅速遺忘', 3: '僅剩片段記憶' } },
+    { key: 'O', label: english ? 'Orientation' : 'Orientation（定向）',
+      desc: english
+        ? { 0: 'Fully oriented.', 0.5: 'Slight difficulty with time relationships; otherwise oriented.', 1: 'Moderate difficulty with time; place orientation is preserved during examination.', 2: 'Usually disoriented in time and often to place.', 3: 'Oriented to person only.' }
+        : { 0: '定向力完整', 0.5: '時間關係輕度困難，其餘定向正常', 1: '中度時間定向困難，就診時地點定向尚存', 2: '常有時間／地點定向差', 3: '僅對人有定向' } },
+    { key: 'JPS', label: english ? 'Judgment & Problem Solving' : 'Judgment & Problem Solving（判斷）',
+      desc: english
+        ? { 0: 'Judgment and everyday problem solving remain intact.', 0.5: 'Slight impairment in solving problems, similarities, or differences.', 1: 'Moderate impairment; social judgment is usually maintained.', 2: 'Severe impairment; social judgment is usually affected.', 3: 'Unable to make judgments or solve problems.' }
+        : { 0: '解決日常問題能力佳，判斷力正常', 0.5: '解決問題、類比、辨差能力輕度受損', 1: '中度受損，社交判斷通常尚存', 2: '重度受損，社交判斷通常已損害', 3: '無法判斷或解決問題' } },
+    { key: 'CA', label: english ? 'Community Affairs' : 'Community Affairs（社區事務）',
+      desc: english
+        ? { 0: 'Independent in usual work, shopping, and social function.', 0.5: 'Slight impairment in outside activities.', 1: 'Cannot function independently outside home, though may still look normal casually.', 2: 'No independent function outside the home.', 3: 'Too impaired to participate in activities outside the family home.' }
+        : { 0: '可維持原本工作、購物、社交功能', 0.5: '輕度受限', 1: '無法在外獨立處理，但外觀尚可', 2: '無家庭外獨立功能', 3: '病況過重，無法外出參與活動' } },
+    { key: 'HH', label: english ? 'Home & Hobbies' : 'Home & Hobbies（居家生活）',
+      desc: english
+        ? { 0: 'Home life and hobbies are well maintained.', 0.5: 'Slight limitation in home life or hobbies.', 1: 'Difficult chores and complex hobbies have been given up.', 2: 'Only simple activities remain; interests are markedly restricted.', 3: 'No meaningful function at home.' }
+        : { 0: '居家生活及嗜好維持良好', 0.5: '輕度受限', 1: '較困難的家務及嗜好已放棄', 2: '僅保留簡單活動，興趣極度受限', 3: '無有效居家功能' } },
+    { key: 'PC', label: english ? 'Personal Care' : 'Personal Care（個人照護）',
+      desc: english
+        ? { 0: 'Fully capable of self-care.', 0.5: 'Fully capable of self-care.', 1: 'Needs prompting.', 2: 'Needs help with dressing and personal hygiene.', 3: 'Requires major assistance and is often incontinent.' }
+        : { 0: '可完全自理', 0.5: '可完全自理', 1: '需提醒', 2: '需協助穿衣及個人衛生', 3: '高度依賴照顧，常有失禁' } }
   ];
   var grades = [
     { v: 0, t: '0' }, { v: 0.5, t: '0.5' }, { v: 1, t: '1' }, { v: 2, t: '2' }, { v: 3, t: '3' }
   ];
   el.innerHTML = `
-    <div class="edu-calc-box">
-      <p style="color:var(--muted);margin-bottom:10px">請為六個向度選擇分數，系統將依 CDR 規則自動計算 Global CDR。滑鼠移到選項可預覽各等級說明。</p>
+    <div class="edu-calc-box edu-calc-box-cdr">
+      <p class="edu-calc-intro">${english
+        ? 'Choose a rating for each of the six domains. The calculator applies the published CDR global scoring rules automatically. Hover over an option to preview its meaning.'
+        : '請為六個向度選擇分數，系統將依 CDR 規則自動計算 Global CDR。滑鼠移到選項可預覽各等級說明。'}</p>
       <div class="edu-calc-grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
         ${rows.map(function(r) {
           return `<div class="edu-domain-row">
-            <label style="font-size:0.82rem;color:var(--muted)">${escHtml(r.label)}</label>
+            <label style="font-size:0.79rem;color:var(--muted)">${escHtml(r.label)}</label>
             <div class="edu-cdr-dd" data-key="${escHtml(r.key)}"></div>
             <div class="edu-domain-info" data-cdr-info="${escHtml(r.key)}">—</div>
           </div>`;
         }).join('')}
       </div>
-      <div class="edu-calc-result" data-cdr-result style="margin-top:14px">CDR = 0（無失智）</div>
-      <div class="edu-calc-rules">
-        <h4>CDR® 完整計分邏輯（依 Morris 1993）</h4>
+      <div class="edu-calc-result" data-cdr-result style="margin-top:14px">${english ? 'Global CDR = 0 (no dementia)' : 'CDR = 0（無失智）'}</div>
+      <details class="edu-calc-inline-collapse">
+        <summary>${english ? 'CDR® scoring rules (Morris 1993)' : 'CDR® 完整計分邏輯（依 Morris 1993）'}</summary>
+        <div class="edu-calc-rules">
         <ol>
-          <li>Memory（M）為主向度，其餘 O/JPS/CA/HH/PC 為次向度。</li>
-          <li>若至少 3 個次向度與 M 同分，則 Global CDR = M。</li>
-          <li>若至少 3 個次向度落在 M 以上或 M 以下，則取次向度多數側的分數；若該側分數有並列，取最接近 M 者。</li>
-          <li>若一側 3 個、另一側 2 個，則 Global CDR = M。</li>
-          <li>M = 0.5 時，若其他向度中至少 3 項 ≥1，則 CDR = 1；否則為 0.5（不可為 0）。</li>
-          <li>M = 0 時，除非次向度中有至少 2 項 ≥0.5，否則 CDR = 0；若有則 CDR = 0.5。</li>
-          <li>M ≥ 1 時，Global CDR 不可為 0；即使次向度多數為 0，最低仍為 0.5。</li>
-          <li>若僅 1–2 個次向度與 M 同分，且 M 兩側各不超過 2 個次向度，則 CDR = M。</li>
+          ${english
+            ? '<li>Memory (M) is the primary domain; O/JPS/CA/HH/PC are secondary domains.</li>' +
+              '<li>If at least 3 secondary domains match M, then Global CDR = M.</li>' +
+              '<li>If at least 3 secondary domains fall above or below M, use the majority side; when tied on that side, choose the score closest to M.</li>' +
+              '<li>If three secondary domains fall on one side of M and two on the other side, then Global CDR = M.</li>' +
+              '<li>When M = 0.5, Global CDR can only be 0.5 or 1; it becomes 1 when at least 3 other domains are ≥1.</li>' +
+              '<li>When M = 0, Global CDR is 0 unless at least 2 secondary domains are ≥0.5, in which case it is 0.5.</li>' +
+              '<li>When M ≥ 1, Global CDR cannot be 0.</li>' +
+              '<li>If only 1–2 secondary domains match M and neither side of M contains more than 2 secondary domains, then Global CDR = M.</li>'
+            : '<li>Memory（M）為主向度，其餘 O/JPS/CA/HH/PC 為次向度。</li>' +
+              '<li>若至少 3 個次向度與 M 同分，則 Global CDR = M。</li>' +
+              '<li>若至少 3 個次向度落在 M 以上或 M 以下，則取次向度多數側的分數；若該側分數有並列，取最接近 M 者。</li>' +
+              '<li>若一側 3 個、另一側 2 個，則 Global CDR = M。</li>' +
+              '<li>M = 0.5 時，若其他向度中至少 3 項 ≥1，則 CDR = 1；否則為 0.5（不可為 0）。</li>' +
+              '<li>M = 0 時，除非次向度中有至少 2 項 ≥0.5，否則 CDR = 0；若有則 CDR = 0.5。</li>' +
+              '<li>M ≥ 1 時，Global CDR 不可為 0；即使次向度多數為 0，最低仍為 0.5。</li>' +
+              '<li>若僅 1–2 個次向度與 M 同分，且 M 兩側各不超過 2 個次向度，則 CDR = M。</li>'}
         </ol>
-      </div>
+        </div>
+      </details>
     </div>`;
   var resultEl = el.querySelector('[data-cdr-result]');
   var scores = {};
@@ -1768,6 +1867,7 @@ function eduRenderCdrCalculator(el) {
       options: grades.map(function(g) {
         return { value: g.v, label: r.key + g.t, desc: r.desc[g.v] || '—' };
       }),
+      placeholderText: english ? 'Hover over a score to preview its definition.' : '將滑鼠移到選項可預覽說明',
       onChange: function(v) {
         scores[r.key] = Number(v);
         updateInfo(r.key);
@@ -1790,10 +1890,12 @@ function eduRenderCdrCalculator(el) {
 
   function recalc() {
     var cdr = eduComputeCdrScore(scores);
-    var labelMap = {
-      0: '無失智', 0.5: '可疑／極輕度失智', 1: '輕度失智', 2: '中度失智', 3: '重度失智'
-    };
-    resultEl.textContent = 'CDR = ' + cdr + '（' + (labelMap[cdr] || '未分級') + '）';
+    var labelMap = english
+      ? { 0: 'no dementia', 0.5: 'questionable / very mild dementia', 1: 'mild dementia', 2: 'moderate dementia', 3: 'severe dementia' }
+      : { 0: '無失智', 0.5: '可疑／極輕度失智', 1: '輕度失智', 2: '中度失智', 3: '重度失智' };
+    resultEl.textContent = english
+      ? ('Global CDR = ' + cdr + ' (' + (labelMap[cdr] || 'unclassified') + ')')
+      : ('CDR = ' + cdr + '（' + (labelMap[cdr] || '未分級') + '）');
   }
 }
 
@@ -1854,57 +1956,44 @@ function eduComputeCdrScore(scores) {
 
 function eduRenderAscodCalculator(el) {
   if (!el) return;
+  var english = eduCurrentVersion === 'english';
+  var lang = english ? 'en' : 'zh';
 
   // Per-domain grade criteria for tooltips
   var domainCriteria = {
     A: {
-      label: 'A — Atherosclerosis（動脈粥樣硬化）',
+      label: { zh: 'A — Atherosclerosis（動脈粥樣硬化）', en: 'A — Atherosclerosis' },
       grades: {
-        0: 'A0：無動脈粥樣硬化',
-        1: 'A1：≥50% 狹窄、潰瘍性斑塊，或主動脈弓斑塊 ≥4mm（位於供血動脈）— potentially causal',
-        2: 'A2：30–49% 狹窄，或不規則/非梗阻性斑塊（供血動脈相關）— uncertain causality',
-        3: 'A3：<30% 狹窄，或與梗塞灶供血區不符部位之斑塊 — unlikely causal',
-        9: 'A9：頸動脈/顱內血管影像學未完成 — insufficient workup'
+        zh: { 0: 'A0：無動脈粥樣硬化', 1: 'A1：≥50% 狹窄、潰瘍性斑塊，或主動脈弓斑塊 ≥4mm（位於供血動脈）— potentially causal', 2: 'A2：30–49% 狹窄，或不規則/非梗阻性斑塊（供血動脈相關）— uncertain causality', 3: 'A3：<30% 狹窄，或與梗塞灶供血區不符部位之斑塊 — unlikely causal', 9: 'A9：頸動脈/顱內血管影像學未完成 — insufficient workup' },
+        en: { 0: 'A0: no relevant atherosclerosis detected.', 1: 'A1: ≥50% stenosis, ulcerated plaque, or aortic arch plaque ≥4 mm in the supplying artery — potentially causal.', 2: 'A2: 30–49% stenosis or irregular non-obstructive plaque in the relevant artery — causality uncertain.', 3: 'A3: <30% stenosis or plaque outside the infarct-supplying territory — unlikely causal.', 9: 'A9: carotid/intracranial vascular imaging not completed — insufficient workup.' }
       }
     },
     S: {
-      label: 'S — Small-vessel disease（小血管病變）',
+      label: { zh: 'S — Small-vessel disease（小血管病變）', en: 'S — Small-vessel disease' },
       grades: {
-        0: 'S0：無小血管病變證據',
-        1: 'S1：腔隙性症候群 + DWI 示 ≤15mm 深部急性梗塞，合併高血壓或糖尿病 — potentially causal',
-        2: 'S2：腔隙模式但有其他可能病因，或 SVD 評估不完整 — uncertain causality',
-        3: 'S3：僅有白質高信號（WMH），無急性腔隙性梗塞 — unlikely causal',
-        9: 'S9：MRI 未完成 — insufficient workup'
+        zh: { 0: 'S0：無小血管病變證據', 1: 'S1：腔隙性症候群 + DWI 示 ≤15mm 深部急性梗塞，合併高血壓或糖尿病 — potentially causal', 2: 'S2：腔隙模式但有其他可能病因，或 SVD 評估不完整 — uncertain causality', 3: 'S3：僅有白質高信號（WMH），無急性腔隙性梗塞 — unlikely causal', 9: 'S9：MRI 未完成 — insufficient workup' },
+        en: { 0: 'S0: no evidence of small-vessel disease relevant to this stroke.', 1: 'S1: lacunar syndrome with DWI-confirmed deep acute infarct ≤15 mm plus hypertension or diabetes — potentially causal.', 2: 'S2: lacunar pattern but another cause exists, or SVD evaluation is incomplete — causality uncertain.', 3: 'S3: white matter hyperintensity only without an acute lacunar infarct — unlikely causal.', 9: 'S9: MRI not completed — insufficient workup.' }
       }
     },
     C: {
-      label: 'C — Cardiac pathology（心臟病變）',
+      label: { zh: 'C — Cardiac pathology（心臟病變）', en: 'C — Cardiac pathology' },
       grades: {
-        0: 'C0：無心臟病變',
-        1: 'C1：高風險心源性栓塞 — AF、機械瓣膜、感染性心內膜炎、病竇症候群、近期 MI（<4週）、擴張型心肌病、心腔內血栓 — potentially causal',
-        2: 'C2：中度風險 — PFO、心房中隔瘤（ASA）、自發性迴聲增強、複雜主動脈弓斑塊 — uncertain causality',
-        3: 'C3：低風險心臟病變（較不可能為主因）',
-        9: 'C9：心臟超音波或長程心律監測未完成 — insufficient workup'
+        zh: { 0: 'C0：無心臟病變', 1: 'C1：高風險心源性栓塞 — AF、機械瓣膜、感染性心內膜炎、病竇症候群、近期 MI（<4週）、擴張型心肌病、心腔內血栓 — potentially causal', 2: 'C2：中度風險 — PFO、心房中隔瘤（ASA）、自發性迴聲增強、複雜主動脈弓斑塊 — uncertain causality', 3: 'C3：低風險心臟病變（較不可能為主因）', 9: 'C9：心臟超音波或長程心律監測未完成 — insufficient workup' },
+        en: { 0: 'C0: no cardiac source identified.', 1: 'C1: high-risk cardiac embolic source (eg, AF, mechanical valve, infective endocarditis, recent MI, dilated cardiomyopathy, intracardiac thrombus) — potentially causal.', 2: 'C2: intermediate-risk source such as PFO, ASA, spontaneous echo contrast, or complex aortic arch plaque — causality uncertain.', 3: 'C3: low-risk cardiac lesion present but unlikely to be the main cause.', 9: 'C9: echocardiography or prolonged rhythm monitoring not completed — insufficient workup.' }
       }
     },
     O: {
-      label: 'O — Other causes（其他病因）',
+      label: { zh: 'O — Other causes（其他病因）', en: 'O — Other causes' },
       grades: {
-        0: 'O0：無其他特定病因',
-        1: 'O1：明確少見病因 — CNS 血管炎、抗磷脂抗體症候群、鐮刀型血球貧血、CADASIL、Moyamoya、高凝狀態、MELAS 等 — potentially causal',
-        2: 'O2：疑似少見病因，尚未確診 — uncertain causality',
-        3: 'O3：少見病因存在，但較不可能為本次中風主因',
-        9: 'O9：特殊病因相關檢查未完成 — insufficient workup'
+        zh: { 0: 'O0：無其他特定病因', 1: 'O1：明確少見病因 — CNS 血管炎、抗磷脂抗體症候群、鐮刀型血球貧血、CADASIL、Moyamoya、高凝狀態、MELAS 等 — potentially causal', 2: 'O2：疑似少見病因，尚未確診 — uncertain causality', 3: 'O3：少見病因存在，但較不可能為本次中風主因', 9: 'O9：特殊病因相關檢查未完成 — insufficient workup' },
+        en: { 0: 'O0: no specific alternative cause identified.', 1: 'O1: specific uncommon cause confirmed (eg, vasculitis, antiphospholipid syndrome, CADASIL, moyamoya, hypercoagulable state, MELAS) — potentially causal.', 2: 'O2: specific uncommon cause suspected but not confirmed — causality uncertain.', 3: 'O3: specific cause present but unlikely to explain the index stroke.', 9: 'O9: disease-specific evaluation not completed — insufficient workup.' }
       }
     },
     D: {
-      label: 'D — Dissection（動脈剝離）',
+      label: { zh: 'D — Dissection（動脈剝離）', en: 'D — Dissection' },
       grades: {
-        0: 'D0：無動脈剝離',
-        1: 'D1：動脈剝離確診（MRI/MRA 顯示壁內血腫/雙腔影，或 DSA 確認）— potentially causal',
-        2: 'D2：疑似動脈剝離，尚未影像確診 — uncertain causality',
-        3: 'D3：舊發/癒合剝離，較不可能為本次主因',
-        9: 'D9：血管壁影像（vessel-wall MRI）未完成 — insufficient workup'
+        zh: { 0: 'D0：無動脈剝離', 1: 'D1：動脈剝離確診（MRI/MRA 顯示壁內血腫/雙腔影，或 DSA 確認）— potentially causal', 2: 'D2：疑似動脈剝離，尚未影像確診 — uncertain causality', 3: 'D3：舊發/癒合剝離，較不可能為本次主因', 9: 'D9：血管壁影像（vessel-wall MRI）未完成 — insufficient workup' },
+        en: { 0: 'D0: no arterial dissection identified.', 1: 'D1: dissection confirmed by vessel-wall imaging, MRI/MRA, or DSA — potentially causal.', 2: 'D2: dissection suspected but not yet confirmed by imaging — causality uncertain.', 3: 'D3: old or healed dissection present but unlikely to be causal.', 9: 'D9: dedicated vessel-wall imaging not completed — insufficient workup.' }
       }
     }
   };
@@ -1919,17 +2008,19 @@ function eduRenderAscodCalculator(el) {
   var domains = ['A', 'S', 'C', 'O', 'D'];
 
   el.innerHTML = `
-    <div class="edu-calc-box">
-      <p style="color:var(--muted);margin-bottom:10px">請選擇每一類別分級，系統會輸出 ASCOD phenotype 字串。將滑鼠移到選項即可預覽該等級意義。</p>
+    <div class="edu-calc-box edu-calc-box-ascod">
+      <p class="edu-calc-intro">${english
+        ? 'Select a grade for each etiologic domain. The calculator outputs the ASCOD phenotype string, and hovering over an option previews the grading definition.'
+        : '請選擇每一類別分級，系統會輸出 ASCOD phenotype 字串。將滑鼠移到選項即可預覽該等級意義。'}</p>
       <div class="edu-calc-grid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
         <div class="edu-domain-row">
-          <label style="font-size:0.82rem;color:var(--muted)">年齡 Age
+          <label style="font-size:0.79rem;color:var(--muted)">${english ? 'Age' : '年齡 Age'}
             <input type="number" min="0" max="120" step="1" class="edu-ascod-age" value="65" />
           </label>
         </div>
         ${domains.map(function(d) {
           return `<div class="edu-domain-row">
-            <label style="font-size:0.82rem;color:var(--muted)">${escHtml(domainCriteria[d].label)}</label>
+            <label style="font-size:0.79rem;color:var(--muted)">${escHtml(domainCriteria[d].label[lang])}</label>
             <div class="edu-ascod-dd" data-key="${d}"></div>
             <div class="edu-domain-info" data-ascod-info="${d}">—</div>
           </div>`;
@@ -1948,7 +2039,7 @@ function eduRenderAscodCalculator(el) {
     var val = Number(g[key] || 0);
     var info = el.querySelector('[data-ascod-info="' + key + '"]');
     if (info && domainCriteria[key]) {
-      var txt = domainCriteria[key].grades[val] || '—';
+      var txt = domainCriteria[key].grades[lang][val] || '—';
       info.innerHTML = escHtml(txt);
     }
   }
@@ -1961,8 +2052,9 @@ function eduRenderAscodCalculator(el) {
     var dd = eduCreateCalcDropdown({
       value: 0,
       options: gradeOptions.map(function(opt) {
-        return { value: opt.v, label: d + opt.v, desc: domainCriteria[d].grades[opt.v] || '—' };
+        return { value: opt.v, label: d + opt.v, desc: domainCriteria[d].grades[lang][opt.v] || '—' };
       }),
+      placeholderText: english ? 'Hover over a grade to preview the definition.' : '將滑鼠移到選項可預覽說明',
       onChange: function(v) {
         g[d] = Number(v);
         updateInfo(d);
@@ -1980,16 +2072,18 @@ function eduRenderAscodCalculator(el) {
     var potential = domains.filter(function(d) { return g[d] === 1; });
     var uncertain = domains.filter(function(d) { return g[d] === 2; });
     var incomplete = domains.filter(function(d) { return g[d] === 9; });
-    mainEl.textContent = 'ASCOD phenotype: ' + phenotype;
+    mainEl.textContent = (english ? 'ASCOD phenotype: ' : 'ASCOD 表型：') + phenotype;
 
     var notes = [];
-    if (potential.length) notes.push('Potentially causal: ' + potential.join(', '));
-    if (uncertain.length) notes.push('Uncertain causal link: ' + uncertain.join(', '));
-    if (incomplete.length) notes.push('Incomplete workup: ' + incomplete.join(', '));
+    if (potential.length) notes.push((english ? 'Potentially causal: ' : '可能為主要病因：') + potential.join(', '));
+    if (uncertain.length) notes.push((english ? 'Uncertain causal link: ' : '因果關聯未定：') + uncertain.join(', '));
+    if (incomplete.length) notes.push((english ? 'Incomplete workup: ' : '檢查尚未完整：') + incomplete.join(', '));
     if (age < 60 && g.A !== 1 && g.A !== 2 && g.S !== 1 && g.C !== 1 && g.O !== 1 && g.D === 0) {
-      notes.push('Rule check: age <60 without A1/A2/S1/C1/O1 should confirm dissection workup; if not completed, consider D9.');
+      notes.push(english
+        ? 'Rule check: age <60 without A1/A2/S1/C1/O1 should prompt confirmation of dissection workup; if not completed, consider D9.'
+        : '規則提醒：年齡 <60 歲且無 A1/A2/S1/C1/O1 時，應再次確認是否已完成動脈剝離評估；若未完成可考慮 D9。');
     }
-    if (!notes.length) notes.push('No high-probability causal domain selected (grade 1).');
+    if (!notes.length) notes.push(english ? 'No grade-1 high-probability causal domain is currently selected.' : '目前未選取 grade 1 的高機率主因。');
     noteEl.innerHTML = notes.map(function(n) { return '<div>• ' + escHtml(n) + '</div>'; }).join('');
   }
 }
