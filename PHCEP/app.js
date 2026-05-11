@@ -1765,8 +1765,8 @@ function eduCreateCalcDropdown(opts) {
 function eduMountInteractiveWidgets(content, entry, version) {
   if (!content || !entry) return;
   var english = version === 'english';
-  function ensureCalculatorAnchorExists(className, shouldInsert) {
-    if (!shouldInsert || content.querySelector('.' + className)) return;
+  function ensureCalculatorAnchorExists(className, isTargetEntry) {
+    if (!isTargetEntry || content.querySelector('.' + className)) return;
     var anchor = document.createElement('div');
     anchor.className = className;
     content.insertBefore(anchor, content.firstChild);
