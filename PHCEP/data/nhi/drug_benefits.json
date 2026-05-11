@@ -536,7 +536,7 @@
       "nameZh": "心臟血管及腎臟藥物",
       "nameEn": "Cardiovascular-renal drugs",
       "icon": "❤️",
-      "totalEntries": 55,
+      "totalEntries": 57,
       "entries": [
         {
           "id": "2.1",
@@ -1008,6 +1008,34 @@
           "tags": [
             "神經血管介入"
           ]
+        },
+        {
+          "id": "2.20",
+          "name": "自主神經性低血壓升壓治療 Autonomic hypotension pressor therapy",
+          "content": "",
+          "tags": [
+            "神經內科",
+            "居家醫療"
+          ],
+          "isGroup": true
+        },
+        {
+          "id": "2.20.1",
+          "name": "Midodrine（米多君）",
+          "content": "1.用於症狀性神經性直立性低血壓（neurogenic orthostatic hypotension）之升壓治療。\n2.應搭配非藥物治療（補液、增加鹽分、反壓動作、彈性襪、姿勢訓練）。\n3.需監測臥位高血壓，晚間避免過晚給藥。",
+          "tags": [
+            "神經內科",
+            "居家醫療"
+          ]
+        },
+        {
+          "id": "2.20.2",
+          "name": "Droxidopa（屈昔多巴）",
+          "content": "1.用於神經性直立性低血壓相關頭暈、近暈厥或姿勢不耐受症狀改善。\n2.屬 norepinephrine 前驅物，臨床上常與姿勢/容量治療並行。\n3.需監測血壓變化與臥位高血壓風險。",
+          "tags": [
+            "神經內科",
+            "居家醫療"
+          ]
         }
       ]
     },
@@ -1375,7 +1403,7 @@
       "nameZh": "激素及影響內分泌機轉藥物",
       "nameEn": "Hormones & Endocrine drugs",
       "icon": "💉",
-      "totalEntries": 37,
+      "totalEntries": 40,
       "entries": [
         {
           "id": "5.1",
@@ -1668,6 +1696,35 @@
           "name": "Etelcalcetide（如 Parsabiv）(110/7/1)",
           "content": "1.靜脈注射型擬鈣劑，用於血液透析患者之次發性副甲狀腺功能亢進症（SHPT）。\n2.限正在接受血液透析之成人患者，且iPTH > 300 pg/mL，對oral cinacalcet無法耐受或依從性不良者。\n3.每週三次（血液透析後）靜脈注射給藥，劑量依iPTH及血鈣調整。\n4.需腎臟科醫師處方，並定期監測iPTH（每1-3個月）及血鈣（每月）。\n5.低血鈣為主要副作用，需於治療初期密切監測。",
           "tags": []
+        },
+        {
+          "id": "5.9",
+          "name": "性荷爾蒙與礦物皮質素用藥 Sex hormones & mineralocorticoid therapy",
+          "content": "",
+          "tags": [
+            "神經內科",
+            "居家醫療"
+          ],
+          "isGroup": true
+        },
+        {
+          "id": "5.9.1",
+          "name": "Female / Male hormonal therapy（雌激素、黃體素、睪固酮等）",
+          "content": "1.女性荷爾蒙治療依適應症（如停經症候群、子宮內膜異位症、婦科內分泌疾病）由專科醫師評估。\n2.男性荷爾蒙治療（如睪固酮補充）需符合性腺功能低下診斷並排除禁忌症。\n3.給付使用應依完整給付規定、適應症與風險分層辦理。",
+          "tags": [
+            "居家醫療",
+            "內分泌科"
+          ]
+        },
+        {
+          "id": "5.9.2",
+          "name": "Fludrocortisone（氟氫可體松）",
+          "content": "1.礦物皮質素製劑，可用於自主神經功能不全相關低血壓之血容量擴張治療。\n2.臨床上可作為神經性直立性低血壓或反覆血管迷走性暈厥之輔助藥物。\n3.需監測血壓、低血鉀、水腫與體液滯留。",
+          "tags": [
+            "神經內科",
+            "居家醫療",
+            "內分泌科"
+          ]
         }
       ]
     },
