@@ -1639,7 +1639,7 @@ function eduWrapContentTables(container, entry, version) {
   if (!tables.length) return;
   tables.forEach(function(table) {
     table.querySelectorAll('th, td').forEach(function(cell) {
-      if (cell.children.length === 1 && cell.firstElementChild && cell.firstElementChild.classList.contains('edu-cell-scroll')) return;
+      if (cell.firstElementChild && cell.firstElementChild.classList.contains('edu-cell-scroll')) return;
       var scroll = document.createElement('div');
       scroll.className = 'edu-cell-scroll';
       while (cell.firstChild) scroll.appendChild(cell.firstChild);
