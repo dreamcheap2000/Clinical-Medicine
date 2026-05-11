@@ -1765,6 +1765,18 @@ function eduCreateCalcDropdown(opts) {
 function eduMountInteractiveWidgets(content, entry, version) {
   if (!content || !entry) return;
   var english = version === 'english';
+  if (version === 'simple_zh') {
+    if (entry.id === 'edu001_CDR' && !content.querySelector('.edu-cdr-calculator')) {
+      var cdrAnchor = document.createElement('div');
+      cdrAnchor.className = 'edu-cdr-calculator';
+      content.insertBefore(cdrAnchor, content.firstChild);
+    }
+    if (eduIsAscodEntry(entry) && !content.querySelector('.edu-ascod-calculator')) {
+      var ascodAnchor = document.createElement('div');
+      ascodAnchor.className = 'edu-ascod-calculator';
+      content.insertBefore(ascodAnchor, content.firstChild);
+    }
+  }
   content.querySelectorAll('.edu-cdr-calculator').forEach(function(el) {
     eduWrapCalculator(el, 'cdr', english ? '🧮 Clinical Dementia Rating Calculator' : '🧮 臨床失智評估量表計算器', function(inner) {
       eduRenderCdrCalculator(inner);
