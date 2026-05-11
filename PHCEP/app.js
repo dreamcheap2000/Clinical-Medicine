@@ -897,9 +897,52 @@ let eduSearchMode = 'all';
 let eduCurrentEntry = null;
 let eduCurrentVersion = 'simple_zh';
 let eduDefaultVersion = 'simple_zh';
+var EDU_ARTICLE_SCALE_LEVELS = [50, 75, 100, 125, 150];
+var eduArticleScaleIndex = 2;
 
 function initEduTab() {
+  eduInitArticleSizeControls();
   loadEduData();
+}
+
+function eduInitArticleSizeControls() {
+  var decBtn = document.getElementById('edu-article-size-dec');
+  var incBtn = document.getElementById('edu-article-size-inc');
+  if (!decBtn || !incBtn || decBtn.dataset.bound === '1') {
+    eduSyncArticleSizeLabel();
+    return;
+  }
+  decBtn.dataset.bound = '1';
+  incBtn.dataset.bound = '1';
+  var stored = Number(localStorage.getItem('phcep_edu_article_scale_index'));
+  if (Number.isFinite(stored)) {
+    eduArticleScaleIndex = Math.max(0, Math.min(EDU_ARTICLE_SCALE_LEVELS.length - 1, Math.round(stored)));
+  }
+  decBtn.addEventListener('click', function() { eduSetArticleSizeIndex(eduArticleScaleIndex - 1); });
+  incBtn.addEventListener('click', function() { eduSetArticleSizeIndex(eduArticleScaleIndex + 1); });
+  eduSyncArticleSizeLabel();
+}
+
+function eduSetArticleSizeIndex(nextIndex) {
+  eduArticleScaleIndex = Math.max(0, Math.min(EDU_ARTICLE_SCALE_LEVELS.length - 1, Number(nextIndex) || 0));
+  localStorage.setItem('phcep_edu_article_scale_index', String(eduArticleScaleIndex));
+  eduSyncArticleSizeLabel();
+  var content = document.getElementById('edu-viewer-content');
+  if (content) eduApplyArticleScale(content);
+}
+
+function eduSyncArticleSizeLabel() {
+  var label = document.getElementById('edu-article-size-label');
+  if (!label) return;
+  label.textContent = String(EDU_ARTICLE_SCALE_LEVELS[eduArticleScaleIndex] || 100) + '%';
+}
+
+function eduApplyArticleScale(content) {
+  if (!content) return;
+  var pct = EDU_ARTICLE_SCALE_LEVELS[eduArticleScaleIndex] || 100;
+  content.classList.remove('edu-article-scale-50', 'edu-article-scale-75', 'edu-article-scale-100', 'edu-article-scale-125', 'edu-article-scale-150');
+  content.classList.add('edu-article-scale-' + pct);
+  content.style.zoom = String(pct / 100);
 }
 
 async function loadEduData() {
@@ -996,12 +1039,12 @@ function eduRenderList() {
     card.className = 'edu-entry-card';
 
     // Score badge
-    var scoreBadge = (query && score > 0)
+    var scoreBadge = query
       ? `<span class="edu-score-badge">${score}%</span>` : '';
 
     // ── FastSR Prototype breakdown bar (G + S + F = 100%) ──────────────────
     var protoHtml = '';
-    if (query && score > 0) {
+    if (query) {
       var gp = protoScores.global, sp = protoScores.semantic, fp = protoScores.fragment;
       protoHtml = `
         <div class="edu-proto-bar" title="Global ${gp}% · Semantic ${sp}% · Fragment ${fp}%">
@@ -1018,14 +1061,14 @@ function eduRenderList() {
 
     // ── SOAP section pills and score summary ────────────────────────────────
     var scoreBreakdownHtml = '';
-    if (query && score > 0) {
+    if (query) {
       scoreBreakdownHtml = `<div class="edu-score-breakdown" title="搜尋匹配度與 SOAP 區段匹配比例">
         匹配度 ${score}% · S ${sectionScores.S || 0}% · O ${sectionScores.O || 0}% · A ${sectionScores.A || 0}% · P ${sectionScores.P || 0}%
       </div>`;
     }
 
     var soapHtml = '';
-    if (query && score > 0) {
+    if (query) {
       var pills = [
         { k: 'S', label: 'S', cls: 'edu-soap-s-pill' },
         { k: 'O', label: 'O', cls: 'edu-soap-o-pill' },
@@ -1449,7 +1492,7 @@ function eduRenderViewerContent() {
     ];
     content.innerHTML = `
       <div class="edu-fastsr-view">
-        <p class="edu-fastsr-desc">FastSR 結構 — 將原文依 SOAP 格式分類，用於精準搜尋與跨文件對比<br>
+        <p class="edu-fastsr-desc">ClinSR 結構 — 將原文依 SOAP 格式分類，用於精準搜尋與跨文件對比<br>
         此分類方式參考 FastSR 論文（EBM-NLP PICO 框架）映射至臨床 SOAP 格式。</p>
         ${sections.map(function({ k, label, cls, blk }) {
           var items = fastsr[k] || [];
@@ -1492,6 +1535,7 @@ function eduRenderViewerContent() {
     eduWrapContentTables(content, entry, v);
     eduMountInteractiveWidgets(content, entry, v);
   }
+  eduApplyArticleScale(content);
 }
 
 function eduIsAscodEntry(entry) {
@@ -1600,31 +1644,6 @@ function eduWrapContentTables(container, entry, version) {
     table.parentNode.insertBefore(wrap, table);
     wrap.appendChild(table);
   });
-  var bar = document.createElement('div');
-  bar.className = 'edu-table-toggle-bar';
-  bar.innerHTML =
-    '<span style="font-size:0.82rem;color:var(--muted)">' + (version === 'english' ? 'Table size:' : '表格尺寸：') + '</span>' +
-    '<button class="edu-table-toggle-btn edu-table-size-btn" data-dir="-1">A−</button>' +
-    '<span class="edu-table-size-label" data-size-label>100%</span>' +
-    '<button class="edu-table-toggle-btn edu-table-size-btn" data-dir="1">A+</button>';
-  container.insertBefore(bar, container.firstChild);
-  var levels = [-5, -4, -3, -2, -1, 0, 1, 2];
-  var pctMap = { '-5': '50%', '-4': '60%', '-3': '70%', '-2': '80%', '-1': '90%', '0': '100%', '1': '110%', '2': '120%' };
-  var size = 0;
-  var label = bar.querySelector('[data-size-label]');
-  function updateScale() {
-    levels.forEach(function(lv) { container.classList.remove('edu-table-scale-' + String(lv).replace('-', 'n')); });
-    container.classList.add('edu-table-scale-' + String(size).replace('-', 'n'));
-    if (label) label.textContent = pctMap[size];
-  }
-  bar.querySelectorAll('.edu-table-size-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      var dir = Number(btn.dataset.dir || 0);
-      size = Math.max(-2, Math.min(2, size + dir));
-      updateScale();
-    });
-  });
-  updateScale();
 }
 
 var _eduCalcDropdownOutsideCloseBound = false;
@@ -1718,8 +1737,11 @@ function eduCreateCalcDropdown(opts) {
     list.appendChild(b);
   });
 
-  root.addEventListener('pointerenter', open);
-  root.addEventListener('pointerleave', scheduleClose);
+  var supportsHoverOpen = !!(window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches);
+  if (supportsHoverOpen) {
+    root.addEventListener('pointerenter', open);
+    root.addEventListener('pointerleave', scheduleClose);
+  }
   root.addEventListener('focusin', open);
   root.addEventListener('focusout', function(e) {
     if (!root.contains(e.relatedTarget)) scheduleClose();
@@ -2136,7 +2158,7 @@ function eduRunAutoEncode() {
   set('edu-form-o', encoded.O);
   set('edu-form-a', encoded.A);
   set('edu-form-p', encoded.P);
-  toast(`✅ FastSR 分類完成：S(${encoded.S.length}) O(${encoded.O.length}) A(${encoded.A.length}) P(${encoded.P.length})`);
+  toast(`✅ ClinSR 分類完成：S(${encoded.S.length}) O(${encoded.O.length}) A(${encoded.A.length}) P(${encoded.P.length})`);
 }
 
 function eduEncodeFastSR(text) {
