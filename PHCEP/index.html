@@ -215,7 +215,7 @@
   <div id="tab-edu" class="tab-content active">
     <div class="section-header">
       <h2>📚 衛教資源庫</h2>
-      <p class="section-desc">FastSR 智能衛教平台 — 結構化醫學知識搜尋・個人化語言版本切換</p>
+      <p class="section-desc">ClinSR 智能衛教平台 — 結構化醫學知識搜尋・個人化語言版本切換</p>
     </div>
 
     <!-- Search toolbar -->
@@ -245,7 +245,13 @@
       <button class="edu-ver-btn active" data-ver="simple_zh" onclick="eduSetDefaultVersion('simple_zh')">🈸 簡易版</button>
       <button class="edu-ver-btn" data-ver="professional_zh" onclick="eduSetDefaultVersion('professional_zh')">🏥 專業版</button>
       <button class="edu-ver-btn" data-ver="english" onclick="eduSetDefaultVersion('english')">🔤 English</button>
-      <button class="edu-ver-btn" data-ver="fastsr" onclick="eduSetDefaultVersion('fastsr')">🔬 FastSR</button>
+      <button class="edu-ver-btn" data-ver="fastsr" onclick="eduSetDefaultVersion('fastsr')">🔬 ClinSR</button>
+      <span class="edu-article-size-group">
+        <span class="edu-ver-label">文章大小：</span>
+        <button id="edu-article-size-dec" class="edu-table-toggle-btn" type="button">A−</button>
+        <span id="edu-article-size-label" class="edu-table-size-label">100%</span>
+        <button id="edu-article-size-inc" class="edu-table-toggle-btn" type="button">A+</button>
+      </span>
     </div>
 
     <!-- Add entry form panel (hidden by default) -->
@@ -274,9 +280,9 @@
           <input id="edu-form-tags" type="text" placeholder="例：膝蓋, 退化, 關節炎" />
         </div>
         <div class="edu-form-row">
-          <label>原始文字（貼上英文或中文，按下按鈕進行 FastSR 自動分類）</label>
+          <label>原始文字（貼上英文或中文，按下按鈕進行 ClinSR 自動分類）</label>
           <textarea id="edu-form-original" rows="5" placeholder="貼上原文，可為英文、繁體或簡體中文..."></textarea>
-          <button class="edu-encode-btn" onclick="eduRunAutoEncode()">🔬 FastSR 自動分類 S/O/A/P</button>
+          <button class="edu-encode-btn" onclick="eduRunAutoEncode()">🔬 ClinSR 自動分類 S/O/A/P</button>
         </div>
         <div class="edu-soap-editor">
           <div class="edu-soap-section">
@@ -332,7 +338,7 @@
         <button class="edu-vtab active" data-v="simple_zh" onclick="eduSwitchVersion('simple_zh')">簡易版</button>
         <button class="edu-vtab" data-v="professional_zh" onclick="eduSwitchVersion('professional_zh')">專業版</button>
         <button class="edu-vtab" data-v="english" onclick="eduSwitchVersion('english')">English</button>
-        <button class="edu-vtab" data-v="fastsr" onclick="eduSwitchVersion('fastsr')">FastSR 結構</button>
+        <button class="edu-vtab" data-v="fastsr" onclick="eduSwitchVersion('fastsr')">ClinSR 結構</button>
         <button class="edu-vtab" data-v="source" onclick="eduSwitchVersion('source')">Source</button>
       </div>
       <!-- Content -->

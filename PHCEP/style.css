@@ -1729,6 +1729,12 @@ select.search-overlay-active {
 .edu-ver-btn[data-ver="professional_zh"] { background: rgba(99,102,241,.12); color: var(--primary); }
 .edu-ver-btn[data-ver="english"] { background: rgba(74,158,255,.12); color: var(--accent); }
 .edu-ver-btn[data-ver="fastsr"] { background: rgba(244,162,97,.12); color: var(--amber); }
+.edu-article-size-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
 .edu-version-bar.hidden { display: none; }
 
 /* Entry list */
@@ -1906,6 +1912,11 @@ select.search-overlay-active {
 
 /* Viewer rich content */
 .edu-viewer-content { line-height: 1.75; color: var(--text); }
+.edu-viewer-content.edu-article-scale-50 { width: 200%; }
+.edu-viewer-content.edu-article-scale-75 { width: 133.3333%; }
+.edu-viewer-content.edu-article-scale-100 { width: 100%; }
+.edu-viewer-content.edu-article-scale-125 { width: 80%; }
+.edu-viewer-content.edu-article-scale-150 { width: 66.6667%; }
 .edu-viewer-content h1, .edu-viewer-content h2, .edu-viewer-content h3, .edu-viewer-content h4 {
   margin-top: 1.2em; margin-bottom: 0.5em; font-weight: 700;
 }
