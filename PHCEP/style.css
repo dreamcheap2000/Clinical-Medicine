@@ -2164,8 +2164,10 @@ select.search-overlay-active {
 .edu-calc-section {
   margin: 16px 0 18px;
   padding: 10px;
+  border: 1px solid var(--border);
   border: 1px solid color-mix(in srgb, var(--primary) 40%, var(--border) 60%);
   border-radius: 12px;
+  background: var(--surface2);
   background: color-mix(in srgb, var(--surface2) 86%, #fff 14%);
   box-shadow: inset 0 0 0 1px rgba(99,102,241,.1);
 }

@@ -1765,15 +1765,15 @@ function eduCreateCalcDropdown(opts) {
 function eduMountInteractiveWidgets(content, entry, version) {
   if (!content || !entry) return;
   var english = version === 'english';
-  function ensureCalculatorAnchorExists(selector, shouldInsert) {
-    if (!shouldInsert || content.querySelector(selector)) return;
+  function ensureCalculatorAnchorExists(className, shouldInsert) {
+    if (!shouldInsert || content.querySelector('.' + className)) return;
     var anchor = document.createElement('div');
-    anchor.className = selector.replace('.', '');
+    anchor.className = className;
     content.insertBefore(anchor, content.firstChild);
   }
   if (version === 'simple_zh') {
-    ensureCalculatorAnchorExists('.edu-cdr-calculator', entry.id === 'edu001_CDR');
-    ensureCalculatorAnchorExists('.edu-ascod-calculator', eduIsAscodEntry(entry));
+    ensureCalculatorAnchorExists('edu-cdr-calculator', entry.id === 'edu001_CDR');
+    ensureCalculatorAnchorExists('edu-ascod-calculator', eduIsAscodEntry(entry));
   }
   content.querySelectorAll('.edu-cdr-calculator').forEach(function(el) {
     eduWrapCalculator(el, 'cdr', english ? '🧮 Clinical Dementia Rating Calculator' : '🧮 臨床失智評估量表計算器', function(inner) {
