@@ -896,8 +896,10 @@ let eduSearchMode = 'all';
 let eduCurrentEntry = null;
 let eduCurrentVersion = 'simple_zh';
 let eduDefaultVersion = 'simple_zh';
-var EDU_ARTICLE_SCALE_LEVELS = [50, 75, 100, 125, 150];
+var EDU_ARTICLE_SCALE_LEVELS = [50, 75, 100, 125, 150, 175, 200];
 var eduArticleScaleIndex = 2;
+// Tolerance for scroll-height comparisons: covers sub-pixel/border rounding differences.
+var EDU_SCROLL_HEIGHT_TOLERANCE = 4;
 
 function initEduTab() {
   eduInitArticleSizeControls();
@@ -939,7 +941,7 @@ function eduSyncArticleSizeLabel() {
 function eduApplyArticleScale(content) {
   if (!content) return;
   var pct = EDU_ARTICLE_SCALE_LEVELS[eduArticleScaleIndex] || 100;
-  content.classList.remove('edu-article-scale-50', 'edu-article-scale-75', 'edu-article-scale-100', 'edu-article-scale-125', 'edu-article-scale-150');
+  content.classList.remove('edu-article-scale-50', 'edu-article-scale-75', 'edu-article-scale-100', 'edu-article-scale-125', 'edu-article-scale-150', 'edu-article-scale-175', 'edu-article-scale-200');
   content.classList.add('edu-article-scale-' + pct);
   content.style.removeProperty('zoom');
   content.style.fontSize = String(pct) + '%';
@@ -1647,10 +1649,12 @@ function eduWrapContentTables(container, entry, version) {
       // and does not interfere with page scroll gestures on mobile.
       scroll.addEventListener('click', function() {
         // Only toggle if content is actually clamped.
-        // scrollHeight > offsetHeight + 4: the 4px tolerance covers
-        // sub-pixel and border differences that can produce a false 1-2px gap.
-        if (scroll.scrollHeight > scroll.offsetHeight + 4 || scroll.classList.contains('edu-cell-expanded')) {
+        // scrollHeight > offsetHeight + EDU_SCROLL_HEIGHT_TOLERANCE: the tolerance
+        // covers sub-pixel and border differences that can produce a false 1-2px gap.
+        if (scroll.scrollHeight > scroll.offsetHeight + EDU_SCROLL_HEIGHT_TOLERANCE || scroll.classList.contains('edu-cell-expanded')) {
           scroll.classList.toggle('edu-cell-expanded');
+          // Refresh clampable marker after expand/collapse
+          setTimeout(function() { eduRefreshClampedCell(scroll); }, 50);
         }
       });
       cell.appendChild(scroll);
@@ -1660,6 +1664,30 @@ function eduWrapContentTables(container, entry, version) {
     wrap.className = 'edu-table-wrap';
     table.parentNode.insertBefore(wrap, table);
     wrap.appendChild(table);
+  });
+  // After the DOM is laid out, flag cells whose content is actually truncated.
+  requestAnimationFrame(function() { eduMarkClampedCells(container); });
+}
+
+function eduRefreshClampedCell(scroll) {
+  if (!scroll) return;
+  if (scroll.classList.contains('edu-cell-expanded')) {
+    scroll.classList.remove('edu-cell-clampable');
+  } else {
+    if (scroll.scrollHeight > scroll.clientHeight + EDU_SCROLL_HEIGHT_TOLERANCE) {
+      scroll.classList.add('edu-cell-clampable');
+    }
+  }
+}
+
+function eduMarkClampedCells(container) {
+  if (!container) return;
+  container.querySelectorAll('.edu-cell-scroll').forEach(function(el) {
+    if (el.classList.contains('edu-cell-expanded')) {
+      el.classList.remove('edu-cell-clampable');
+    } else if (el.scrollHeight > el.clientHeight + EDU_SCROLL_HEIGHT_TOLERANCE) {
+      el.classList.add('edu-cell-clampable');
+    }
   });
 }
 
