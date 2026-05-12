@@ -1979,7 +1979,7 @@ select.search-overlay-active {
 .edu-viewer-content td, .edu-viewer-content th {
   border: 1px solid var(--border);
   padding: 7px 9px;
-  font-size: 0.86rem;
+  font-size: 0.9rem;
   line-height: 1.55;
   vertical-align: top;
   overflow-wrap: anywhere;
@@ -2099,6 +2099,11 @@ select.search-overlay-active {
 }
 .edu-table-wrap table {
   width: 100%;
+  table-layout: fixed;
+}
+.edu-table-wrap td,
+.edu-table-wrap th {
+  max-width: 280px;
 }
 .edu-cell-scroll {
   display: block;
@@ -2109,6 +2114,10 @@ select.search-overlay-active {
   scrollbar-width: thin;
   word-break: normal;
   overflow-wrap: normal;
+}
+/* Base table font in wrapped tables is slightly larger than bare-table default */
+.edu-table-wrap table {
+  font-size: 0.92rem;
 }
 .edu-viewer-content.edu-table-scale-n2 .edu-table-wrap table { font-size: 0.76rem; }
 .edu-viewer-content.edu-table-scale-n2 .edu-table-wrap td,
@@ -3410,4 +3419,57 @@ select.search-overlay-active {
 }
 .edu-search-wrap .edu-search-btn:last-child {
   border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+/* ========================== CHA₂DS₂-VASc & HAS-BLED Calculators ========================== */
+.edu-calc-box-chadsvasc,
+.edu-calc-box-hasbled {
+  margin: 0;
+  padding: 0;
+}
+.edu-chads-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.edu-chads-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background .12s;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+.edu-chads-row:hover { background: var(--surface2); }
+.edu-chads-cb {
+  flex-shrink: 0;
+  margin-top: 3px;
+  accent-color: var(--primary);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+.edu-chads-pts {
+  flex-shrink: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--primary);
+  min-width: 24px;
+  margin-top: 2px;
+}
+.edu-chads-desc {
+  color: var(--text);
+}
+.edu-chads-result {
+  margin-top: 8px;
+  font-size: 1rem;
+}
+.edu-chads-note {
+  margin-top: 4px;
+  font-size: 0.84rem;
+  color: var(--muted);
 }

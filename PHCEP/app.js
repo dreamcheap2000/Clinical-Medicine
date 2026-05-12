@@ -1778,9 +1778,12 @@ function eduMountInteractiveWidgets(content, entry, version) {
     anchor.className = className;
     content.insertBefore(anchor, content.firstChild);
   }
+  var isAfEntry = entry.id === 'edu001_AF';
   if (version === 'simple_zh') {
     ensureCalculatorAnchorExists('edu-cdr-calculator', entry.id === 'edu001_CDR');
     ensureCalculatorAnchorExists('edu-ascod-calculator', eduIsAscodEntry(entry));
+    ensureCalculatorAnchorExists('edu-chadsvasc-calculator', isAfEntry);
+    ensureCalculatorAnchorExists('edu-hasbled-calculator', isAfEntry);
   }
   content.querySelectorAll('.edu-cdr-calculator').forEach(function(el) {
     eduWrapCalculator(el, 'cdr', english ? '🧮 Clinical Dementia Rating Calculator' : '🧮 臨床失智評估量表計算器', function(inner) {
@@ -1790,6 +1793,16 @@ function eduMountInteractiveWidgets(content, entry, version) {
   content.querySelectorAll('.edu-ascod-calculator').forEach(function(el) {
     eduWrapCalculator(el, 'ascod', english ? '🧮 ASCOD Phenotype Calculator' : '🧮 腦中風原因分類計算器', function(inner) {
       eduRenderAscodCalculator(inner);
+    });
+  });
+  content.querySelectorAll('.edu-chadsvasc-calculator').forEach(function(el) {
+    eduWrapCalculator(el, 'chadsvasc', english ? '🧮 CHA₂DS₂-VASc Score Calculator' : '🧮 CHA₂DS₂-VASc 中風風險計算器', function(inner) {
+      eduRenderChadsVascCalculator(inner);
+    });
+  });
+  content.querySelectorAll('.edu-hasbled-calculator').forEach(function(el) {
+    eduWrapCalculator(el, 'hasbled', english ? '🧮 HAS-BLED Bleeding Risk Calculator' : '🧮 HAS-BLED 出血風險計算器', function(inner) {
+      eduRenderHasbledCalculator(inner);
     });
   });
 }
@@ -2125,6 +2138,161 @@ function eduRenderAscodCalculator(el) {
     if (!notes.length) notes.push(english ? 'No grade-1 high-probability causal domain is currently selected.' : '目前未選取 grade 1 的高機率主因。');
     noteEl.innerHTML = notes.map(function(n) { return '<div>• ' + escHtml(n) + '</div>'; }).join('');
   }
+}
+
+function eduRenderChadsVascCalculator(el) {
+  if (!el) return;
+  var english = eduCurrentVersion === 'english';
+  var items = [
+    { key: 'C', pts: 1, zh: '鬱血性心衰竭或左心室收縮功能障礙', en: 'Congestive heart failure / LV dysfunction' },
+    { key: 'H', pts: 1, zh: '高血壓（已診斷或目前使用降血壓藥）', en: 'Hypertension (diagnosed or on antihypertensives)' },
+    { key: 'A2', pts: 2, zh: '年齡 ≥ 75 歲', en: 'Age ≥ 75 years' },
+    { key: 'D', pts: 1, zh: '糖尿病', en: 'Diabetes mellitus' },
+    { key: 'S2', pts: 2, zh: '曾中風、暫時性腦缺血（TIA）或全身性栓塞', en: 'Prior stroke, TIA, or systemic thromboembolism' },
+    { key: 'V', pts: 1, zh: '血管疾病（心肌梗塞、周邊動脈疾病、主動脈粥樣斑塊）', en: 'Vascular disease (MI, PAD, or aortic plaque)' },
+    { key: 'A', pts: 1, zh: '年齡 65–74 歲', en: 'Age 65–74 years' },
+    { key: 'Sc', pts: 1, zh: '女性', en: 'Female sex category' }
+  ];
+
+  el.innerHTML = '<div class="edu-calc-box edu-calc-box-chadsvasc"></div>';
+  var box = el.querySelector('.edu-calc-box-chadsvasc');
+  var intro = document.createElement('p');
+  intro.className = 'edu-calc-intro';
+  intro.textContent = english
+    ? 'Check each applicable risk factor. The score and annual stroke risk are updated automatically.'
+    : '勾選適用的危險因子，分數與年中風風險將自動更新。';
+  box.appendChild(intro);
+
+  var grid = document.createElement('div');
+  grid.className = 'edu-chads-grid';
+  box.appendChild(grid);
+
+  var state = {};
+  items.forEach(function(item) {
+    state[item.key] = false;
+    var row = document.createElement('label');
+    row.className = 'edu-chads-row';
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'edu-chads-cb';
+    cb.addEventListener('change', function() { state[item.key] = cb.checked; recalc(); });
+    var pts = document.createElement('span');
+    pts.className = 'edu-chads-pts';
+    pts.textContent = '+' + item.pts;
+    var desc = document.createElement('span');
+    desc.className = 'edu-chads-desc';
+    desc.textContent = (english ? item.en : item.zh);
+    row.appendChild(cb);
+    row.appendChild(pts);
+    row.appendChild(desc);
+    grid.appendChild(row);
+  });
+
+  var resultEl = document.createElement('div');
+  resultEl.className = 'edu-calc-result edu-chads-result';
+  box.appendChild(resultEl);
+  var noteEl = document.createElement('div');
+  noteEl.className = 'edu-calc-note edu-chads-note';
+  box.appendChild(noteEl);
+
+  var eventRates = [0.78, 2.01, 3.71, 5.92, 9.27, 15.26, 19.74, 21.50, 22.38, 23.64];
+
+  function recalc() {
+    var score = items.reduce(function(acc, item) { return acc + (state[item.key] ? item.pts : 0); }, 0);
+    var rate = eventRates[Math.min(score, 9)];
+    resultEl.textContent = (english ? 'Score: ' : '分數：') + score + (english ? '  |  Annual stroke/TE risk: ' : '　年中風/栓塞風險：') + rate + '%';
+
+    var rec = '';
+    if (score === 0) {
+      rec = english ? 'Score 0 (male) — anticoagulation generally not recommended.' : '0 分（男性）— 通常不建議常規抗凝血治療。';
+    } else if (score === 1) {
+      rec = english
+        ? 'Score 1 (male) or 2 (female, sex-only point) — shared decision-making; consider modifiable risks.'
+        : '1 分（男性）或 2 分（女性，僅性別得分）— 需共享決策，考慮可修正危險因子。';
+    } else {
+      rec = english
+        ? 'Score ≥ 2 (male) or ≥ 3 (female) — oral anticoagulation generally recommended if no contraindications.'
+        : '2 分以上（男性）/ 3 分以上（女性）— 通常建議口服抗凝血，需排除禁忌症。';
+    }
+    noteEl.innerHTML = '<div>• ' + escHtml(rec) + '</div>';
+  }
+  recalc();
+}
+
+function eduRenderHasbledCalculator(el) {
+  if (!el) return;
+  var english = eduCurrentVersion === 'english';
+  var items = [
+    { key: 'H', pts: 1, zh: 'H — 未控制高血壓（收縮壓 > 160 mmHg）', en: 'H — Uncontrolled hypertension (SBP > 160 mmHg)' },
+    { key: 'Ar', pts: 1, zh: 'A — 腎功能異常（血清肌酸酐 > 200 μmol/L、透析或腎移植）', en: 'A — Abnormal renal function (Cr >200 μmol/L, dialysis, or transplant)' },
+    { key: 'Al', pts: 1, zh: 'A — 肝功能異常（慢性肝病或膽紅素 > 2×ULN + AST/ALT/ALP > 3×ULN）', en: 'A — Abnormal liver function (cirrhosis or bilirubin >2× + transaminases >3× ULN)' },
+    { key: 'S', pts: 1, zh: 'S — 中風病史', en: 'S — Prior stroke history' },
+    { key: 'B', pts: 1, zh: 'B — 出血史或出血傾向（貧血、出血體質）', en: 'B — Bleeding history or predisposition (anemia or bleeding diathesis)' },
+    { key: 'L', pts: 1, zh: 'L — INR 不穩定（僅 warfarin 使用者，TTR < 60%）', en: 'L — Labile INR (warfarin users only, TTR < 60%)' },
+    { key: 'E', pts: 1, zh: 'E — 高齡（年齡 > 65 歲）', en: 'E — Elderly age (>65 years)' },
+    { key: 'Dd', pts: 1, zh: 'D — 抗血小板藥物或 NSAIDs（Aspirin、Clopidogrel 等）', en: 'D — Antiplatelet or NSAID use (aspirin, clopidogrel, etc.)' },
+    { key: 'Da', pts: 1, zh: 'D — 酒精過量使用（每週 > 8 單位）', en: 'D — Excess alcohol use (>8 units/week)' }
+  ];
+
+  el.innerHTML = '<div class="edu-calc-box edu-calc-box-hasbled"></div>';
+  var box = el.querySelector('.edu-calc-box-hasbled');
+  var intro = document.createElement('p');
+  intro.className = 'edu-calc-intro';
+  intro.textContent = english
+    ? 'Check each applicable risk factor. HAS-BLED scores modifiable bleeding risk — a high score should prompt risk correction, not automatic anticoagulation avoidance.'
+    : '勾選適用的出血危險因子。HAS-BLED 分數高代表需積極修正可逆因子，並非停止抗凝血的絕對理由。';
+  box.appendChild(intro);
+
+  var grid = document.createElement('div');
+  grid.className = 'edu-chads-grid';
+  box.appendChild(grid);
+
+  var state = {};
+  items.forEach(function(item) {
+    state[item.key] = false;
+    var row = document.createElement('label');
+    row.className = 'edu-chads-row';
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'edu-chads-cb';
+    cb.addEventListener('change', function() { state[item.key] = cb.checked; recalc(); });
+    var pts = document.createElement('span');
+    pts.className = 'edu-chads-pts';
+    pts.textContent = '+' + item.pts;
+    var desc = document.createElement('span');
+    desc.className = 'edu-chads-desc';
+    desc.textContent = (english ? item.en : item.zh);
+    row.appendChild(cb);
+    row.appendChild(pts);
+    row.appendChild(desc);
+    grid.appendChild(row);
+  });
+
+  var resultEl = document.createElement('div');
+  resultEl.className = 'edu-calc-result edu-chads-result';
+  box.appendChild(resultEl);
+  var noteEl = document.createElement('div');
+  noteEl.className = 'edu-calc-note edu-chads-note';
+  box.appendChild(noteEl);
+
+  var bleedRates = [1.13, 1.02, 1.88, 3.74, 8.70, 12.5, 12.5, 12.5, 12.5, 12.5];
+
+  function recalc() {
+    var score = items.reduce(function(acc, item) { return acc + (state[item.key] ? item.pts : 0); }, 0);
+    var rate = bleedRates[Math.min(score, 9)];
+    resultEl.textContent = (english ? 'HAS-BLED Score: ' : 'HAS-BLED 分數：') + score + (english ? '  |  Annual major bleeding risk: ' : '　年重大出血風險：') + rate + '%';
+
+    var rec = '';
+    if (score <= 2) {
+      rec = english ? 'Low to moderate bleeding risk. Consider anticoagulation if stroke risk is high.' : '低至中度出血風險。若中風風險高，建議評估給予抗凝血治療。';
+    } else if (score === 3) {
+      rec = english ? 'Moderately high risk. Correct reversible factors (BP, INR stability, interacting drugs, alcohol).' : '中高度出血風險。請積極修正可逆因子（血壓控制、INR 穩定、減少交互作用藥物及酒精）。';
+    } else {
+      rec = english ? 'High bleeding risk. Intensive risk factor modification is essential before and during anticoagulation.' : '高出血風險。需加強修正可逆因子，密切追蹤；此分數本身不是停止抗凝血的絕對指徵。';
+    }
+    noteEl.innerHTML = '<div>• ' + escHtml(rec) + '</div>';
+  }
+  recalc();
 }
 
 function eduCloseViewer() {

@@ -1022,7 +1022,7 @@
         {
           "id": "2.20.1",
           "name": "Midodrine（米多君）",
-          "content": "1.用於症狀性神經性直立性低血壓（neurogenic orthostatic hypotension）之升壓治療。\n2.應搭配非藥物治療（補液、增加鹽分、反壓動作、彈性襪、姿勢訓練）。\n3.需監測臥位高血壓，晚間避免過晚給藥。",
+          "content": "【注意】依現有官方 NHI 給付規定文件，目前尚無針對 midodrine 之特定適應症給付規範條文。\n\n臨床參考用途（非給付依據）：\n1. 用於症狀性神經性直立性低血壓（neurogenic orthostatic hypotension）之升壓治療。\n2. 應搭配非藥物治療（補液、增加鹽分、反壓動作、彈性襪、姿勢訓練）。\n3. 需監測臥位高血壓，晚間避免過晚給藥。",
           "tags": [
             "神經內科",
             "居家醫療"
@@ -1031,7 +1031,7 @@
         {
           "id": "2.20.2",
           "name": "Droxidopa（屈昔多巴）",
-          "content": "1.用於神經性直立性低血壓相關頭暈、近暈厥或姿勢不耐受症狀改善。\n2.屬 norepinephrine 前驅物，臨床上常與姿勢/容量治療並行。\n3.需監測血壓變化與臥位高血壓風險。",
+          "content": "【注意】依現有官方 NHI 給付規定文件，目前尚無針對 droxidopa 之特定適應症給付規範條文。\n\n臨床參考用途（非給付依據）：\n1. 用於神經性直立性低血壓相關頭暈、近暈厥或姿勢不耐受症狀改善。\n2. 屬 norepinephrine 前驅物，臨床上常與姿勢/容量治療並行。\n3. 需監測血壓變化與臥位高血壓風險。",
           "tags": [
             "神經內科",
             "居家醫療"
@@ -1403,7 +1403,7 @@
       "nameZh": "激素及影響內分泌機轉藥物",
       "nameEn": "Hormones & Endocrine drugs",
       "icon": "💉",
-      "totalEntries": 40,
+      "totalEntries": 42,
       "entries": [
         {
           "id": "5.1",
@@ -1709,17 +1709,34 @@
         },
         {
           "id": "5.9.1",
-          "name": "Female / Male hormonal therapy（雌激素、黃體素、睪固酮等）",
-          "content": "1.女性荷爾蒙治療依適應症（如停經症候群、子宮內膜異位症、婦科內分泌疾病）由專科醫師評估。\n2.男性荷爾蒙治療（如睪固酮補充）需符合性腺功能低下診斷並排除禁忌症。\n3.給付使用應依完整給付規定、適應症與風險分層辦理。",
+          "name": "動情激素（Estrogen / 女性荷爾蒙）",
+          "content": "一般適應症（General indications）：\n1. 閉經（amenorrhea）\n2. 不孕症（infertility）\n3. 乳癌（breast cancer）\n4. 攝護腺癌（prostate cancer）\n5. 功能性子宮出血（dysfunctional uterine bleeding）\n6. 停經後荷爾蒙補充（postmenopausal hormone replacement）\n7. 腦下垂體疾病引起之閉經（amenorrhea caused by pituitary diseases）\n8. 症狀性更年期症候群（symptomatic menopausal syndrome）\n\n特定劑型限制：\n【經皮雌二醇】如 Estraderm TTS、Oestro V.T：\n  - 限用於無法口服藥物之患者。\n  - 申報時須於病歷載明無法口服之具體原因。\n\n【雌二醇貼片】如 Climara 50 Transdermal Patch：\n  - 每週最多使用一片（limited to a maximum of one patch per week）。\n",
           "tags": [
             "居家醫療",
             "內分泌科"
           ]
         },
         {
+          "id": "5.9.1.2",
+          "name": "黃體激素（Progesterone / 黃體荷爾蒙）",
+          "content": "一般適應症（General indications）：\n1. 流產（miscarriage）\n2. 功能性子宮出血（dysfunctional uterine bleeding）\n3. 不孕症（infertility）\n4. 乳癌（breast cancer）\n5. 子宮內膜異位症（endometriosis）\n6. 停經後婦女（postmenopausal women）\n\n特定劑型限制：\n【子宮內投藥系統—左旋諾孕酮】如 Mirena（levonorgestrel intrauterine system）：\n  - 嚴格限用於因嚴重月經過多造成嚴重貧血（血色素 Hemoglobin ≦ 10 g/dL）、且月經過多已持續至少連續 3 個月之婦女。\n  - 每次使用後五年內不得再次申請給付（cannot be reimbursed again within five years after each use）。\n",
+          "tags": [
+            "婦產科",
+            "內分泌科"
+          ]
+        },
+        {
+          "id": "5.9.1.3",
+          "name": "口服避孕藥（Oral Contraceptives）",
+          "content": "【注意】依現有官方 NHI 給付規定文件，目前尚無針對口服避孕藥的特定適應症給付規範條文。\n\n臨床背景提示：\n口服避孕藥僅在 NHI 給付規定中被簡短提及，作為繼發性非典型溶血性尿毒症（atypical Hemolytic Uremic Syndrome, aHUS）之潛在誘發藥物，\n其本身並無相應的處方給付規定。\n",
+          "tags": [
+            "婦產科"
+          ]
+        },
+        {
           "id": "5.9.2",
           "name": "Fludrocortisone（氟氫可體松）",
-          "content": "1.礦物皮質素製劑，可用於自主神經功能不全相關低血壓之血容量擴張治療。\n2.臨床上可作為神經性直立性低血壓或反覆血管迷走性暈厥之輔助藥物。\n3.需監測血壓、低血鉀、水腫與體液滯留。",
+          "content": "【注意】依現有官方 NHI 給付規定文件，目前尚無針對 fludrocortisone 用於低血壓之特定適應症給付規範條文。\n\n臨床參考用途（非給付依據）：\n1. 礦物皮質素製劑，可用於自主神經功能不全相關低血壓之血容量擴張治療。\n2. 臨床上可作為神經性直立性低血壓或反覆血管迷走性暈厥之輔助藥物。\n3. 需監測血壓、低血鉀、水腫與體液滯留。",
           "tags": [
             "神經內科",
             "居家醫療",
