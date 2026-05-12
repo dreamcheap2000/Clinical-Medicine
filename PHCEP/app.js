@@ -898,6 +898,8 @@ let eduCurrentVersion = 'simple_zh';
 let eduDefaultVersion = 'simple_zh';
 var EDU_ARTICLE_SCALE_LEVELS = [50, 75, 100, 125, 150, 175, 200];
 var eduArticleScaleIndex = 2;
+// Tolerance for scroll-height comparisons: covers sub-pixel/border rounding differences.
+var EDU_SCROLL_HEIGHT_TOLERANCE = 4;
 
 function initEduTab() {
   eduInitArticleSizeControls();
@@ -1647,9 +1649,9 @@ function eduWrapContentTables(container, entry, version) {
       // and does not interfere with page scroll gestures on mobile.
       scroll.addEventListener('click', function() {
         // Only toggle if content is actually clamped.
-        // scrollHeight > offsetHeight + 4: the 4px tolerance covers
-        // sub-pixel and border differences that can produce a false 1-2px gap.
-        if (scroll.scrollHeight > scroll.offsetHeight + 4 || scroll.classList.contains('edu-cell-expanded')) {
+        // scrollHeight > offsetHeight + EDU_SCROLL_HEIGHT_TOLERANCE: the tolerance
+        // covers sub-pixel and border differences that can produce a false 1-2px gap.
+        if (scroll.scrollHeight > scroll.offsetHeight + EDU_SCROLL_HEIGHT_TOLERANCE || scroll.classList.contains('edu-cell-expanded')) {
           scroll.classList.toggle('edu-cell-expanded');
           // Refresh clampable marker after expand/collapse
           setTimeout(function() { eduRefreshClampedCell(scroll); }, 50);
@@ -1672,7 +1674,7 @@ function eduRefreshClampedCell(scroll) {
   if (scroll.classList.contains('edu-cell-expanded')) {
     scroll.classList.remove('edu-cell-clampable');
   } else {
-    if (scroll.scrollHeight > scroll.clientHeight + 4) {
+    if (scroll.scrollHeight > scroll.clientHeight + EDU_SCROLL_HEIGHT_TOLERANCE) {
       scroll.classList.add('edu-cell-clampable');
     }
   }
@@ -1683,7 +1685,7 @@ function eduMarkClampedCells(container) {
   container.querySelectorAll('.edu-cell-scroll').forEach(function(el) {
     if (el.classList.contains('edu-cell-expanded')) {
       el.classList.remove('edu-cell-clampable');
-    } else if (el.scrollHeight > el.clientHeight + 4) {
+    } else if (el.scrollHeight > el.clientHeight + EDU_SCROLL_HEIGHT_TOLERANCE) {
       el.classList.add('edu-cell-clampable');
     }
   });
