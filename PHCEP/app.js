@@ -1643,6 +1643,16 @@ function eduWrapContentTables(container, entry, version) {
       var scroll = document.createElement('div');
       scroll.className = 'edu-cell-scroll';
       while (cell.firstChild) scroll.appendChild(cell.firstChild);
+      // Tap/click to expand/collapse: 'click' works on both mouse and touch
+      // and does not interfere with page scroll gestures on mobile.
+      scroll.addEventListener('click', function() {
+        // Only toggle if content is actually clamped.
+        // scrollHeight > offsetHeight + 4: the 4px tolerance covers
+        // sub-pixel and border differences that can produce a false 1-2px gap.
+        if (scroll.scrollHeight > scroll.offsetHeight + 4 || scroll.classList.contains('edu-cell-expanded')) {
+          scroll.classList.toggle('edu-cell-expanded');
+        }
+      });
       cell.appendChild(scroll);
     });
     if (table.parentElement && table.parentElement.classList.contains('edu-table-wrap')) return;

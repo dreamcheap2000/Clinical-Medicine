@@ -66,7 +66,7 @@
         <input id="cm-search" type="text" class="drug-search-input"
                placeholder="搜尋 ICD-10-CM 代碼或名稱（中英文）…"
                oninput="cmSearch(this.value); hideSearchHistory('cm',0)"
-               onfocus="hideSearchHistory('cm',0); if(this.value.trim()) cmSearch(this.value)"
+               onfocus="hideSearchHistory('cm',0); cmSearch(this.value)"
                onblur="hideSearchHistory('cm',200)"
                autocomplete="off" />
         <div id="cm-search-history" class="search-history-dropdown">
@@ -100,7 +100,7 @@
         <input id="nhi-search" type="text" class="nhi-search-input"
                placeholder="搜尋代碼或名稱（中英文）…"
                oninput="nhiSearch(this.value); hideSearchHistory('nhi',0)"
-               onfocus="hideSearchHistory('nhi',0); if(this.value.trim()) nhiSearch(this.value)"
+               onfocus="hideSearchHistory('nhi',0); nhiSearch(this.value)"
                onblur="hideSearchHistory('nhi',200)"
                autocomplete="off" />
         <div id="nhi-search-history" class="search-history-dropdown">
@@ -163,7 +163,7 @@
         <input id="drug-search" type="text" class="drug-search-input"
                placeholder="搜尋藥品名稱或給付規定（中英文）…"
                oninput="drugSearch(this.value); hideSearchHistory('drug',0)"
-               onfocus="hideSearchHistory('drug',0); if(this.value.trim()) drugSearch(this.value)"
+               onfocus="hideSearchHistory('drug',0); drugSearch(this.value)"
                onblur="hideSearchHistory('drug',200)"
                autocomplete="off" />
         <div id="drug-search-history" class="search-history-dropdown">
@@ -405,7 +405,7 @@
         <input id="specmat-search" type="text" class="drug-search-input"
                placeholder="搜尋特材品名或給付規定…"
                oninput="specmatSearch(this.value); hideSearchHistory('specmat',0)"
-               onfocus="hideSearchHistory('specmat',0); if(this.value.trim()) specmatSearch(this.value)"
+               onfocus="hideSearchHistory('specmat',0); specmatSearch(this.value)"
                onblur="hideSearchHistory('specmat',200)"
                autocomplete="off" />
         <div id="specmat-search-history" class="search-history-dropdown">
