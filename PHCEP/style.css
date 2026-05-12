@@ -1916,7 +1916,9 @@ select.search-overlay-active {
 .edu-viewer-content.edu-article-scale-75,
 .edu-viewer-content.edu-article-scale-100,
 .edu-viewer-content.edu-article-scale-125,
-.edu-viewer-content.edu-article-scale-150 { width: 100%; }
+.edu-viewer-content.edu-article-scale-150,
+.edu-viewer-content.edu-article-scale-175,
+.edu-viewer-content.edu-article-scale-200 { width: 100%; }
 .edu-viewer-content h1, .edu-viewer-content h2, .edu-viewer-content h3, .edu-viewer-content h4 {
   margin-top: 1.2em; margin-bottom: 0.5em; font-weight: 700;
 }
@@ -1957,7 +1959,9 @@ select.search-overlay-active {
 /* Colorful tables */
 .edu-viewer-content table {
   border-collapse: collapse;
-  width: 100%;
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
   table-layout: auto;
   margin-bottom: 1.1em;
   border-radius: 8px;
@@ -1987,6 +1991,11 @@ select.search-overlay-active {
   hyphens: auto;
 }
 .edu-viewer-content tbody td:first-child { color: var(--accent2); font-weight: 600; }
+/* Remove excess <p> spacing inside table cells */
+.edu-viewer-content td p,
+.edu-viewer-content th p { margin-bottom: 0; }
+.edu-viewer-content td p + p,
+.edu-viewer-content th p + p { margin-top: 0.3em; }
 .edu-calc-box {
   margin: 12px 0 18px;
   padding: 10px;
@@ -2098,12 +2107,11 @@ select.search-overlay-active {
   padding: 6px;
 }
 .edu-table-wrap table {
-  /* min-width: 100% keeps the table at least as wide as the container;
-     width: max-content lets it grow beyond that for wide content —
-     overflow-x: auto on the wrapper provides horizontal scrolling. */
-  min-width: 100%;
-  width: max-content;
+  /* Use natural content width; overflow-x:auto on the wrapper handles wide tables */
+  width: auto;
+  min-width: 0;
   table-layout: auto;
+  font-size: 1em;
 }
 .edu-table-wrap td,
 .edu-table-wrap th {
@@ -2111,25 +2119,45 @@ select.search-overlay-active {
   min-width: 80px;
   vertical-align: top;
 }
-/* Cell content: show up to 3 lines; expand on hover/focus/touch */
+/* Cell content: show up to 5 lines; expand on click/hover for overflowing cells */
 .edu-cell-scroll {
   display: block;
   white-space: normal;
   word-break: break-word;
   overflow-wrap: anywhere;
-  max-height: none;
+  max-height: calc(5 * 1.55em);
+  overflow: hidden;
   cursor: default;
+  position: relative;
+}
+/* Only show pointer and fade gradient when content actually overflows */
+.edu-cell-scroll.edu-cell-clampable {
+  cursor: pointer;
+}
+.edu-cell-scroll.edu-cell-clampable::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1.8em;
+  background: linear-gradient(transparent, color-mix(in srgb, var(--surface2) 85%, var(--bg) 15%));
+  pointer-events: none;
+  border-radius: 0 0 2px 2px;
 }
 .edu-cell-scroll.edu-cell-expanded,
-.edu-cell-scroll:hover,
-.edu-cell-scroll:focus-within {
-  overflow: visible;
+.edu-cell-scroll.edu-cell-expanded::after {
   max-height: none;
+  overflow: visible;
 }
-/* Base table font in wrapped tables is slightly larger than bare-table default */
-.edu-table-wrap table {
-  font-size: 1em;
+.edu-cell-scroll.edu-cell-expanded::after { display: none; }
+.edu-cell-scroll:hover.edu-cell-clampable,
+.edu-cell-scroll:focus-within.edu-cell-clampable {
+  max-height: none;
+  overflow: visible;
 }
+.edu-cell-scroll:hover.edu-cell-clampable::after,
+.edu-cell-scroll:focus-within.edu-cell-clampable::after { display: none; }
 .edu-viewer-content.edu-table-scale-n2 .edu-table-wrap table { font-size: 0.86em; }
 .edu-viewer-content.edu-table-scale-n2 .edu-table-wrap td,
 .edu-viewer-content.edu-table-scale-n2 .edu-table-wrap th { padding: 5px 7px; }
