@@ -3157,6 +3157,12 @@ select.search-overlay-active {
   white-space: nowrap;
 }
 .btn-settings-mode:hover { background: var(--primary); color: #fff; }
+.settings-article-size-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
 
 /* Keyboard shortcuts table in settings */
 .settings-shortcuts {

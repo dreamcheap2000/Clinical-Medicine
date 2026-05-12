@@ -1586,6 +1586,537 @@
       ]
     },
     {
+      "id": "ent_exam",
+      "nameZh": "耳鼻喉系統檢查",
+      "nameEn": "E.N.T. Examination",
+      "icon": "👂",
+      "section": "第二部第二章第一節第十六項 (22001-22041)",
+      "fhir_resource": "Observation",
+      "fhir_profile": "https://twcore.mohw.gov.tw/ig/twcore/StructureDefinition-Observation-twcore.html",
+      "codes": [
+        {
+          "code": "22001C",
+          "nameZh": "純音聽力檢查",
+          "nameEn": "Pure tone audiometry (PTA)",
+          "points": "405",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1. 包括骨導聽力及氣導聽力。\n2. 不得同時申報22041C。"
+        },
+        {
+          "code": "22002B",
+          "nameZh": "響音重振檢查",
+          "nameEn": "Recruitment test (SISI)",
+          "points": "300",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22003C",
+          "nameZh": "聽音電阻檢查",
+          "nameEn": "Impedance audiometry",
+          "points": "452",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22004C",
+          "nameZh": "鼓室圖檢查",
+          "nameEn": "Tympanometry",
+          "points": "300",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22005C",
+          "nameZh": "一般語言檢查",
+          "nameEn": "Medium speech evaluation",
+          "points": "210",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22006C",
+          "nameZh": "複雜語言檢查",
+          "nameEn": "Complex speech evaluation",
+          "points": "357",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22007C",
+          "nameZh": "語言錄音檢查",
+          "nameEn": "Sound record testing",
+          "points": "280",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22008B",
+          "nameZh": "聲場聽力檢查",
+          "nameEn": "Sound field testing",
+          "points": "2270",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22009B",
+          "nameZh": "音聲頻譜儀檢查",
+          "nameEn": "Sound spectrography",
+          "points": "497",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22010C",
+          "nameZh": "吞嚥檢查",
+          "nameEn": "Swallowing evaluation",
+          "points": "350",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22011B",
+          "nameZh": "語言分辨聽力檢查",
+          "nameEn": "Speech discrimination",
+          "points": "279",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22012B",
+          "nameZh": "響音衰退檢查",
+          "nameEn": "Tone decay test",
+          "points": "300",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22013B",
+          "nameZh": "語言聽力檢查",
+          "nameEn": "Speech audiometry",
+          "points": "300",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22014B",
+          "nameZh": "誘發反應聽力檢查",
+          "nameEn": "E.R.A. (electrical response audiometry)",
+          "points": "706",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22015B",
+          "nameZh": "詐聾聽力檢查",
+          "nameEn": "Functional hearing test",
+          "points": "800",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22016B",
+          "nameZh": "眼振圖檢查",
+          "nameEn": "ENG (electronystagmography)",
+          "points": "640",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22017C",
+          "nameZh": "前庭平衡檢查",
+          "nameEn": "V.F.T. (vestibular function test)",
+          "points": "450",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1. 包括上肢、下肢偏倚檢查、起立檢查、眼球運動檢查、頭位變化檢查等項。\n2. 屬西醫基層總額部門院所，除山地離島地區外，限由專任醫師開立處方及執行始可申報。"
+        },
+        {
+          "code": "22018B",
+          "nameZh": "腦幹反應檢查",
+          "nameEn": "B.S.R. (brain stem response)",
+          "points": "1792",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22019B",
+          "nameZh": "內耳溫差試驗",
+          "nameEn": "Caloric test",
+          "points": "596",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22020B",
+          "nameZh": "甘油試驗",
+          "nameEn": "Glycerine test",
+          "points": "765",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22021B",
+          "nameZh": "上頷竇機能檢查（單側）",
+          "nameEn": "Maxillary sinus moljodol exam. — single side",
+          "points": "1076",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22022B",
+          "nameZh": "上頷竇機能檢查（雙側）",
+          "nameEn": "Maxillary sinus moljodol exam. — both side",
+          "points": "1292",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22023B",
+          "nameZh": "耳蝸誘發聽力檢查",
+          "nameEn": "Econg",
+          "points": "2012",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22024B",
+          "nameZh": "喉部發聲機能檢查",
+          "nameEn": "Phonatory ability test",
+          "points": "2218",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22025B",
+          "nameZh": "自記聽力檢查",
+          "nameEn": "Bekesy audiometry",
+          "points": "300",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22026C",
+          "nameZh": "聽反射測驗（ART）",
+          "nameEn": "Acoustic emission test",
+          "points": "312",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22027C",
+          "nameZh": "耳聲傳射檢查",
+          "nameEn": "OTO acoustic emission test",
+          "points": "837",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22028C",
+          "nameZh": "耳咽管功能檢查",
+          "nameEn": "E-tube function test",
+          "points": "336",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22029C",
+          "nameZh": "鐙骨肌反射衰退試驗",
+          "nameEn": "Stapedial reflex decay",
+          "points": "452",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22030C",
+          "nameZh": "喉機能音響分析",
+          "nameEn": "Laryngeal acoustic analysis",
+          "points": "280",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22031B",
+          "nameZh": "聽反射衰退檢查",
+          "nameEn": "Acoustic reflex decay test",
+          "points": "364",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22032B",
+          "nameZh": "交替性兩側響度平衡測驗",
+          "nameEn": "Alternate binaural loudness balance test (ABLB)",
+          "points": "300",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22033B",
+          "nameZh": "幼兒聽力篩檢（腦幹聽反射）",
+          "nameEn": "Argo-1 infant hearing test",
+          "points": "800",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22034B",
+          "nameZh": "重心動搖儀檢查",
+          "nameEn": "Posturography",
+          "points": "678",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22035B",
+          "nameZh": "喉部氣體動力學分析（音聲氣體流動分析）",
+          "nameEn": "Laryngeal aerodynamic analysis",
+          "points": "852",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22037B",
+          "nameZh": "頸性或眼性前庭誘發肌電位",
+          "nameEn": "cVEMP or oVEMP",
+          "points": "720",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1. 適應症為末梢前庭病變之眩暈症之鑑別診斷，視患者狀況施作頸性前庭誘發肌電位（cVEMP）或眼性前庭誘發肌電位（oVEMP）時申報。\n2. 不可重複申報本項。"
+        },
+        {
+          "code": "22040B",
+          "nameZh": "頸性及眼性前庭誘發肌電位",
+          "nameEn": "cVEMP and oVEMP",
+          "points": "1188",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1. 適應症為末梢前庭病變之眩暈症之鑑別診斷，視患者狀況同時施作頸性前庭誘發肌電位（cVEMP）及眼性前庭誘發肌電位（oVEMP）時申報。\n2. 不可重複申報22037B。"
+        },
+        {
+          "code": "22038B",
+          "nameZh": "喉肌電圖檢查",
+          "nameEn": "Laryngeal EMG",
+          "points": "2218",
+          "available": {
+            "基層院所": false,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22039C",
+          "nameZh": "聽覺穩定狀態電位反應",
+          "nameEn": "ASSR",
+          "points": "1500",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": ""
+        },
+        {
+          "code": "22041C",
+          "nameZh": "遊戲式聽力檢查",
+          "nameEn": "Conditioning play audiometry",
+          "points": "671",
+          "available": {
+            "基層院所": true,
+            "地區醫院": true,
+            "區域醫院": true,
+            "醫學中心": true
+          },
+          "note": "註：\n1. 適應症：限聽力篩檢未通過，且符合下列任一適應症之二歲以上至未滿七歲兒童：\n(1) 傳音性及感音性耳聾（H90）。\n(2) 突發性自發性聽力喪失（H91.2）。\n(3) 聽障（H91.9）。\n(4) 耳鳴（H93.1）。\n(5) 其他異常聽覺（H93.2）。\n2. 基層診所之聽力檢查室須符合醫療機構設置標準附表（一）之聽力設施規範。\n3. 每年以申報二次為原則，如需額外執行應於病歷敘明重複執行之原因。\n4. 申報費用時須檢附遊戲式聽力檢查報告。\n5. 不得同時申報22001C。"
+        }
+      ]
+    },
+    {
       "id": "ultrasound",
       "nameZh": "超音波檢查",
       "nameEn": "Ultrasound Examinations",
