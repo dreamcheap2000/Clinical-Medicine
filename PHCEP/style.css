@@ -2098,22 +2098,36 @@ select.search-overlay-active {
   padding: 6px;
 }
 .edu-table-wrap table {
-  width: 100%;
-  table-layout: fixed;
+  min-width: 100%;
+  width: max-content;
+  table-layout: auto;
 }
 .edu-table-wrap td,
 .edu-table-wrap th {
   max-width: 280px;
+  min-width: 80px;
+  vertical-align: top;
 }
+/* Cell content: show up to 3 lines; expand on hover/focus/touch */
 .edu-cell-scroll {
-  display: block;
-  max-width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  white-space: nowrap;
-  scrollbar-width: thin;
-  word-break: normal;
-  overflow-wrap: normal;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-height: calc(1.5em * 3 + 2px);
+  transition: max-height 0.25s ease, -webkit-line-clamp 0s;
+  position: relative;
+  cursor: default;
+}
+.edu-cell-scroll.edu-cell-expanded,
+.edu-cell-scroll:hover,
+.edu-cell-scroll:focus-within {
+  -webkit-line-clamp: unset;
+  overflow: visible;
+  max-height: none;
 }
 /* Base table font in wrapped tables is slightly larger than bare-table default */
 .edu-table-wrap table {

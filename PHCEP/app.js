@@ -1643,6 +1643,14 @@ function eduWrapContentTables(container, entry, version) {
       var scroll = document.createElement('div');
       scroll.className = 'edu-cell-scroll';
       while (cell.firstChild) scroll.appendChild(cell.firstChild);
+      // Touch toggle: tap to expand/collapse on mobile
+      scroll.addEventListener('touchstart', function(e) {
+        // Only toggle if content is actually clamped (scrollHeight > offsetHeight)
+        if (scroll.scrollHeight > scroll.offsetHeight + 4 || scroll.classList.contains('edu-cell-expanded')) {
+          e.preventDefault();
+          scroll.classList.toggle('edu-cell-expanded');
+        }
+      }, { passive: false });
       cell.appendChild(scroll);
     });
     if (table.parentElement && table.parentElement.classList.contains('edu-table-wrap')) return;
