@@ -940,7 +940,7 @@ function eduApplyArticleScale(content) {
   if (!content) return;
   var pct = EDU_ARTICLE_SCALE_LEVELS[eduArticleScaleIndex] || 100;
   content.classList.remove('edu-article-scale-50', 'edu-article-scale-75', 'edu-article-scale-100', 'edu-article-scale-125', 'edu-article-scale-150');
-  content.classList.add('edu-article-scale-100');
+  content.classList.add('edu-article-scale-' + pct);
   content.style.zoom = '';
   content.style.fontSize = String(pct) + '%';
 }
