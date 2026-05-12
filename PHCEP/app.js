@@ -2195,6 +2195,8 @@ function eduRenderChadsVascCalculator(el) {
   noteEl.className = 'edu-calc-note edu-chads-note';
   box.appendChild(noteEl);
 
+  // Annual stroke/TE event rates (%) indexed by CHA₂DS₂-VASc score 0-9
+  // Source: Lip GY et al. Chest 2010 (n=73,538 Danish cohort)
   var eventRates = [0.78, 2.01, 3.71, 5.92, 9.27, 15.26, 19.74, 21.50, 22.38, 23.64];
 
   function recalc() {
@@ -2275,6 +2277,9 @@ function eduRenderHasbledCalculator(el) {
   noteEl.className = 'edu-calc-note edu-chads-note';
   box.appendChild(noteEl);
 
+  // Annual major bleeding risk (%) indexed by HAS-BLED score 0-9
+  // Source: Pisters R et al. Chest 2010 (n=3,978 Euro Heart Survey AF cohort)
+  // Scores ≥5 are extrapolated to ~12.5% as validated data ends at score 5 (≥5 grouped together)
   var bleedRates = [1.13, 1.02, 1.88, 3.74, 8.70, 12.5, 12.5, 12.5, 12.5, 12.5];
 
   function recalc() {
