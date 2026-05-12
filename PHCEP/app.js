@@ -902,23 +902,30 @@ var eduArticleScaleIndex = 2;
 var EDU_SCROLL_HEIGHT_TOLERANCE = 4;
 
 function initEduTab() {
-  eduInitArticleSizeControls();
+  eduLoadArticleSizeSetting();
   loadEduData();
 }
 
-function eduInitArticleSizeControls() {
-  var decBtn = document.getElementById('edu-article-size-dec');
-  var incBtn = document.getElementById('edu-article-size-inc');
+function eduLoadArticleSizeSetting() {
+  var stored = Number(localStorage.getItem('phcep_edu_article_scale_index'));
+  if (Number.isFinite(stored)) {
+    eduArticleScaleIndex = Math.max(0, Math.min(EDU_ARTICLE_SCALE_LEVELS.length - 1, Math.round(stored)));
+  } else {
+    eduArticleScaleIndex = EDU_ARTICLE_SCALE_LEVELS.indexOf(100);
+    if (eduArticleScaleIndex < 0) eduArticleScaleIndex = 0;
+  }
+  eduSyncArticleSizeLabel();
+}
+
+function eduBindArticleSizeControls() {
+  var decBtn = document.getElementById('setting-article-size-dec');
+  var incBtn = document.getElementById('setting-article-size-inc');
   if (!decBtn || !incBtn || decBtn.dataset.bound === '1') {
     eduSyncArticleSizeLabel();
     return;
   }
   decBtn.dataset.bound = '1';
   incBtn.dataset.bound = '1';
-  var stored = Number(localStorage.getItem('phcep_edu_article_scale_index'));
-  if (Number.isFinite(stored)) {
-    eduArticleScaleIndex = Math.max(0, Math.min(EDU_ARTICLE_SCALE_LEVELS.length - 1, Math.round(stored)));
-  }
   decBtn.addEventListener('click', function() { eduSetArticleSizeIndex(eduArticleScaleIndex - 1); });
   incBtn.addEventListener('click', function() { eduSetArticleSizeIndex(eduArticleScaleIndex + 1); });
   eduSyncArticleSizeLabel();
@@ -933,7 +940,7 @@ function eduSetArticleSizeIndex(nextIndex) {
 }
 
 function eduSyncArticleSizeLabel() {
-  var label = document.getElementById('edu-article-size-label');
+  var label = document.getElementById('setting-article-size-label');
   if (!label) return;
   label.textContent = String(EDU_ARTICLE_SCALE_LEVELS[eduArticleScaleIndex] || 100) + '%';
 }
@@ -1872,6 +1879,51 @@ function eduWrapCalculator(el, type, label, renderFn) {
   el.parentNode.removeChild(el);
 }
 
+function eduCopyTextToClipboard(text, okMsg) {
+  var payload = String(text || '').trim();
+  if (!payload) {
+    toast('⚠️ 無可複製內容');
+    return;
+  }
+  function onOk() { toast(okMsg || '✅ 已複製'); }
+  function fallback() {
+    var ta = document.createElement('textarea');
+    ta.value = payload;
+    ta.setAttribute('readonly', 'readonly');
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      onOk();
+    } catch (e) {
+      toast('⚠️ 複製失敗，請手動複製');
+    }
+    document.body.removeChild(ta);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(payload).then(onOk).catch(fallback);
+  } else {
+    fallback();
+  }
+}
+
+function eduAppendCalcCopyButton(box, getText, english) {
+  if (!box || typeof getText !== 'function') return;
+  var row = document.createElement('div');
+  row.style.marginTop = '10px';
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'edu-table-toggle-btn';
+  btn.textContent = english ? 'Copy score & explanation' : '複製分數與說明';
+  btn.addEventListener('click', function() {
+    eduCopyTextToClipboard(getText(), english ? '✅ Copied' : '✅ 已複製');
+  });
+  row.appendChild(btn);
+  box.appendChild(row);
+}
+
 function eduRenderCdrCalculator(el) {
   if (!el) return;
   var english = eduCurrentVersion === 'english';
@@ -1987,6 +2039,16 @@ function eduRenderCdrCalculator(el) {
       ? ('Global CDR = ' + cdr + ' (' + (labelMap[cdr] || 'unclassified') + ')')
       : ('CDR = ' + cdr + '（' + (labelMap[cdr] || '未分級') + '）');
   }
+
+  eduAppendCalcCopyButton(el.querySelector('.edu-calc-box-cdr'), function() {
+    var lines = [resultEl ? resultEl.textContent : ''];
+    rows.forEach(function(r) {
+      var info = el.querySelector('[data-cdr-info="' + r.key + '"]');
+      var txt = info ? info.textContent : '';
+      if (txt) lines.push(txt);
+    });
+    return lines.join('\n');
+  }, english);
 }
 
 function eduComputeCdrScore(scores) {
@@ -2176,6 +2238,24 @@ function eduRenderAscodCalculator(el) {
     if (!notes.length) notes.push(english ? 'No grade-1 high-probability causal domain is currently selected.' : '目前未選取 grade 1 的高機率主因。');
     noteEl.innerHTML = notes.map(function(n) { return '<div>• ' + escHtml(n) + '</div>'; }).join('');
   }
+
+  eduAppendCalcCopyButton(el.querySelector('.edu-calc-box-ascod'), function() {
+    var lines = [mainEl ? mainEl.textContent : ''];
+    var noteLines = [];
+    if (noteEl) {
+      noteEl.querySelectorAll('div').forEach(function(node) {
+        var txt = (node.textContent || '').trim();
+        if (txt) noteLines.push(txt);
+      });
+    }
+    if (noteLines.length) lines = lines.concat(noteLines);
+    domains.forEach(function(d) {
+      var info = el.querySelector('[data-ascod-info="' + d + '"]');
+      var txt = info ? info.textContent : '';
+      if (txt) lines.push(d + ': ' + txt);
+    });
+    return lines.join('\n');
+  }, english);
 }
 
 function eduRenderChadsVascCalculator(el) {
@@ -2256,6 +2336,17 @@ function eduRenderChadsVascCalculator(el) {
     }
     noteEl.innerHTML = '<div>• ' + escHtml(rec) + '</div>';
   }
+  eduAppendCalcCopyButton(box, function() {
+    var lines = [resultEl ? resultEl.textContent : ''];
+    items.forEach(function(item) {
+      var checked = !!state[item.key];
+      var mark = checked ? '✓' : '✗';
+      var desc = english ? item.en : item.zh;
+      lines.push(mark + ' ' + item.key + ' (+' + item.pts + '): ' + desc);
+    });
+    if (noteEl) lines.push((noteEl.textContent || '').trim());
+    return lines.join('\n');
+  }, english);
   recalc();
 }
 
@@ -2335,6 +2426,17 @@ function eduRenderHasbledCalculator(el) {
     }
     noteEl.innerHTML = '<div>• ' + escHtml(rec) + '</div>';
   }
+  eduAppendCalcCopyButton(box, function() {
+    var lines = [resultEl ? resultEl.textContent : ''];
+    items.forEach(function(item) {
+      var checked = !!state[item.key];
+      var mark = checked ? '✓' : '✗';
+      var desc = english ? item.en : item.zh;
+      lines.push(mark + ' ' + item.key + ' (+' + item.pts + '): ' + desc);
+    });
+    if (noteEl) lines.push((noteEl.textContent || '').trim());
+    return lines.join('\n');
+  }, english);
   recalc();
 }
 
@@ -3491,6 +3593,17 @@ function renderSettingsTab() {
           ${mode === 'dark' ? '🌙 深色模式（點擊切換淺色）' : '☀️ 淺色模式（點擊切換深色）'}
         </button>
       </label>
+      <label class="settings-item">
+        <div class="settings-item-label">
+          <div class="settings-item-name">文章大小</div>
+          <div class="settings-item-desc">衛教文章字體大小，預設 100%</div>
+        </div>
+        <span class="settings-article-size-group">
+          <button id="setting-article-size-dec" class="edu-table-toggle-btn" type="button">A−</button>
+          <span id="setting-article-size-label" class="edu-table-size-label">100%</span>
+          <button id="setting-article-size-inc" class="edu-table-toggle-btn" type="button">A+</button>
+        </span>
+      </label>
     </div>
 
     <div class="settings-group">
@@ -3549,9 +3662,10 @@ function renderSettingsTab() {
         <div class="shortcut-row"><kbd class="key-combo">Cmd/Ctrl + ↑</kbd> 回到頁頂</div>
         <div class="shortcut-row"><kbd class="key-combo">Cmd/Ctrl + ↓</kbd> 前往頁底</div>
         <div class="shortcut-row"><kbd>Esc</kbd> 衛教搜尋欄：清除並回到篩選列</div>
-        <div class="shortcut-row"><kbd>Enter</kbd> 衛教搜尋欄：跳至搜尋結果</div>
-      </div>
-    </div>`;
+         <div class="shortcut-row"><kbd>Enter</kbd> 衛教搜尋欄：跳至搜尋結果</div>
+       </div>
+     </div>`;
+  eduBindArticleSizeControls();
 }
 
 function onSettingShowPcs(checked) {
