@@ -1638,6 +1638,13 @@ function eduWrapContentTables(container, entry, version) {
   var tables = container.querySelectorAll('table');
   if (!tables.length) return;
   tables.forEach(function(table) {
+    table.querySelectorAll('th, td').forEach(function(cell) {
+      if (cell.firstElementChild && cell.firstElementChild.classList.contains('edu-cell-scroll')) return;
+      var scroll = document.createElement('div');
+      scroll.className = 'edu-cell-scroll';
+      while (cell.firstChild) scroll.appendChild(cell.firstChild);
+      cell.appendChild(scroll);
+    });
     if (table.parentElement && table.parentElement.classList.contains('edu-table-wrap')) return;
     var wrap = document.createElement('div');
     wrap.className = 'edu-table-wrap';

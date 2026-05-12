@@ -1958,7 +1958,7 @@ select.search-overlay-active {
 .edu-viewer-content table {
   border-collapse: collapse;
   width: 100%;
-  table-layout: fixed;
+  table-layout: auto;
   margin-bottom: 1em;
   border-radius: 8px;
   overflow: hidden;
@@ -2096,6 +2096,19 @@ select.search-overlay-active {
   border: 1px solid color-mix(in srgb, var(--border) 75%, var(--primary) 25%);
   background: color-mix(in srgb, var(--surface2) 90%, #fff 10%);
   padding: 6px;
+}
+.edu-table-wrap table {
+  width: 100%;
+}
+.edu-cell-scroll {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  scrollbar-width: thin;
+  word-break: normal;
+  overflow-wrap: normal;
 }
 .edu-viewer-content.edu-table-scale-n2 .edu-table-wrap table { font-size: 0.76rem; }
 .edu-viewer-content.edu-table-scale-n2 .edu-table-wrap td,
