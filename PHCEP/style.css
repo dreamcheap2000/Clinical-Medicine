@@ -50,7 +50,7 @@ body {
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   background: var(--bg);
   color: var(--text);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.6;
   min-height: 100vh;
 }
@@ -1626,7 +1626,7 @@ select.search-overlay-active {
   flex-wrap: wrap;
   gap: 10px;
   padding: 12px 20px;
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto 4px;
   border-bottom: 1px solid var(--border);
 }
@@ -1697,7 +1697,7 @@ select.search-overlay-active {
   flex-wrap: nowrap;
   gap: 6px;
   padding: 8px 20px 10px;
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   border-bottom: 1px solid var(--border);
   overflow-x: auto;
@@ -1739,7 +1739,7 @@ select.search-overlay-active {
 
 /* Entry list */
 .edu-list {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 12px 20px;
   display: flex;
@@ -1872,7 +1872,7 @@ select.search-overlay-active {
 
 /* Detail viewer */
 .edu-viewer {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 0 20px 40px;
 }
@@ -1912,11 +1912,11 @@ select.search-overlay-active {
 
 /* Viewer rich content */
 .edu-viewer-content { line-height: 1.75; color: var(--text); }
-.edu-viewer-content.edu-article-scale-50 { width: 200%; }
-.edu-viewer-content.edu-article-scale-75 { width: 133.3333%; }
-.edu-viewer-content.edu-article-scale-100 { width: 100%; }
-.edu-viewer-content.edu-article-scale-125 { width: 80%; }
-.edu-viewer-content.edu-article-scale-150 { width: 66.6667%; }
+.edu-viewer-content.edu-article-scale-50,
+.edu-viewer-content.edu-article-scale-75,
+.edu-viewer-content.edu-article-scale-100,
+.edu-viewer-content.edu-article-scale-125,
+.edu-viewer-content.edu-article-scale-150 { width: 100%; }
 .edu-viewer-content h1, .edu-viewer-content h2, .edu-viewer-content h3, .edu-viewer-content h4 {
   margin-top: 1.2em; margin-bottom: 0.5em; font-weight: 700;
 }
@@ -1959,7 +1959,7 @@ select.search-overlay-active {
   border-collapse: collapse;
   width: 100%;
   table-layout: auto;
-  margin-bottom: 1em;
+  margin-bottom: 1.1em;
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid rgba(99,102,241,.22);
@@ -1969,7 +1969,7 @@ select.search-overlay-active {
   background: linear-gradient(135deg, rgba(99,102,241,.9), rgba(74,158,255,.88));
   color: #f8faff;
   padding: 8px 10px;
-  font-size: 0.88rem;
+  font-size: 0.95em;
   text-align: left;
   font-weight: 700;
   line-height: 1.45;
@@ -1979,7 +1979,7 @@ select.search-overlay-active {
 .edu-viewer-content td, .edu-viewer-content th {
   border: 1px solid var(--border);
   padding: 7px 9px;
-  font-size: 0.9rem;
+  font-size: 1em;
   line-height: 1.55;
   vertical-align: top;
   overflow-wrap: anywhere;
@@ -2113,49 +2113,42 @@ select.search-overlay-active {
 }
 /* Cell content: show up to 3 lines; expand on hover/focus/touch */
 .edu-cell-scroll {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  overflow: hidden;
+  display: block;
   white-space: normal;
   word-break: break-word;
   overflow-wrap: anywhere;
-  /* 3 lines × 1.5em line-height; +2px accounts for sub-pixel rounding */
-  max-height: calc(1.5em * 3 + 2px);
-  transition: max-height 0.25s ease, -webkit-line-clamp 0s;
-  position: relative;
+  max-height: none;
   cursor: default;
 }
 .edu-cell-scroll.edu-cell-expanded,
 .edu-cell-scroll:hover,
 .edu-cell-scroll:focus-within {
-  -webkit-line-clamp: unset;
   overflow: visible;
   max-height: none;
 }
 /* Base table font in wrapped tables is slightly larger than bare-table default */
 .edu-table-wrap table {
-  font-size: 0.92rem;
+  font-size: 1em;
 }
-.edu-viewer-content.edu-table-scale-n2 .edu-table-wrap table { font-size: 0.76rem; }
+.edu-viewer-content.edu-table-scale-n2 .edu-table-wrap table { font-size: 0.86em; }
 .edu-viewer-content.edu-table-scale-n2 .edu-table-wrap td,
 .edu-viewer-content.edu-table-scale-n2 .edu-table-wrap th { padding: 5px 7px; }
-.edu-viewer-content.edu-table-scale-n3 .edu-table-wrap table { font-size: 0.7rem; }
+.edu-viewer-content.edu-table-scale-n3 .edu-table-wrap table { font-size: 0.8em; }
 .edu-viewer-content.edu-table-scale-n3 .edu-table-wrap td,
 .edu-viewer-content.edu-table-scale-n3 .edu-table-wrap th { padding: 4px 6px; }
-.edu-viewer-content.edu-table-scale-n4 .edu-table-wrap table { font-size: 0.62rem; }
+.edu-viewer-content.edu-table-scale-n4 .edu-table-wrap table { font-size: 0.74em; }
 .edu-viewer-content.edu-table-scale-n4 .edu-table-wrap td,
 .edu-viewer-content.edu-table-scale-n4 .edu-table-wrap th { padding: 3px 5px; }
-.edu-viewer-content.edu-table-scale-n5 .edu-table-wrap table { font-size: 0.54rem; }
+.edu-viewer-content.edu-table-scale-n5 .edu-table-wrap table { font-size: 0.68em; }
 .edu-viewer-content.edu-table-scale-n5 .edu-table-wrap td,
 .edu-viewer-content.edu-table-scale-n5 .edu-table-wrap th { padding: 2px 4px; }
-.edu-viewer-content.edu-table-scale-n1 .edu-table-wrap table { font-size: 0.83rem; }
+.edu-viewer-content.edu-table-scale-n1 .edu-table-wrap table { font-size: 0.92em; }
 .edu-viewer-content.edu-table-scale-n1 .edu-table-wrap td,
 .edu-viewer-content.edu-table-scale-n1 .edu-table-wrap th { padding: 6px 9px; }
-.edu-viewer-content.edu-table-scale-1 .edu-table-wrap table { font-size: 0.96rem; }
+.edu-viewer-content.edu-table-scale-1 .edu-table-wrap table { font-size: 1.02em; }
 .edu-viewer-content.edu-table-scale-1 .edu-table-wrap td,
 .edu-viewer-content.edu-table-scale-1 .edu-table-wrap th { padding: 8px 13px; }
-.edu-viewer-content.edu-table-scale-2 .edu-table-wrap table { font-size: 1.04rem; }
+.edu-viewer-content.edu-table-scale-2 .edu-table-wrap table { font-size: 1.1em; }
 .edu-viewer-content.edu-table-scale-2 .edu-table-wrap td,
 .edu-viewer-content.edu-table-scale-2 .edu-table-wrap th { padding: 9px 15px; }
 
@@ -2480,7 +2473,7 @@ select.search-overlay-active {
 .edu-source-view p { margin-bottom: 8px; font-size: 0.9rem; }
 
 /* Add entry panel */
-.edu-add-panel { max-width: 900px; margin: 0 auto 16px; padding: 0 20px; }
+.edu-add-panel { max-width: 1200px; margin: 0 auto 16px; padding: 0 20px; }
 .edu-add-panel.hidden { display: none; }
 .edu-add-form {
   background: var(--surface);

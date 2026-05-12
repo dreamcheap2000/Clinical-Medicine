@@ -100,7 +100,6 @@ function switchTab(name) {
     b.classList.toggle('active', b.dataset.tab === name));
   document.querySelectorAll('.tab-content').forEach(c =>
     c.classList.toggle('active', c.id === 'tab-' + name));
-  if (name === 'history') renderHistory();
   if (name === 'nhi') nhiOnTabShow();
   if (name === 'drug') drugOnTabShow();
   if (name === 'specmat') specmatOnTabShow();
@@ -597,13 +596,13 @@ function buildPcsSearchResults(q) {
 // Keyboard Shortcuts
 // Alt/Option+1…7 → jump to main tabs
 // Tabs: edu(1), drug(2), ref(3), cm(4), nhi(5), specmat(6), workflow(7)
-// Shift+9 → 歷史記錄, Shift+0 → 治療流程, Shift+- → 設定
+// Shift+0 → 治療流程, Shift+- → 設定
 // Option/Alt + ↑/↓ → page up / page down
 // Cmd/Ctrl + ↑/↓  → scroll to top / bottom of page
 // ---------------------------------------------------------------------------
 (function() {
   var TAB_SHORTCUTS = { '1': 'edu', '2': 'drug', '3': 'ref', '4': 'cm', '5': 'nhi', '6': 'specmat', '7': 'workflow' };
-  var SHIFT_SHORTCUTS = { 'Digit9': 'history', 'Digit0': 'workflow', 'Minus': 'settings' };
+  var SHIFT_SHORTCUTS = { 'Digit0': 'workflow', 'Minus': 'settings' };
   document.addEventListener('keydown', function(e) {
     var tag = (document.activeElement || {}).tagName;
     var inInput = (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT');
@@ -942,7 +941,8 @@ function eduApplyArticleScale(content) {
   var pct = EDU_ARTICLE_SCALE_LEVELS[eduArticleScaleIndex] || 100;
   content.classList.remove('edu-article-scale-50', 'edu-article-scale-75', 'edu-article-scale-100', 'edu-article-scale-125', 'edu-article-scale-150');
   content.classList.add('edu-article-scale-' + pct);
-  content.style.zoom = String(pct / 100);
+  content.style.removeProperty('zoom');
+  content.style.fontSize = String(pct) + '%';
 }
 
 async function loadEduData() {
@@ -1492,7 +1492,7 @@ function eduRenderViewerContent() {
     ];
     content.innerHTML = `
       <div class="edu-fastsr-view">
-        <p class="edu-fastsr-desc">ClinSR 結構 — 將原文依 SOAP 格式分類，用於精準搜尋與跨文件對比<br>
+        <p class="edu-fastsr-desc">SOAP 結構 — 將原文依 SOAP 格式分類，用於精準搜尋與跨文件對比<br>
         此分類方式參考 FastSR 論文（EBM-NLP PICO 框架）映射至臨床 SOAP 格式。</p>
         ${sections.map(function({ k, label, cls, blk }) {
           var items = fastsr[k] || [];
@@ -2358,7 +2358,7 @@ function eduRunAutoEncode() {
   set('edu-form-o', encoded.O);
   set('edu-form-a', encoded.A);
   set('edu-form-p', encoded.P);
-  toast(`✅ ClinSR 分類完成：S(${encoded.S.length}) O(${encoded.O.length}) A(${encoded.A.length}) P(${encoded.P.length})`);
+  toast(`✅ SOAP 分類完成：S(${encoded.S.length}) O(${encoded.O.length}) A(${encoded.A.length}) P(${encoded.P.length})`);
 }
 
 function eduEncodeFastSR(text) {
@@ -3514,7 +3514,6 @@ function renderSettingsTab() {
         <div class="shortcut-row"><kbd>Alt+5</kbd> NHI支付標準</div>
         <div class="shortcut-row"><kbd>Alt+6</kbd> 特材給付</div>
         <div class="shortcut-row"><kbd>Alt+7</kbd> 治療流程</div>
-        <div class="shortcut-row"><kbd>Shift+9</kbd> 歷史記錄</div>
         <div class="shortcut-row"><kbd>Shift+0</kbd> 治療流程</div>
         <div class="shortcut-row"><kbd>Shift+-</kbd> 設定</div>
         <div class="shortcut-row"><kbd class="key-combo">Option/Alt + ↑</kbd> 向上翻頁</div>
