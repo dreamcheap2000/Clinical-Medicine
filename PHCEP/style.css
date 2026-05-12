@@ -2098,6 +2098,9 @@ select.search-overlay-active {
   padding: 6px;
 }
 .edu-table-wrap table {
+  /* min-width: 100% keeps the table at least as wide as the container;
+     width: max-content lets it grow beyond that for wide content —
+     overflow-x: auto on the wrapper provides horizontal scrolling. */
   min-width: 100%;
   width: max-content;
   table-layout: auto;
@@ -2117,6 +2120,7 @@ select.search-overlay-active {
   white-space: normal;
   word-break: break-word;
   overflow-wrap: anywhere;
+  /* 3 lines × 1.5em line-height; +2px accounts for sub-pixel rounding */
   max-height: calc(1.5em * 3 + 2px);
   transition: max-height 0.25s ease, -webkit-line-clamp 0s;
   position: relative;
