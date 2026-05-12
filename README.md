@@ -21,7 +21,6 @@ The GitHub Page is a single-page application (SPA) built with vanilla HTML / CSS
 | 💰 NHI支付標準 | NHI payment standard codes (181st ed.) |
 | ICD-10-PCS (處置) | ICD-10-PCS procedure codes |
 | 🔩 特材給付 | Special materials coverage |
-| 🗂️ 歷史記錄 | Session history |
 | 🩺 治療流程 | Clinical workflow diagrams ([EVT](PHCEP/workflow/README.md) — acute stroke thrombectomy) |
 | ⚙️ 設定 | Settings & keyboard shortcuts |
 
@@ -126,7 +125,7 @@ Push .docx → GitHub Actions trigger → build_edu_data.py
 - NHI payment standard lookup (181st edition, 115.04.01)
 - Special materials (特材) coverage viewer
 - EVT acute stroke thrombectomy workflow diagrams
-- Keyboard shortcuts: **Alt/Option + 1–7** to switch tabs; **Shift + 9** (歷史紀錄), **Shift + 0** (治療流程), **Shift + -** (設定); **Alt/Option + ↑/↓** to scroll; **Cmd/Ctrl + ↑/↓** to jump to top/bottom
+- Keyboard shortcuts: **Alt/Option + 1–7** to switch tabs; **Shift + 0** (治療流程), **Shift + -** (設定); **Alt/Option + ↑/↓** to scroll; **Cmd/Ctrl + ↑/↓** to jump to top/bottom
 
 ### Repository layout
 
