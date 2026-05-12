@@ -2114,7 +2114,6 @@ select.search-overlay-active {
 /* Cell content: show up to 3 lines; expand on hover/focus/touch */
 .edu-cell-scroll {
   display: block;
-  overflow: visible;
   white-space: normal;
   word-break: break-word;
   overflow-wrap: anywhere;
