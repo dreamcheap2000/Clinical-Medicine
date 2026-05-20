@@ -1971,6 +1971,7 @@ function eduRenderCdrCalculator(el) {
         }).join('')}
       </div>
       <div class="edu-calc-result" data-cdr-result style="margin-top:14px">${english ? 'Global CDR = 0 (no dementia)' : 'CDR = 0（無失智）'}</div>
+      <div class="edu-calc-result" data-cdr-sum style="margin-top:8px;font-size:.9rem;color:var(--muted)">${english ? 'CDR Sum of Boxes = 0.0 / 18 (none)' : 'CDR-SB 總分 = 0.0 / 18（無失智範圍）'}</div>
       <details class="edu-calc-inline-collapse">
         <summary>${english ? 'CDR® scoring rules (Morris 1993)' : 'CDR® 完整計分邏輯（依 Morris 1993）'}</summary>
         <div class="edu-calc-rules">
@@ -1983,7 +1984,8 @@ function eduRenderCdrCalculator(el) {
               '<li>When M = 0.5, Global CDR can only be 0.5 or 1; it becomes 1 when at least 3 other domains are ≥1.</li>' +
               '<li>When M = 0, Global CDR is 0 unless at least 2 secondary domains are ≥0.5, in which case it is 0.5.</li>' +
               '<li>When M ≥ 1, Global CDR cannot be 0.</li>' +
-              '<li>If only 1–2 secondary domains match M and neither side of M contains more than 2 secondary domains, then Global CDR = M.</li>'
+              '<li>If only 1–2 secondary domains match M and neither side of M contains more than 2 secondary domains, then Global CDR = M.</li>' +
+              '<li>CDR Sum of Boxes (CDR-SB) = sum of all 6 domains (range 0–18); approximate bands: 0, 0.5–4, 4.5–9, 9.5–15.5, 16–18.</li>'
             : '<li>Memory（M）為主向度，其餘 O/JPS/CA/HH/PC 為次向度。</li>' +
               '<li>若至少 3 個次向度與 M 同分，則 Global CDR = M。</li>' +
               '<li>若至少 3 個次向度落在 M 以上或 M 以下，則取次向度多數側的分數；若該側分數有並列，取最接近 M 者。</li>' +
@@ -1991,12 +1993,14 @@ function eduRenderCdrCalculator(el) {
               '<li>M = 0.5 時，若其他向度中至少 3 項 ≥1，則 CDR = 1；否則為 0.5（不可為 0）。</li>' +
               '<li>M = 0 時，除非次向度中有至少 2 項 ≥0.5，否則 CDR = 0；若有則 CDR = 0.5。</li>' +
               '<li>M ≥ 1 時，Global CDR 不可為 0；即使次向度多數為 0，最低仍為 0.5。</li>' +
-              '<li>若僅 1–2 個次向度與 M 同分，且 M 兩側各不超過 2 個次向度，則 CDR = M。</li>'}
+              '<li>若僅 1–2 個次向度與 M 同分，且 M 兩側各不超過 2 個次向度，則 CDR = M。</li>' +
+              '<li>CDR-SB（Sum of Boxes）= 六個向度分數總和，範圍 0–18；常用分層約為 0、0.5–4、4.5–9、9.5–15.5、16–18。</li>'}
         </ol>
         </div>
       </details>
     </div>`;
   var resultEl = el.querySelector('[data-cdr-result]');
+  var sumEl = el.querySelector('[data-cdr-sum]');
   var scores = {};
   var descMap = {};
   rows.forEach(function(r) {
@@ -2032,16 +2036,24 @@ function eduRenderCdrCalculator(el) {
 
   function recalc() {
     var cdr = eduComputeCdrScore(scores);
+    var cdrSum = rows.reduce(function(acc, r) { return acc + Number(scores[r.key] || 0); }, 0);
     var labelMap = english
       ? { 0: 'no dementia', 0.5: 'questionable / very mild dementia', 1: 'mild dementia', 2: 'moderate dementia', 3: 'severe dementia' }
       : { 0: '無失智', 0.5: '可疑／極輕度失智', 1: '輕度失智', 2: '中度失智', 3: '重度失智' };
     resultEl.textContent = english
       ? ('Global CDR = ' + cdr + ' (' + (labelMap[cdr] || 'unclassified') + ')')
       : ('CDR = ' + cdr + '（' + (labelMap[cdr] || '未分級') + '）');
+    if (sumEl) {
+      var band = eduCdrSumBand(cdrSum, english);
+      sumEl.textContent = english
+        ? ('CDR Sum of Boxes = ' + cdrSum.toFixed(1) + ' / 18 (' + band + ')')
+        : ('CDR-SB 總分 = ' + cdrSum.toFixed(1) + ' / 18（' + band + '）');
+    }
   }
 
   eduAppendCalcCopyButton(el.querySelector('.edu-calc-box-cdr'), function() {
     var lines = [resultEl ? resultEl.textContent : ''];
+    if (sumEl && sumEl.textContent) lines.push(sumEl.textContent);
     rows.forEach(function(r) {
       var info = el.querySelector('[data-cdr-info="' + r.key + '"]');
       var txt = info ? info.textContent : '';
@@ -2104,6 +2116,14 @@ function eduComputeCdrScore(scores) {
   if (M >= 1 && eq(result, 0)) result = 0.5;
   if (typeof result === 'undefined' || Number.isNaN(Number(result))) result = M >= 1 ? 0.5 : 0;
   return Number(result);
+}
+
+function eduCdrSumBand(sum, english) {
+  if (sum === 0) return english ? 'none' : '無失智範圍';
+  if (sum <= 4) return english ? 'very mild / questionable range' : '可疑／極輕度範圍';
+  if (sum <= 9) return english ? 'mild range' : '輕度範圍';
+  if (sum <= 15.5) return english ? 'moderate range' : '中度範圍';
+  return english ? 'severe range' : '重度範圍';
 }
 
 function eduRenderAscodCalculator(el) {
@@ -2913,6 +2933,11 @@ function hideSearchHistory(type, delayMs) {
     var el = document.getElementById(type + '-search-history');
     if (el) el.classList.remove('open');
   }, delayMs || 0);
+}
+
+function toggleSearchHistoryByQuery(type, query) {
+  if ((query || '').trim()) showSearchHistory(type);
+  else hideSearchHistory(type, 0);
 }
 
 function applySearchHistory(type, query) {
