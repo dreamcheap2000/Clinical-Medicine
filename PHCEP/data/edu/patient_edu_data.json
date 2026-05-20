@@ -4,146 +4,74 @@
   "entries": [
     {
       "id": "edu001_20260520",
-      "title": "20260520",
+      "title": "早期帕金森病：減少異動症的藥物策略（20260520 Doc2）",
       "source_file": "20260520.docx",
       "source_url": "",
-      "source_label": "",
+      "source_label": "20260520.docx（@ 分段第 2 段）",
       "source_urls": [],
       "original_lang": "en",
       "added_date": "2026-05-20",
       "version": "1",
-      "tags": [],
+      "tags": [
+        "帕金森病",
+        "異動症",
+        "amantadine",
+        "MAO-B inhibitor",
+        "levodopa"
+      ],
       "fastsr": {
         "S": [
-          "Ticagrelor in stroke",
-          "5% with ticagrelor-aspirin vs 6.",
-          "6% with aspirin alone (HR 0.",
-          "83, 95% CI 0.",
-          "71-0.",
-          "96, p=0.",
-          "02).",
-          "1%, with a number needed to treat of 92.",
-          "Ischemic stroke: 5.",
-          "0% with ticagrelor-aspirin vs 6.",
-          "3% with aspirin alone (HR 0.",
-          "79, 95% CI 0.",
-          "68-0.",
-          "93, p=0.",
-          "004).",
-          "Major hemorrhage: Major ischemic events (ischemic stroke or nonhemorrhagic death) occurred in 5.",
-          "3% with ticagrelor-aspirin vs 6.",
-          "19%).",
-          "However, major hemorrhage (intracranial hemorrhage or hemorrhagic death) occurred in 0.",
-          "4% with ticagrelor-aspirin vs 0.",
-          "1% with aspirin alone (absolute risk increase 0.",
-          "29%).",
-          "[2] Severe bleeding overall occurred in 0.",
-          "5% vs 0.",
-          "1% (p=0.",
-          "001), with a number needed to harm of 263.",
-          "025) and reduced levodopa dose escalation by 70 mg (P = 0.",
-          "005).",
-          "001) and lower dyskinesia scores (p = 0.",
-          "028)",
-          "7 hours compared to rasagiline when added to levodopa"
+          "早期帕金森病患者在使用 levodopa 後，常擔心日後出現異動症（dyskinesia）與劑量逐步上升。",
+          "病人常詢問是否能在疾病早期加入輔助藥物，降低運動併發症風險。",
+          "臨床目標為延緩異動症、減少 OFF time，並兼顧藥物耐受性。"
         ],
         "O": [
-          "THALES trial randomized 11,016 patients with mild-to-moderate acute noncardioembolic ischemic stroke (NIHSS ≤5) or high-risk TIA",
-          "Primary efficacy outcome (stroke or death at 30 days): 5.",
-          "This represents an absolute risk reduction of 1.",
-          "5% with aspirin alone (absolute risk reduction 1.",
-          "The treatment effect of ticagrelor-aspirin accrued primarily over the first 10 days,",
-          "A network meta-analysis found Clopidogrel-aspirin ranked highest in SUCRA analysis and was associated with lower risk of functional disability compared to both aspirin alone and ticagrelor-aspirin",
-          "Recent evidence from the PREMANDYSK trial demonstrates that early addition of amantadine-IR (200 mg/day) to levodopa therapy in early PD halved dyskinesia incidence over 18 months (11% vs 22%, P = 0.",
-          "Common side effects include hallucinations (15-24%), peripheral edema (24%), dizziness (22%), and dry mouth.",
-          "A 3-year head-to-head retrospective study comparing selegiline and rasagiline found that both MAO-B inhibitors were associated with approximately 2-fold lower increases in daily levodopa dose (p < 0.",
-          "Recent indirect comparison data suggest safinamide may reduce OFF time by an additional 0."
+          "PREMANDYSK 試驗顯示：早期加用 amantadine-IR 200 mg/day，18 個月異動症發生率約 11% 對 22%。",
+          "同試驗中 levodopa 劑量增加量約少 70 mg。",
+          "selegiline 與 rasagiline 的回溯研究顯示，兩者皆與較慢的 levodopa 劑量上升及較低異動症分數相關。",
+          "間接比較資料指出：safinamide 加用於 levodopa 可能再減少約 0.7 小時 OFF time。",
+          "amantadine 常見副作用包括幻覺、周邊水腫、頭暈、口乾。"
         ],
-        "A": [],
-        "P": []
+        "A": [
+          "早期輔助治療可作為延後運動併發症的策略之一，但需依症狀型態與副作用風險個別化。",
+          "MAO-B 抑制劑可作為平穩症狀與減少 levodopa 追加速度的選項。",
+          "異動症預防與 OFF time 改善需同時評估，不能只看單一指標。"
+        ],
+        "P": [
+          "與神經科醫師討論是否於早期加入 amantadine 或 MAO-B 抑制劑。",
+          "規律追蹤運動症狀、異動症分數、OFF time 與日常功能。",
+          "若出現幻覺、水腫或明顯頭暈，應及早回診調整藥物。",
+          "整合復健運動、睡眠與用藥時程，以提升整體控制品質。"
+        ]
       },
       "prototype": {
         "global": [
-          "20260520",
-          "ticagrelor",
-          "in",
-          "stroke",
-          "5%",
-          "with",
-          "aspirin",
-          "vs",
-          "6%",
-          "alone",
-          "(hr",
-          "83",
-          "95%",
-          "ci",
-          "71",
-          "96",
-          "p=0",
-          "02)",
-          "1%",
-          "number",
-          "needed",
-          "to",
-          "treat",
-          "of",
-          "92",
-          "ischemic",
-          "stroke:",
-          "0%",
-          "3%",
-          "79",
-          "68",
-          "93",
-          "004)",
-          "major",
-          "hemorrhage:",
-          "events",
-          "(ischemic",
-          "or",
-          "nonhemorrhagic",
-          "death)",
-          "occurred",
-          "19%)",
-          "however",
-          "hemorrhage",
-          "(intracranial",
-          "hemorrhagic",
-          "4%",
-          "(absolute",
-          "risk",
-          "increase",
-          "29%)",
-          "[2]",
-          "severe",
-          "bleeding",
-          "overall",
-          "(p=0",
-          "001)",
-          "harm",
-          "263",
-          "025)"
+          "帕金森病",
+          "早期治療",
+          "異動症",
+          "amantadine",
+          "MAO-B",
+          "levodopa",
+          "OFF time"
         ],
         "semantic": [
-          "CT",
-          "rate",
-          "study",
-          "data",
-          "outcome",
-          "treatment",
-          "therapy"
+          "患者",
+          "症狀",
+          "副作用",
+          "治療",
+          "評估",
+          "追蹤"
         ],
         "fragment": [
-          "20260520",
-          "Major hemorrhage: Major ischemic events (ischemic stroke or nonhemorrhagic death) occurred in 5.",
-          "Recent evidence from the PREMANDYSK trial demonstrates that early addition of amantadine-IR (200 mg/day) to levodopa therapy in early PD halved dyskinesia incidence over 18 months (11% vs 22%, P = 0."
+          "早期帕金森病：減少異動症的藥物策略（20260520 Doc2）",
+          "PREMANDYSK 試驗顯示：早期加用 amantadine-IR 可降低異動症發生率。",
+          "MAO-B 抑制劑與較慢的 levodopa 劑量增加及較低異動症分數相關。"
         ]
       },
       "versions": {
-        "simple_zh": "",
-        "professional_zh": "",
-        "english": "<p>@</p><p>Ticagrelor in stroke</p><p>THALES trial randomized 11,016 patients with mild-to-moderate acute noncardioembolic ischemic stroke (NIHSS ≤5) or high-risk TIA</p><p><strong>Primary efficacy outcome</strong> (stroke or death at 30 days): 5.5% with ticagrelor-aspirin vs 6.6% with aspirin alone (HR 0.83, 95% CI 0.71-0.96, p=0.02). This represents an absolute risk reduction of 1.1%, with a number needed to treat of 92. [1]</p><p><strong>Ischemic stroke</strong>: 5.0% with ticagrelor-aspirin vs 6.3% with aspirin alone (HR 0.79, 95% CI 0.68-0.93, p=0.004). [1]</p><p><strong>Major hemorrhage</strong>: Major ischemic events (ischemic stroke or nonhemorrhagic death) occurred in 5.3% with ticagrelor-aspirin vs 6.5% with aspirin alone (absolute risk reduction 1.19%). However, major hemorrhage (intracranial hemorrhage or hemorrhagic death) occurred in 0.4% with ticagrelor-aspirin vs 0.1% with aspirin alone (absolute risk increase 0.29%). [2] Severe bleeding overall occurred in 0.5% vs 0.1% (p=0.001), with a number needed to harm of 263.</p><p>The treatment effect of ticagrelor-aspirin accrued primarily over the first 10 days,</p><p>A network meta-analysis found Clopidogrel-aspirin ranked highest in SUCRA analysis and was associated with lower risk of functional disability compared to both aspirin alone and ticagrelor-aspirin</p><p>@</p><p>Recent evidence from the PREMANDYSK trial demonstrates that <strong>early addition of amantadine-IR (200 mg/day) to levodopa therapy in early PD halved dyskinesia incidence</strong> over 18 months (11% vs 22%, P = 0.025) and reduced levodopa dose escalation by 70 mg (P = 0.005). Common side effects include hallucinations (15-24%), peripheral edema (24%), dizziness (22%), and dry mouth.</p><p>A 3-year head-to-head retrospective study comparing selegiline and rasagiline found that <strong>both MAO-B inhibitors were associated with approximately 2-fold lower increases in daily levodopa dose</strong> (p &lt; 0.001) and <strong>lower dyskinesia scores</strong> (p = 0.028) </p><p>Recent indirect comparison data suggest safinamide may reduce OFF time by an additional 0.7 hours compared to rasagiline when added to levodopa</p>"
+        "simple_zh": "<h2>早期帕金森病：如何降低異動症風險？</h2>\n<p>帕金森病患者常會問：「如果現在就開始治療，能不能減少以後手腳不自主晃動（異動症）？」</p>\n<p>根據 20260520 文件第 2 段資料，<strong>早期加入輔助藥物</strong>可能有幫助，但需要醫師評估後使用。</p>\n<h3>重點發現</h3>\n<ul>\n<li><strong>Amantadine-IR（200 mg/day）</strong>：研究中 18 個月異動症發生率約 11%（未加用者約 22%）。</li>\n<li>使用 amantadine 的病人，levodopa 劑量增加幅度也較小。</li>\n<li><strong>MAO-B 抑制劑</strong>（如 selegiline、rasagiline）也與較慢的 levodopa 劑量上升、較低異動症分數有關。</li>\n<li>safinamide 可能進一步縮短 OFF time（約 0.7 小時）。</li>\n</ul>\n<h3>常見副作用（以 amantadine 為例）</h3>\n<ul>\n<li>幻覺</li>\n<li>周邊水腫（腳踝腫）</li>\n<li>頭暈</li>\n<li>口乾</li>\n</ul>\n<h3>給病友的實用建議</h3>\n<ol>\n<li>和神經科醫師討論是否適合早期加用輔助藥物。</li>\n<li>定期記錄「抖動、僵硬、異動症、OFF 時段」變化。</li>\n<li>若出現幻覺、腫脹或明顯頭暈，請盡快回診調整用藥。</li>\n</ol>",
+        "professional_zh": "<h2>早期帕金森病：降低異動症與劑量負荷的治療策略（20260520 Doc2）</h2>\n<p>本段內容摘自 20260520 文件以 <code>@</code> 分隔後之第 2 段，主題聚焦於早期 PD 藥物策略與運動併發症預防。</p>\n<h3>關鍵證據摘要</h3>\n<table><thead><tr><th>主題</th><th>主要結果</th><th>臨床意義</th></tr></thead><tbody>\n<tr><td>PREMANDYSK（早期加用 amantadine-IR）</td><td>18 個月異動症 11% vs 22%；levodopa 劑量升幅較低</td><td>支持早期輔助治療可降低運動併發症風險</td></tr>\n<tr><td>Selegiline / Rasagiline 比較</td><td>兩者皆與較慢 levodopa 劑量上升、較低異動症分數相關</td><td>MAO-B 抑制劑可作為早期加成選項</td></tr>\n<tr><td>Safinamide 間接比較</td><td>加用後 OFF time 可能再下降約 0.7 小時</td><td>可作為波動症狀控制之輔助依據</td></tr>\n</tbody></table>\n<h3>安全性與監測</h3>\n<p>Amantadine 常見不良反應：幻覺、周邊水腫、頭暈、口乾。治療決策需整合年齡、認知狀態、跌倒風險與共病藥物。</p>\n<h3>實務建議</h3>\n<ul>\n<li>以「異動症風險 + OFF time + 功能目標」三軸進行個別化治療。</li>\n<li>每次門診固定追蹤 UPDRS 臨床表現與副作用訊號。</li>\n<li>維持復健與生活作息管理，避免僅依藥物加量處理波動症狀。</li>\n</ul>",
+        "english": "<h2>Early Parkinson Disease: Strategies to Reduce Dyskinesia (20260520 Doc2)</h2>\n<p>This brief education article is translated from the second segment split by <code>@</code> in the 20260520 document.</p>\n<h3>Key findings</h3>\n<ul>\n<li>In PREMANDYSK, early add-on <strong>amantadine-IR (200 mg/day)</strong> was associated with lower dyskinesia incidence over 18 months (11% vs 22%).</li>\n<li>Levodopa dose escalation was also smaller in the amantadine arm.</li>\n<li>Retrospective data suggest both <strong>selegiline</strong> and <strong>rasagiline</strong> were linked to slower levodopa dose increase and lower dyskinesia scores.</li>\n<li>Indirect comparison suggests <strong>safinamide</strong> may reduce OFF time by about 0.7 additional hours versus rasagiline when added to levodopa.</li>\n</ul>\n<h3>Common adverse effects (amantadine)</h3>\n<p>Hallucinations, peripheral edema, dizziness, and dry mouth.</p>\n<h3>Clinical take-home points</h3>\n<ol>\n<li>Consider early adjunctive therapy in selected patients at risk for motor complications.</li>\n<li>Track dyskinesia, OFF time, and functional outcomes longitudinally.</li>\n<li>Adjust treatment promptly if neuropsychiatric or edema-related adverse effects emerge.</li>\n</ol>"
       }
     },
     {
@@ -849,9 +777,9 @@
         ]
       },
       "versions": {
-        "simple_zh": "<h2>頭暈、頸椎與頸動脈超音波：怎麼判斷比較合理？</h2><p>很多人頭暈時會懷疑「頸椎壓迫」或「頸動脈阻塞」。臨床上要先分清楚頭暈型態，再決定檢查。最常見、也最容易治療的周邊眩暈是 <strong>BPPV（耳石脫落）</strong>。</p><h3>1) 什麼是頸因性頭暈（CGD）？</h3><p>CGD 常被解釋為：頸部訊號和前庭/視覺訊號不一致，造成不穩感或暈眩。不過它是否是「獨立疾病」仍有爭議，所以通常是<strong>排除診斷</strong>，不能只靠一張影像就下結論。</p><h3>2) 還有哪些可能機轉？</h3><ul><li>頸部疼痛導致姿勢控制變差</li><li>中樞對感覺輸入重新加權失衡</li><li>焦慮與過度警覺讓暈感放大</li></ul><h3>3) 什麼時候要做頸動脈超音波？</h3><p>若有短暫性腦缺血/中風症狀、單側神經學缺損、頸部血管雜音或明顯動脈粥樣硬化高風險，才比較有幫助。<strong>只有頭暈而沒有局灶神經症狀時，檢查陽性率通常很低。</strong></p><p>另外，頸動脈狹窄造成中風的主要機轉是<strong>血栓栓塞</strong>，不是單純「供血不足」。</p><h3>4) 常見鑑別診斷</h3><ul><li><strong>BPPV</strong>：翻身或抬頭誘發、短暫旋轉感，通常可用復位術改善。</li><li><strong>前庭型偏頭痛</strong>：可有眩暈、畏光畏聲、頭痛或視覺先兆，盛行率約 1–3%。</li></ul><h3>5) 治療重點</h3><ul><li>CGD：頸部治療 + 前庭復健 + 姿勢訓練。</li><li>BPPV：優先做耳石復位術。</li><li>周邊眩暈：<strong>長期固定使用止暈藥通常沒有持續好處</strong>。</li><li>前庭型偏頭痛：規律睡眠、壓力管理與預防藥物（如 flunarizine）可考慮。</li></ul>",
-        "professional_zh": "<h2>Dizzy_Carotid_Duplex：頸因性頭暈與頸動脈超音波的臨床定位</h2><h3>病理生理與爭議</h3><p>頸因性頭暈（cervicogenic dizziness, CGD）常以「頸椎本體感覺輸入異常，與視覺/前庭訊號不一致」解釋；但其作為獨立診斷實體仍具爭議，應採排除式診斷策略。</p><h3>替代機制</h3><ul><li>疼痛驅動之感覺重加權與中樞敏化</li><li>頸部活動受限引發姿勢控制失衡</li><li>焦慮-過度警覺迴路放大主觀暈眩</li></ul><h3>頸動脈超音波的適應時機</h3><p>建議優先用於疑似 TIA/中風、局灶神經學缺損、頸部雜音或高粥樣硬化風險病人。對「孤立性頭暈」族群，臨床可處置狹窄之檢出率低，不宜作為常規篩檢。</p><p>病理機轉上，頸動脈狹窄導致缺血性中風以<strong>血栓栓塞</strong>為主，低灌流並非主要機制。</p><h3>重要鑑別</h3><ul><li><strong>BPPV</strong>：最常見周邊眩暈，位置誘發眼振與復位治療反應具診斷價值。</li><li><strong>前庭型偏頭痛</strong>：盛行率約 1–3%，症狀可含自發/姿勢相關眩暈、頭痛、畏光畏聲與視覺先兆。</li></ul><h3>治療建議</h3><ul><li>CGD：整合頸部復健、前庭訓練與功能性姿勢治療。</li><li>周邊眩暈：避免長期固定使用前庭抑制/止暈藥物，因缺乏長期獲益且可能延遲代償。</li><li>前庭型偏頭痛：可考慮預防治療（例如 flunarizine）與生活型態介入。</li></ul>",
-        "english": "<h2>Dizzy_Carotid_Duplex: practical framework for dizziness</h2><h3>Pathophysiology of cervicogenic dizziness (controversial)</h3><p>A common model for cervicogenic dizziness (CGD) is a <strong>sensory mismatch</strong>: abnormal cervical proprioceptive input conflicts with vestibular and visual signals. However, CGD as an independent entity remains debated, so diagnosis should be exclusion-based.</p><h3>Alternative mechanisms</h3><ul><li>Pain-driven sensory reweighting and central sensitization</li><li>Postural control disturbance from restricted neck motion</li><li>Anxiety/hypervigilance amplifying dizziness perception</li></ul><h3>When should carotid duplex be performed?</h3><p>Use carotid duplex mainly when there are focal neurologic deficits, suspected TIA/stroke, carotid bruit, or high atherosclerotic risk. In isolated dizziness without focal signs, the diagnostic yield for actionable carotid stenosis is generally low.</p><p>Mechanistically, carotid stenosis causes ischemic stroke primarily via <strong>thromboembolism</strong>, not isolated hypoperfusion.</p><h3>Key differentials</h3><ul><li><strong>BPPV</strong>: the most common treatable peripheral vertigo; positional testing and reposition maneuvers are central.</li><li><strong>Vestibular migraine</strong>: prevalence is roughly 1–3%; symptoms include episodic vertigo/dizziness with migraine features (photophobia, phonophobia, aura, headache).</li></ul><h3>Treatment points</h3><ul><li>CGD: combined neck rehabilitation + vestibular rehabilitation.</li><li>Peripheral vertigo: chronic routine anti-vertigo medication has no proven long-term benefit and may delay vestibular compensation.</li><li>Vestibular migraine: lifestyle regulation plus preventive therapy; <strong>flunarizine</strong> is one option in appropriate patients.</li></ul>"
+        "simple_zh": "<h2>頭暈要不要做頸動脈超音波？先看這 4 件事</h2>\n<p>頭暈很常見，但不是每次都要做頸動脈超音波。先分清楚頭暈型態，才能做對檢查。</p>\n<h3>1) 先辨認頭暈類型</h3>\n<table><thead><tr><th>常見類型</th><th>特徵</th><th>常見處置</th></tr></thead><tbody>\n<tr><td>BPPV（耳石脫落）</td><td>翻身、抬頭誘發短暫旋轉感</td><td>耳石復位術，通常改善很快</td></tr>\n<tr><td>前庭型偏頭痛</td><td>眩暈合併偏頭痛、怕光怕吵、視覺先兆</td><td>生活作息調整＋預防藥物</td></tr>\n<tr><td>頸因性頭暈（CGD）</td><td>常伴頸痛、姿勢改變時不穩感加重</td><td>頸部復健＋前庭訓練＋姿勢訓練</td></tr>\n</tbody></table>\n<h3>2) 什麼情況比較需要做頸動脈超音波？</h3>\n<ul>\n<li>有單側無力、說話不清、臉歪等中風/TIA 警訊</li>\n<li>醫師聽到頸部血管雜音</li>\n<li>本身有高風險動脈粥樣硬化因素（高齡、糖尿病、吸菸等）</li>\n</ul>\n<p><strong>只有頭暈、沒有局灶神經症狀時，頸動脈超音波通常檢出率不高。</strong></p>\n<h3>3) 重要觀念</h3>\n<p>頸動脈狹窄導致中風，主要機轉是<strong>血栓栓塞</strong>，不是單純「血流稍少」就一定頭暈。</p>\n<h3>4) 何時要急診？</h3>\n<ul>\n<li>突然單側肢體無力或麻木</li>\n<li>說話困難、視力突然改變</li>\n<li>新發劇烈頭痛、步態明顯不穩</li>\n</ul>",
+        "professional_zh": "<h2>Dizzy_Carotid_Duplex：頭暈評估與頸動脈超音波之適應定位</h2>\n<p>本主題強調：頭暈評估應先完成臨床分型與神經學危險訊號篩查，再決定是否安排頸動脈超音波。</p>\n<h3>病理與鑑別重點</h3>\n<ul>\n<li><strong>CGD</strong>：推測與頸部本體感覺輸入失衡、疼痛相關中樞敏化及姿勢控制網路失調有關，屬排除診斷。</li>\n<li><strong>BPPV</strong>：最常見可逆周邊眩暈，Dix-Hallpike 與復位反應具高度臨床價值。</li>\n<li><strong>Vestibular migraine</strong>：可呈現自發/姿勢性眩暈，並合併偏頭痛特徵（光聲敏感、aura、頭痛）。</li>\n</ul>\n<h3>頸動脈超音波：何時有價值？</h3>\n<table><thead><tr><th>情境</th><th>建議</th><th>理由</th></tr></thead><tbody>\n<tr><td>疑似 TIA/中風、局灶神經缺損</td><td>建議檢查</td><td>可影響後續再灌流/二級預防策略</td></tr>\n<tr><td>頸部雜音或高動脈粥樣硬化風險</td><td>可考慮檢查</td><td>有助斑塊與狹窄分層</td></tr>\n<tr><td>孤立性頭暈、無神經學定位徵象</td><td>不建議常規篩檢</td><td>可處置重大狹窄檢出率低</td></tr>\n</tbody></table>\n<h3>治療原則</h3>\n<ul>\n<li>CGD：頸部疼痛處理、活動度重建、前庭復健與姿勢再訓練整合。</li>\n<li>周邊眩暈：避免長期固定使用前庭抑制劑，以免延遲中樞代償。</li>\n<li>前庭型偏頭痛：生活型態管理 + 預防藥物（如 flunarizine）個別化使用。</li>\n</ul>",
+        "english": "<h2>Dizzy_Carotid_Duplex: When is carotid duplex useful in dizziness?</h2>\n<p>Dizziness should be phenotyped first; carotid duplex is not a routine test for every dizzy patient.</p>\n<h3>Structured differential</h3>\n<table><thead><tr><th>Condition</th><th>Typical clues</th><th>Practical first step</th></tr></thead><tbody>\n<tr><td>BPPV</td><td>Brief positional vertigo with turning in bed</td><td>Positional testing and canalith repositioning</td></tr>\n<tr><td>Vestibular migraine</td><td>Episodic vertigo with migraine features</td><td>Lifestyle trigger control and preventive plan</td></tr>\n<tr><td>Cervicogenic dizziness (CGD)</td><td>Neck pain/stiffness with non-spinning disequilibrium</td><td>Exclude dangerous causes; combine neck + vestibular rehab</td></tr>\n</tbody></table>\n<h3>When to order carotid duplex</h3>\n<ul>\n<li>Focal neurologic deficits or suspected TIA/stroke</li>\n<li>Carotid bruit or high atherosclerotic burden</li>\n</ul>\n<p>In isolated dizziness without focal signs, the diagnostic yield for actionable carotid stenosis is usually low.</p>\n<h3>Clinical pearl</h3>\n<p>Ischemic stroke from carotid disease is mainly <strong>thromboembolic</strong>, not simply due to mild isolated hypoperfusion.</p>"
       }
     },
     {
@@ -1012,9 +940,9 @@
         ]
       },
       "versions": {
-        "simple_zh": "<h2>🤔 疼痛的物理治療：你需要知道的事</h2><p>許多人在慢性疼痛時都想知道：「我需要做電療、超音波，還是熱療？」這篇文章幫你整理各種物理治療的實際效果，讓你做出更聰明的選擇。</p><h3>⚡ 常見物理治療儀器——有沒有效？</h3><p>根據醫學實證，這些儀器對慢性疼痛的幫助<strong>相當有限</strong>：</p><ul><li>🔴 <strong>微波透熱療法、短波透熱療法</strong>：實證不足，<strong>不建議</strong>常規使用</li><li>🟡 <strong>治療性超音波</strong>：對慢性疼痛效益不足；不同熱療方式效果相近</li><li>🟡 <strong>TENS（低頻電刺激）</strong>：短期可能稍有幫助，長期效果不確定；對退化性膝關節炎在安慰劑對照試驗中無效</li><li>🟡 <strong>紅外線治療</strong>：目前醫學文獻對此疼痛用途尚未有明確建議</li></ul><p>👉 這些儀器最多只是<strong>輔助工具</strong>，無法根治慢性疼痛。</p><h3>🏃 慢性下背痛：運動才是關鍵</h3><p>如果你有慢性下背痛，最重要的事是：<strong>規律運動</strong>！</p><ul><li>✅ 規律運動計畫（各種運動方式效果差不多，選你喜歡的就好）</li><li>✅ 短期可用熱敷緩解症狀，也可考慮推拿、針灸作為過渡治療</li><li>✅ 若有情緒困擾或心理壓力，可加入認知行為治療（CBT）</li><li>❌ 不建議：TENS、超音波、短波透熱療法——這些對慢性下背痛幫助有限</li></ul><h3>🦵 退化性膝關節炎：動起來最有效</h3><p>膝關節退化的核心治療同樣是：<strong>持續運動</strong>！</p><ul><li>✅ 低衝擊有氧（騎自行車、游泳）＋下肢肌力訓練</li><li>✅ 太極拳、瑜伽也是很好的選擇</li><li>✅ 可考慮轉介物理治療師設計個人化運動計畫</li><li>✅ 熱敷可短期緩解；急性發炎腫脹時可冰敷</li><li>❌ 不建議：TENS、短波透熱療法——對退化性膝關節炎無效</li></ul><h3>💡 總結一張表</h3><table><thead><tr><th>症狀</th><th>最重要的治療</th><th>可輔助</th><th>應避免</th></tr></thead><tbody><tr><td>慢性下背痛</td><td>規律運動</td><td>熱敷、推拿、針灸、CBT</td><td>TENS、超音波、短波透熱</td></tr><tr><td>退化性膝關節炎</td><td>有氧＋肌力訓練</td><td>熱敷、冰敷、物理治療師指導</td><td>TENS、短波透熱</td></tr></tbody></table><p>如果你的疼痛伴有心理壓力或情緒問題，記得告訴醫師，這也是慢性疼痛治療的重要一環！</p>",
-        "professional_zh": "<h2>物理治療疼痛管理實證指引</h2><p>本文整理物理治療在疼痛管理中的實證建議，涵蓋常見物理治療儀器的療效、慢性下背痛及退化性膝關節炎的治療策略，資料來源為 UpToDate Expert AI。</p><h3>一、物理治療儀器療效比較</h3><p>在慢性疼痛與復健的臨床應用中，各類物理治療儀器通常被視為<strong>輔助性選項</strong>，整體療效的實證程度不一，且比較各項儀器效果的直接實證仍十分有限。</p><table><thead><tr><th>治療儀器</th><th>療效實證</th><th>建議應用情境</th></tr></thead><tbody><tr><td><strong>微波透熱療法</strong><br>Microwave diathermy</td><td>實證不足，不建議用於慢性疼痛</td><td>不建議常規使用</td></tr><tr><td><strong>短波透熱療法</strong><br>Shortwave diathermy</td><td>慢性下背痛之隨機試驗顯示一致效益不足；退化性膝關節炎亦未優於假治療</td><td>不建議常規使用</td></tr><tr><td><strong>紅外線治療</strong><br>Infrared therapy</td><td>UpToDate現有內容未直接討論紅外線治療在疼痛管理中的角色</td><td>尚無明確適應症建議</td></tr><tr><td><strong>治療性超音波</strong><br>Therapeutic ultrasound</td><td>慢性疼痛實證不足；可穿戴式超音波於退化性膝關節炎有初步實證，但需長時間配戴且費用較高</td><td>作為熱療輔助；不同熱療方式效果相似</td></tr><tr><td><strong>TENS（經皮神經電刺激）</strong><br>Transcutaneous Electrical Nerve Stimulation</td><td>慢性疼痛療效不確定；主要短期療效，長期效益未確立；退化性膝關節炎安慰劑對照試驗顯示無額外療效；對原發性痛經有效（高頻優於低頻）</td><td>部分局部慢性疼痛可輔助使用，須告知效益不確定性</td></tr></tbody></table><h3>二、慢性下背痛的物理治療策略</h3><p>對於慢性下背痛，物理治療的<strong>核心</strong>是<strong>規律運動或動態治療</strong>，其他干預措施主要用於促進積極治療的參與及短期症狀緩解。</p><h4>基礎治療</h4><ul><li><strong>運動治療</strong>：建議規律參與運動計畫；大多數運動類型效果相近，依可取得性與患者偏好選擇。</li></ul><h4>短期症狀緩解的輔助療法</h4><ul><li><strong>表層熱療</strong>：可用於短期症狀緩解，包括急性惡化期。</li><li><strong>被動療法</strong>（脊椎徒手治療、針灸、按摩）：可考慮用於短期症狀改善，最好作為銜接主動治療的橋接策略。</li></ul><h4>心理社會風險明顯時</h4><ul><li><strong>認知行為治療（CBT）</strong>：可加入有顯著心理社會風險的亞急性疼痛或功能損傷明顯的慢性疼痛治療計畫。</li></ul><h4>應避免的療法</h4><ul><li>不建議常規使用<strong>TENS、治療性超音波或短波透熱療法</strong>——隨機試驗顯示一致效益不足。</li></ul><h3>三、退化性膝關節炎的物理治療策略</h3><p>對於退化性膝關節炎，物理治療的<strong>核心</strong>是<strong>持續運動</strong>——通常結合低衝擊有氧訓練與下肢肌力訓練；目前尚無強力實證支持單一最佳運動處方。</p><h4>主要治療（所有患者）</h4><ul><li>低衝擊有氧訓練結合下肢肌力訓練適合所有患者。</li><li>優先選擇低衝擊有氧（如騎自行車、游泳）加上下肢肌力訓練。</li><li>太極拳及瑜伽可作為補充性運動選項。</li></ul><h4>物理治療轉介</h4><ul><li>轉介物理治療師可優化運動計畫的效果，並針對個別損傷與偏好進行個別化調整。</li></ul><h4>輔助性症狀調節治療</h4><ul><li><strong>局部熱療</strong>：可能有短期止痛效益，但缺乏強力試驗實證。</li><li><strong>冷敷</strong>：部分患者在急性發作或腫脹時可短暫緩解症狀。</li></ul><h4>應避免的療法</h4><ul><li><strong>TENS</strong>：無額外療效（根據安慰劑對照試驗）</li><li><strong>短波透熱療法</strong>：在教育與運動計畫中的試驗顯示，與假治療相比無額外效益。</li></ul><h3>四、結語</h3><p>物理治療儀器在疼痛管理中通常扮演輔助角色，而<strong>規律運動</strong>才是慢性疼痛——無論下背痛或退化性膝關節炎——的核心治療。臨床醫師應根據患者症狀、功能目標及偏好選擇適當的輔助干預，並充分告知各種療法的實證程度。</p>",
-        "english": "<p><strong>AI Generated Response</strong></p><p>You are asking about the efficacy and typical use cases for microwave and shortwave diathermy, infrared therapy, low- and high-frequency therapeutic ultrasound, and TENS in physical therapy. I am assuming the question is about pain and musculoskeletal rehabilitation in adults.</p><p>Is there anything to add or change?  </p><p>Across chronic pain and rehabilitation contexts, these modalities are generally considered adjunctive options with variable or uncertain benefit, and evidence comparing specific modalities is limited.<a href=\"https://www.uptodate.com/contents/126111#H852460222\">[9]</a><a href=\"https://www.uptodate.com/contents/16852#H4420016\">[13]</a></p><p><strong>Efficacy and use cases (as supported in UpToDate)</strong></p><table><thead><tr><th><p><strong>Modality</strong></p></th><th><p><strong>Efficacy signal</strong></p></th><th><p><strong>Use case framing in UpToDate</strong></p></th></tr></thead><tbody><tr><td><p>Microwave diathermy</p></td><td><p>Insufficient evidence of effectiveness to recommend for chronic pain.<a href=\"https://www.uptodate.com/contents/126111#H4202641109\">[1]</a></p></td><td><p>Not recommended as a chronic pain treatment modality based on insufficient evidence.<a href=\"https://www.uptodate.com/contents/126111#H4202641109\">[1]</a></p></td></tr><tr><td><p>Shortwave diathermy</p></td><td><p>For chronic low back pain, little evidence of consistent benefit from randomized trials.<a href=\"https://www.uptodate.com/contents/7770#H3309966480\">[3]</a></p></td><td><p>Listed among therapies not routinely recommended for chronic low back pain.<a href=\"https://www.uptodate.com/contents/7770#H3309966480\">[3]</a></p></td></tr><tr><td><p>Infrared therapy</p></td><td><p>UpToDate content retrieved here did not directly address infrared therapy as a PT pain modality (distinct from “infrared coagulation,” which is a hemorrhoid procedure).</p></td><td><p>Use case not established from retrieved content.</p></td></tr><tr><td><p>Therapeutic ultrasound (including low vs high frequency)</p></td><td><p>Insufficient evidence of effectiveness to recommend for chronic pain.<a href=\"https://www.uptodate.com/contents/126111#H4202641109\">[1]</a> For chronic low back pain, little evidence of consistent benefit.<a href=\"https://www.uptodate.com/contents/7770#H3309966480\">[3]</a> For tendinopathy, definitive evidence is lacking and systematic reviews suggest marginal or no benefit versus placebo or other modalities.<a href=\"https://www.uptodate.com/contents/230#H1990765\">[10]</a></p></td><td><p>Used as a heat modality; low-frequency ranges can heat deeper tissues.<a href=\"https://www.uptodate.com/contents/16852#H342207432\">[2]</a> Evidence comparing heat-delivery modalities suggests similar pain relief across methods.<a href=\"https://www.uptodate.com/contents/16852#H342207432\">[2]</a> Variable evidence for specific musculoskeletal disorders; wearable ultrasound has emerging evidence, strongest for knee osteoarthritis, but requires prolonged daily wear and may be costly with limited reimbursement.<a href=\"https://www.uptodate.com/contents/16852#H1199738371\">[4]</a></p></td></tr><tr><td><p>TENS</p></td><td><p>Uncertain benefit for most chronic pain, may be used as an adjunct.<a href=\"https://www.uptodate.com/contents/126111#H852460222\">[9]</a> Suggested for a subset with localized pain as part of a broader plan, with tempered expectations; evidence quality is low with mainly short-term benefits and inconclusive long-term efficacy.<a href=\"https://www.uptodate.com/contents/126111#H2129654601\">[5]</a> For chronic low back pain, listed among therapies not routinely recommended due to limited evidence of consistent benefit.<a href=\"https://www.uptodate.com/contents/7770#H3309966480\">[3]</a> Not recommended for knee osteoarthritis; sham-controlled trials showed no added benefit.<a href=\"https://www.uptodate.com/contents/111177#H163360731\">[6]</a></p></td><td><p>Adjunct option some patients may try for localized chronic pain, recognizing heterogeneity of devices and application techniques.<a href=\"https://www.uptodate.com/contents/126111#H2129654601\">[5]</a> May help acute pain when appropriately dosed; evidence does not support use for chronic pain due to trial limitations.<a href=\"https://www.uptodate.com/contents/16852#H162990059\">[8]</a> In cancer-related pain, evidence is limited and trials/systematic reviews are negative or insufficient, though some patients may benefit in practice.<a href=\"https://www.uptodate.com/contents/14249#H23390227\">[7]</a> Emerging evidence for labor pain reduction.<a href=\"https://www.uptodate.com/contents/4455#H2657330025\">[11]</a> Reasonable nonpharmacologic next step for primary dysmenorrhea, with evidence favoring high-frequency over low-frequency TENS.<a href=\"https://www.uptodate.com/contents/5414#H2623182260\">[12]</a></p></td></tr></tbody></table><p>If you’d like, I can help map these modalities to a specific diagnosis and treatment goal.</p><p><strong>Sources</strong></p><ol><li><a href=\"https://www.uptodate.com/contents/126111#H4202641109\">Other physical modalities</a></li><li><a href=\"https://www.uptodate.com/contents/16852#H342207432\">Heat/cold</a></li><li><a href=\"https://www.uptodate.com/contents/7770#H3309966480\">Other physical modalities</a></li><li><a href=\"https://www.uptodate.com/contents/16852#H1199738371\">Ultrasound</a></li><li><a href=\"https://www.uptodate.com/contents/126111#H2129654601\">Transcutaneous electrical nerve stimulation (TENS)</a></li><li><a href=\"https://www.uptodate.com/contents/111177#H163360731\">Transcutaneous electrical nerve stimulation</a></li><li><a href=\"https://www.uptodate.com/contents/14249#H23390227\">TENS and other electrostimulation devices</a></li><li><a href=\"https://www.uptodate.com/contents/16852#H162990059\">Electrophysical agents</a></li><li><a href=\"https://www.uptodate.com/contents/126111#H852460222\">Physical modalities</a></li><li><a href=\"https://www.uptodate.com/contents/230#H1990765\">Ultrasound therapy</a></li><li><a href=\"https://www.uptodate.com/contents/4455#H2657330025\">Transcutaneous electrical nerve stimulation</a></li><li><a href=\"https://www.uptodate.com/contents/5414#H2623182260\">Transcutaneous electrical nerve stimulation</a></li><li><a href=\"https://www.uptodate.com/contents/16852#H4420016\">Therapeutic modalities</a></li></ol><p>Copied from <a href=\"https://ai.uptodate.com/\">UpToDate Expert AI</a>, an evidence-based clinical reasoning tool.</p><p><strong>AI Generated Response</strong></p><p>You are asking how to choose physical therapy modalities for chronic low back pain. I am assuming the patient is an adult with nonspecific chronic low back pain and the goal is pain reduction to enable activity and exercise participation.</p><p>Is there anything to add or change?  </p><p>For chronic low back pain, the core “modality” should be <strong>regular exercise or movement-based therapy</strong>, with other interventions used mainly to support participation and short-term symptom relief.<a href=\"https://www.uptodate.com/contents/7770#H35\">[2]</a></p><p><strong>Suggested modality selection</strong></p><p><strong>Foundation</strong></p><ul><li>Exercise therapy: recommend participation in a regular exercise program; most exercise types appear similarly effective, so selection is guided by availability and patient interest.<a href=\"https://www.uptodate.com/contents/7770#H35\">[2]</a><a href=\"https://www.uptodate.com/contents/7770#H1914437946\">[4]</a> Selected exercise modalities</li></ul><p><strong>Adjuncts for short-term symptom relief to facilitate active therapy</strong></p><ul><li>Superficial heat can be used for short-term symptomatic relief, including during flares.<a href=\"https://www.uptodate.com/contents/7770#H35\">[2]</a><a href=\"https://www.uptodate.com/contents/7770#H3642671060\">[3]</a></li><li>Selected “passive” therapies (spinal manipulation, acupuncture, massage) may be considered for short-term symptomatic improvement, ideally as a bridge to active therapies.<a href=\"https://www.uptodate.com/contents/7770#H35\">[2]</a><a href=\"https://www.uptodate.com/contents/7770#H2883739741\">[5]</a></li></ul><p><strong>When psychosocial risk or disability is prominent</strong></p><ul><li>Cognitive-behavioral therapy can be added for higher-risk subacute pain or chronic pain with significant functional impairment.<a href=\"https://www.uptodate.com/contents/7770#H35\">[2]</a></li></ul><p><strong>Modalities to generally avoid for chronic low back pain</strong></p><ul><li>Do not routinely recommend or refer for transcutaneous electrical nerve stimulation, therapeutic ultrasound, or shortwave diathermy due to little evidence of consistent benefit from randomized trials.<a href=\"https://www.uptodate.com/contents/7770#H3309966480\">[1]</a></li></ul><p>If you’d like, I can help tailor a PT referral “prescription” (goals, session intensity, and adjuncts) to a specific presentation.</p><p><strong>Sources</strong></p><ol><li><a href=\"https://www.uptodate.com/contents/7770#H3309966480\">Other physical modalities</a></li><li><a href=\"https://www.uptodate.com/contents/7770#H35\">SUMMARY AND RECOMMENDATIONS</a></li><li><a href=\"https://www.uptodate.com/contents/7770#H3642671060\">Self-care advice</a></li><li><a href=\"https://www.uptodate.com/contents/7770#H1914437946\">Exercise therapy</a></li><li><a href=\"https://www.uptodate.com/contents/7770#H2883739741\">Passive therapies for short-term symptom relief</a></li></ol><p>Copied from <a href=\"https://ai.uptodate.com/\">UpToDate Expert AI</a>, an evidence-based clinical reasoning tool.</p><p><strong>AI Generated Response</strong></p><p>You are asking how to choose physical therapy modalities for chronic low back pain. I am assuming the patient is an adult with nonspecific chronic low back pain and the goal is pain reduction to enable activity and exercise participation.</p><p>Is there anything to add or change?  </p><p>For chronic low back pain, the core “modality” should be <strong>regular exercise or movement-based therapy</strong>, with other interventions used mainly to support participation and short-term symptom relief.<a href=\"https://www.uptodate.com/contents/7770#H35\">[2]</a></p><p><strong>Suggested modality selection</strong></p><p><strong>Foundation</strong></p><ul><li>Exercise therapy: recommend participation in a regular exercise program; most exercise types appear similarly effective, so selection is guided by availability and patient interest.<a href=\"https://www.uptodate.com/contents/7770#H35\">[2]</a><a href=\"https://www.uptodate.com/contents/7770#H1914437946\">[4]</a> Selected exercise modalities</li></ul><p><strong>Adjuncts for short-term symptom relief to facilitate active therapy</strong></p><ul><li>Superficial heat can be used for short-term symptomatic relief, including during flares.<a href=\"https://www.uptodate.com/contents/7770#H35\">[2]</a><a href=\"https://www.uptodate.com/contents/7770#H3642671060\">[3]</a></li><li>Selected “passive” therapies (spinal manipulation, acupuncture, massage) may be considered for short-term symptomatic improvement, ideally as a bridge to active therapies.<a href=\"https://www.uptodate.com/contents/7770#H35\">[2]</a><a href=\"https://www.uptodate.com/contents/7770#H2883739741\">[5]</a></li></ul><p><strong>When psychosocial risk or disability is prominent</strong></p><ul><li>Cognitive-behavioral therapy can be added for higher-risk subacute pain or chronic pain with significant functional impairment.<a href=\"https://www.uptodate.com/contents/7770#H35\">[2]</a></li></ul><p><strong>Modalities to generally avoid for chronic low back pain</strong></p><ul><li>Do not routinely recommend or refer for transcutaneous electrical nerve stimulation, therapeutic ultrasound, or shortwave diathermy due to little evidence of consistent benefit from randomized trials.<a href=\"https://www.uptodate.com/contents/7770#H3309966480\">[1]</a></li></ul><p>If you’d like, I can help tailor a PT referral “prescription” (goals, session intensity, and adjuncts) to a specific presentation.</p><p><strong>Sources</strong></p><ol><li><a href=\"https://www.uptodate.com/contents/7770#H3309966480\">Other physical modalities</a></li><li><a href=\"https://www.uptodate.com/contents/7770#H35\">SUMMARY AND RECOMMENDATIONS</a></li><li><a href=\"https://www.uptodate.com/contents/7770#H3642671060\">Self-care advice</a></li><li><a href=\"https://www.uptodate.com/contents/7770#H1914437946\">Exercise therapy</a></li><li><a href=\"https://www.uptodate.com/contents/7770#H2883739741\">Passive therapies for short-term symptom relief</a></li></ol><p>Copied from <a href=\"https://ai.uptodate.com/\">UpToDate Expert AI</a>, an evidence-based clinical reasoning tool.</p><p><strong>AI Generated Response</strong></p><p>You are asking how to choose physical therapy modalities when the target condition is knee osteoarthritis. I am assuming the patient is an adult with symptomatic knee osteoarthritis and the goal is pain reduction and functional improvement.</p><p>Is there anything to add or change?  </p><p>For knee osteoarthritis, the core PT “modality” is <strong>ongoing exercise</strong>, typically combining low-impact aerobic training and lower-limb strengthening; there is no strong evidence for a single best exercise prescription.<a href=\"https://www.uptodate.com/contents/111177#H4206035898\">[2]</a><a href=\"https://www.uptodate.com/contents/111177#H2025137224\">[4]</a> Management of mild knee osteoarthritis Management of moderate to severe knee osteoarthritis</p><p><strong>Modality selection</strong></p><p><strong>Primary</strong></p><ul><li>Exercise for all patients.<a href=\"https://www.uptodate.com/contents/111177#H4206035898\">[2]</a></li><li>Preferred exercise mix: low-impact aerobic fitness training plus lower-limb strengthening.<a href=\"https://www.uptodate.com/contents/111177#H4206035898\">[2]</a><a href=\"https://www.uptodate.com/contents/111177#H2025137224\">[4]</a></li><li>Tai chi and yoga can be used as complementary exercise options.<a href=\"https://www.uptodate.com/contents/111177#H1800495264\">[3]</a></li></ul><p><strong>PT referral use case</strong></p><ul><li>Physical therapy referral is often used to optimize the effectiveness of the exercise program and personalize it to impairments and preferences.<a href=\"https://www.uptodate.com/contents/111177#H2025137224\">[4]</a></li></ul><p><strong>Adjunct symptom-modulating modalities</strong></p><ul><li>Local heat may have short-term pain benefit but lacks robust trial evidence; some patients may find icing temporarily helpful during flares or swelling.<a href=\"https://www.uptodate.com/contents/111177#H624810986\">[5]</a></li></ul><p><strong>Modalities to generally avoid</strong></p><ul><li>Do not recommend transcutaneous electrical nerve stimulation for knee OA; sham-controlled trials showed no added benefit, and there is evidence of a placebo component.<a href=\"https://www.uptodate.com/contents/111177#H163360731\">[1]</a></li><li>Shortwave diathermy also showed no added benefit versus sham in a trial within an education and exercise program.<a href=\"https://www.uptodate.com/contents/111177#H163360731\">[1]</a></li></ul><p>If you’d like, I can help choose an exercise emphasis and adjuncts based on severity, impairments, and comorbidities.</p><p><strong>Sources</strong></p><ol><li><a href=\"https://www.uptodate.com/contents/111177#H163360731\">Transcutaneous electrical nerve stimulation</a></li><li><a href=\"https://www.uptodate.com/contents/111177#H4206035898\">SUMMARY AND RECOMMENDATIONS</a></li><li><a href=\"https://www.uptodate.com/contents/111177#H1800495264\">Mind-body interventions</a></li><li><a href=\"https://www.uptodate.com/contents/111177#H2025137224\">Land-based exercise</a></li><li><a href=\"https://www.uptodate.com/contents/111177#H624810986\">Local heat and cold</a></li></ol><p>Copied from <a href=\"https://ai.uptodate.com/\">UpToDate Expert AI</a>, an evidence-based clinical reasoning tool.</p><p><strong>AI Generated Response</strong></p><p>You are asking how to choose physical therapy modalities when the target condition is knee osteoarthritis. I am assuming the patient is an adult with symptomatic knee osteoarthritis and the goal is pain reduction and functional improvement.</p><p>Is there anything to add or change?  </p><p>For knee osteoarthritis, the core PT “modality” is <strong>ongoing exercise</strong>, typically combining low-impact aerobic training and lower-limb strengthening; there is no strong evidence for a single best exercise prescription.<a href=\"https://www.uptodate.com/contents/111177#H4206035898\">[2]</a><a href=\"https://www.uptodate.com/contents/111177#H2025137224\">[4]</a> Management of mild knee osteoarthritis Management of moderate to severe knee osteoarthritis</p><p><strong>Modality selection</strong></p><p><strong>Primary</strong></p><ul><li>Exercise for all patients.<a href=\"https://www.uptodate.com/contents/111177#H4206035898\">[2]</a></li><li>Preferred exercise mix: low-impact aerobic fitness training plus lower-limb strengthening.<a href=\"https://www.uptodate.com/contents/111177#H4206035898\">[2]</a><a href=\"https://www.uptodate.com/contents/111177#H2025137224\">[4]</a></li><li>Tai chi and yoga can be used as complementary exercise options.<a href=\"https://www.uptodate.com/contents/111177#H1800495264\">[3]</a></li></ul><p><strong>PT referral use case</strong></p><ul><li>Physical therapy referral is often used to optimize the effectiveness of the exercise program and personalize it to impairments and preferences.<a href=\"https://www.uptodate.com/contents/111177#H2025137224\">[4]</a></li></ul><p><strong>Adjunct symptom-modulating modalities</strong></p><ul><li>Local heat may have short-term pain benefit but lacks robust trial evidence; some patients may find icing temporarily helpful during flares or swelling.<a href=\"https://www.uptodate.com/contents/111177#H624810986\">[5]</a></li></ul><p><strong>Modalities to generally avoid</strong></p><ul><li>Do not recommend transcutaneous electrical nerve stimulation for knee OA; sham-controlled trials showed no added benefit, and there is evidence of a placebo component.<a href=\"https://www.uptodate.com/contents/111177#H163360731\">[1]</a></li><li>Shortwave diathermy also showed no added benefit versus sham in a trial within an education and exercise program.<a href=\"https://www.uptodate.com/contents/111177#H163360731\">[1]</a></li></ul><p>If you’d like, I can help choose an exercise emphasis and adjuncts based on severity, impairments, and comorbidities.</p><p><strong>Sources</strong></p><ol><li><a href=\"https://www.uptodate.com/contents/111177#H163360731\">Transcutaneous electrical nerve stimulation</a></li><li><a href=\"https://www.uptodate.com/contents/111177#H4206035898\">SUMMARY AND RECOMMENDATIONS</a></li><li><a href=\"https://www.uptodate.com/contents/111177#H1800495264\">Mind-body interventions</a></li><li><a href=\"https://www.uptodate.com/contents/111177#H2025137224\">Land-based exercise</a></li><li><a href=\"https://www.uptodate.com/contents/111177#H624810986\">Local heat and cold</a></li></ol><p>Copied from <a href=\"https://ai.uptodate.com/\">UpToDate Expert AI</a>, an evidence-based clinical reasoning tool.</p>"
+        "simple_zh": "<h2>慢性疼痛的物理治療：先做對「主軸」</h2>\n<p>很多人以為慢性疼痛一定要做電療、超音波或透熱。其實在多數情境下，<strong>規律運動</strong>才是核心，儀器多半是輔助。</p>\n<h3>哪些治療是主角？</h3>\n<ul>\n<li>慢性下背痛：規律運動 + 漸進活動量</li>\n<li>退化性膝關節炎：低衝擊有氧 + 下肢肌力訓練</li>\n<li>必要時可加物理治療師個別化訓練</li>\n</ul>\n<h3>儀器治療怎麼看？</h3>\n<table><thead><tr><th>儀器</th><th>整體證據</th><th>建議</th></tr></thead><tbody>\n<tr><td>TENS</td><td>部分情境短期可能有感，但長期效果不穩定</td><td>可短期輔助，不宜當主治療</td></tr>\n<tr><td>治療性超音波</td><td>慢性疼痛證據有限</td><td>非核心，慎選使用</td></tr>\n<tr><td>短波/微波透熱</td><td>一致性效益不足</td><td>不建議常規使用</td></tr>\n</tbody></table>\n<h3>實用建議</h3>\n<ol>\n<li>先設定功能目標（走路距離、上下樓、睡眠）。</li>\n<li>把治療資源放在可長期維持的運動計畫。</li>\n<li>若疼痛合併焦慮或失眠，可加入心理介入（如 CBT）。</li>\n</ol>",
+        "professional_zh": "<h2>物理治療於慢性疼痛管理：實證導向整合</h2>\n<p>本文整理 UpToDate 相關重點：慢性疼痛治療應以主動式復健為主，儀器療法定位於短期輔助。</p>\n<h3>臨床定位</h3>\n<table><thead><tr><th>疾病情境</th><th>核心處置</th><th>可選輔助</th><th>不建議常規</th></tr></thead><tbody>\n<tr><td>慢性下背痛</td><td>規律運動治療（型態依偏好與可近性）</td><td>表層熱療、短期被動療法作為橋接</td><td>TENS、治療性超音波、短波透熱</td></tr>\n<tr><td>退化性膝關節炎</td><td>低衝擊有氧 + 下肢肌力訓練</td><td>太極、瑜伽、PT 個別化指導</td><td>TENS、短波透熱</td></tr>\n</tbody></table>\n<h3>決策原則</h3>\n<ul>\n<li>以功能恢復與活動參與作為主要終點，不以單次止痛感受取代長期目標。</li>\n<li>儀器療法可短期改善症狀，但不應取代運動與行為介入。</li>\n<li>對高心理社會風險患者，建議併入 CBT 或跨專業疼痛管理。</li>\n</ul>",
+        "english": "<h2>Physical Therapy for Chronic Pain: Evidence-Based Role of Modalities</h2>\n<p>Across chronic pain conditions, the foundation of treatment is active rehabilitation (exercise and function restoration). Device-based modalities are generally adjuncts.</p>\n<h3>Practical framework</h3>\n<table><thead><tr><th>Clinical scenario</th><th>Core treatment</th><th>Adjunct options</th><th>Generally avoid routine use</th></tr></thead><tbody>\n<tr><td>Chronic low back pain</td><td>Regular exercise program</td><td>Superficial heat, selected short-term passive therapies</td><td>TENS, therapeutic ultrasound, shortwave diathermy</td></tr>\n<tr><td>Knee osteoarthritis</td><td>Low-impact aerobic + strengthening</td><td>PT-guided progression, mind-body exercise</td><td>TENS, shortwave diathermy</td></tr>\n</tbody></table>\n<h3>Clinical take-home</h3>\n<ul>\n<li>Use modalities to support participation, not to replace active therapy.</li>\n<li>Define outcomes by function and activity tolerance, not only immediate pain change.</li>\n<li>Integrate psychosocial management (eg, CBT) when disability risk is high.</li>\n</ul>"
       }
     },
     {
