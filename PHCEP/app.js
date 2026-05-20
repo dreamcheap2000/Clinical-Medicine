@@ -2118,6 +2118,7 @@ function eduComputeCdrScore(scores) {
   return Number(result);
 }
 
+/** Map CDR-SB (0-18) into a coarse severity band label in current language. */
 function eduCdrSumBand(sum, english) {
   if (sum === 0) return english ? 'none' : '無失智範圍';
   if (sum <= 4) return english ? 'very mild / questionable range' : '可疑／極輕度範圍';
@@ -2935,6 +2936,7 @@ function hideSearchHistory(type, delayMs) {
   }, delayMs || 0);
 }
 
+/** Show history for non-empty query; hide it immediately when the query is empty. */
 function toggleSearchHistoryByQuery(type, query) {
   if ((query || '').trim()) showSearchHistory(type);
   else hideSearchHistory(type, 0);
