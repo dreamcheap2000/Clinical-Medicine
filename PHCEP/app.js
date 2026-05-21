@@ -896,8 +896,8 @@ let eduSearchMode = 'all';
 let eduCurrentEntry = null;
 let eduCurrentVersion = 'simple_zh';
 let eduDefaultVersion = 'simple_zh';
-var EDU_ARTICLE_SCALE_LEVELS = [50, 75, 100, 125, 150, 175, 200];
-var eduArticleScaleIndex = 2;
+var EDU_ARTICLE_SCALE_LEVELS = [100, 125, 150, 175, 200];
+var eduArticleScaleIndex = 0;
 // Tolerance for scroll-height comparisons: covers sub-pixel/border rounding differences.
 var EDU_SCROLL_HEIGHT_TOLERANCE = 4;
 
