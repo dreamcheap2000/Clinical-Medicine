@@ -210,7 +210,6 @@
     const q = (id) => document.getElementById(id);
     const RTPA_PRE_SBP_MAX = 185;
     const RTPA_PRE_DBP_MAX = 110;
-    const INVALID_HOURS = Number.MAX_SAFE_INTEGER;
     const nodes = ['n0','n1','n2','n3','n4','n5','n6','n7'];
 
     function clearNodes(){ nodes.forEach(id=>q(id).className='node'); }
@@ -218,7 +217,10 @@
 
     function getOnsetHours(){
       const mode = q('onsetMode').value;
-      if(mode === 'known') return Number(q('knownHours').value || INVALID_HOURS);
+      if(mode === 'known'){
+        const v = q('knownHours').value;
+        return v === '' ? NaN : Number(v);
+      }
       const s = q('sleepStart').value, w = q('wakeTime').value, e = q('evalTime').value;
       if(!s || !w || !e) return NaN;
       const t1 = new Date(s).getTime(), t2 = new Date(w).getTime(), t3 = new Date(e).getTime();
