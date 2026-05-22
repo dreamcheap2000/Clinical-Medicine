@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Acute stroke triage HTML</title>
+  <title>急性中風 ER 分流流程圖</title>
   <style>
     :root{--bg:#0b1220;--card:#131c2f;--line:#2b3a59;--text:#e7ecf7;--muted:#97a8c7;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--accent:#60a5fa}
     *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
@@ -70,7 +70,7 @@
         </div>
         <div class="row" id="evalRow" style="display:none;margin-top:8px;">
           <div>
-            <label>ER評估時間（預設現在）</label>
+            <label>急診評估時間（預設現在）</label>
             <input id="evalTime" type="datetime-local" />
           </div>
           <div class="small" style="align-self:end;">Wake-up 會以「睡眠中點 → ER評估時間」計算時間窗。</div>
@@ -208,6 +208,9 @@
 
   <script>
     const q = (id) => document.getElementById(id);
+    const RTPA_PRE_SBP_MAX = 185;
+    const RTPA_PRE_DBP_MAX = 110;
+    const INVALID_HOURS = Number.MAX_SAFE_INTEGER;
     const nodes = ['n0','n1','n2','n3','n4','n5','n6','n7'];
 
     function clearNodes(){ nodes.forEach(id=>q(id).className='node'); }
@@ -215,11 +218,11 @@
 
     function getOnsetHours(){
       const mode = q('onsetMode').value;
-      if(mode === 'known') return Number(q('knownHours').value || 999);
+      if(mode === 'known') return Number(q('knownHours').value || INVALID_HOURS);
       const s = q('sleepStart').value, w = q('wakeTime').value, e = q('evalTime').value;
       if(!s || !w || !e) return NaN;
       const t1 = new Date(s).getTime(), t2 = new Date(w).getTime(), t3 = new Date(e).getTime();
-      if(!isFinite(t1) || !isFinite(t2) || !isFinite(t3) || t2<=t1 || t3<=t1) return NaN;
+      if(!isFinite(t1) || !isFinite(t2) || !isFinite(t3) || t2<=t1 || t3<=t2) return NaN;
       const midpoint = t1 + (t2 - t1) / 2;
       return (t3 - midpoint)/3600000;
     }
@@ -265,10 +268,10 @@
         lines.push('IVT路徑：>9h，不建議 rtPA。');
       }
 
-      if (sbp >= 185 || dbp >= 110){
-        lines.push('⚠ 血壓未達 rtPA 前目標（需 <185/110 mmHg）。');
+      if (sbp >= RTPA_PRE_SBP_MAX || dbp >= RTPA_PRE_DBP_MAX){
+        lines.push(`⚠ 血壓未達 rtPA 前目標（需 <${RTPA_PRE_SBP_MAX}/${RTPA_PRE_DBP_MAX} mmHg）。`);
       } else {
-        lines.push('✓ 血壓符合 rtPA 前門檻（<185/110 mmHg）。');
+        lines.push(`✓ 血壓符合 rtPA 前門檻（<${RTPA_PRE_SBP_MAX}/${RTPA_PRE_DBP_MAX} mmHg）。`);
       }
 
       let evtCandidate = false;
@@ -326,6 +329,7 @@
     q('checkNoContra').addEventListener('click', (e)=>{e.preventDefault(); setAll('#contraList input[type=checkbox]', true);});
     q('uncheckNoContra').addEventListener('click', (e)=>{e.preventDefault(); setAll('#contraList input[type=checkbox]', false);});
 
+    // datetime-local needs local time without timezone; shift UTC epoch by local offset first.
     q('evalTime').value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16);
     run();
   </script>
