@@ -151,12 +151,12 @@
             <a href="#" id="uncheckEligible">全部清除</a>
           </div>
           <div class="check-group" id="eligibleList">
-            <label><input type="checkbox">疑似急性缺血性腦中風，且影像排除顱內出血</label>
-            <label><input type="checkbox">發病時間 ≤ 4.5 小時（健保給付時間窗）</label>
-            <label><input type="checkbox">年齡 ≥ 18 歲</label>
-            <label><input type="checkbox">使用前完成神經學評估與必要影像（CT/MRI）</label>
-            <label><input type="checkbox">院所有神經內/外科與 ICU（或同級）</label>
-            <label><input type="checkbox">治療前血壓可控制至 &lt;185/110 mmHg</label>
+            <label for="el-1"><input id="el-1" type="checkbox">疑似急性缺血性腦中風，且影像排除顱內出血</label>
+            <label for="el-2"><input id="el-2" type="checkbox">發病時間 ≤ 4.5 小時（健保給付時間窗）</label>
+            <label for="el-3"><input id="el-3" type="checkbox">年齡 ≥ 18 歲</label>
+            <label for="el-4"><input id="el-4" type="checkbox">使用前完成神經學評估與必要影像（CT/MRI）</label>
+            <label for="el-5"><input id="el-5" type="checkbox">院所有神經內/外科與 ICU（或同級）</label>
+            <label for="el-6"><input id="el-6" type="checkbox">治療前血壓可控制至 &lt;185/110 mmHg</label>
           </div>
           <p class="small" style="margin-top:8px;">註：超過 4.5 小時不屬 rtPA 健保給付範圍；若仍於 4.5–9 小時灌流影像條件下考慮 IVT，應走自費與風險討論流程。</p>
         </div>
@@ -180,16 +180,16 @@
         <a href="#" id="uncheckNoContra">全部清除</a>
       </div>
       <div class="check-group" id="contraList" style="max-height:340px;">
-        <label><input type="checkbox">無：經矯正後血壓仍 &gt;185/110 mmHg</label>
-        <label><input type="checkbox">無：經矯正後血糖仍 &lt;50 或 &gt;400 mg/dL</label>
-        <label><input type="checkbox">無：影像顯示大範圍梗塞（&gt;1/3 MCA）</label>
-        <label><input type="checkbox">無：近三個月內顱內/脊椎手術或嚴重頭部外傷（需個案判讀）</label>
-        <label><input type="checkbox">無：1個月內中風史、非創傷性 ICH 病史</label>
-        <label><input type="checkbox">無：活動性內出血、易出血腫瘤、腸胃道惡性腫瘤、急性胰臟炎</label>
-        <label><input type="checkbox">無：感染性心內膜炎、嚴重肝病合併凝血異常</label>
-        <label><input type="checkbox">無：主動脈瘤/主動脈弓剝離</label>
-        <label><input type="checkbox">無：Warfarin 且 INR &gt;1.7、血小板 &lt;100k、aPTT &gt;40 sec</label>
-        <label><input type="checkbox">無：24hr 內 LMWH/Xa 抑制劑、或 Heparin 且 aPTT &gt;40 sec</label>
+        <label for="co-1"><input id="co-1" type="checkbox">無：經矯正後血壓仍 &gt;185/110 mmHg</label>
+        <label for="co-2"><input id="co-2" type="checkbox">無：經矯正後血糖仍 &lt;50 或 &gt;400 mg/dL</label>
+        <label for="co-3"><input id="co-3" type="checkbox">無：影像顯示大範圍梗塞（&gt;1/3 MCA）</label>
+        <label for="co-4"><input id="co-4" type="checkbox">無：近三個月內顱內/脊椎手術或嚴重頭部外傷（需個案判讀）</label>
+        <label for="co-5"><input id="co-5" type="checkbox">無：1個月內中風史、非創傷性 ICH 病史</label>
+        <label for="co-6"><input id="co-6" type="checkbox">無：活動性內出血、易出血腫瘤、腸胃道惡性腫瘤、急性胰臟炎</label>
+        <label for="co-7"><input id="co-7" type="checkbox">無：感染性心內膜炎、嚴重肝病合併凝血異常</label>
+        <label for="co-8"><input id="co-8" type="checkbox">無：主動脈瘤/主動脈弓剝離</label>
+        <label for="co-9"><input id="co-9" type="checkbox">無：Warfarin 且 INR &gt;1.7、血小板 &lt;100k、aPTT &gt;40 sec</label>
+        <label for="co-10"><input id="co-10" type="checkbox">無：24hr 內 LMWH/Xa 抑制劑、或 Heparin 且 aPTT &gt;40 sec</label>
       </div>
     </section>
 
@@ -224,7 +224,9 @@
       const s = q('sleepStart').value, w = q('wakeTime').value, e = q('evalTime').value;
       if(!s || !w || !e) return NaN;
       const t1 = new Date(s).getTime(), t2 = new Date(w).getTime(), t3 = new Date(e).getTime();
-      if(!isFinite(t1) || !isFinite(t2) || !isFinite(t3) || t2<=t1 || t3<=t2) return NaN;
+      const timesParsed = isFinite(t1) && isFinite(t2) && isFinite(t3);
+      const isChronologicalOrder = t2 > t1 && t3 > t2;
+      if(!timesParsed || !isChronologicalOrder) return NaN;
       const midpoint = t1 + (t2 - t1) / 2;
       return (t3 - midpoint)/3600000;
     }
@@ -331,7 +333,8 @@
     q('checkNoContra').addEventListener('click', (e)=>{e.preventDefault(); setAll('#contraList input[type=checkbox]', true);});
     q('uncheckNoContra').addEventListener('click', (e)=>{e.preventDefault(); setAll('#contraList input[type=checkbox]', false);});
 
-    // datetime-local needs local time without timezone; shift UTC epoch by local offset first.
+    // datetime-local expects local YYYY-MM-DDTHH:mm without timezone suffix,
+    // so convert current UTC timestamp to local clock time before slicing ISO text.
     q('evalTime').value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16);
     run();
   </script>
