@@ -210,6 +210,7 @@
     const q = (id) => document.getElementById(id);
     const RTPA_PRE_SBP_MAX = 185;
     const RTPA_PRE_DBP_MAX = 110;
+    const MS_PER_MINUTE = 60000;
     const nodes = ['n0','n1','n2','n3','n4','n5','n6','n7'];
 
     function clearNodes(){ nodes.forEach(id=>q(id).className='node'); }
@@ -224,9 +225,9 @@
       const s = q('sleepStart').value, w = q('wakeTime').value, e = q('evalTime').value;
       if(!s || !w || !e) return NaN;
       const t1 = new Date(s).getTime(), t2 = new Date(w).getTime(), t3 = new Date(e).getTime();
-      const timesParsed = isFinite(t1) && isFinite(t2) && isFinite(t3);
+      const timesAreFinite = isFinite(t1) && isFinite(t2) && isFinite(t3);
       const isChronologicalOrder = t2 > t1 && t3 > t2;
-      if(!timesParsed || !isChronologicalOrder) return NaN;
+      if(!timesAreFinite || !isChronologicalOrder) return NaN;
       const midpoint = t1 + (t2 - t1) / 2;
       return (t3 - midpoint)/3600000;
     }
@@ -335,7 +336,7 @@
 
     // datetime-local expects local YYYY-MM-DDTHH:mm without timezone suffix,
     // so convert current UTC timestamp to local clock time before slicing ISO text.
-    q('evalTime').value = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0,16);
+    q('evalTime').value = new Date(Date.now() - new Date().getTimezoneOffset() * MS_PER_MINUTE).toISOString().slice(0,16);
     run();
   </script>
 </body>
