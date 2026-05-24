@@ -854,7 +854,6 @@
           q('#severeLiverDisease').checked,
           q('#leukoaraiosis').checked,
           q('#caaHighRisk').checked,
-          q('#caaHighRisk').checked,
           q('#cmb10').checked,
           q('#fib4High').checked,
           q('#infectiveEndocarditis').checked,
@@ -988,7 +987,7 @@
         : `${state.time.description}：資料不足`;
 
       if (state.imagingClear === 'no') {
-        headline = '影像已示出血：請改走 ICH 處置，不適用 IVT';
+        headline = '影像已顯示出血：請改走 ICH 處置，不適用 IVT';
         headlineClass = 'badge class-iii';
         recommendationLines.push('影像已見出血，立即停止 IVT 思考，轉入出血性中風流程。');
       } else if (state.standardEligible) {
