@@ -3,341 +3,1185 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>急性中風 ER 分流流程圖</title>
+  <title>急性中風分流流程圖（2025 台灣 IVT/EVT）</title>
   <style>
-    :root{--bg:#0b1220;--card:#131c2f;--line:#2b3a59;--text:#e7ecf7;--muted:#97a8c7;--ok:#22c55e;--warn:#f59e0b;--bad:#ef4444;--accent:#60a5fa}
-    *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
-    .wrap{max-width:1200px;margin:0 auto;padding:20px}
-    h1{font-size:1.4rem;margin:.2rem 0 .8rem} h2{font-size:1.1rem;margin:1.1rem 0 .6rem}
-    .desc{color:var(--muted);font-size:.92rem}
-    .grid{display:grid;grid-template-columns:1.2fr 1fr;gap:14px}
-    .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
-    .row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-    label{font-size:.86rem;color:#c9d6ee;display:block;margin-bottom:4px}
-    input,select,button{width:100%;padding:8px;border-radius:8px;border:1px solid #33456b;background:#0e1628;color:var(--text)}
-    button{cursor:pointer;background:#18315a;border-color:#2d4f8a}
-    .btn-secondary{background:#1f2937;border-color:#374151}
-    .result{padding:10px;border-radius:10px;background:#0f172a;border:1px solid var(--line);white-space:pre-wrap;line-height:1.5}
-    .flow{display:grid;grid-template-columns:1fr;gap:8px}
-    .node{padding:10px;border:1px dashed #40609d;border-radius:10px;background:#101b32}
-    .node.active{border-style:solid;border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
-    .node.ok{border-color:var(--ok)} .node.warn{border-color:var(--warn)} .node.bad{border-color:var(--bad)}
-    .links{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-    .links a{display:inline-block;padding:6px 10px;border-radius:999px;background:#132746;color:#9fc5ff;text-decoration:none;border:1px solid #2f528e;font-size:.82rem}
-    .check-group{display:grid;gap:6px;max-height:260px;overflow:auto;padding:8px;border:1px solid var(--line);border-radius:10px;background:#0d1528}
-    .check-group label{display:flex;gap:8px;align-items:flex-start;margin:0}
-    .check-group input{width:auto;margin-top:2px}
-    table{width:100%;border-collapse:collapse;font-size:.87rem}
-    th,td{border:1px solid var(--line);padding:8px;text-align:left;vertical-align:top}
-    th{background:#0f223f}
-    .small{font-size:.8rem;color:var(--muted)}
-    .tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.75rem}
-    .tag.ok{background:#153a25;color:#8ae9b2}.tag.warn{background:#4b330a;color:#ffd18a}.tag.bad{background:#4b1616;color:#ffb0b0}
-    @media (max-width:960px){.grid{grid-template-columns:1fr}.row{grid-template-columns:1fr}}
+    :root{
+      --bg:#0b1220;
+      --card:#131c2f;
+      --line:#2b3a59;
+      --text:#e7ecf7;
+      --muted:#97a8c7;
+      --ok:#22c55e;
+      --ok-soft:#86efac;
+      --warn:#f59e0b;
+      --bad:#ef4444;
+      --accent:#60a5fa;
+      --accent-soft:#93c5fd;
+      --violet:#a78bfa;
+      --chip:#0d1528;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:radial-gradient(circle at top,#13203a 0,var(--bg) 35%);color:var(--text);line-height:1.5}
+    a{color:#9fc5ff}
+    .wrap{max-width:1580px;margin:0 auto;padding:22px 18px 90px}
+    .hero{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px}
+    .hero h1{margin:0 0 8px;font-size:1.7rem}
+    .desc{margin:0;color:var(--muted);max-width:1100px}
+    .anchor-nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .anchor-nav a{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;text-decoration:none;background:#132746;border:1px solid #2f528e;font-size:.84rem}
+    .two-col{display:grid;grid-template-columns:minmax(700px,1.15fr) minmax(360px,.85fr);gap:18px;align-items:start}
+    .card{background:linear-gradient(180deg,rgba(24,35,60,.95),rgba(16,25,45,.96));border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 18px 44px rgba(0,0,0,.22)}
+    .card h2,.card h3{margin-top:0}
+    .card h2{font-size:1.15rem;margin-bottom:8px}
+    .card h3{font-size:1rem;margin-bottom:8px}
+    .sticky{position:sticky;top:18px}
+    .section-stack{display:grid;gap:16px}
+    .field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .field-grid.thirds{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .field-grid.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .field{display:grid;gap:6px}
+    .field label,.field legend{font-size:.9rem;color:#d3def2}
+    input,select,button,textarea{width:100%;padding:10px 12px;border-radius:10px;border:1px solid #36507f;background:#0e1628;color:var(--text);font:inherit}
+    input:focus,select:focus,button:focus,summary:focus{outline:2px solid rgba(96,165,250,.35);outline-offset:2px}
+    button{cursor:pointer;background:#18315a;border-color:#2d4f8a;transition:.2s ease}
+    button:hover{filter:brightness(1.08)}
+    .btn-row{display:flex;gap:10px;flex-wrap:wrap}
+    .btn-secondary{background:#1f2937;border-color:#42526d}
+    .btn-ghost{background:#0f172a;border-color:#334155}
+    .mini{padding:7px 10px;font-size:.83rem;width:auto}
+    .muted{color:var(--muted)}
+    .tiny{font-size:.78rem}
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:.76rem;font-weight:700;border:1px solid transparent}
+    .badge.class-i{background:rgba(34,197,94,.14);border-color:rgba(34,197,94,.45);color:#b7f8ca}
+    .badge.class-iia{background:rgba(132,204,22,.12);border-color:rgba(132,204,22,.38);color:#d4f7b0}
+    .badge.class-iib{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.38);color:#ffd58b}
+    .badge.class-iii{background:rgba(239,68,68,.14);border-color:rgba(239,68,68,.38);color:#ffb4b4}
+    .badge.info{background:rgba(96,165,250,.12);border-color:rgba(96,165,250,.35);color:#c9ddff}
+    .panel-note,.result-box,.gfast-score,.score-box,.ivt-status,.copy-status{background:#0d1528;border:1px solid rgba(61,84,125,.75);border-radius:14px;padding:12px}
+    .result-box{white-space:pre-wrap}
+    .score-box strong{font-size:1.15rem}
+    .alert-good{color:#b6f5c9}
+    .alert-warn{color:#ffd58b}
+    .alert-bad{color:#ffb4b4}
+    details{border:1px solid rgba(58,79,116,.85);border-radius:16px;background:rgba(13,21,40,.72);padding:10px 12px}
+    details[open]{box-shadow:inset 0 0 0 1px rgba(96,165,250,.16)}
+    summary{cursor:pointer;font-weight:700;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    summary::-webkit-details-marker{display:none}
+    summary::after{content:'＋';color:var(--accent-soft);font-size:1rem}
+    details[open] summary::after{content:'－'}
+    .check-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+    .check-card,.gfast-item{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:12px;border:1px solid rgba(60,82,120,.7);background:rgba(10,17,30,.88)}
+    .check-card input,.gfast-item input{width:auto;margin-top:3px;accent-color:var(--accent)}
+    .check-card.active{border-color:rgba(34,197,94,.55);background:rgba(34,197,94,.08)}
+    .check-card.contra{border-color:rgba(239,68,68,.65);background:rgba(239,68,68,.10);box-shadow:0 0 12px 3px rgba(239,68,68,.16)}
+    .check-card.auto::after{content:'AUTO';margin-left:auto;font-size:.7rem;letter-spacing:.08em;color:#9fc5ff}
+    .check-card .label-main{font-weight:650;display:block}
+    .check-card .label-note{display:block;color:var(--muted);font-size:.78rem;margin-top:2px}
+    .gfast-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+    .gfast-score strong{font-size:1.1rem}
+    .positive-pill{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.38);color:#b6f5c9;font-size:.78rem;margin-top:8px}
+    .nihss-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+    .nihss-item{display:grid;gap:6px;padding:12px;border-radius:12px;border:1px solid rgba(60,82,120,.74);background:rgba(10,17,30,.86)}
+    .nihss-item span{font-size:.87rem;color:#dbe6fb}
+    .nihss-summary{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-top:12px}
+    .inline-list{display:flex;gap:8px;flex-wrap:wrap}
+    .flowchart{display:grid;gap:10px;margin-top:12px}
+    .node{padding:12px 14px;border-radius:14px;border:1px dashed rgba(107,127,166,.6);background:#0e1628;opacity:.45;transition:all .25s ease;position:relative}
+    .node .title{display:block;font-weight:800;margin-bottom:4px}
+    .node .sub{display:block;color:#c5d4f2;font-size:.85rem}
+    .node.compatible,.node.current,.node.warning,.node.contra{opacity:1;border-style:solid}
+    .node.current{border-color:var(--accent);box-shadow:0 0 12px 3px rgba(96,165,250,.35);animation:pulse 1.8s infinite}
+    .node.compatible{border-color:var(--ok);box-shadow:0 0 12px 3px rgba(34,197,94,.35);animation:pulse 1.8s infinite}
+    .node.warning{border-color:var(--warn);box-shadow:0 0 12px 3px rgba(245,158,11,.30)}
+    .node.contra{border-color:var(--bad);box-shadow:0 0 12px 3px rgba(239,68,68,.34)}
+    .node small{display:block;color:var(--muted);margin-top:5px}
+    .recommendation{margin-top:12px;padding:14px;border-radius:14px;border:1px solid rgba(96,165,250,.36);background:rgba(96,165,250,.08)}
+    .stats-grid{display:grid;gap:12px}
+    .stats-grid details{padding:12px 14px}
+    .stats-grid ul{margin:10px 0 0 18px;padding:0}
+    .stats-grid li{margin-bottom:6px}
+    .table-wrap{overflow:auto;margin-top:12px}
+    table{width:100%;border-collapse:collapse;font-size:.9rem}
+    th,td{padding:10px 12px;border:1px solid rgba(55,76,111,.86);vertical-align:top}
+    th{background:#10213f;color:#dcebff}
+    tbody tr:nth-child(odd){background:rgba(11,18,32,.42)}
+    .special-check{width:auto;accent-color:var(--accent);transform:translateY(2px)}
+    .ivt-columns{display:grid;grid-template-columns:minmax(280px,.9fr) minmax(340px,1.1fr);gap:16px;margin-top:12px}
+    .status-good{border-color:rgba(34,197,94,.52);background:rgba(34,197,94,.08);color:#b6f5c9}
+    .status-bad{border-color:rgba(239,68,68,.55);background:rgba(239,68,68,.11);color:#ffb4b4}
+    .copy-fab{position:fixed;right:18px;bottom:18px;z-index:50;width:auto;min-width:180px;padding:12px 16px;border-radius:999px;box-shadow:0 14px 30px rgba(0,0,0,.35)}
+    .protocol-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .protocol-grid ol,.protocol-grid ul{margin:8px 0 0 18px;padding:0}
+    .protocol-grid li{margin-bottom:6px}
+    .scenario-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .divider{height:1px;background:linear-gradient(90deg,transparent,rgba(96,165,250,.3),transparent);margin:14px 0}
+    .hidden{display:none !important}
+    @keyframes pulse{0%{transform:translateY(0)}50%{transform:translateY(-1px)}100%{transform:translateY(0)}}
+    @media (max-width:1240px){.two-col{grid-template-columns:1fr}.sticky{position:static}.protocol-grid,.ivt-columns,.scenario-list,.field-grid.four,.field-grid.thirds{grid-template-columns:1fr 1fr}}
+    @media (max-width:860px){.field-grid,.check-grid,.gfast-grid,.nihss-grid,.ivt-columns,.protocol-grid,.scenario-list,.field-grid.thirds,.field-grid.four{grid-template-columns:1fr}.copy-fab{left:18px;right:18px;min-width:0}.wrap{padding-bottom:110px}}
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>急性中風 ER 分流流程圖（IVT/EVT）</h1>
-    <p class="desc">依據上傳之中風指引與 PHCEP 支付標準內容整理。重點：rtPA 健保給付限發病 ≤4.5 小時；4.5–9 小時僅可於影像篩選下考慮（非健保給付）；EVT 可延伸至 24 小時（符合影像與條件）。</p>
+    <header class="hero">
+      <div>
+        <h1>急性中風分流流程圖（IVT / EVT）</h1>
+        <p class="desc">整合 GFAST、NIHSS、2025 台灣腦中風學會 IVT 決策核對、特殊情況綜合評估、延長時間窗/睡醒中風證據、rtPA 後 ICH 與 angioedema 處置。右側流程圖會依目前輸入自動發光高亮。</p>
+        <nav class="anchor-nav" aria-label="快速導覽">
+          <a href="#main-inputs">主輸入</a>
+          <a href="#flowchart-panel">GFAST / 流程圖</a>
+          <a href="#stats-section">情境統計</a>
+          <a href="#ivt-checklist">IVT 核對表</a>
+          <a href="#special-situations">特殊情況表</a>
+          <a href="#ich-protocol">ICH / Angioedema 處置</a>
+        </nav>
+      </div>
+      <div class="panel-note tiny">
+        <div><strong>重要提醒</strong></div>
+        <div>rtPA / EVT 後 24h：目標 BP &lt;180/105 mmHg；EVT post 亦維持 &lt;180/105 mmHg。</div>
+        <div class="muted" style="margin-top:6px">本頁為臨床決策輔助，仍須結合影像、禁忌症、共享決策與院內流程。</div>
+      </div>
+    </header>
 
-    <div class="grid">
-      <section class="card">
-        <h2>1) 互動分流輸入</h2>
-        <div class="row">
-          <div>
-            <label>發病型態</label>
-            <select id="onsetMode">
-              <option value="known">已知發病時間</option>
-              <option value="wakeup">Wake-up stroke（用睡眠中點估算）</option>
-            </select>
-          </div>
-          <div>
-            <label>已知發病至今（小時）</label>
-            <input id="knownHours" type="number" step="0.1" min="0" value="2.5" />
-          </div>
-        </div>
-
-        <div class="row" id="wakeupRow" style="display:none;margin-top:8px;">
-          <div>
-            <label>入睡時間</label>
-            <input id="sleepStart" type="datetime-local" />
-          </div>
-          <div>
-            <label>醒來發現時間</label>
-            <input id="wakeTime" type="datetime-local" />
-          </div>
-        </div>
-        <div class="row" id="evalRow" style="display:none;margin-top:8px;">
-          <div>
-            <label>急診評估時間（預設現在）</label>
-            <input id="evalTime" type="datetime-local" />
-          </div>
-          <div class="small" style="align-self:end;">Wake-up 會以「睡眠中點 → ER評估時間」計算時間窗。</div>
-        </div>
-
-        <div class="row" style="margin-top:8px;">
-          <div>
-            <label>收縮壓 / 舒張壓 (mmHg)</label>
-            <div class="row" style="grid-template-columns:1fr 1fr;gap:6px;">
-              <input id="sbp" type="number" value="170" />
-              <input id="dbp" type="number" value="95" />
+    <main class="two-col">
+      <div class="section-stack">
+        <section class="card" id="main-inputs">
+          <h2>主分流輸入</h2>
+          <div class="field-grid thirds">
+            <div class="field">
+              <label for="age">年齡</label>
+              <input id="age" type="number" min="0" value="72" />
+            </div>
+            <div class="field">
+              <label for="onsetMode">發病型態</label>
+              <select id="onsetMode">
+                <option value="known">已知發病時間</option>
+                <option value="wakeup">睡醒時發現中風</option>
+                <option value="unknown">發病時間不明</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="knownHours" id="knownHoursLabel">距發病 / 最後正常時間（小時）</label>
+              <input id="knownHours" type="number" min="0" step="0.1" value="2.8" />
             </div>
           </div>
-          <div>
-            <label>是否疑似大血管阻塞 (LVO)</label>
-            <select id="lvo"><option value="yes">是</option><option value="no">否</option><option value="unknown">未知</option></select>
+
+          <div class="field-grid thirds" id="wakeupFields" style="margin-top:12px;display:none;">
+            <div class="field">
+              <label for="sleepStart">入睡時間</label>
+              <input id="sleepStart" type="datetime-local" />
+            </div>
+            <div class="field">
+              <label for="wakeTime">醒來發現時間</label>
+              <input id="wakeTime" type="datetime-local" />
+            </div>
+            <div class="field">
+              <label for="evalTime">急診評估時間</label>
+              <input id="evalTime" type="datetime-local" />
+            </div>
           </div>
-        </div>
 
-        <div class="row" style="margin-top:8px;">
-          <div>
-            <label>4.5–9h 是否可做 CTP/MRP（或等效灌流）</label>
-            <select id="ctpAvail"><option value="yes">可</option><option value="no">不可</option></select>
+          <div class="field-grid four" style="margin-top:12px;">
+            <div class="field">
+              <label for="sbp">收縮壓 SBP (mmHg)</label>
+              <input id="sbp" type="number" min="0" value="170" />
+            </div>
+            <div class="field">
+              <label for="dbp">舒張壓 DBP (mmHg)</label>
+              <input id="dbp" type="number" min="0" value="95" />
+            </div>
+            <div class="field">
+              <label for="glucose">血糖 (mg/dL)</label>
+              <input id="glucose" type="number" min="0" value="128" />
+            </div>
+            <div class="field">
+              <label for="imagingClear">腦部影像排除顱內出血</label>
+              <select id="imagingClear">
+                <option value="yes">是</option>
+                <option value="pending">尚待判讀</option>
+                <option value="no">否 / 已有出血</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <label>灌流結果有可救腦組織（mismatch）</label>
-            <select id="mismatch"><option value="yes">有</option><option value="no">無/未知</option></select>
+
+          <div class="field-grid four" style="margin-top:12px;">
+            <div class="field">
+              <label for="lvo">疑似大血管阻塞（LVO）</label>
+              <select id="lvo">
+                <option value="yes">是</option>
+                <option value="no">否</option>
+                <option value="unknown">未知</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="ctpAvail">灌流影像（CTP/MRP）可得</label>
+              <select id="ctpAvail">
+                <option value="yes">可</option>
+                <option value="no">不可</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="perfusionMismatch">灌流 mismatch / salvageable tissue</label>
+              <select id="perfusionMismatch">
+                <option value="yes">有</option>
+                <option value="no">無</option>
+                <option value="unknown">未知</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="dwiFlairMismatch">DWI-FLAIR mismatch</label>
+              <select id="dwiFlairMismatch">
+                <option value="unknown">未知</option>
+                <option value="yes">有</option>
+                <option value="no">無</option>
+              </select>
+            </div>
           </div>
-        </div>
 
-        <div class="row" style="margin-top:8px;">
-          <div>
-            <label>EVT 團隊是否可立即執行</label>
-            <select id="evtTeam"><option value="yes">可</option><option value="no">不可</option></select>
+          <div class="field-grid four" style="margin-top:12px;">
+            <div class="field">
+              <label for="evtTeam">EVT 團隊可立即執行</label>
+              <select id="evtTeam">
+                <option value="yes">可</option>
+                <option value="no">不可</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="cryo">Cryoprecipitate 可用</label>
+              <select id="cryo">
+                <option value="yes">可</option>
+                <option value="no">不可</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="anticoag">抗凝狀態</label>
+              <select id="anticoag">
+                <option value="none">無</option>
+                <option value="warfarin">Warfarin</option>
+                <option value="doac">DOAC</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="acuteMI">急性心肌梗塞情境</label>
+              <select id="acuteMI">
+                <option value="none">無</option>
+                <option value="concurrent">與中風同時合併 acute MI</option>
+                <option value="stemi_lt1wk">STEMI &lt; 1 週</option>
+                <option value="nstemi_3mo">NSTEMI &lt; 3 個月</option>
+              </select>
+            </div>
           </div>
-          <div>
-            <label>Cryoprecipitate 是否可用（rtPA 後 ICH 反轉）</label>
-            <select id="cryo"><option value="yes">可</option><option value="no">不可</option></select>
+
+          <div class="field-grid four" style="margin-top:12px;">
+            <div class="field">
+              <label for="inr">INR</label>
+              <input id="inr" type="number" min="0" step="0.1" value="1.0" />
+            </div>
+            <div class="field">
+              <label for="aptt">aPTT (sec)</label>
+              <input id="aptt" type="number" min="0" step="0.1" value="32" />
+            </div>
+            <div class="field">
+              <label for="platelets">血小板 (/mm³)</label>
+              <input id="platelets" type="number" min="0" step="1000" value="210000" />
+            </div>
+            <div class="field">
+              <label for="manualNihss">NIHSS 總分（可手動覆寫）</label>
+              <input id="manualNihss" type="number" min="0" max="42" value="0" />
+            </div>
           </div>
-        </div>
 
-        <div class="row" style="margin-top:10px;">
-          <button id="runBtn">更新分流建議</button>
-          <button id="resetBtn" class="btn-secondary" type="button">重設</button>
-        </div>
+          <div class="field-grid thirds" style="margin-top:12px;">
+            <div class="field">
+              <label><input id="syncNihss" type="checkbox" checked style="width:auto;margin-right:8px;accent-color:var(--accent)" />同步 NIHSS 量表總分至主輸入</label>
+            </div>
+            <div class="field">
+              <label><input id="recentLmwh" type="checkbox" style="width:auto;margin-right:8px;accent-color:var(--accent)" />24 小時內使用 LMWH</label>
+            </div>
+            <div class="field">
+              <label><input id="recentXa" type="checkbox" style="width:auto;margin-right:8px;accent-color:var(--accent)" />24 小時內使用 Xa 抑制劑</label>
+            </div>
+          </div>
 
-        <h2 style="margin-top:12px;">2) 即時結果</h2>
-        <div id="summary" class="result"></div>
-        <div class="links">
-          <a href="#rtpa-coverage">跳到 rtPA 給付/支付標準表</a>
-          <a href="#contraindications">跳到 rtPA 禁忌核對</a>
-          <a href="#care-points">跳到治療注意事項</a>
-        </div>
-      </section>
+          <div class="field-grid thirds" style="margin-top:12px;">
+            <div class="field">
+              <label><input id="recentHeparin" type="checkbox" style="width:auto;margin-right:8px;accent-color:var(--accent)" />中風前使用 Heparin</label>
+            </div>
+            <div class="field">
+              <label><input id="suspectedPostIvtICh" type="checkbox" style="width:auto;margin-right:8px;accent-color:var(--accent)" />rtPA 後疑似 ICH / 新神經惡化</label>
+            </div>
+            <div class="field">
+              <label><input id="persistentDeficitAfterGlucose" type="checkbox" style="width:auto;margin-right:8px;accent-color:var(--accent)" />血糖校正後仍有神經學缺損</label>
+            </div>
+          </div>
 
-      <section class="card">
-        <h2>流程圖（會依結果高亮）</h2>
-        <div class="flow">
-          <div id="n0" class="node">A. 急診疑似急性缺血性中風 → 立即 NCCT/CTA（必要時 CTP/MRP）</div>
-          <div id="n1" class="node">B. 發病時間窗判斷：≤4.5h / 4.5–9h（含 wake-up 中點）/ 9–24h / >24h</div>
-          <div id="n2" class="node">C. ≤4.5h：先看 rtPA 條件、禁忌、血壓；符合者可健保給付 IVT</div>
-          <div id="n3" class="node">D. 4.5–9h：需 CTP/MRP 篩選；可考慮 IVT 但非健保給付（自費）</div>
-          <div id="n4" class="node">E. ≤24h 且 LVO 候選：依 CTA/CTP/MRP 評估 EVT</div>
-          <div id="n5" class="node">F. EVT 團隊不可得：立即轉院至可 EVT 醫院</div>
-          <div id="n6" class="node">G. 若無 EVT 適應症且 rtPA >4.5h 不給付：進入自費/最佳藥物治療路徑</div>
-          <div id="n7" class="node">H. rtPA 後若 ICH：停藥 + TXA + cryoprecipitate + 外科會診</div>
-        </div>
-      </section>
-    </div>
+          <details style="margin-top:14px;">
+            <summary>特殊病史、影像風險與臨床修飾因子</summary>
+            <div class="check-grid" style="margin-top:12px;">
+              <label class="check-card"><input id="disablingVisual" type="checkbox" /><span><span class="label-main">輕微中風但視野缺損</span><span class="label-note">Mild stroke with disability</span></span></label>
+              <label class="check-card"><input id="disablingAphasia" type="checkbox" /><span><span class="label-main">輕微中風但失語</span><span class="label-note">Mild stroke with disability</span></span></label>
+              <label class="check-card"><input id="disablingNeglect" type="checkbox" /><span><span class="label-main">輕微中風但忽略症</span><span class="label-note">Mild stroke with disability</span></span></label>
+              <label class="check-card"><input id="disablingWeakness" type="checkbox" /><span><span class="label-main">輕微中風但肢體無力無法抗重力</span><span class="label-note">Mild stroke with disability</span></span></label>
+              <label class="check-card"><input id="seizureAtOnset" type="checkbox" /><span><span class="label-main">中風發作時合併癲癇，排除 Todd's paralysis 後仍有缺損</span></span></label>
+              <label class="check-card"><input id="recentStroke1to3m" type="checkbox" /><span><span class="label-main">1–3 個月內缺血性中風</span><span class="label-note">SITS-EAST</span></span></label>
+              <label class="check-card"><input id="stroke1mo" type="checkbox" /><span><span class="label-main">1 個月內中風病史</span><span class="label-note">絕對禁忌</span></span></label>
+              <label class="check-card"><input id="largeInfarct" type="checkbox" /><span><span class="label-main">CT 顯示 &gt;1/3 MCA 低密度變化</span></span></label>
+              <label class="check-card"><input id="priorICh" type="checkbox" /><span><span class="label-main">非創傷性顱內出血病史</span></span></label>
+              <label class="check-card"><input id="caaHighRisk" type="checkbox" /><span><span class="label-main">已知 CAA 且曾 sICH / convexity SAH / diffuse siderosis</span></span></label>
+              <label class="check-card"><input id="extraAxialTumor" type="checkbox" /><span><span class="label-main">顱內腦外腫瘤（extra-axial）</span><span class="label-note">例如 meningioma</span></span></label>
+              <label class="check-card"><input id="parenchymalTumor" type="checkbox" /><span><span class="label-main">腦實質腫瘤（intra-axial）</span><span class="label-note">NOT recommended</span></span></label>
+              <label class="check-card"><input id="pituitaryTumor" type="checkbox" /><span><span class="label-main">Pituitary tumor</span><span class="label-note">sICH 可高達 50%</span></span></label>
+              <label class="check-card"><input id="unrupturedAneurysm" type="checkbox" /><span><span class="label-main">未破裂顱內動脈瘤</span></span></label>
+              <label class="check-card"><input id="largeBasilarFusiform" type="checkbox" /><span><span class="label-main">大型梭狀基底動脈瘤 / 已破裂 / &gt;1 cm</span><span class="label-note">高風險</span></span></label>
+              <label class="check-card"><input id="infectiveEndocarditis" type="checkbox" /><span><span class="label-main">感染性心內膜炎</span></span></label>
+              <label class="check-card"><input id="ckdEskd" type="checkbox" /><span><span class="label-main">CKD / ESKD</span></span></label>
+              <label class="check-card"><input id="severeLiverDisease" type="checkbox" /><span><span class="label-main">嚴重肝病合併凝血異常</span></span></label>
+              <label class="check-card"><input id="activeCancer" type="checkbox" /><span><span class="label-main">活動性癌症</span></span></label>
+              <label class="check-card"><input id="leukoaraiosis" type="checkbox" /><span><span class="label-main">Leukoaraiosis / WML</span></span></label>
+              <label class="check-card"><input id="cmb10" type="checkbox" /><span><span class="label-main">Cerebral microbleeds &gt; 10</span></span></label>
+              <label class="check-card"><input id="fib4High" type="checkbox" /><span><span class="label-main">FIB-4 &gt; 2.67</span></span></label>
+              <label class="check-card"><input id="intracranialDissection" type="checkbox" /><span><span class="label-main">顱內動脈剝離</span></span></label>
+              <label class="check-card"><input id="extracranialDissection" type="checkbox" /><span><span class="label-main">顱外頸動脈剝離</span></span></label>
+              <label class="check-card"><input id="intracranialSpinalSurgery3m" type="checkbox" /><span><span class="label-main">3 個月內顱內 / 脊柱手術</span></span></label>
+              <label class="check-card"><input id="headTrauma3m" type="checkbox" /><span><span class="label-main">3 個月內嚴重頭部創傷</span></span></label>
+              <label class="check-card"><input id="giGuBleed21d" type="checkbox" /><span><span class="label-main">21 日內腸胃道 / 泌尿道出血</span></span></label>
+              <label class="check-card"><input id="majorSurgery14d" type="checkbox" /><span><span class="label-main">14 日內重大手術</span></span></label>
+              <label class="check-card"><input id="activeBleeding" type="checkbox" /><span><span class="label-main">活動性內出血</span></span></label>
+              <label class="check-card"><input id="bleedingTumor" type="checkbox" /><span><span class="label-main">易出血腫瘤</span></span></label>
+              <label class="check-card"><input id="giMalignancy" type="checkbox" /><span><span class="label-main">腸胃道惡性腫瘤</span></span></label>
+              <label class="check-card"><input id="pancreatitis" type="checkbox" /><span><span class="label-main">急性胰臟炎</span></span></label>
+              <label class="check-card"><input id="aorticAneurysm" type="checkbox" /><span><span class="label-main">主動脈瘤</span></span></label>
+              <label class="check-card"><input id="aorticDissection" type="checkbox" /><span><span class="label-main">主動脈弓剝離</span></span></label>
+            </div>
+          </details>
 
-    <section id="rtpa-coverage" class="card" style="margin-top:14px;">
-      <h2>rtPA（Actilyse）給付條件與支付標準（可勾選）</h2>
-      <p class="small">來源：完整給付規定 115.4.23（2.1.2.2）、附件二藥品給付項目暨支付標準表（Actilyse 條目）。</p>
-      <div class="row">
+          <details id="nihss-panel" style="margin-top:14px;">
+            <summary>NIHSS 量表（15 項）</summary>
+            <div id="nihssItems" class="nihss-grid"></div>
+            <div class="nihss-summary">
+              <div class="score-box">
+                <div>NIHSS 總分：<strong id="nihssScore">0</strong></div>
+                <div class="muted">嚴重度：<span id="nihssSeverity">無中風症狀</span></div>
+              </div>
+              <div class="inline-list">
+                <span class="badge info">0 無中風症狀</span>
+                <span class="badge info">1–4 輕微</span>
+                <span class="badge info">5–15 中度</span>
+                <span class="badge info">16–20 中重度</span>
+                <span class="badge info">21–42 嚴重</span>
+              </div>
+            </div>
+          </details>
+
+          <div class="divider"></div>
+          <div class="btn-row">
+            <button id="updateBtn" type="button">更新分流建議</button>
+            <button id="resetBtn" type="button" class="btn-secondary">重設頁面</button>
+          </div>
+
+          <div class="recommendation" id="decisionBox" style="margin-top:14px;"></div>
+          <div class="result-box" id="summaryBox" aria-live="polite" style="margin-top:12px;"></div>
+        </section>
+      </div>
+
+      <aside class="section-stack sticky" id="flowchart-panel">
+        <section class="card">
+          <h2>GFAST Scale</h2>
+          <div class="gfast-grid">
+            <label class="gfast-item"><input id="g-gaze" type="checkbox" /><span><strong>G：凝視偏移</strong><br><span class="muted tiny">雙眼向一側強迫偏移</span></span></label>
+            <label class="gfast-item"><input id="g-face" type="checkbox" /><span><strong>F：臉部下垂</strong><br><span class="muted tiny">單側臉部不對稱或下垂</span></span></label>
+            <label class="gfast-item"><input id="g-arm" type="checkbox" /><span><strong>A：手臂無力</strong><br><span class="muted tiny">單側手臂無力，無法抵抗重力</span></span></label>
+            <label class="gfast-item"><input id="g-speech" type="checkbox" /><span><strong>S：語言障礙</strong><br><span class="muted tiny">說話不清楚、無法說話或語言混亂</span></span></label>
+          </div>
+          <div class="gfast-score">
+            <div>GFAST 分數（T 不計分）：<strong id="gfastScore">0 / 4</strong></div>
+            <div class="muted">T：時間緊急（Time）→ 立即送醫</div>
+            <div id="gfastFlag" class="positive-pill hidden">疑似中風，立即啟動處理流程</div>
+          </div>
+
+          <div class="recommendation" id="flowRecommendation" style="margin-top:14px;"></div>
+
+          <div class="flowchart" aria-label="acute stroke flowchart">
+            <div class="node" id="node-a"><span class="title">A. 急診疑似急性缺血性中風 → 立即 NCCT/CTA</span><span class="sub">先排除顱內出血，並同步篩查 LVO / 影像治療條件。</span><small></small></div>
+            <div class="node" id="node-b"><span class="title">B. GFAST / NIHSS 評估 → 時間窗判斷</span><span class="sub">整合床邊篩檢、神經缺損嚴重度、已知 / 睡醒 / 不明發病。</span><small></small></div>
+            <div class="node" id="node-c"><span class="title">C. ≤4.5h → rtPA 評估（健保給付）</span><span class="sub">符合 IVT 核對表、無絕對禁忌、可將 BP 控制至 &lt;185/110。</span><small></small></div>
+            <div class="node" id="node-d"><span class="title">D. 4.5–9h → 需灌流影像篩選（EXTEND / WAKE-UP 證據）</span><span class="sub">需 CTP/MRP 或等效影像，與病人共享決策；非健保給付。</span><small></small></div>
+            <div class="node" id="node-e"><span class="title">E. 睡醒 / 不明發病時間 → 影像篩選（DWI-FLAIR mismatch）</span><span class="sub">符合影像條件時可考慮 IVT（IIb, B）。</span><small></small></div>
+            <div class="node" id="node-f"><span class="title">F. ≤24h + LVO → EVT 評估</span><span class="sub">CTA / CTP / MRP 判讀，必要時與 IVT 並行啟動。</span><small></small></div>
+            <div class="node" id="node-g"><span class="title">G. EVT 團隊不可得 → 立即轉院</span><span class="sub">確認轉運窗口、影像與血壓控制同步完成。</span><small></small></div>
+            <div class="node" id="node-h"><span class="title">H. 超過時間窗或不符適應症 → 最佳藥物治療</span><span class="sub">抗血小板 / 抗栓塞、次級預防與監測；必要時自費 / 研究方案討論。</span><small></small></div>
+            <div class="node" id="node-i"><span class="title">I. rtPA 後 ICH 處置 → 停藥 + TXA + Cryoprecipitate + 外科</span><span class="sub">另須處理 angioedema / 神經惡化等 rtPA 併發症。</span><small></small></div>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <section class="card" id="stats-section" style="margin-top:18px;">
+      <h2>情境統計與證據摘要</h2>
+      <p class="muted">會依目前分流情境自動展開最相關的證據區塊。</p>
+      <div class="stats-grid">
+        <details id="stat-extend">
+          <summary>4.5–9h + perfusion imaging（EXTEND trial）</summary>
+          <ul>
+            <li><strong>功能獨立：</strong>mRS 0–1：35.4% vs 29.5% placebo。</li>
+            <li><strong>sICH：</strong>6.2% vs 0.9%。</li>
+            <li><strong>臨床訊息：</strong>僅在符合灌流影像篩選條件時考慮；屬共享決策路徑。</li>
+          </ul>
+        </details>
+        <details id="stat-wakeup">
+          <summary>睡醒 / 不明發病時間（Lancet 2020 meta-analysis + Cochrane 2021）</summary>
+          <ul>
+            <li><strong>Lancet 2020：</strong>mRS 0–1：47% vs 39%，aOR 1.49（95% CI 1.10–2.03）；sICH 3% vs &lt;1%，aOR 5.58。</li>
+            <li><strong>Cochrane 2021：</strong>mRS 0–2：66% vs 58%，OR 1.13；sICH 3%（95% CI 2.5–4.1%），RR 4.00 vs no tPA。</li>
+            <li><strong>臨床訊息：</strong>需 DWI-FLAIR mismatch 或等效影像篩選。</li>
+          </ul>
+        </details>
+        <details id="stat-mild">
+          <summary>輕微中風但合併失能症狀（NIHSS ≤ 5）</summary>
+          <ul>
+            <li>若有<span class="alert-good">視野缺損、失語、忽略症、手腳無力無法抗重力</span>等失能症狀，可考慮 IVT（IIa, B）。</li>
+            <li>低 NIHSS 並不等於低風險；應以功能失能與生活影響作為決策核心。</li>
+          </ul>
+        </details>
+        <details id="stat-recent">
+          <summary>近期中風 / 高齡 / DOAC 情境</summary>
+          <ul>
+            <li><strong>Recent stroke（SITS-EAST）：</strong>與第一次中風相比，sICH 與 3 個月功能獨立無顯著差異。</li>
+            <li><strong>高齡（TTT-AIS, Taiwan）：</strong>71–80 歲 low dose 0.6 mg/kg 有較佳風險平衡；&gt;80 歲資料不足。</li>
+            <li><strong>DOAC + IVT（Taiwan NHIA 2024 / JAMA Intern Med）：</strong>91 位 DOAC、182 位 warfarin；DOAC 不增加 bleeding risk vs 無抗凝。</li>
+          </ul>
+        </details>
+        <details id="stat-special">
+          <summary>特殊條件與風險修飾因子</summary>
+          <ul>
+            <li><strong>CKD / ESKD：</strong>sICH 無顯著增加（aOR 1.0）；若 aPTT ≤40 sec，IVT 仍可考慮；台灣資料顯示 IVT 降低 6 個月不良結局（OR 0.60）。</li>
+            <li><strong>FIB-4 &gt;2.67：</strong>較高 sICH、死亡與不良結局風險。</li>
+            <li><strong>活動性癌症：</strong>IIb, C-LD，效益不確定，須考量腫瘤型態與出血風險。</li>
+            <li><strong>Leukoaraiosis：</strong>任何 WML → sICH OR 1.5；嚴重 WML → sICH OR 2.5；但 3–6 月不良結局仍下降（OR 0.75）。</li>
+            <li><strong>CMB &gt;10：</strong>poor outcome OR 3.99（95% CI 1.55–10.22）。</li>
+            <li><strong>CAA：</strong>若曾 sICH、diffuse siderosis 或 convexity SAH，視為禁忌。</li>
+            <li><strong>Unruptured aneurysm：</strong>sICH 8.3%；動脈瘤破裂 2.3%（皆 basilar fusiform）→ 一般安全，除大型梭狀基底動脈瘤。</li>
+            <li><strong>Infective endocarditis：</strong>sICH 20% vs 6.5%（P=0.006），出院回家 10% vs 37%（P=0.01）→ 不建議。</li>
+            <li><strong>Intracranial dissection（Japan 2025）：</strong>ICH OR 3.18（1.26–8.06）；poor outcome OR 0.51（0.37–0.72）→ 效益未定。</li>
+            <li><strong>Extracranial cervical artery dissection：</strong>美國 / 歐洲指引認為可合理考慮。</li>
+            <li><strong>Intracranial tumors：</strong>meningioma sICH 7%；parenchymal 6%；pituitary 50% → intra-axial tumors 不建議（III, C-LD）。</li>
+            <li><strong>AIS + acute MI：</strong>一般可考慮；STEMI &lt;1 週避免；NSTEMI &lt;3 個月可斟酌。</li>
+          </ul>
+        </details>
+      </div>
+    </section>
+
+    <section class="card" id="ivt-checklist" style="margin-top:18px;">
+      <h2>IVT 治療決策核對表（2025 台灣腦中風學會）</h2>
+      <div class="field-grid four">
+        <div class="field">
+          <label for="ivtTimestamp">核對時間戳記</label>
+          <input id="ivtTimestamp" type="datetime-local" />
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button id="ivtSelectAllRequired" type="button" class="mini">必要條件全選</button>
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button id="ivtSelectAllContra" type="button" class="mini btn-ghost">禁忌全選</button>
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button id="ivtClearAll" type="button" class="mini btn-secondary">清除手動勾選</button>
+        </div>
+      </div>
+      <div id="ivtStatus" class="ivt-status" style="margin-top:12px;"></div>
+      <div class="ivt-columns">
         <div>
-          <div class="links" style="margin-bottom:6px;">
-            <a href="#" id="checkEligible">全選「符合」</a>
-            <a href="#" id="uncheckEligible">全部清除</a>
-          </div>
-          <div class="check-group" id="eligibleList">
-            <label for="el-1"><input id="el-1" type="checkbox">疑似急性缺血性腦中風，且影像排除顱內出血</label>
-            <label for="el-2"><input id="el-2" type="checkbox">發病時間 ≤ 4.5 小時（健保給付時間窗）</label>
-            <label for="el-3"><input id="el-3" type="checkbox">年齡 ≥ 18 歲</label>
-            <label for="el-4"><input id="el-4" type="checkbox">使用前完成神經學評估與必要影像（CT/MRI）</label>
-            <label for="el-5"><input id="el-5" type="checkbox">院所有神經內/外科與 ICU（或同級）</label>
-            <label for="el-6"><input id="el-6" type="checkbox">治療前血壓可控制至 &lt;185/110 mmHg</label>
-          </div>
-          <p class="small" style="margin-top:8px;">註：超過 4.5 小時不屬 rtPA 健保給付範圍；若仍於 4.5–9 小時灌流影像條件下考慮 IVT，應走自費與風險討論流程。</p>
+          <h3>必要條件</h3>
+          <div id="requiredChecklist" class="check-grid"></div>
         </div>
         <div>
-          <table>
-            <thead><tr><th>藥價代碼</th><th>品名</th><th>擷取價格</th><th>來源</th></tr></thead>
-            <tbody>
-              <tr><td>K000744238</td><td>ACTILYSE INJECTION 20MG</td><td>8041</td><td>附件二，第361頁</td></tr>
-              <tr><td>KC00743248</td><td>ACTILYSE INJECTION</td><td>17815</td><td>附件二，第363頁</td></tr>
-            </tbody>
-          </table>
-          <p class="small">OCR 擷取中第二筆規格未完整顯示，建議臨床申報前對照原始支付標準表。</p>
+          <h3>絕對禁忌（Not recommended）</h3>
+          <div id="contraChecklist" class="check-grid"></div>
         </div>
       </div>
     </section>
 
-    <section id="contraindications" class="card" style="margin-top:14px;">
-      <h2>rtPA 禁忌核對（可勾「皆無」）</h2>
-      <div class="links" style="margin-bottom:6px;">
-        <a href="#" id="checkNoContra">全選「無此禁忌」</a>
-        <a href="#" id="uncheckNoContra">全部清除</a>
-      </div>
-      <div class="check-group" id="contraList" style="max-height:340px;">
-        <label for="co-1"><input id="co-1" type="checkbox">無：經矯正後血壓仍 &gt;185/110 mmHg</label>
-        <label for="co-2"><input id="co-2" type="checkbox">無：經矯正後血糖仍 &lt;50 或 &gt;400 mg/dL</label>
-        <label for="co-3"><input id="co-3" type="checkbox">無：影像顯示大範圍梗塞（&gt;1/3 MCA）</label>
-        <label for="co-4"><input id="co-4" type="checkbox">無：近三個月內顱內/脊椎手術或嚴重頭部外傷（需個案判讀）</label>
-        <label for="co-5"><input id="co-5" type="checkbox">無：1個月內中風史、非創傷性 ICH 病史</label>
-        <label for="co-6"><input id="co-6" type="checkbox">無：活動性內出血、易出血腫瘤、腸胃道惡性腫瘤、急性胰臟炎</label>
-        <label for="co-7"><input id="co-7" type="checkbox">無：感染性心內膜炎、嚴重肝病合併凝血異常</label>
-        <label for="co-8"><input id="co-8" type="checkbox">無：主動脈瘤/主動脈弓剝離</label>
-        <label for="co-9"><input id="co-9" type="checkbox">無：Warfarin 且 INR &gt;1.7、血小板 &lt;100k、aPTT &gt;40 sec</label>
-        <label for="co-10"><input id="co-10" type="checkbox">無：24hr 內 LMWH/Xa 抑制劑、或 Heparin 且 aPTT &gt;40 sec</label>
+    <section class="card" id="special-situations" style="margin-top:18px;">
+      <h2>IVT 特殊情況綜合評估表（2025 台灣腦中風學會）</h2>
+      <p class="muted">以下情況可在共享決策與影像條件下考慮 IVT，表格會自動帶入目前已符合的項目。</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>適用</th>
+              <th>臨床情境</th>
+              <th>建議 / 證據</th>
+              <th>相關統計 / 補充</th>
+            </tr>
+          </thead>
+          <tbody id="specialSituationBody"></tbody>
+        </table>
       </div>
     </section>
 
-    <section id="care-points" class="card" style="margin-top:14px;">
-      <h2>各步驟注意事項</h2>
-      <ul>
-        <li><span class="tag warn">rtPA 前</span> 血壓需控制在 <b>&lt;185/110</b> mmHg 才可進入 IVT。</li>
-        <li><span class="tag ok">rtPA / EVT 後24h</span> 建議血壓控制在 <b>&lt;180/105</b> mmHg，並追蹤腦部影像。</li>
-        <li><span class="tag bad">若 rtPA 後 ICH</span> 立即停 rtPA、抽 CBC/PT(INR)/aPTT/fibrinogen、輸注 TXA 1g、給 cryoprecipitate 10–12U（fibrinogen&lt;200 可再補）、神外會診與支持療法。</li>
-        <li><span class="tag warn">抗凝血反轉</span> 48hr 內 dabigatran 可考慮 idarucizumab 後再評估 IVT；其他 DOAC 需依最後服藥時間、檢驗與 EVT 可行性個別判斷。</li>
-        <li><span class="tag warn">資源決策</span> 4.5–9h 若無 CTP/MRP（或等效影像）不建議進入延長窗 IVT；無 EVT 團隊應啟動轉院。</li>
-        <li><span class="tag warn">給付決策</span> rtPA 超過 4.5h 為非健保給付；若亦不符 EVT，須走自費或最佳藥物治療路徑。</li>
-      </ul>
+    <section class="card" id="ich-protocol" style="margin-top:18px;">
+      <h2>ICH Management Protocol / rtPA 相關併發症</h2>
+      <div class="protocol-grid">
+        <div class="panel-note">
+          <h3>rtPA 後 ICH 處置（步驟化）</h3>
+          <ol>
+            <li>立即停止 rtPA / 抗栓藥，啟動急救團隊與神經外科會診。</li>
+            <li>緊急 NCCT / CTA，抽 CBC、PT/INR、aPTT、fibrinogen、type &amp; screen。</li>
+            <li>先給 <strong>TXA 1 g IV</strong>；若院內 protocol 採 aminocaproic acid，依院規追加。</li>
+            <li><strong>Cryoprecipitate</strong> 建議先給 10 單位；文獻平均約 8.7 units，可使 fibrinogen 上升 55±24 mg/dL，目標 fibrinogen ≥200 mg/dL。</li>
+            <li>若持續惡化或大量血腫，考慮 PCC、血小板 / 凝血因子補充與外科處置。</li>
+            <li>嚴格血壓控制、重症監測、必要時氣道保護與 ICP 管理。</li>
+          </ol>
+          <div class="divider"></div>
+          <div class="tiny muted">rtPA / EVT 後 24h 維持 BP &lt;180/105 mmHg；EVT post 同樣以 &lt;180/105 mmHg 為原則。</div>
+        </div>
+        <div class="panel-note">
+          <h3>Angioedema 與神經惡化</h3>
+          <ul>
+            <li><strong>rtPA 後 angioedema：</strong>發生率 0.2–7.9%；ACEI 使用者風險增加 3–4 倍。</li>
+            <li><strong>第一線治療：</strong>IV methylprednisolone 125 mg + IV diphenhydramine 50 mg + IV famotidine 20 mg。</li>
+            <li><strong>第二線：</strong>epinephrine 0.3 mL SC；若有 airway compromise，優先氣道處置。</li>
+            <li><strong>rtPA 後神經惡化：</strong>排除 ICH / LVO 後，<span class="badge class-iib">IIb, B-R</span> tirofiban may be reasonable。</li>
+            <li><strong>早期 antiplatelet after IVT/EVT（Korean 2016）：</strong>24h 內使用 vs 標準：hemorrhagic transformation 26.8% vs 34.4%（P=0.04），mRS 0–2 56.5% vs 47.2%（P=0.02）。</li>
+          </ul>
+        </div>
+      </div>
     </section>
   </div>
 
+  <button id="copyBtn" class="copy-fab">複製分流摘要</button>
+
   <script>
-    const q = (id) => document.getElementById(id);
-    const RTPA_PRE_SBP_MAX = 185;
-    const RTPA_PRE_DBP_MAX = 110;
+    const q = (selector) => document.querySelector(selector);
+    const qa = (selector) => Array.from(document.querySelectorAll(selector));
     const MS_PER_MINUTE = 60000;
-    const nodes = ['n0','n1','n2','n3','n4','n5','n6','n7'];
 
-    function clearNodes(){ nodes.forEach(id=>q(id).className='node'); }
-    function on(id, cls='active'){ q(id).className = `node ${cls}`; }
+    const NIHSS_ITEMS = [
+      { id: 'nihss1', label: '1. 意識程度 (LOC)', options: [[0,'清醒'],[1,'嗜睡'],[2,'木僵'],[3,'昏迷']] },
+      { id: 'nihss2', label: '2. 意識問題 (LOC Questions)', options: [[0,'都答對'],[1,'答對一題'],[2,'都答錯']] },
+      { id: 'nihss3', label: '3. 意識指令 (LOC Commands)', options: [[0,'都完成'],[1,'完成一項'],[2,'都無法完成']] },
+      { id: 'nihss4', label: '4. 凝視 (Best Gaze)', options: [[0,'正常'],[1,'部分凝視麻痺'],[2,'強迫偏斜']] },
+      { id: 'nihss5', label: '5. 視野 (Visual)', options: [[0,'無缺損'],[1,'部分偏盲'],[2,'完全偏盲'],[3,'雙側盲']] },
+      { id: 'nihss6', label: '6. 臉部麻痺 (Facial Palsy)', options: [[0,'正常'],[1,'輕微'],[2,'部分麻痺'],[3,'完全麻痺']] },
+      { id: 'nihss7', label: '7. 左上肢運動 (Left Arm)', options: [[0,'無下沉'],[1,'10秒內下沉'],[2,'有力但不抗重力'],[3,'無力'],[4,'無活動'],[0,'UN=截肢 / 關節固定（不計分）']] },
+      { id: 'nihss8', label: '8. 右上肢運動 (Right Arm)', options: [[0,'無下沉'],[1,'10秒內下沉'],[2,'有力但不抗重力'],[3,'無力'],[4,'無活動'],[0,'UN=截肢 / 關節固定（不計分）']] },
+      { id: 'nihss9', label: '9. 左下肢運動 (Left Leg)', options: [[0,'無下沉（5秒）'],[1,'5秒內下沉'],[2,'有力但不抗重力'],[3,'無力'],[4,'無活動']] },
+      { id: 'nihss10', label: '10. 右下肢運動 (Right Leg)', options: [[0,'無下沉（5秒）'],[1,'5秒內下沉'],[2,'有力但不抗重力'],[3,'無力'],[4,'無活動']] },
+      { id: 'nihss11', label: '11. 肢體共濟失調 (Limb Ataxia)', options: [[0,'無'],[1,'一側'],[2,'雙側']] },
+      { id: 'nihss12', label: '12. 感覺 (Sensory)', options: [[0,'正常'],[1,'輕度至中度喪失'],[2,'嚴重至完全喪失']] },
+      { id: 'nihss13', label: '13. 最佳語言 (Best Language)', options: [[0,'正常'],[1,'輕度失語'],[2,'重度失語'],[3,'無語言 / 完全失語']] },
+      { id: 'nihss14', label: '14. 構音障礙 (Dysarthria)', options: [[0,'正常'],[1,'輕至中度'],[2,'嚴重']] },
+      { id: 'nihss15', label: '15. 消失 / 不注意 (Extinction)', options: [[0,'無'],[1,'一種感覺缺損'],[2,'多種感覺缺損']] },
+    ];
 
-    function getOnsetHours(){
-      const mode = q('onsetMode').value;
-      if(mode === 'known'){
-        const v = q('knownHours').value;
-        return v === '' ? NaN : Number(v);
-      }
-      const s = q('sleepStart').value, w = q('wakeTime').value, e = q('evalTime').value;
-      if(!s || !w || !e) return NaN;
-      const t1 = new Date(s).getTime(), t2 = new Date(w).getTime(), t3 = new Date(e).getTime();
-      const timesAreFinite = isFinite(t1) && isFinite(t2) && isFinite(t3);
-      const isChronologicalOrder = t2 > t1 && t3 > t2;
-      if(!timesAreFinite || !isChronologicalOrder) return NaN;
-      const midpoint = t1 + (t2 - t1) / 2;
-      return (t3 - midpoint)/3600000;
+    const REQUIRED_ITEMS = [
+      { id: 'req-suspected', label: '臨床懷疑是急性缺血性腦中風', note: '依 GFAST / NIHSS 與整體臨床判斷，自動帶入。' },
+      { id: 'req-time', label: '中風發病在 4.5 小時內', note: '僅限已知發病時間之標準 IVT 窗口。' },
+      { id: 'req-age', label: '年齡在 18 歲以上', note: '由年齡輸入自動判定。' },
+      { id: 'req-imaging', label: '腦部影像排除顱內出血', note: '由 NCCT / MRI 判讀結果帶入。' },
+    ];
+
+    const CONTRA_ITEMS = [
+      { id: 'contra-bp', label: '經矯正後血壓持續維持 > 185/110 mmHg' },
+      { id: 'contra-glucose', label: '經矯正後血糖持續維持 < 50 mg/dL or > 400 mg/dL' },
+      { id: 'contra-large-infarct', label: '腦部影像學評估為嚴重中風（CT >1/3 MCA 灌流區低密度變化）' },
+      { id: 'contra-surgery3m', label: '顱內或脊柱手術（*三個月以上非絕對禁忌）' },
+      { id: 'contra-head-trauma', label: '嚴重性頭部創傷（*三個月以上非絕對禁忌）' },
+      { id: 'contra-stroke1m', label: '一個月內中風病史' },
+      { id: 'contra-prior-ich', label: '非創傷性顱內出血病史' },
+      { id: 'contra-caa', label: '已知腦部類澱粉血管症且曾 sICH / SAH / diffuse siderosis' },
+      { id: 'contra-parenchymal-tumor', label: '腦實質腫瘤' },
+      { id: 'contra-aneurysm', label: '已破裂顱內動脈瘤或 >1 公分未破裂顱內動脈瘤 / 大型梭狀基底動脈瘤' },
+      { id: 'contra-gibleed', label: '近 21 日內腸胃道或泌尿道出血' },
+      { id: 'contra-surgery14d', label: '近 14 日內曾接受重大手術' },
+      { id: 'contra-stemi', label: '近 7 日內 STEMI，且非中風發病時所合併之 acute MI' },
+      { id: 'contra-active-bleed', label: '活動性內出血' },
+      { id: 'contra-bleeding-tumor', label: '易出血腫瘤' },
+      { id: 'contra-gi-malignancy', label: '腸胃道惡性腫瘤' },
+      { id: 'contra-pancreatitis', label: '急性胰臟炎' },
+      { id: 'contra-ie', label: '已知感染性心內膜炎' },
+      { id: 'contra-liver', label: '嚴重肝病且凝血功能異常' },
+      { id: 'contra-aortic-aneurysm', label: '主動脈瘤' },
+      { id: 'contra-aortic-dissection', label: '主動脈弓剝離' },
+      { id: 'contra-warfarin', label: '服用 Warfarin 且 INR > 1.7' },
+      { id: 'contra-platelets', label: '血小板數 < 100,000/mm³' },
+      { id: 'contra-aptt', label: 'aPTT > 40 sec' },
+      { id: 'contra-lmwh', label: '中風發作前 24 hr 內使用 LMWH' },
+      { id: 'contra-heparin', label: '中風發作前使用 Heparin 且 aPTT > 40 sec' },
+      { id: 'contra-xa', label: '中風發作前 24 hr 內使用 Xa 抑制劑（*24–48h 特定條件下非絕對禁忌）' },
+    ];
+
+    const SPECIAL_ROWS = [
+      { id: 'ss-extend', situation: '發病或最後正常時間 4.5–9 小時並符合腦部影像學篩選條件', badgeClass: 'class-iia', badgeText: 'IIa, B', stats: 'EXTEND：mRS 0–1 35.4% vs 29.5%；sICH 6.2% vs 0.9%。' },
+      { id: 'ss-wakeup', situation: '睡醒時發現中風或發病時間不明，且符合腦部影像學篩選條件', badgeClass: 'class-iib', badgeText: 'IIb, B', stats: 'Lancet 2020：mRS 0–1 47% vs 39%；Cochrane 2021：mRS 0–2 66% vs 58%；sICH 約 3%。' },
+      { id: 'ss-mild', situation: '輕微（NIHSS ≦ 5）且合併失能症狀', badgeClass: 'class-iia', badgeText: 'IIa, B', stats: '視野缺損、失語、忽略症、抗重力無力等屬重要失能症狀。' },
+      { id: 'ss-severe', situation: '臨床嚴重中風，但非腦部影像學評估為嚴重中風', badgeClass: 'class-i', badgeText: '3h 內 I, A；3–4.5h IIb, C', stats: '高 NIHSS 但 CT 未見 >1/3 MCA 梗塞時，可依時間窗分級考慮。' },
+      { id: 'ss-glucose', situation: '血糖異常，經校正後仍有神經學缺損', badgeClass: 'class-iib', badgeText: 'IIb, C', stats: '需先矯正代謝異常，再重新評估是否仍為 AIS。' },
+      { id: 'ss-seizure', situation: '中風發作時併發癲癇，排除 Todd\'s paralysis 後仍有神經學症狀', badgeClass: 'class-iia', badgeText: 'IIa, C', stats: '影像與持續缺損支持 AIS 時可考慮。' },
+      { id: 'ss-recent-stroke', situation: '1 到 3 個月內曾發生缺血性中風', badgeClass: 'class-iib', badgeText: 'IIb, C', stats: 'SITS-EAST：與首次中風相比，sICH 與 3 個月獨立性無顯著差異。' },
+      { id: 'ss-extraaxial', situation: '顱內腦外腫瘤（extra-axial intracranial neoplasm）', badgeClass: 'class-iib', badgeText: 'IIb, C', stats: 'Meningioma sICH 約 7%；需排除 pituitary / intra-axial tumor。' },
+      { id: 'ss-aneurysm', situation: '未破裂顱內動脈瘤（大型梭狀基底動脈瘤除外）', badgeClass: 'class-iib', badgeText: 'IIb, C', stats: '整體 sICH 8.3%；動脈瘤破裂 2.3%，且多為 basilar fusiform。' },
+    ];
+
+    const manualRequired = Object.fromEntries(REQUIRED_ITEMS.map((item) => [item.id, false]));
+    const manualContra = Object.fromEntries(CONTRA_ITEMS.map((item) => [item.id, false]));
+    const manualSpecial = Object.fromEntries(SPECIAL_ROWS.map((row) => [row.id, false]));
+    let latestAutoRequired = Object.fromEntries(REQUIRED_ITEMS.map((item) => [item.id, false]));
+    let latestAutoContra = Object.fromEntries(CONTRA_ITEMS.map((item) => [item.id, false]));
+    let latestAutoSpecial = Object.fromEntries(SPECIAL_ROWS.map((row) => [row.id, false]));
+
+    function renderNihss() {
+      const container = q('#nihssItems');
+      container.innerHTML = NIHSS_ITEMS.map((item) => `
+        <label class="nihss-item" for="${item.id}">
+          <span>${item.label}</span>
+          <select id="${item.id}" data-nihss>
+            ${item.options.map(([value, text], index) => `<option value="${value}" ${index === 0 ? 'selected' : ''}>${value} = ${text}</option>`).join('')}
+          </select>
+        </label>
+      `).join('');
     }
 
-    function setAll(selector, checked){ document.querySelectorAll(selector).forEach(x=>x.checked=checked); }
+    function renderChecklist() {
+      q('#requiredChecklist').innerHTML = REQUIRED_ITEMS.map((item) => `
+        <label class="check-card auto" data-check-card="${item.id}">
+          <input type="checkbox" id="${item.id}" data-required />
+          <span><span class="label-main">${item.label}</span><span class="label-note">${item.note}</span></span>
+        </label>
+      `).join('');
 
-    function run(){
-      clearNodes();
-      on('n0'); on('n1');
-
-      const onset = getOnsetHours();
-      const sbp = Number(q('sbp').value || 0), dbp = Number(q('dbp').value || 0);
-      const lvo = q('lvo').value;
-      const ctpAvail = q('ctpAvail').value === 'yes';
-      const mismatch = q('mismatch').value === 'yes';
-      const evtTeam = q('evtTeam').value === 'yes';
-      const cryo = q('cryo').value === 'yes';
-
-      const lines = [];
-      const badInput = !isFinite(onset) || onset < 0;
-      if (badInput){
-        q('summary').textContent = '請先填寫有效的時間資料（wake-up 需填入睡與醒來時間）。';
-        return;
-      }
-
-      lines.push(`估算發病時間：${onset.toFixed(2)} 小時`);
-
-      let rtpa = 'no', rtpaPay = 'none';
-      if (onset <= 4.5){
-        on('n2','ok');
-        rtpa = 'possible'; rtpaPay = 'reimbursed';
-        lines.push('IVT路徑：≤4.5h，可評估 rtPA（健保給付）。');
-      } else if (onset <= 9){
-        on('n3','warn');
-        if (ctpAvail && mismatch){
-          rtpa = 'possible'; rtpaPay = 'self';
-          lines.push('IVT路徑：4.5–9h 且有灌流影像條件，可考慮 rtPA（非健保給付，自費）。');
-        } else {
-          lines.push('IVT路徑：4.5–9h 但無可用/符合灌流影像條件，不建議延長窗 rtPA。');
-        }
-      } else {
-        on('n3','bad');
-        lines.push('IVT路徑：>9h，不建議 rtPA。');
-      }
-
-      if (sbp >= RTPA_PRE_SBP_MAX || dbp >= RTPA_PRE_DBP_MAX){
-        lines.push(`⚠ 血壓未達 rtPA 前目標（需 <${RTPA_PRE_SBP_MAX}/${RTPA_PRE_DBP_MAX} mmHg）。`);
-      } else {
-        lines.push(`✓ 血壓符合 rtPA 前門檻（<${RTPA_PRE_SBP_MAX}/${RTPA_PRE_DBP_MAX} mmHg）。`);
-      }
-
-      let evtCandidate = false;
-      if (onset <= 24 && lvo === 'yes'){
-        evtCandidate = true;
-        on('n4','ok');
-        if (onset > 6 && !ctpAvail){
-          evtCandidate = false;
-          on('n4','warn');
-          lines.push('EVT路徑：6–24h 需進階影像篩選（CTP/MRP/等效），目前不可得。');
-        }
-        if (evtCandidate){
-          if (!evtTeam){ on('n5','warn'); lines.push('EVT路徑：符合候選但本院無 EVT 團隊，建議立即轉院。'); }
-          else lines.push('EVT路徑：符合候選且本院 EVT 團隊可執行。');
-        }
-      } else if (onset <= 24 && lvo === 'unknown'){
-        on('n4','warn');
-        lines.push('EVT路徑：24h 內但 LVO 未明，需先完成 CTA/等效影像。');
-      } else {
-        on('n4','bad');
-        lines.push('EVT路徑：目前不符合 EVT 候選（>24h 或無 LVO）。');
-      }
-
-      if (!cryo){
-        on('n7','warn');
-        lines.push('⚠ 無 cryoprecipitate：若 rtPA 後 ICH 反轉資源不足，需先啟動血品支援流程。');
-      } else {
-        on('n7','ok');
-        lines.push('✓ cryoprecipitate 可用（rtPA 後 ICH 反轉可執行）。');
-      }
-
-      if (!evtCandidate && rtpaPay === 'self'){
-        on('n6','warn');
-        lines.push('結論：無 EVT 給付路徑，且 rtPA 於 >4.5h 屬自費。');
-      }
-      if (!evtCandidate && rtpa === 'no'){
-        on('n6','bad');
-        lines.push('結論：不符 rtPA / EVT 給付條件，建議最佳藥物治療與自費方案討論。');
-      }
-
-      lines.push('治療後提醒：rtPA/EVT 後 24h 目標血壓 <180/105；若神經惡化，立即影像追蹤排除 ICH。');
-      q('summary').textContent = lines.join('\n');
+      q('#contraChecklist').innerHTML = CONTRA_ITEMS.map((item) => `
+        <label class="check-card" data-check-card="${item.id}">
+          <input type="checkbox" id="${item.id}" data-contra />
+          <span><span class="label-main">${item.label}</span></span>
+        </label>
+      `).join('');
     }
 
-    q('onsetMode').addEventListener('change', ()=>{
-      q('wakeupRow').style.display = q('onsetMode').value === 'wakeup' ? 'grid' : 'none';
-      q('evalRow').style.display = q('onsetMode').value === 'wakeup' ? 'grid' : 'none';
-      q('knownHours').disabled = q('onsetMode').value === 'wakeup';
+    function renderSpecialRows() {
+      q('#specialSituationBody').innerHTML = SPECIAL_ROWS.map((row) => `
+        <tr>
+          <td><input class="special-check" type="checkbox" id="${row.id}" /></td>
+          <td>${row.situation}</td>
+          <td><span class="badge ${row.badgeClass}">${row.badgeText}</span></td>
+          <td>${row.stats}</td>
+        </tr>
+      `).join('');
+    }
+
+    function formatDateLocal(date) {
+      return new Date(date.getTime() - date.getTimezoneOffset() * MS_PER_MINUTE).toISOString().slice(0, 16);
+    }
+
+    function setDefaults() {
+      const now = new Date();
+      q('#evalTime').value = formatDateLocal(now);
+      q('#ivtTimestamp').value = formatDateLocal(now);
+      const wake = new Date(now.getTime() - 2 * 3600000);
+      const sleep = new Date(now.getTime() - 8 * 3600000);
+      q('#wakeTime').value = formatDateLocal(wake);
+      q('#sleepStart').value = formatDateLocal(sleep);
+    }
+
+    function getGfastState() {
+      const positives = [
+        ['g-gaze', 'G 凝視偏移'],
+        ['g-face', 'F 臉部下垂'],
+        ['g-arm', 'A 手臂無力'],
+        ['g-speech', 'S 語言障礙'],
+      ].filter(([id]) => q(`#${id}`).checked).map(([, label]) => label);
+      return { score: positives.length, positives };
+    }
+
+    function getNihssScore() {
+      return qa('[data-nihss]').reduce((sum, select) => sum + Number(select.value || 0), 0);
+    }
+
+    function nihssSeverity(score) {
+      if (score === 0) return '無中風症狀';
+      if (score <= 4) return '輕微中風';
+      if (score <= 15) return '中度中風';
+      if (score <= 20) return '中重度中風';
+      return '嚴重中風';
+    }
+
+    function parseTimeWindow() {
+      const mode = q('#onsetMode').value;
+      const fallback = Number(q('#knownHours').value || NaN);
+      if (mode === 'known' || mode === 'unknown') {
+        return { hours: fallback, mode, description: mode === 'known' ? '已知發病時間' : '發病時間不明（以最後正常時間估算）' };
+      }
+      const sleepStart = q('#sleepStart').value;
+      const wakeTime = q('#wakeTime').value;
+      const evalTime = q('#evalTime').value;
+      if (!sleepStart || !wakeTime || !evalTime) {
+        return { hours: NaN, mode, description: '睡醒中風（需完整時間）' };
+      }
+      const sleepMs = new Date(sleepStart).getTime();
+      const wakeMs = new Date(wakeTime).getTime();
+      const evalMs = new Date(evalTime).getTime();
+      if (![sleepMs, wakeMs, evalMs].every(Number.isFinite) || !(wakeMs > sleepMs && evalMs >= wakeMs)) {
+        return { hours: NaN, mode, description: '睡醒中風（時間序有誤）' };
+      }
+      const midpoint = sleepMs + (wakeMs - sleepMs) / 2;
+      return { hours: (evalMs - midpoint) / 3600000, mode, description: '睡醒中風（以睡眠中點估算）' };
+    }
+
+    function setNode(id, state, note) {
+      const node = q(`#${id}`);
+      node.className = `node ${state}`.trim();
+      node.querySelector('small').textContent = note || '';
+    }
+
+    function toggleAutoFields() {
+      const mode = q('#onsetMode').value;
+      q('#wakeupFields').style.display = mode === 'wakeup' ? 'grid' : 'none';
+      q('#knownHoursLabel').textContent = mode === 'known'
+        ? '距發病時間（小時）'
+        : mode === 'unknown'
+          ? '距最後正常時間（小時）'
+          : '距發病 / 最後正常時間（小時）';
+      q('#knownHours').disabled = mode === 'wakeup';
+      q('#manualNihss').disabled = q('#syncNihss').checked;
+    }
+
+    function setCardState(id, active, contra = false) {
+      const card = q(`[data-check-card="${id}"]`);
+      if (!card) return;
+      card.classList.toggle('active', !!active && !contra);
+      card.classList.toggle('contra', !!contra);
+    }
+
+    function getDisablingSymptoms() {
+      const mapping = [
+        ['#disablingVisual', '視野缺損'],
+        ['#disablingAphasia', '失語'],
+        ['#disablingNeglect', '忽略症'],
+        ['#disablingWeakness', '肢體無力無法抗重力'],
+      ];
+      return mapping.filter(([selector]) => q(selector).checked).map(([, text]) => text);
+    }
+
+    function updateAutoChecklist(state) {
+      const autoRequiredState = {
+        'req-suspected': state.gfast.score >= 1 || state.nihssScore > 0,
+        'req-time': state.time.mode === 'known' && Number.isFinite(state.time.hours) && state.time.hours <= 4.5,
+        'req-age': state.age >= 18,
+        'req-imaging': state.imagingClear === 'yes',
+      };
+      latestAutoRequired = autoRequiredState;
+      Object.entries(autoRequiredState).forEach(([id, value]) => {
+        const merged = value || manualRequired[id];
+        q(`#${id}`).checked = merged;
+        setCardState(id, merged, false);
+      });
+
+      const autoContraState = {
+        'contra-bp': state.sbp > 185 || state.dbp > 110,
+        'contra-glucose': state.glucose < 50 || state.glucose > 400,
+        'contra-large-infarct': q('#largeInfarct').checked,
+        'contra-surgery3m': q('#intracranialSpinalSurgery3m').checked,
+        'contra-head-trauma': q('#headTrauma3m').checked,
+        'contra-stroke1m': q('#stroke1mo').checked,
+        'contra-prior-ich': q('#priorICh').checked,
+        'contra-caa': q('#caaHighRisk').checked,
+        'contra-parenchymal-tumor': q('#parenchymalTumor').checked || q('#pituitaryTumor').checked,
+        'contra-aneurysm': q('#largeBasilarFusiform').checked,
+        'contra-gibleed': q('#giGuBleed21d').checked,
+        'contra-surgery14d': q('#majorSurgery14d').checked,
+        'contra-stemi': q('#acuteMI').value === 'stemi_lt1wk',
+        'contra-active-bleed': q('#activeBleeding').checked,
+        'contra-bleeding-tumor': q('#bleedingTumor').checked,
+        'contra-gi-malignancy': q('#giMalignancy').checked,
+        'contra-pancreatitis': q('#pancreatitis').checked,
+        'contra-ie': q('#infectiveEndocarditis').checked,
+        'contra-liver': q('#severeLiverDisease').checked,
+        'contra-aortic-aneurysm': q('#aorticAneurysm').checked,
+        'contra-aortic-dissection': q('#aorticDissection').checked,
+        'contra-warfarin': state.anticoag === 'warfarin' && state.inr > 1.7,
+        'contra-platelets': state.platelets > 0 && state.platelets < 100000,
+        'contra-aptt': state.aptt > 40,
+        'contra-lmwh': q('#recentLmwh').checked,
+        'contra-heparin': q('#recentHeparin').checked && state.aptt > 40,
+        'contra-xa': q('#recentXa').checked,
+      };
+      latestAutoContra = autoContraState;
+      Object.entries(autoContraState).forEach(([id, value]) => {
+        const merged = value || manualContra[id];
+        q(`#${id}`).checked = merged;
+        setCardState(id, merged, merged);
+      });
+
+      state.requiredMet = REQUIRED_ITEMS.every((item) => q(`#${item.id}`).checked);
+      state.contraPresent = CONTRA_ITEMS.filter((item) => q(`#${item.id}`).checked).map((item) => item.id);
+      state.requiredLabels = REQUIRED_ITEMS.filter((item) => q(`#${item.id}`).checked).map((item) => item.label);
+      state.contraLabels = CONTRA_ITEMS.filter((item) => q(`#${item.id}`).checked).map((item) => item.label);
+    }
+
+    function updateSpecialSituationChecks(state) {
+      const autoSpecialState = {
+        'ss-extend': state.time.mode === 'known' && state.time.hours > 4.5 && state.time.hours <= 9 && state.ctpAvail && state.perfusionMismatch === 'yes',
+        'ss-wakeup': (state.time.mode === 'wakeup' || state.time.mode === 'unknown') && state.dwiFlairMismatch === 'yes',
+        'ss-mild': state.nihssScore <= 5 && state.disablingSymptoms.length > 0,
+        'ss-severe': state.nihssScore >= 16 && !q('#largeInfarct').checked && state.time.mode === 'known' && Number.isFinite(state.time.hours) && state.time.hours <= 4.5,
+        'ss-glucose': (state.glucose < 50 || state.glucose > 400) && q('#persistentDeficitAfterGlucose').checked,
+        'ss-seizure': q('#seizureAtOnset').checked,
+        'ss-recent-stroke': q('#recentStroke1to3m').checked,
+        'ss-extraaxial': q('#extraAxialTumor').checked,
+        'ss-aneurysm': q('#unrupturedAneurysm').checked && !q('#largeBasilarFusiform').checked,
+      };
+      latestAutoSpecial = autoSpecialState;
+      Object.entries(autoSpecialState).forEach(([id, value]) => {
+        q(`#${id}`).checked = value || manualSpecial[id];
+      });
+      state.specialLabels = SPECIAL_ROWS.filter((row) => q(`#${row.id}`).checked).map((row) => row.situation);
+      state.specialState = Object.fromEntries(SPECIAL_ROWS.map((row) => [row.id, q(`#${row.id}`).checked]));
+    }
+
+    function openRelevantStats(state) {
+      const mappings = {
+        '#stat-extend': state.specialState['ss-extend'],
+        '#stat-wakeup': state.specialState['ss-wakeup'],
+        '#stat-mild': state.specialState['ss-mild'],
+        '#stat-recent': q('#recentStroke1to3m').checked || state.age > 70 || state.anticoag === 'doac',
+        '#stat-special': [
+          q('#ckdEskd').checked,
+          q('#activeCancer').checked,
+          q('#severeLiverDisease').checked,
+          q('#leukoaraiosis').checked,
+          q('#caaHighRisk').checked,
+          q('#caaHighRisk').checked,
+          q('#cmb10').checked,
+          q('#fib4High').checked,
+          q('#infectiveEndocarditis').checked,
+          q('#intracranialDissection').checked,
+          q('#extracranialDissection').checked,
+          q('#unrupturedAneurysm').checked,
+          q('#pituitaryTumor').checked,
+          q('#parenchymalTumor').checked,
+          q('#acuteMI').value !== 'none',
+        ].some(Boolean),
+      };
+      Object.entries(mappings).forEach(([selector, shouldOpen]) => {
+        q(selector).open = !!shouldOpen;
+      });
+    }
+
+    function currentState() {
+      const nihssRaw = getNihssScore();
+      if (q('#syncNihss').checked) q('#manualNihss').value = nihssRaw;
+      const nihssScore = Number(q('#manualNihss').value || 0);
+      return {
+        age: Number(q('#age').value || 0),
+        sbp: Number(q('#sbp').value || 0),
+        dbp: Number(q('#dbp').value || 0),
+        glucose: Number(q('#glucose').value || 0),
+        inr: Number(q('#inr').value || 0),
+        aptt: Number(q('#aptt').value || 0),
+        platelets: Number(q('#platelets').value || 0),
+        anticoag: q('#anticoag').value,
+        lvo: q('#lvo').value,
+        ctpAvail: q('#ctpAvail').value === 'yes',
+        perfusionMismatch: q('#perfusionMismatch').value,
+        dwiFlairMismatch: q('#dwiFlairMismatch').value,
+        evtTeam: q('#evtTeam').value === 'yes',
+        cryo: q('#cryo').value === 'yes',
+        imagingClear: q('#imagingClear').value,
+        acuteMI: q('#acuteMI').value,
+        time: parseTimeWindow(),
+        gfast: getGfastState(),
+        nihssRaw,
+        nihssScore,
+        nihssSeverity: nihssSeverity(nihssScore),
+        disablingSymptoms: getDisablingSymptoms(),
+      };
+    }
+
+    function updateFlow(state) {
+      const validTime = Number.isFinite(state.time.hours) && state.time.hours >= 0;
+      const standardIvtWindow = state.time.mode === 'known' && validTime && state.time.hours <= 4.5;
+      const extendedWindow = state.time.mode === 'known' && validTime && state.time.hours > 4.5 && state.time.hours <= 9;
+      const wakeupWindow = (state.time.mode === 'wakeup' || state.time.mode === 'unknown');
+      const evtWindow = validTime && state.time.hours <= 24;
+      const evtCandidate = evtWindow && state.lvo === 'yes';
+      const standardEligible = standardIvtWindow && state.requiredMet && state.contraPresent.length === 0;
+      const extendedEligible = extendedWindow && state.ctpAvail && state.perfusionMismatch === 'yes';
+      const wakeupEligible = wakeupWindow && state.dwiFlairMismatch === 'yes';
+      const anyReperfusion = standardEligible || extendedEligible || wakeupEligible || evtCandidate;
+
+      setNode('node-a', state.imagingClear === 'no' ? 'warning' : 'current', state.imagingClear === 'yes' ? 'NCCT 已排除 ICH，請並行評估 LVO。' : state.imagingClear === 'pending' ? '影像判讀中，先完成 NCCT / CTA。' : '影像已有出血，應轉為 ICH 路徑。');
+      setNode('node-b', (state.gfast.score >= 1 || state.nihssScore > 0) ? 'compatible' : 'warning', `GFAST ${state.gfast.score}/4；NIHSS ${state.nihssScore}（${state.nihssSeverity}）。`);
+
+      if (standardEligible) {
+        setNode('node-c', 'compatible', '標準 IVT 窗口且符合 2025 台灣核對表。');
+      } else if (standardIvtWindow) {
+        const reason = state.contraLabels[0] || (!state.requiredMet ? '必要條件尚未齊備。' : '需進一步補齊資料。');
+        setNode('node-c', 'contra', `≤4.5h 但目前不符：${reason}`);
+      } else {
+        setNode('node-c', 'inactive', '目前非標準 4.5 小時內 IVT 路徑。');
+      }
+
+      if (extendedEligible) {
+        setNode('node-d', 'compatible', '4.5–9h 且灌流影像顯示 mismatch，可共享決策考慮 IVT。');
+      } else if (extendedWindow) {
+        const reason = !state.ctpAvail ? '缺乏灌流影像。' : state.perfusionMismatch === 'no' ? '未見 mismatch。' : '等待影像結果。';
+        setNode('node-d', state.perfusionMismatch === 'unknown' ? 'warning' : 'contra', reason);
+      } else {
+        setNode('node-d', 'inactive', '目前非 4.5–9 小時延長窗。');
+      }
+
+      if (wakeupEligible) {
+        setNode('node-e', 'compatible', '睡醒 / 不明發病且 DWI-FLAIR mismatch 為陽性。');
+      } else if (wakeupWindow) {
+        const reason = state.dwiFlairMismatch === 'no' ? '未見 DWI-FLAIR mismatch。' : '等待 MRI DWI-FLAIR 判讀。';
+        setNode('node-e', state.dwiFlairMismatch === 'unknown' ? 'warning' : 'contra', reason);
+      } else {
+        setNode('node-e', 'inactive', '目前非睡醒 / 發病時間不明路徑。');
+      }
+
+      if (evtCandidate) {
+        setNode('node-f', 'compatible', state.evtTeam ? '≤24h + LVO，應立即啟動 EVT 評估。' : '≤24h + LVO，需同步準備轉運。');
+      } else if (evtWindow && state.lvo === 'unknown') {
+        setNode('node-f', 'warning', '仍在 24h 內，但需先完成 CTA / 等效影像確認是否 LVO。');
+      } else if (state.lvo === 'no' || !evtWindow) {
+        setNode('node-f', 'inactive', !evtWindow ? '超過 24 小時 EVT 評估窗。' : '目前未見 LVO。');
+      }
+
+      if (evtCandidate && !state.evtTeam) {
+        setNode('node-g', 'current', '本院 EVT 團隊不可得，請立即轉院。');
+      } else if (evtCandidate && state.evtTeam) {
+        setNode('node-g', 'inactive', '本院可直接啟動 EVT。');
+      } else {
+        setNode('node-g', 'inactive', '僅在 EVT 候選且本院無團隊時啟用。');
+      }
+
+      if (!anyReperfusion || state.imagingClear === 'no') {
+        setNode('node-h', 'compatible', state.imagingClear === 'no' ? '影像顯示出血時轉 ICH 路徑，不走 IVT/EVT。' : '目前不符再灌流條件，建議最佳藥物治療與次級預防。');
+      } else {
+        setNode('node-h', 'inactive', '已有再灌流候選路徑。');
+      }
+
+      if (q('#suspectedPostIvtICh').checked) {
+        setNode('node-i', state.cryo ? 'compatible' : 'contra', state.cryo ? '啟動 ICH 反轉：停藥 + TXA + cryo + 神外。' : '疑似 ICH 但 cryo 不可得，需立即啟動血品 / 轉院支援。');
+      } else {
+        setNode('node-i', 'inactive', '若 rtPA 後出現新神經惡化，立即切換至此路徑。');
+      }
+
+      state.standardEligible = standardEligible;
+      state.extendedEligible = extendedEligible;
+      state.wakeupEligible = wakeupEligible;
+      state.evtCandidate = evtCandidate;
+      state.anyReperfusion = anyReperfusion;
+    }
+
+    function updateDecision(state) {
+      const recommendationLines = [];
+      const scenarioStats = [];
+      let headline = '持續評估中';
+      let headlineClass = 'badge info';
+      const timeText = Number.isFinite(state.time.hours) && state.time.hours >= 0
+        ? `${state.time.description}：${state.time.hours.toFixed(2)} 小時`
+        : `${state.time.description}：資料不足`;
+
+      if (state.imagingClear === 'no') {
+        headline = '影像已示出血：請改走 ICH 處置，不適用 IVT';
+        headlineClass = 'badge class-iii';
+        recommendationLines.push('影像已見出血，立即停止 IVT 思考，轉入出血性中風流程。');
+      } else if (state.standardEligible) {
+        headline = '符合標準 IVT 路徑（≤4.5h）';
+        headlineClass = 'badge class-i';
+        recommendationLines.push('符合 2025 台灣 IVT 核對表，可啟動 rtPA 評估 / 治療。');
+      } else if (state.extendedEligible) {
+        headline = '符合延長窗 IVT 評估（4.5–9h + perfusion mismatch）';
+        headlineClass = 'badge class-iia';
+        recommendationLines.push('灌流影像符合條件，可依 EXTEND 證據共享決策考慮 IVT（非健保給付）。');
+        scenarioStats.push('EXTEND：mRS 0–1 35.4% vs 29.5%；sICH 6.2% vs 0.9%。');
+      } else if (state.wakeupEligible) {
+        headline = '符合睡醒 / 不明發病 IVT 評估（影像篩選）';
+        headlineClass = 'badge class-iib';
+        recommendationLines.push('DWI-FLAIR mismatch 陽性，可依 WAKE-UP / meta-analysis 證據考慮 IVT。');
+        scenarioStats.push('Wake-up / unknown onset：mRS 0–1 47% vs 39%；mRS 0–2 66% vs 58%；sICH 約 3%。');
+      } else if (state.evtCandidate) {
+        headline = state.evtTeam ? '符合 EVT 候選，請立刻啟動 EVT 評估' : '符合 EVT 候選，但需立即轉院';
+        headlineClass = 'badge class-i';
+        recommendationLines.push(state.evtTeam ? '本院 EVT 團隊可得，立即 CTA / CTP / DSA 串接。' : 'LVO 且 24h 內，本院無 EVT 團隊，立即轉至可治療醫院。');
+      } else {
+        headline = '目前不符再灌流條件，建議最佳藥物治療';
+        headlineClass = 'badge class-iib';
+        recommendationLines.push('請持續監測、完成病因分類、啟動次級預防與復健安排。');
+      }
+
+      if (state.gfast.score >= 1) recommendationLines.push('GFAST 陽性，疑似中風應立即啟動處理流程。');
+      if (state.sbp > 185 || state.dbp > 110) recommendationLines.push('rtPA 前需先將血壓控制至 <185/110 mmHg。');
+      recommendationLines.push('rtPA / EVT 後 24h 及 EVT post 目標 BP 均維持 <180/105 mmHg。');
+      if (state.evtCandidate && !state.evtTeam) recommendationLines.push('轉院前請同步完成影像資料、血壓控制與聯絡接收團隊。');
+      if (q('#suspectedPostIvtICh').checked) recommendationLines.push(state.cryo ? '目前已啟動 ICH 反轉資源（含 cryoprecipitate）。' : '目前 ICH 反轉資源不足，需即刻血品支援。');
+      if (state.disablingSymptoms.length > 0 && state.nihssScore <= 5) recommendationLines.push(`雖 NIHSS ≤5，但存在失能症狀：${state.disablingSymptoms.join('、')}。`);
+      if (state.anticoag === 'doac') scenarioStats.push('Taiwan NHIA 2024：DOAC 未增加 bleeding risk vs 無抗凝；仍須檢視最後用藥時間。');
+      if (state.age > 70) scenarioStats.push('TTT-AIS Taiwan：71–80 歲 low-dose 0.6 mg/kg 可能有較佳風險平衡；>80 歲證據不足。');
+      if (q('#recentStroke1to3m').checked) scenarioStats.push('SITS-EAST：近期中風再 IVT，sICH 與 3 月功能獨立未見顯著差異。');
+      if (q('#ckdEskd').checked) scenarioStats.push('CKD/ESKD：若 aPTT ≤40 sec，IVT 仍可考慮；台灣資料 OR 0.60 改善 6 月結局。');
+      if (q('#activeCancer').checked || q('#severeLiverDisease').checked || q('#leukoaraiosis').checked || q('#fib4High').checked || q('#caaHighRisk').checked || q('#cmb10').checked) {
+        scenarioStats.push('特殊條件需個別權衡：癌症、肝病、WML、FIB-4、CAA、CMB 等均可能提高出血風險。');
+      }
+
+      const decisionHtml = `
+        <div class="inline-list" style="margin-bottom:8px;"><span class="${headlineClass}">${headline}</span></div>
+        <div><strong>${timeText}</strong></div>
+        <div class="muted" style="margin-top:6px;">NIHSS ${state.nihssScore}（${state.nihssSeverity}）｜BP ${state.sbp}/${state.dbp}｜Glucose ${state.glucose}｜LVO：${state.lvo === 'yes' ? '是' : state.lvo === 'no' ? '否' : '未知'}</div>
+        <ul style="margin:10px 0 0 18px;padding:0;">
+          ${recommendationLines.map((line) => `<li>${line}</li>`).join('')}
+        </ul>
+      `;
+      q('#decisionBox').innerHTML = decisionHtml;
+      q('#flowRecommendation').innerHTML = decisionHtml;
+
+      const summaryLines = [
+        `• ${headline}`,
+        `• ${timeText}`,
+        `• GFAST：${state.gfast.score}/4${state.gfast.positives.length ? `（${state.gfast.positives.join('、')}）` : ''}`,
+        `• NIHSS：${state.nihssScore}（${state.nihssSeverity}）`,
+        `• 影像：${state.imagingClear === 'yes' ? '已排除 ICH' : state.imagingClear === 'pending' ? '待判讀' : '已有出血'}`,
+        `• IVT 必要條件：${state.requiredLabels.length ? state.requiredLabels.join('；') : '尚未滿足'}`,
+        `• IVT 絕對禁忌：${state.contraLabels.length ? state.contraLabels.join('；') : '目前未見自動帶入之絕對禁忌'}`,
+        `• 特殊情況：${state.specialLabels.length ? state.specialLabels.join('；') : '無'}`,
+        `• 情境統計：${scenarioStats.length ? scenarioStats.join(' ｜ ') : '目前無額外自動展開統計'}`,
+      ];
+      q('#summaryBox').textContent = summaryLines.join('\n');
+      state.headline = headline;
+      state.scenarioStats = scenarioStats;
+    }
+
+    function updateStatusBoxes(state) {
+      const status = q('#ivtStatus');
+      if (state.requiredMet && state.contraPresent.length === 0) {
+        status.className = 'ivt-status status-good';
+        status.innerHTML = '<strong>符合 IVT 適應症</strong><br>所有必要條件已符合，且目前未見自動帶入之絕對禁忌。';
+      } else {
+        status.className = 'ivt-status status-bad';
+        const missing = REQUIRED_ITEMS.filter((item) => !q(`#${item.id}`).checked).map((item) => item.label);
+        status.innerHTML = `<strong>目前不符合標準 IVT 核對表</strong><br>${missing.length ? `缺少必要條件：${missing.join('；')}。<br>` : ''}${state.contraLabels.length ? `絕對禁忌：${state.contraLabels.join('；')}。` : '可補齊必要條件後再評估。'}`;
+      }
+    }
+
+    function updateGfastDisplay(state) {
+      q('#gfastScore').textContent = `${state.gfast.score} / 4`;
+      q('#gfastFlag').classList.toggle('hidden', state.gfast.score < 1);
+      q('#nihssScore').textContent = String(state.nihssRaw);
+      q('#nihssSeverity').textContent = nihssSeverity(state.nihssRaw);
+    }
+
+    function buildCopySummary(state) {
+      return [
+        '急性中風分流摘要',
+        `時間：${new Date().toLocaleString('zh-TW', { hour12: false })}`,
+        `GFAST：${state.gfast.score}/4${state.gfast.positives.length ? `（${state.gfast.positives.join('、')}）` : '（無明確陽性）'}`,
+        `NIHSS：${state.nihssScore}（${state.nihssSeverity}）`,
+        `時間窗：${Number.isFinite(state.time.hours) ? `${state.time.description} ${state.time.hours.toFixed(2)} 小時` : `${state.time.description} / 資料不足`}`,
+        `BP / 血糖：${state.sbp}/${state.dbp} mmHg，Glucose ${state.glucose} mg/dL`,
+        `LVO / EVT：LVO=${state.lvo}，EVT team=${state.evtTeam ? '可得' : '不可得'}`,
+        `主建議：${state.headline}`,
+        `IVT 必要條件：${state.requiredLabels.length ? state.requiredLabels.join('；') : '未完全符合'}`,
+        `IVT 絕對禁忌：${state.contraLabels.length ? state.contraLabels.join('；') : '未自動帶入'}`,
+        `特殊情況：${state.specialLabels.length ? state.specialLabels.join('；') : '無'}`,
+        `相關統計：${state.scenarioStats.length ? state.scenarioStats.join(' ｜ ') : '無'}`,
+        'rtPA / EVT 後 BP 目標：<180/105 mmHg。',
+      ].join('\n');
+    }
+
+    async function copySummary() {
+      const state = currentState();
+      updateAutoChecklist(state);
+      updateSpecialSituationChecks(state);
+      updateFlow(state);
+      updateDecision(state);
+      updateStatusBoxes(state);
+      openRelevantStats(state);
+      const text = buildCopySummary(state);
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (error) {
+        const area = document.createElement('textarea');
+        area.value = text;
+        area.setAttribute('readonly', 'readonly');
+        area.style.position = 'fixed';
+        area.style.left = '-9999px';
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand('copy');
+        document.body.removeChild(area);
+      }
+      const btn = q('#copyBtn');
+      const original = btn.textContent;
+      btn.textContent = '已複製摘要';
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    }
+
+    function updateAll() {
+      toggleAutoFields();
+      const state = currentState();
+      updateAutoChecklist(state);
+      updateSpecialSituationChecks(state);
+      updateFlow(state);
+      updateDecision(state);
+      updateStatusBoxes(state);
+      updateGfastDisplay(state);
+      openRelevantStats(state);
+    }
+
+    renderNihss();
+    renderChecklist();
+    renderSpecialRows();
+    setDefaults();
+    toggleAutoFields();
+
+    qa('input:not([data-required]):not([data-contra]):not(.special-check), select').forEach((element) => {
+      element.addEventListener('change', updateAll);
+      element.addEventListener('input', updateAll);
     });
-    q('runBtn').addEventListener('click', run);
-    q('resetBtn').addEventListener('click', ()=>location.reload());
 
-    q('checkEligible').addEventListener('click', (e)=>{e.preventDefault(); setAll('#eligibleList input[type=checkbox]', true);});
-    q('uncheckEligible').addEventListener('click', (e)=>{e.preventDefault(); setAll('#eligibleList input[type=checkbox]', false);});
-    q('checkNoContra').addEventListener('click', (e)=>{e.preventDefault(); setAll('#contraList input[type=checkbox]', true);});
-    q('uncheckNoContra').addEventListener('click', (e)=>{e.preventDefault(); setAll('#contraList input[type=checkbox]', false);});
+    REQUIRED_ITEMS.forEach((item) => {
+      q(`#${item.id}`).addEventListener('change', (event) => {
+        manualRequired[item.id] = latestAutoRequired[item.id] ? false : event.target.checked;
+        updateAll();
+      });
+    });
+    CONTRA_ITEMS.forEach((item) => {
+      q(`#${item.id}`).addEventListener('change', (event) => {
+        manualContra[item.id] = latestAutoContra[item.id] ? false : event.target.checked;
+        updateAll();
+      });
+    });
+    SPECIAL_ROWS.forEach((row) => {
+      q(`#${row.id}`).addEventListener('change', (event) => {
+        manualSpecial[row.id] = latestAutoSpecial[row.id] ? false : event.target.checked;
+        updateAll();
+      });
+    });
 
-    // datetime-local expects local YYYY-MM-DDTHH:mm without timezone suffix,
-    // so convert current UTC timestamp to local clock time before slicing ISO text.
-    q('evalTime').value = new Date(Date.now() - new Date().getTimezoneOffset() * MS_PER_MINUTE).toISOString().slice(0,16);
-    run();
+    q('#updateBtn').addEventListener('click', updateAll);
+    q('#resetBtn').addEventListener('click', () => window.location.reload());
+    q('#copyBtn').addEventListener('click', copySummary);
+    q('#ivtSelectAllRequired').addEventListener('click', () => {
+      REQUIRED_ITEMS.forEach((item) => { manualRequired[item.id] = true; });
+      updateAll();
+    });
+    q('#ivtSelectAllContra').addEventListener('click', () => {
+      CONTRA_ITEMS.forEach((item) => { manualContra[item.id] = true; });
+      updateAll();
+    });
+    q('#ivtClearAll').addEventListener('click', () => {
+      REQUIRED_ITEMS.forEach((item) => { manualRequired[item.id] = false; });
+      CONTRA_ITEMS.forEach((item) => { manualContra[item.id] = false; });
+      SPECIAL_ROWS.forEach((row) => { manualSpecial[row.id] = false; });
+      updateAll();
+    });
+
+    updateAll();
   </script>
 </body>
 </html>
