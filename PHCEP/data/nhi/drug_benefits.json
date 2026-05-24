@@ -3506,6 +3506,128 @@
           "tags": []
         }
       ]
+    },
+    {
+      "id": "palliative",
+      "num": 13,
+      "nameZh": "安寧緩和與疼痛控制",
+      "nameEn": "Palliative Care & Pain Management",
+      "icon": "🕊️",
+      "totalEntries": 11,
+      "entries": [
+        {
+          "id": "P.1",
+          "name": "鴉片類止痛劑 Opioid Analgesics",
+          "content": "",
+          "tags": [],
+          "isGroup": true
+        },
+        {
+          "id": "P.1.1",
+          "name": "Morphine sulfate 口服製劑（如 Sevredol、MS Contin）(87/4/1、93/2/1)",
+          "content": "限符合下列條件之一患者使用：\n1.癌症疼痛病患（住院及門診）。\n2.安寧緩和醫療病患（含安寧居家療護及安寧共同照護）。\n3.非癌症慢性頑固性疼痛（疼痛期超過六個月），需同時符合：\n(1)使用 NSAIDs 仍無法控制疼痛或有嚴重副作用者。\n(2)需檢附疼痛評估報告，內容包括疼痛強度及疼痛緩解之 VAS 與 VRS。",
+          "tags": [
+            "安寧緩和"
+          ]
+        },
+        {
+          "id": "P.1.2",
+          "name": "Morphine sulfate 注射劑（87/4/1、93/2/1）",
+          "content": "限符合下列條件之一患者使用：\n1.癌症疼痛病患（住院）。\n2.安寧緩和醫療病患（需有醫師評估記錄）。\n3.術後中重度急性疼痛（住院，限短期使用）。",
+          "tags": [
+            "安寧緩和"
+          ]
+        },
+        {
+          "id": "P.1.3",
+          "name": "Oxycodone HCl 控釋製劑（如 OxyContin）(97/4/1)",
+          "content": "限符合下列條件使用：\n1.癌症疼痛病患，已接受口服嗎啡或等效類鴉片藥物治療後仍無法控制疼痛，或有嚴重副作用者。\n2.處方時需於病歷詳載目前使用之類鴉片藥物劑量及疼痛控制情況。\n3.不得用於急性或術後疼痛之常規處置。",
+          "tags": [
+            "安寧緩和"
+          ]
+        },
+        {
+          "id": "P.1.4",
+          "name": "Fentanyl 貼片劑（如 Durogesic DTRANS）(89/11/1、111/2/1)",
+          "content": "限符合下列條件使用：\n1.已接受口服嗎啡至少 30 mg/day、oxycodone 至少 15 mg/day，或 fentanyl 注射劑等效劑量類鴉片藥物達一週（含）以上，疼痛穩定之癌症疼痛病患。\n2.需要長效止痛（>12小時）且無法口服者。\n3.不得用於急性疼痛、術後疼痛，或不能全程戴貼之患者。",
+          "tags": [
+            "安寧緩和"
+          ]
+        },
+        {
+          "id": "P.1.5",
+          "name": "Fentanyl citrate 口頰溶片或口頰錠（如 Actiq、Effentora）(108/10/1、111/2/1)",
+          "content": "限用於突發性疼痛(breakthrough pain)，並已接受過口服 morphine 至少\n60 mg/day、oxycodone 至少 30 mg/day、hydromorphone 至少 8 mg/day、或 fentanyl\n貼片劑至少 25 mcg/hr 或其他等止痛劑量之類鴉片藥物達一星期(含)以上之 18 歲以\n上癌症患者(111/2/1)。\n不得用於急性或術後疼痛之處置。",
+          "tags": [
+            "安寧緩和"
+          ]
+        },
+        {
+          "id": "P.2",
+          "name": "骨轉移相關用藥 Bone Metastasis",
+          "content": "",
+          "tags": [],
+          "isGroup": true
+        },
+        {
+          "id": "P.2.1",
+          "name": "Clodronate；pamidronate：（85/1/1、87/4/1、93/2/1、96/1/1、100/1/1）",
+          "content": "限符合下列條件之一患者使用：\n1.血清鈣濃度超過 2.75 mmol/L (11.0 mg%) 或游離鈣大於 5.6 mg/dL 者（惡性腫瘤相關高血鈣）。\n2.惡性腫瘤之蝕骨性骨頭轉移之病患，在使用嗎啡、可待因等止痛劑後仍不易控制疼痛者。\n3.Multiple Myeloma、Breast Cancer、Prostate Cancer 併有蝕骨性骨轉移之病患 (96/1/1)。",
+          "tags": [
+            "安寧緩和",
+            "骨科"
+          ]
+        },
+        {
+          "id": "P.2.2",
+          "name": "Zoledronic acid 4 mg（如 Zometa Conc. 4 mg/5 mL）(93/5/1、96/1/1、100/1/1)",
+          "content": "限符合下列條件之一患者使用：\n1.惡性腫瘤（乳癌、攝護腺癌、多發性骨髓瘤及其他實體腫瘤）之骨轉移病患，預防骨骼相關事件（skeletal-related events, SREs）。\n2.惡性腫瘤相關之高血鈣（血清鈣超過 12.0 mg/dL）。\n使用頻率限每 3—4 週一次。",
+          "tags": [
+            "安寧緩和",
+            "骨科"
+          ]
+        },
+        {
+          "id": "P.2.3",
+          "name": "Denosumab 120 mg（如 Xgeva）(103/3/1、106/1/1)",
+          "content": "限用於以下情形預防骨骼相關事件（skeletal-related events, SREs）：\n1.已發生骨轉移（包括乳癌、攝護腺癌、肺癌及其他實體腫瘤）之成人患者。\n2.不可手術的巨細胞骨瘤（giant cell tumor of bone）之成人及青少年（骨骼發育成熟）患者。\n注意：不得與 bisphosphonates 同時使用。",
+          "tags": [
+            "安寧緩和",
+            "骨科"
+          ]
+        },
+        {
+          "id": "P.3",
+          "name": "其他安寧緩和支持用藥 Other Supportive Care",
+          "content": "",
+          "tags": [],
+          "isGroup": true
+        },
+        {
+          "id": "P.3.1",
+          "name": "Tramadol (87/4/1) ▶ 參見 1.1.3",
+          "content": "限：\n1.癌症病例使用。\n2.非癌症慢性頑固性疼痛（疼痛期超過六個月），需符合以下條件：\n(1)使用 NSAIDs 仍無法控制疼痛或有嚴重副作用者。\n(2)需檢附疼痛評估報告（VAS 與 VRS）。",
+          "tags": [
+            "安寧緩和"
+          ]
+        },
+        {
+          "id": "P.3.2",
+          "name": "非類固醇抗發炎劑 (NSAIDs) 注射劑（如 ketorolac）▶ 參見 1.1.2",
+          "content": "限不能口服且不能使用肛門栓劑之病患使用。\nKetorolac 注射劑：限無法口服之病人且為手術後中重度急性疼痛之短期治療（≦5 天）。",
+          "tags": [
+            "安寧緩和"
+          ]
+        },
+        {
+          "id": "P.3.3",
+          "name": "Polysaccharides of Astragalus membranaceus（如 PG2 注射劑）(110/3/1)",
+          "content": "使用本藥品應符合下列各條件：\n1.限用於第四期因疾病進展導致中重度疲憊之乳癌成人患者（不含住院安寧療護病患）。\n2.臨床上需符合 ICD-10 診斷標準，病歷上應詳細記載疲憊分數 ≥ 4（BFI-T 或 VAS），經其他處置無效之中重度癌因性疲憊症患者。\n3.ECOG 需為 0—2 之患者。\n4.每位病人終生給付 6 支為上限。\n5.需經事前審查核准後使用。",
+          "tags": [
+            "安寧緩和"
+          ]
+        }
+      ]
     }
   ]
 }
