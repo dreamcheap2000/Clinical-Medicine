@@ -126,7 +126,7 @@
     .hidden{display:none !important}
     @keyframes pulse{0%{transform:translateY(0)}50%{transform:translateY(-1px)}100%{transform:translateY(0)}}
     @media (max-width:1240px){.two-col{grid-template-columns:1fr}.sticky{position:static}.protocol-grid,.ivt-columns,.scenario-list,.field-grid.four,.field-grid.thirds{grid-template-columns:1fr 1fr}}
-    @media (max-width:860px){.field-grid,.check-grid,.gfast-grid,.nihss-grid,.ivt-columns,.protocol-grid,.scenario-list,.field-grid.thirds,.field-grid.four,.nihss-hover-grid{grid-template-columns:1fr}.copy-fab{left:18px;right:18px;min-width:0}.wrap{padding-bottom:110px}}
+    @media (max-width:860px){.field-grid,.check-grid,.nihss-grid,.ivt-columns,.protocol-grid,.scenario-list,.field-grid.thirds,.field-grid.four,.nihss-hover-grid{grid-template-columns:1fr}.copy-fab{left:18px;right:18px;min-width:0}.wrap{padding-bottom:110px}}
   </style>
 </head>
 <body>
@@ -474,7 +474,7 @@
           </ul>
         </details>
         <details id="stat-nonrapid">
-          <summary>Non-RAPID 灌流軟體與延長時間窗分流重點</summary>
+          <summary>non-RAPID 灌流軟體與延長時間窗分流重點</summary>
           <ul>
             <li>延長時間窗分流可使用 non-RAPID 軟體，但需具備 <strong>automated post-processing</strong> 與可重現閾值。</li>
             <li>核心原則為對齊試驗門檻（core / penumbra / mismatch），而非限定特定品牌。</li>
@@ -661,7 +661,7 @@
     function renderNihssHover() {
       const grid = q('#nihssHoverGrid');
       grid.innerHTML = NIHSS_ITEMS.map((item) => `
-        <div class="nihss-hover-item" tabindex="0" title="${item.options.map(([value, text]) => `${value}=${text}`).join(' | ')}" aria-label="${item.label}：${item.options.map(([value, text]) => `${value}=${text}`).join('；')}">
+        <div class="nihss-hover-item" title="${item.options.map(([value, text]) => `${value}=${text}`).join(' | ')}" aria-label="${item.label}：${item.options.map(([value, text]) => `${value}=${text}`).join('；')}">
           <strong>${item.label}</strong>
         </div>
       `).join('');
