@@ -91,9 +91,6 @@
     .nihss-item span{font-size:.87rem;color:#dbe6fb}
     .nihss-hover-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
     .nihss-hover-item{position:relative;padding:9px 10px;border-radius:10px;border:1px solid rgba(60,82,120,.74);background:rgba(10,17,30,.86);font-size:.82rem;cursor:help}
-    .nihss-hover-item .tip{display:none;position:absolute;left:0;top:calc(100% + 6px);width:min(360px,90vw);padding:10px;border-radius:10px;border:1px solid rgba(96,165,250,.38);background:#0d1528;z-index:20;white-space:normal}
-    .nihss-hover-item .tip ul{margin:0;padding-left:18px}
-    .nihss-hover-item:hover .tip,.nihss-hover-item:focus-within .tip{display:block}
     .nihss-summary{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-top:12px}
     .inline-list{display:flex;gap:8px;flex-wrap:wrap}
     .flowchart{display:grid;gap:10px;margin-top:12px}
@@ -664,16 +661,10 @@
     function renderNihssHover() {
       const grid = q('#nihssHoverGrid');
       grid.innerHTML = NIHSS_ITEMS.map((item) => `
-        <div class="nihss-hover-item" tabindex="0" aria-describedby="tip-${item.id}">
+        <div class="nihss-hover-item" tabindex="0" title="${item.options.map(([value, text]) => `${value}=${text}`).join(' | ')}">
           <strong>${item.label}</strong>
-          <div class="tip" role="tooltip" id="tip-${item.id}"><ul>${item.options.map(([value, text]) => `<li>${value}=${text}</li>`).join('')}</ul></div>
         </div>
       `).join('');
-      qa('.nihss-hover-item').forEach((item) => {
-        item.addEventListener('keydown', (event) => {
-          if (event.key === 'Escape') item.blur();
-        });
-      });
     }
 
     function renderChecklist() {
@@ -1163,7 +1154,18 @@
           panel.classList.toggle('is-active', active);
         });
       };
-      buttons.forEach((btn) => btn.addEventListener('click', () => activate(btn.dataset.tabTarget)));
+      buttons.forEach((btn, index) => {
+        btn.addEventListener('click', () => activate(btn.dataset.tabTarget));
+        btn.addEventListener('keydown', (event) => {
+          if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+          event.preventDefault();
+          const step = event.key === 'ArrowRight' ? 1 : -1;
+          const nextIndex = (index + step + buttons.length) % buttons.length;
+          const nextBtn = buttons[nextIndex];
+          activate(nextBtn.dataset.tabTarget);
+          nextBtn.focus();
+        });
+      });
       activate('triage');
     }
 
