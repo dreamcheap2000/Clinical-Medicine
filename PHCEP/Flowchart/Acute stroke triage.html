@@ -147,14 +147,14 @@
     </header>
 
     <div class="section-tabs" role="tablist" aria-label="內容分頁">
-      <button type="button" class="tab-btn active" data-tab-target="triage">主分流 / 流程圖</button>
-      <button type="button" class="tab-btn" data-tab-target="stats">情境統計</button>
-      <button type="button" class="tab-btn" data-tab-target="ivt">IVT 核對表</button>
-      <button type="button" class="tab-btn" data-tab-target="special">特殊情況</button>
-      <button type="button" class="tab-btn" data-tab-target="ich">ICH / Angioedema</button>
+      <button type="button" id="tab-triage" role="tab" aria-controls="panel-triage" aria-selected="true" class="tab-btn active" data-tab-target="triage">主分流 / 流程圖</button>
+      <button type="button" id="tab-stats" role="tab" aria-controls="panel-stats" aria-selected="false" class="tab-btn" data-tab-target="stats">情境統計</button>
+      <button type="button" id="tab-ivt" role="tab" aria-controls="panel-ivt" aria-selected="false" class="tab-btn" data-tab-target="ivt">IVT 核對表</button>
+      <button type="button" id="tab-special" role="tab" aria-controls="panel-special" aria-selected="false" class="tab-btn" data-tab-target="special">特殊情況</button>
+      <button type="button" id="tab-ich" role="tab" aria-controls="panel-ich" aria-selected="false" class="tab-btn" data-tab-target="ich">ICH / Angioedema</button>
     </div>
 
-    <section class="tab-panel is-active" data-tab-panel="triage">
+    <section class="tab-panel is-active" id="panel-triage" role="tabpanel" aria-labelledby="tab-triage" data-tab-panel="triage">
       <main class="two-col">
         <div class="section-stack">
           <section class="card" id="main-inputs">
@@ -424,7 +424,7 @@
       </main>
     </section>
 
-    <section class="card tab-panel" data-tab-panel="stats" id="stats-section" style="margin-top:18px;">
+    <section class="card tab-panel" id="panel-stats" role="tabpanel" aria-labelledby="tab-stats" data-tab-panel="stats" style="margin-top:18px;">
       <h2>情境統計與證據摘要</h2>
       <p class="muted">會依目前分流情境自動展開最相關的證據區塊。</p>
       <div class="stats-grid">
@@ -487,7 +487,7 @@
       </div>
     </section>
 
-    <section class="card tab-panel" data-tab-panel="ivt" id="ivt-checklist" style="margin-top:18px;">
+    <section class="card tab-panel" id="panel-ivt" role="tabpanel" aria-labelledby="tab-ivt" data-tab-panel="ivt" style="margin-top:18px;">
       <h2>IVT 治療決策核對表（2025 台灣腦中風學會）</h2>
       <div class="field-grid four">
         <div class="field">
@@ -520,7 +520,7 @@
       </div>
     </section>
 
-    <section class="card tab-panel" data-tab-panel="special" id="special-situations" style="margin-top:18px;">
+    <section class="card tab-panel" id="panel-special" role="tabpanel" aria-labelledby="tab-special" data-tab-panel="special" style="margin-top:18px;">
       <h2>IVT 特殊情況綜合評估表（2025 台灣腦中風學會）</h2>
       <p class="muted">以下情況可在共享決策與影像條件下考慮 IVT，表格會自動帶入目前已符合的項目。</p>
       <div class="table-wrap">
@@ -538,7 +538,7 @@
       </div>
     </section>
 
-    <section class="card tab-panel" data-tab-panel="ich" id="ich-protocol" style="margin-top:18px;">
+    <section class="card tab-panel" id="panel-ich" role="tabpanel" aria-labelledby="tab-ich" data-tab-panel="ich" style="margin-top:18px;">
       <h2>ICH Management Protocol / rtPA 相關併發症</h2>
       <div class="protocol-grid">
         <div class="panel-note">
@@ -653,7 +653,7 @@
       const container = q('#nihssItems');
       container.innerHTML = NIHSS_ITEMS.map((item) => `
         <label class="nihss-item" for="${item.id}">
-          <span title="${item.options.map(([value, text]) => `${value}=${text}`).join(' | ')}">${item.label}</span>
+          <span>${item.label}</span>
           <select id="${item.id}" data-nihss>
             ${item.options.map(([value, text], index) => `<option value="${value}" ${index === 0 ? 'selected' : ''}>${value} = ${text}</option>`).join('')}
           </select>
@@ -664,11 +664,16 @@
     function renderNihssHover() {
       const grid = q('#nihssHoverGrid');
       grid.innerHTML = NIHSS_ITEMS.map((item) => `
-        <div class="nihss-hover-item" tabindex="0">
+        <div class="nihss-hover-item" tabindex="0" role="button" aria-haspopup="true" aria-describedby="tip-${item.id}">
           <strong>${item.label}</strong>
-          <div class="tip"><ul>${item.options.map(([value, text]) => `<li>${value}=${text}</li>`).join('')}</ul></div>
+          <div class="tip" id="tip-${item.id}"><ul>${item.options.map(([value, text]) => `<li>${value}=${text}</li>`).join('')}</ul></div>
         </div>
       `).join('');
+      qa('.nihss-hover-item').forEach((item) => {
+        item.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') item.blur();
+        });
+      });
     }
 
     function renderChecklist() {
@@ -1148,8 +1153,16 @@
       const buttons = qa('[data-tab-target]');
       const panels = qa('[data-tab-panel]');
       const activate = (name) => {
-        buttons.forEach((btn) => btn.classList.toggle('active', btn.dataset.tabTarget === name));
-        panels.forEach((panel) => panel.classList.toggle('is-active', panel.dataset.tabPanel === name));
+        buttons.forEach((btn) => {
+          const active = btn.dataset.tabTarget === name;
+          btn.classList.toggle('active', active);
+          btn.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+        panels.forEach((panel) => {
+          const active = panel.dataset.tabPanel === name;
+          panel.classList.toggle('is-active', active);
+          panel.hidden = !active;
+        });
       };
       buttons.forEach((btn) => btn.addEventListener('click', () => activate(btn.dataset.tabTarget)));
       activate('triage');
