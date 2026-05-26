@@ -664,9 +664,9 @@
     function renderNihssHover() {
       const grid = q('#nihssHoverGrid');
       grid.innerHTML = NIHSS_ITEMS.map((item) => `
-        <div class="nihss-hover-item" tabindex="0" role="button" aria-haspopup="true" aria-describedby="tip-${item.id}">
+        <div class="nihss-hover-item" tabindex="0" aria-describedby="tip-${item.id}">
           <strong>${item.label}</strong>
-          <div class="tip" id="tip-${item.id}"><ul>${item.options.map(([value, text]) => `<li>${value}=${text}</li>`).join('')}</ul></div>
+          <div class="tip" role="tooltip" id="tip-${item.id}"><ul>${item.options.map(([value, text]) => `<li>${value}=${text}</li>`).join('')}</ul></div>
         </div>
       `).join('');
       qa('.nihss-hover-item').forEach((item) => {
@@ -1161,7 +1161,6 @@
         panels.forEach((panel) => {
           const active = panel.dataset.tabPanel === name;
           panel.classList.toggle('is-active', active);
-          panel.hidden = !active;
         });
       };
       buttons.forEach((btn) => btn.addEventListener('click', () => activate(btn.dataset.tabTarget)));
