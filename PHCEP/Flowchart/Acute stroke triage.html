@@ -661,7 +661,7 @@
     function renderNihssHover() {
       const grid = q('#nihssHoverGrid');
       grid.innerHTML = NIHSS_ITEMS.map((item) => `
-        <div class="nihss-hover-item" tabindex="0" title="${item.options.map(([value, text]) => `${value}=${text}`).join(' | ')}">
+        <div class="nihss-hover-item" tabindex="0" title="${item.options.map(([value, text]) => `${value}=${text}`).join(' | ')}" aria-label="${item.label}：${item.options.map(([value, text]) => `${value}=${text}`).join('；')}">
           <strong>${item.label}</strong>
         </div>
       `).join('');
@@ -1157,6 +1157,20 @@
       buttons.forEach((btn, index) => {
         btn.addEventListener('click', () => activate(btn.dataset.tabTarget));
         btn.addEventListener('keydown', (event) => {
+          if (event.key === 'Home') {
+            event.preventDefault();
+            const firstBtn = buttons[0];
+            activate(firstBtn.dataset.tabTarget);
+            firstBtn.focus();
+            return;
+          }
+          if (event.key === 'End') {
+            event.preventDefault();
+            const lastBtn = buttons[buttons.length - 1];
+            activate(lastBtn.dataset.tabTarget);
+            lastBtn.focus();
+            return;
+          }
           if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
           event.preventDefault();
           const step = event.key === 'ArrowRight' ? 1 : -1;
