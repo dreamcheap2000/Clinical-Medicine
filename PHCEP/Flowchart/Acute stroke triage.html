@@ -90,7 +90,14 @@
     .nihss-item{display:grid;gap:6px;padding:12px;border-radius:12px;border:1px solid rgba(60,82,120,.74);background:rgba(10,17,30,.86)}
     .nihss-item span{font-size:.87rem;color:#dbe6fb}
     .nihss-hover-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
-    .nihss-hover-item{position:relative;padding:9px 10px;border-radius:10px;border:1px solid rgba(60,82,120,.74);background:rgba(10,17,30,.86);font-size:.82rem;cursor:help}
+    .nihss-hover-item{position:relative;padding:9px 10px;border-radius:10px;border:1px solid rgba(60,82,120,.74);background:rgba(10,17,30,.86);font-size:.82rem;cursor:help;display:grid;gap:7px}
+    .nihss-hover-item select{padding:6px 8px;font-size:.79rem}
+    .calc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .calc-box{border:1px solid rgba(61,84,125,.75);border-radius:14px;padding:12px;background:#0d1528}
+    .calc-box h3{margin:0 0 8px}
+    .calc-list{display:grid;gap:7px}
+    .calc-list label{display:flex;gap:8px;align-items:flex-start}
+    .calc-list input{width:auto;accent-color:var(--accent);margin-top:2px}
     .nihss-summary{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-top:12px}
     .inline-list{display:flex;gap:8px;flex-wrap:wrap}
     .flowchart{display:grid;gap:10px;margin-top:12px}
@@ -191,6 +198,15 @@
           </div>
 
           <div class="field-grid four" style="margin-top:12px;">
+            <div class="field">
+              <label for="strokeType">中風型態分流</label>
+              <select id="strokeType">
+                <option value="undifferentiated">待影像分類 / 未分型</option>
+                <option value="ischemic">缺血性中風（AIS）</option>
+                <option value="ich">出血性中風（ICH）</option>
+                <option value="sah">出血性中風（SAH）</option>
+              </select>
+            </div>
             <div class="field">
               <label for="sbp">收縮壓 SBP (mmHg)</label>
               <input id="sbp" type="number" min="0" value="170" />
@@ -334,7 +350,8 @@
               <label class="check-card"><input id="seizureAtOnset" type="checkbox" /><span><span class="label-main">中風發作時合併癲癇，排除 Todd's paralysis 後仍有缺損</span></span></label>
               <label class="check-card"><input id="recentStroke1to3m" type="checkbox" /><span><span class="label-main">1–3 個月內缺血性中風</span><span class="label-note">SITS-EAST</span></span></label>
               <label class="check-card"><input id="stroke1mo" type="checkbox" /><span><span class="label-main">1 個月內中風病史</span><span class="label-note">絕對禁忌</span></span></label>
-              <label class="check-card"><input id="largeInfarct" type="checkbox" /><span><span class="label-main">CT 顯示 &gt;1/3 MCA 低密度變化</span></span></label>
+              <label class="check-card"><input id="imagingNonSevere" type="checkbox" /><span><span class="label-main">腦部影像學評估非嚴重中風（未見 &gt;1/3 MCA territory）</span></span></label>
+              <label class="check-card"><input id="largeInfarct" type="checkbox" /><span><span class="label-main">腦部影像學評估為嚴重中風（CT 顯示 &gt;1/3 MCA 低密度）</span></span></label>
               <label class="check-card"><input id="priorICh" type="checkbox" /><span><span class="label-main">非創傷性顱內出血病史</span></span></label>
               <label class="check-card"><input id="caaHighRisk" type="checkbox" /><span><span class="label-main">已知 CAA 且曾 sICH / convexity SAH / diffuse siderosis</span></span></label>
               <label class="check-card"><input id="extraAxialTumor" type="checkbox" /><span><span class="label-main">顱內腦外腫瘤（extra-axial）</span><span class="label-note">例如 meningioma</span></span></label>
@@ -343,6 +360,7 @@
               <label class="check-card"><input id="unrupturedAneurysm" type="checkbox" /><span><span class="label-main">未破裂顱內動脈瘤</span></span></label>
               <label class="check-card"><input id="largeBasilarFusiform" type="checkbox" /><span><span class="label-main">大型梭狀基底動脈瘤 / 已破裂 / &gt;1 cm</span><span class="label-note">高風險</span></span></label>
               <label class="check-card"><input id="infectiveEndocarditis" type="checkbox" /><span><span class="label-main">感染性心內膜炎</span></span></label>
+              <label class="check-card"><input id="lvThrombus" type="checkbox" /><span><span class="label-main">左心室血栓（LV thrombus）</span><span class="label-note">非絕對禁忌，需個案風險評估</span></span></label>
               <label class="check-card"><input id="ckdEskd" type="checkbox" /><span><span class="label-main">CKD / ESKD</span></span></label>
               <label class="check-card"><input id="severeLiverDisease" type="checkbox" /><span><span class="label-main">嚴重肝病合併凝血異常</span></span></label>
               <label class="check-card"><input id="activeCancer" type="checkbox" /><span><span class="label-main">活動性癌症</span></span></label>
@@ -406,7 +424,7 @@
             <div class="recommendation" id="flowRecommendation" style="margin-top:14px;"></div>
 
             <div class="flowchart" aria-label="acute stroke flowchart">
-              <div class="node" id="node-a"><span class="title">A. 急診疑似急性缺血性中風 → 立即 NCCT/CTA</span><span class="sub">先排除顱內出血，並同步篩查 LVO / 影像治療條件。</span><small></small></div>
+              <div class="node" id="node-a"><span class="title">A. 急性中風初始分流：先區分 ischemic vs hemorrhagic</span><span class="sub">先做 NCCT（必要時 CTA/MRA），再進入 AIS 再灌流或 ICH/SAH 路徑。</span><small></small></div>
               <div class="node" id="node-b"><span class="title">B. NIHSS 評估 → 時間窗判斷</span><span class="sub">整合神經缺損嚴重度、已知 / 睡醒 / 不明發病。</span><small></small></div>
               <div class="node" id="node-c"><span class="title">C. ≤4.5h → rtPA 評估（健保給付）</span><span class="sub">符合 IVT 核對表、無絕對禁忌、可將 BP 控制至 &lt;185/110。</span><small></small></div>
               <div class="node" id="node-d"><span class="title">D. 4.5–9h → 需灌流影像篩選（EXTEND / WAKE-UP 證據）</span><span class="sub">需 CTP/MRP 或等效影像，與病人共享決策；非健保給付。</span><small></small></div>
@@ -468,9 +486,13 @@
             <li><strong>Unruptured aneurysm：</strong>sICH 8.3%；動脈瘤破裂 2.3%（皆 basilar fusiform）→ 一般安全，除大型梭狀基底動脈瘤。</li>
             <li><strong>Infective endocarditis：</strong>sICH 20% vs 6.5%（P=0.006），出院回家 10% vs 37%（P=0.01）→ 不建議。</li>
             <li><strong>Intracranial dissection（Japan 2025）：</strong>ICH OR 3.18（1.26–8.06）；poor outcome OR 0.51（0.37–0.72）→ 效益未定。</li>
-            <li><strong>Extracranial cervical artery dissection：</strong>美國 / 歐洲指引認為可合理考慮。</li>
+            <li><strong>Extracranial cervical artery dissection（carotid dissection）：</strong>美國 / 歐洲指引認為 IVT 可合理考慮（影像排除出血且無其他禁忌）。</li>
+            <li><strong>LV thrombus：</strong>非 rtPA 絕對禁忌，需與近期 MI、抗凝狀態與出血風險一起評估。</li>
             <li><strong>Intracranial tumors：</strong>meningioma sICH 7%；parenchymal 6%；pituitary 50% → intra-axial tumors 不建議（III, C-LD）。</li>
             <li><strong>AIS + acute MI：</strong>一般可考慮；STEMI &lt;1 週避免；NSTEMI &lt;3 個月可斟酌。</li>
+            <li><strong>ICH early BP：</strong>SBP 150–220 mmHg 時可快速降至約 140（維持 130–150）；避免急降 &lt;130。</li>
+            <li><strong>HE 時間窗：</strong>HE 高峰在最初 3 小時；6–12h 約 15%，12–24h 約 6%，24h 後極少見。</li>
+            <li><strong>VKA-related ICH reversal：</strong>4F-PCC 於 3h 內達 INR ≤1.2：67% vs FFP 9%；24h HE 18.3% vs 27.1%。</li>
           </ul>
         </details>
         <details id="stat-nonrapid">
@@ -532,6 +554,21 @@
           </thead>
           <tbody id="specialSituationBody"></tbody>
         </table>
+      </div>
+      <div class="divider"></div>
+      <h3>心因性栓塞風險與出血風險評估（AF）</h3>
+      <p class="muted">整合 CHA₂DS₂-VASc 與 HAS-BLED（以 1 年事件率提供 bedside 參考）。</p>
+      <div class="calc-grid">
+        <div class="calc-box">
+          <h3>CHA₂DS₂-VASc</h3>
+          <div id="chadsList" class="calc-list"></div>
+          <div class="result-box" id="chadsResult" style="margin-top:10px;"></div>
+        </div>
+        <div class="calc-box">
+          <h3>HAS-BLED</h3>
+          <div id="hasbledList" class="calc-list"></div>
+          <div class="result-box" id="hasbledResult" style="margin-top:10px;"></div>
+        </div>
       </div>
     </section>
 
@@ -631,13 +668,40 @@
       { id: 'ss-extend', situation: '發病或最後正常時間 4.5–9 小時並符合腦部影像學篩選條件', badgeClass: 'class-iia', badgeText: 'IIa, B', stats: 'EXTEND：mRS 0–1 35.4% vs 29.5%；sICH 6.2% vs 0.9%。' },
       { id: 'ss-wakeup', situation: '睡醒時發現中風或發病時間不明，且符合腦部影像學篩選條件', badgeClass: 'class-iib', badgeText: 'IIb, B', stats: 'Lancet 2020：mRS 0–1 47% vs 39%；Cochrane 2021：mRS 0–2 66% vs 58%；sICH 約 3%。' },
       { id: 'ss-mild', situation: '輕微（NIHSS ≦ 5）且合併失能症狀', badgeClass: 'class-iia', badgeText: 'IIa, B', stats: '視野缺損、失語、忽略症、抗重力無力等屬重要失能症狀。' },
-      { id: 'ss-severe', situation: '臨床嚴重中風，但非腦部影像學評估為嚴重中風', badgeClass: 'class-i', badgeText: '3h 內 I, A；3–4.5h IIb, C', stats: '高 NIHSS 但 CT 未見 >1/3 MCA 梗塞時，可依時間窗分級考慮。' },
+      { id: 'ss-severe', situation: '臨床嚴重中風，但腦部影像學評估非嚴重中風（如未見 >1/3 MCA territory）', badgeClass: 'class-i', badgeText: '3h 內 I, A；3–4.5h IIb, C', stats: '高 NIHSS 但影像未達大範圍梗塞標準時，可依時間窗分級考慮。' },
       { id: 'ss-glucose', situation: '血糖異常，經校正後仍有神經學缺損', badgeClass: 'class-iib', badgeText: 'IIb, C', stats: '需先矯正代謝異常，再重新評估是否仍為 AIS。' },
       { id: 'ss-seizure', situation: '中風發作時併發癲癇，排除 Todd\'s paralysis 後仍有神經學症狀', badgeClass: 'class-iia', badgeText: 'IIa, C', stats: '影像與持續缺損支持 AIS 時可考慮。' },
       { id: 'ss-recent-stroke', situation: '1 到 3 個月內曾發生缺血性中風', badgeClass: 'class-iib', badgeText: 'IIb, C', stats: 'SITS-EAST：與首次中風相比，sICH 與 3 個月獨立性無顯著差異。' },
       { id: 'ss-extraaxial', situation: '顱內腦外腫瘤（extra-axial intracranial neoplasm）', badgeClass: 'class-iib', badgeText: 'IIb, C', stats: 'Meningioma sICH 約 7%；需排除 pituitary / intra-axial tumor。' },
       { id: 'ss-aneurysm', situation: '未破裂顱內動脈瘤（大型梭狀基底動脈瘤除外）', badgeClass: 'class-iib', badgeText: 'IIb, C', stats: '整體 sICH 8.3%；動脈瘤破裂 2.3%，且多為 basilar fusiform。' },
+      { id: 'ss-carotid-dissection', situation: '顱外頸動脈剝離（carotid dissection）', badgeClass: 'class-iib', badgeText: 'IIb, C', stats: '美國 / 歐洲指引可合理考慮 IVT（需排除其他禁忌）。' },
+      { id: 'ss-lv-thrombus', situation: '左心室血栓（LV thrombus）相關心源性栓塞', badgeClass: 'class-iib', badgeText: 'IIb, C', stats: '非絕對禁忌，須整合近期 MI、抗凝狀態與出血風險。' },
+      { id: 'ss-ie-no', situation: '感染性心內膜炎（Infective endocarditis）', badgeClass: 'class-iii', badgeText: 'III, C-LD', stats: 'sICH 20% vs 6.5%（P=0.006）；不建議 IVT。' },
     ];
+
+    const CHADS_ITEMS = [
+      { id: 'chads-c', pts: 1, label: 'C：鬱血性心衰竭 / LV dysfunction' },
+      { id: 'chads-h', pts: 1, label: 'H：高血壓' },
+      { id: 'chads-a2', pts: 2, label: 'A₂：年齡 ≥ 75 歲' },
+      { id: 'chads-d', pts: 1, label: 'D：糖尿病' },
+      { id: 'chads-s2', pts: 2, label: 'S₂：中風 / TIA / 全身性栓塞病史' },
+      { id: 'chads-v', pts: 1, label: 'V：血管疾病（MI / PAD / aortic plaque）' },
+      { id: 'chads-a', pts: 1, label: 'A：年齡 65–74 歲' },
+      { id: 'chads-sc', pts: 1, label: 'Sc：女性' },
+    ];
+    const CHADS_RATES = [0.78, 2.01, 3.71, 5.92, 9.27, 15.26, 19.74, 21.50, 22.38, 23.64];
+    const HASBLED_ITEMS = [
+      { id: 'has-h', pts: 1, label: 'H：未控制高血壓（SBP >160）' },
+      { id: 'has-ar', pts: 1, label: 'A：腎功能異常' },
+      { id: 'has-al', pts: 1, label: 'A：肝功能異常' },
+      { id: 'has-s', pts: 1, label: 'S：中風病史' },
+      { id: 'has-b', pts: 1, label: 'B：出血病史 / 傾向' },
+      { id: 'has-l', pts: 1, label: 'L：INR 不穩定（warfarin）' },
+      { id: 'has-e', pts: 1, label: 'E：高齡 >65 歲' },
+      { id: 'has-dd', pts: 1, label: 'D：抗血小板藥或 NSAID' },
+      { id: 'has-da', pts: 1, label: 'D：酒精過量' },
+    ];
+    const HASBLED_RATES = [1.13, 1.02, 1.88, 3.74, 8.70, 12.5, 12.5, 12.5, 12.5, 12.5];
 
     const manualRequired = Object.fromEntries(REQUIRED_ITEMS.map((item) => [item.id, false]));
     const manualContra = Object.fromEntries(CONTRA_ITEMS.map((item) => [item.id, false]));
@@ -663,8 +727,19 @@
       grid.innerHTML = NIHSS_ITEMS.map((item) => `
         <div class="nihss-hover-item" title="${item.options.map(([value, text]) => `${value}=${text}`).join(' | ')}" aria-label="${item.label}：${item.options.map(([value, text]) => `${value}=${text}`).join('；')}">
           <strong>${item.label}</strong>
+          <select data-nihss-hover="${item.id}">
+            ${item.options.map(([value, text], index) => `<option value="${value}" ${index === 0 ? 'selected' : ''}>${value} = ${text}</option>`).join('')}
+          </select>
         </div>
       `).join('');
+      qa('[data-nihss-hover]').forEach((select) => {
+        select.addEventListener('change', () => {
+          const target = q(`#${select.dataset.nihssHover}`);
+          if (!target) return;
+          target.value = select.value;
+          updateAll();
+        });
+      });
     }
 
     function renderChecklist() {
@@ -692,6 +767,32 @@
           <td>${row.stats}</td>
         </tr>
       `).join('');
+    }
+
+    function renderAfCalculators() {
+      q('#chadsList').innerHTML = CHADS_ITEMS.map((item) => `
+        <label><input type="checkbox" data-chads="${item.id}" /> <span>+${item.pts} ${item.label}</span></label>
+      `).join('');
+      q('#hasbledList').innerHTML = HASBLED_ITEMS.map((item) => `
+        <label><input type="checkbox" data-hasbled="${item.id}" /> <span>+${item.pts} ${item.label}</span></label>
+      `).join('');
+      qa('[data-chads],[data-hasbled]').forEach((el) => el.addEventListener('change', updateAfRiskScores));
+      updateAfRiskScores();
+    }
+
+    function updateAfRiskScores() {
+      const chadsScore = CHADS_ITEMS.reduce((sum, item) => {
+        const el = q(`[data-chads="${item.id}"]`);
+        return sum + (el && el.checked ? item.pts : 0);
+      }, 0);
+      const chadsRisk = CHADS_RATES[Math.min(chadsScore, 9)];
+      q('#chadsResult').innerHTML = `<strong>分數 ${chadsScore}</strong> ｜ 1 年中風/栓塞風險 ${chadsRisk}%`;
+      const hasbledScore = HASBLED_ITEMS.reduce((sum, item) => {
+        const el = q(`[data-hasbled="${item.id}"]`);
+        return sum + (el && el.checked ? item.pts : 0);
+      }, 0);
+      const hasbledRisk = HASBLED_RATES[Math.min(hasbledScore, 9)];
+      q('#hasbledResult').innerHTML = `<strong>分數 ${hasbledScore}</strong> ｜ 1 年重大出血風險 ${hasbledRisk}%`;
     }
 
     function formatDateLocal(date) {
@@ -838,12 +939,15 @@
         'ss-extend': state.time.mode === 'known' && state.time.hours > 4.5 && state.time.hours <= 9 && state.ctpAvail && state.perfusionMismatch === 'yes',
         'ss-wakeup': (state.time.mode === 'wakeup' || state.time.mode === 'unknown') && state.dwiFlairMismatch === 'yes',
         'ss-mild': state.nihssScore <= 5 && state.disablingSymptoms.length > 0,
-        'ss-severe': state.nihssScore >= 16 && !q('#largeInfarct').checked && state.time.mode === 'known' && Number.isFinite(state.time.hours) && state.time.hours <= 4.5,
+        'ss-severe': state.nihssScore >= 16 && q('#imagingNonSevere').checked && state.time.mode === 'known' && Number.isFinite(state.time.hours) && state.time.hours <= 4.5,
         'ss-glucose': (state.glucose < 50 || state.glucose > 400) && q('#persistentDeficitAfterGlucose').checked,
         'ss-seizure': q('#seizureAtOnset').checked,
         'ss-recent-stroke': q('#recentStroke1to3m').checked,
         'ss-extraaxial': q('#extraAxialTumor').checked,
         'ss-aneurysm': q('#unrupturedAneurysm').checked && !q('#largeBasilarFusiform').checked,
+        'ss-carotid-dissection': q('#extracranialDissection').checked,
+        'ss-lv-thrombus': q('#lvThrombus').checked,
+        'ss-ie-no': q('#infectiveEndocarditis').checked,
       };
       latestAutoSpecial = autoSpecialState;
       Object.entries(autoSpecialState).forEach(([id, value]) => {
@@ -871,6 +975,7 @@
           q('#infectiveEndocarditis').checked,
           q('#intracranialDissection').checked,
           q('#extracranialDissection').checked,
+          q('#lvThrombus').checked,
           q('#unrupturedAneurysm').checked,
           q('#pituitaryTumor').checked,
           q('#parenchymalTumor').checked,
@@ -891,6 +996,7 @@
         sbp: Number(q('#sbp').value || 0),
         dbp: Number(q('#dbp').value || 0),
         glucose: Number(q('#glucose').value || 0),
+        strokeType: q('#strokeType').value,
         inr: Number(q('#inr').value || 0),
         aptt: Number(q('#aptt').value || 0),
         platelets: Number(q('#platelets').value || 0),
@@ -912,18 +1018,19 @@
     }
 
     function updateFlow(state) {
+      const hemorrhagicPath = state.strokeType === 'ich' || state.strokeType === 'sah' || state.imagingClear === 'no';
       const validTime = Number.isFinite(state.time.hours) && state.time.hours >= 0;
       const standardIvtWindow = state.time.mode === 'known' && validTime && state.time.hours <= 4.5;
       const extendedWindow = state.time.mode === 'known' && validTime && state.time.hours > 4.5 && state.time.hours <= 9;
       const wakeupWindow = (state.time.mode === 'wakeup' || state.time.mode === 'unknown');
       const evtWindow = validTime && state.time.hours <= 24;
       const evtCandidate = evtWindow && state.lvo === 'yes';
-      const standardEligible = standardIvtWindow && state.requiredMet && state.contraPresent.length === 0;
-      const extendedEligible = extendedWindow && state.ctpAvail && state.perfusionMismatch === 'yes';
-      const wakeupEligible = wakeupWindow && state.dwiFlairMismatch === 'yes';
+      const standardEligible = !hemorrhagicPath && standardIvtWindow && state.requiredMet && state.contraPresent.length === 0;
+      const extendedEligible = !hemorrhagicPath && extendedWindow && state.ctpAvail && state.perfusionMismatch === 'yes';
+      const wakeupEligible = !hemorrhagicPath && wakeupWindow && state.dwiFlairMismatch === 'yes';
       const anyReperfusion = standardEligible || extendedEligible || wakeupEligible || evtCandidate;
 
-      setNode('node-a', state.imagingClear === 'no' ? 'warning' : 'current', state.imagingClear === 'yes' ? 'NCCT 已排除 ICH，請並行評估 LVO。' : state.imagingClear === 'pending' ? '影像判讀中，先完成 NCCT / CTA。' : '影像已有出血，應轉為 ICH 路徑。');
+      setNode('node-a', hemorrhagicPath ? 'warning' : 'current', hemorrhagicPath ? '目前走出血性中風（ICH/SAH）路徑。' : state.imagingClear === 'pending' ? '影像判讀中，先完成 NCCT / CTA。' : 'NCCT 已排除 ICH，進入缺血性中風分流。');
       setNode('node-b', state.nihssScore > 0 ? 'compatible' : 'warning', `NIHSS ${state.nihssScore}（${state.nihssSeverity}）。`);
 
       if (standardEligible) {
@@ -953,24 +1060,26 @@
         setNode('node-e', 'inactive', '目前非睡醒 / 發病時間不明路徑。');
       }
 
-      if (evtCandidate) {
+      if (evtCandidate && !hemorrhagicPath) {
         setNode('node-f', 'compatible', state.evtTeam ? '≤24h + LVO，應立即啟動 EVT 評估。' : '≤24h + LVO，需同步準備轉運。');
-      } else if (evtWindow && state.lvo === 'unknown') {
+      } else if (!hemorrhagicPath && evtWindow && state.lvo === 'unknown') {
         setNode('node-f', 'warning', '仍在 24h 內，但需先完成 CTA / 等效影像確認是否 LVO。');
       } else if (state.lvo === 'no' || !evtWindow) {
         setNode('node-f', 'inactive', !evtWindow ? '超過 24 小時 EVT 評估窗。' : '目前未見 LVO。');
+      } else {
+        setNode('node-f', 'inactive', '出血性中風路徑不適用 EVT（除特定介入情境）。');
       }
 
-      if (evtCandidate && !state.evtTeam) {
+      if (evtCandidate && !state.evtTeam && !hemorrhagicPath) {
         setNode('node-g', 'current', '本院 EVT 團隊不可得，請立即轉院。');
-      } else if (evtCandidate && state.evtTeam) {
+      } else if (evtCandidate && state.evtTeam && !hemorrhagicPath) {
         setNode('node-g', 'inactive', '本院可直接啟動 EVT。');
       } else {
         setNode('node-g', 'inactive', '僅在 EVT 候選且本院無團隊時啟用。');
       }
 
-      if (!anyReperfusion || state.imagingClear === 'no') {
-        setNode('node-h', 'compatible', state.imagingClear === 'no' ? '影像顯示出血時轉 ICH 路徑，不走 IVT/EVT。' : '目前不符再灌流條件，建議最佳藥物治療與次級預防。');
+      if (!anyReperfusion || hemorrhagicPath) {
+        setNode('node-h', 'compatible', hemorrhagicPath ? '已分類為 ICH/SAH，請優先出血控制、逆轉抗凝與神外評估。' : '目前不符再灌流條件，建議最佳藥物治療與次級預防。');
       } else {
         setNode('node-h', 'inactive', '已有再灌流候選路徑。');
       }
@@ -986,6 +1095,7 @@
       state.wakeupEligible = wakeupEligible;
       state.evtCandidate = evtCandidate;
       state.anyReperfusion = anyReperfusion;
+      state.hemorrhagicPath = hemorrhagicPath;
     }
 
     function updateDecision(state) {
@@ -997,10 +1107,10 @@
         ? `${state.time.description}：${state.time.hours.toFixed(2)} 小時`
         : `${state.time.description}：資料不足`;
 
-      if (state.imagingClear === 'no') {
-        headline = '影像已顯示出血：請改走 ICH 處置，不適用 IVT';
+      if (state.hemorrhagicPath) {
+        headline = state.strokeType === 'sah' ? '已分流為 SAH 路徑：不適用 IVT' : '已分流為出血性中風路徑：不適用 IVT';
         headlineClass = 'badge class-iii';
-        recommendationLines.push('影像已見出血，立即停止 IVT 思考，轉入出血性中風流程。');
+        recommendationLines.push('請優先執行 ICH/SAH 流程：血壓控制、逆轉抗凝、神外與重症照護。');
       } else if (state.standardEligible) {
         headline = '符合標準 IVT 路徑（≤4.5h）';
         headlineClass = 'badge class-i';
@@ -1027,7 +1137,7 @@
 
       if (state.sbp > 185 || state.dbp > 110) recommendationLines.push('rtPA 前需先將血壓控制至 <185/110 mmHg。');
       recommendationLines.push('rtPA / EVT 後 24h 及 EVT post 目標 BP 均維持 <180/105 mmHg。');
-      if (state.evtCandidate && !state.evtTeam) recommendationLines.push('轉院前請同步完成影像資料、血壓控制與聯絡接收團隊。');
+      if (state.evtCandidate && !state.evtTeam && !state.hemorrhagicPath) recommendationLines.push('轉院前請同步完成影像資料、血壓控制與聯絡接收團隊。');
       if (q('#suspectedPostIvtICh').checked) recommendationLines.push(state.cryo ? '目前已啟動 ICH 反轉資源（含 cryoprecipitate）。' : '目前 ICH 反轉資源不足，需即刻血品支援。');
       if (state.disablingSymptoms.length > 0 && state.nihssScore <= 5) recommendationLines.push(`雖 NIHSS ≤5，但存在失能症狀：${state.disablingSymptoms.join('、')}。`);
       if (state.anticoag === 'doac') scenarioStats.push('Taiwan NHIA 2024：DOAC 未增加 bleeding risk vs 無抗凝；仍須檢視最後用藥時間。');
@@ -1052,6 +1162,7 @@
       const summaryLines = [
         `• ${headline}`,
         `• ${timeText}`,
+        `• 中風分流型態：${state.strokeType === 'ischemic' ? '缺血性（AIS）' : state.strokeType === 'ich' ? '出血性（ICH）' : state.strokeType === 'sah' ? '出血性（SAH）' : '待影像分類'}`,
         `• NIHSS：${state.nihssScore}（${state.nihssSeverity}）`,
         `• 影像：${state.imagingClear === 'yes' ? '已排除 ICH' : state.imagingClear === 'pending' ? '待判讀' : '已有出血'}`,
         `• IVT 必要條件：${state.requiredLabels.length ? state.requiredLabels.join('；') : '尚未滿足'}`,
@@ -1081,12 +1192,18 @@
       q('#nihssSeverity').textContent = nihssSeverity(state.nihssRaw);
       q('#nihssScoreSide').textContent = String(state.nihssRaw);
       q('#nihssSeveritySide').textContent = nihssSeverity(state.nihssRaw);
+      NIHSS_ITEMS.forEach((item) => {
+        const src = q(`#${item.id}`);
+        const dest = q(`[data-nihss-hover="${item.id}"]`);
+        if (src && dest && dest.value !== src.value) dest.value = src.value;
+      });
     }
 
     function buildCopySummary(state) {
       return [
         '急性中風分流摘要',
         `時間：${new Date().toLocaleString('zh-TW', { hour12: false })}`,
+        `中風分流型態：${state.strokeType}`,
         `NIHSS：${state.nihssScore}（${state.nihssSeverity}）`,
         `時間窗：${Number.isFinite(state.time.hours) ? `${state.time.description} ${state.time.hours.toFixed(2)} 小時` : `${state.time.description} / 資料不足`}`,
         `BP / 血糖：${state.sbp}/${state.dbp} mmHg，Glucose ${state.glucose} mg/dL`,
@@ -1187,6 +1304,7 @@
     renderNihssHover();
     renderChecklist();
     renderSpecialRows();
+    renderAfCalculators();
     setDefaults();
     toggleAutoFields();
     initTabs();
@@ -1232,6 +1350,14 @@
       SPECIAL_ROWS.forEach((row) => { manualSpecial[row.id] = false; });
       updateAll();
     });
+    function bindMutuallyExclusiveCheckbox(primarySelector, secondarySelector) {
+      q(primarySelector).addEventListener('change', () => {
+        if (q(primarySelector).checked) q(secondarySelector).checked = false;
+        updateAll();
+      });
+    }
+    bindMutuallyExclusiveCheckbox('#imagingNonSevere', '#largeInfarct');
+    bindMutuallyExclusiveCheckbox('#largeInfarct', '#imagingNonSevere');
 
     updateAll();
   </script>
