@@ -1,6 +1,6 @@
 {
   "version": "2.0",
-  "generated": "2026-05-25",
+  "generated": "2026-05-26T00:00:00Z",
   "entries": [
     {
       "id": "edu001_2023_________________",
@@ -2119,6 +2119,159 @@
         "simple_zh": "<h2>rt-PA（tPA）靜脈血栓溶解治療的健保給付條件</h2>\n<p>rt-PA（如 Actilyse，主成分 alteplase）是急性缺血性腦中風急性期最重要的靜脈溶栓藥物，能溶解阻塞腦血管的血栓，恢復腦部血流。台灣健保有明確的給付條件。</p>\n<h3>🕐 時間窗口</h3>\n<p>必須在腦中風症狀發生後 <strong>4.5 小時內</strong>使用（2023 年 10 月更新）。</p>\n<h3>🏥 醫院資格</h3>\n<p>需在具有<strong>神經內科、神經外科專科醫師</strong>及<strong>加護病房</strong>（或同等設施）的醫院進行。</p>\n<h3>🔬 治療前必做的檢查</h3>\n<ul>\n<li>腦部電腦斷層（CT）或磁振造影（MRI）</li>\n<li>神經學評估（含 NIHSS 量表評分）</li>\n<li>心電圖</li>\n<li>胸部 X 光</li>\n<li>凝血功能（凝血時間、凝血酶原時間）</li>\n<li>肝腎功能及血糖</li>\n</ul>\n<p>所有結果須符合「<strong>急性缺血性腦中風之血栓溶解治療檢查表</strong>」的適應症及禁忌症標準。</p>\n<h3>📋 治療後的申報要求</h3>\n<p>使用後須在當月費用申報時填寫健保申請表，並檢附注射前及注射後 24 小時、36 小時的腦部影像與 NIHSS 評估記錄。</p>\n<p><strong>⚠️ 提醒</strong>：rt-PA 治療有顱內及全身性出血風險，醫師會依您的完整狀況評估是否適合，並與您或家屬充分說明後進行。</p>",
         "professional_zh": "<h2>rt-PA（Alteplase）靜脈血栓溶解治療——健保給付規定（支付標準 2.1.2.2）</h2>\n<p>依全民健康保險藥品給付規定（115.4.23 更新），rt-PA（如 Actilyse 注射劑）用於急性缺血性腦中風之給付條件如下（2.1.2.2 條）：</p>\n<h3>給付條件</h3>\n<ol>\n<li>限急性缺血性腦中風 <strong>4.5 小時內</strong>使用（112/10/1 更新）。</li>\n<li>使用醫院應具有神經內科、外科專科醫師及加護病房或同等級之設施。</li>\n<li>治療前須完成下列檢查，並<strong>符合「急性缺血性腦中風之血栓溶解治療檢查表（附表二-C）」</strong>的所有條件（107/11/1 更新）：\n  <ul>\n    <li>腦部 CT 或 MRI</li>\n    <li>神經學檢查（含 NIHSS）</li>\n    <li>心電圖</li>\n    <li>胸部 X 光</li>\n    <li>凝血時間（aPTT）及凝血酶原時間（PT）</li>\n    <li>肝腎功能及血糖</li>\n  </ul>\n</li>\n<li>醫院於病例發生後，於當月醫療費用申報時，應填寫「全民健康保險使用 rt-PA（Actilyse）申請表（急性缺血性腦中風病患用）（附表二-B）」，並附注射前及 24 小時、36 小時後之腦部 CT（或 MRI）與 NIHSS。</li>\n</ol>\n<h3>臨床要點摘要</h3>\n<table>\n<thead><tr><th>項目</th><th>說明</th></tr></thead>\n<tbody>\n<tr><td>治療時窗</td><td>症狀發生起算 ≤ 4.5 小時（台灣健保現行標準，與 2019 AHA/ASA 指引一致）</td></tr>\n<tr><td>影像排除條件</td><td>CT 有出血、大面積低密度影（&gt;1/3 MCA 供血區）、腫瘤、動靜脈畸形</td></tr>\n<tr><td>NIHSS</td><td>評估神經功能缺損程度；輕微症狀（NIHSS 1—3）及嚴重症狀（NIHSS &gt;25）需個別評估</td></tr>\n<tr><td>血壓控制</td><td>治療前血壓須 &lt;185/110 mmHg（必要時積極降壓後再評估）</td></tr>\n<tr><td>血糖</td><td>排除低血糖（&lt;50 mg/dL）或高血糖引起的假性神經症狀</td></tr>\n<tr><td>凝血功能</td><td>INR ≤ 1.7、aPTT 在正常範圍；有口服抗凝血劑、肝素等需特別評估</td></tr>\n<tr><td>給付設施要求</td><td>具神經內科或外科專科醫師 + ICU 或同等設施</td></tr>\n</tbody>\n</table>\n<h3>注意事項</h3>\n<ul>\n<li>完整適應症及禁忌症清單依「急性缺血性腦中風之血栓溶解治療檢查表（附表二-C）」為準，建議臨床使用前逐項核對。</li>\n<li>本條文版本歷次更新：93/1/1、100/7/1、107/11/1、112/10/1。</li>\n</ul>",
         "english": "<h2>NHI Coverage Criteria for rt-PA (Alteplase) in Acute Ischemic Stroke</h2>\n<p>Under Taiwan's National Health Insurance Drug Benefit Regulations (updated April 23, 2026; Section 2.1.2.2), intravenous rt-PA (Actilyse Injection) for acute ischemic stroke is covered under the following conditions:</p>\n<h3>Coverage Requirements</h3>\n<ol>\n<li>Must be administered within <strong>4.5 hours</strong> of ischemic stroke symptom onset (updated October 2023).</li>\n<li>Administering hospital must have neurological and neurosurgical specialists plus ICU or equivalent facilities.</li>\n<li>Pre-treatment workup must be completed, and the patient must satisfy all criteria in the <strong>\"Acute Ischemic Stroke Thrombolysis Checklist (Appendix II-C)\"</strong> (updated November 2018):\n  <ul>\n    <li>Brain CT or MRI</li>\n    <li>Neurological examination including NIHSS</li>\n    <li>ECG</li>\n    <li>Chest X-ray</li>\n    <li>Coagulation studies (aPTT and PT)</li>\n    <li>Liver/renal function tests and blood glucose</li>\n  </ul>\n</li>\n<li>Hospital must submit the <strong>\"NHI rt-PA (Actilyse) Application Form for Acute Ischemic Stroke Patients (Appendix II-B)\"</strong> with monthly claims, attaching pre-treatment and 24/36-hour post-treatment neuroimaging and NIHSS scores.</li>\n</ol>\n<h3>Key Clinical Points</h3>\n<table>\n<thead><tr><th>Parameter</th><th>Details</th></tr></thead>\n<tbody>\n<tr><td>Treatment window</td><td>≤ 4.5 hours from symptom onset (aligned with 2019 AHA/ASA guidelines)</td></tr>\n<tr><td>Imaging exclusions</td><td>CT hemorrhage, large hypodensity (&gt;1/3 MCA territory), tumor, AVM</td></tr>\n<tr><td>NIHSS</td><td>Quantifies neurological deficit; minor (1–3) and severe (&gt;25) require individualized assessment</td></tr>\n<tr><td>Blood pressure</td><td>Must be &lt;185/110 mmHg before treatment; aggressive lowering if needed</td></tr>\n<tr><td>Blood glucose</td><td>Exclude hypoglycemia (&lt;50 mg/dL) or hyperglycemia as stroke mimics</td></tr>\n<tr><td>Coagulation</td><td>INR ≤ 1.7, aPTT within normal range; anticoagulated patients require individual assessment</td></tr>\n<tr><td>Facility requirement</td><td>Neurologist/neurosurgeon on-site + ICU or equivalent</td></tr>\n</tbody>\n</table>\n<p><strong>Source:</strong> <a href=\"https://www.nhi.gov.tw/Content_List.aspx?n=5082839B5600C079\" target=\"_blank\" rel=\"noopener noreferrer\">NHI Drug Benefit Regulations 115.4.23</a></p>"
+      }
+    },
+    {
+      "id": "edu008_20260525",
+      "title": "急性中風急診分流：缺血性/出血性處置重點（@3）",
+      "source_file": "20260525.docx",
+      "source_url": "",
+      "source_label": "",
+      "source_urls": [],
+      "original_lang": "zh-TW",
+      "added_date": "2026-05-26",
+      "version": "1",
+      "tags": [
+        "急性中風",
+        "急診分流",
+        "缺血性中風",
+        "出血性中風",
+        "ICH",
+        "EVT",
+        "血壓控制"
+      ],
+      "fastsr": {
+        "S": [
+          "急診疑似中風需在最短時間完成分流，核心是先區分缺血性與出血性中風。",
+          "中風病人到院後應先完成 ABC、發病時間確認與 NIHSS 初步評估。"
+        ],
+        "O": [
+          "缺血性中風 4.5 小時內符合條件可考慮 IVT；4.5–24 小時依 LVO 與進階影像評估 EVT。",
+          "ICH 病人 SBP 150–220 mmHg 時，快速降壓到約 140（建議維持 130–150）可改善預後。",
+          "血腫擴大（HE）以最初 3 小時風險最高，6–12h 約 15%、12–24h 約 6%、24h 後極少。"
+        ],
+        "A": [
+          "急性中風流程應以影像分型驅動後續治療，不宜僅靠臨床嚴重度判斷。",
+          "出血性中風需同步進行抗凝逆轉、神外評估與 ICU 監測。"
+        ],
+        "P": [
+          "建立 ER 標準化路徑：NCCT 優先分型，缺血性進入 IVT/EVT，出血性進入 ICH/SAH protocol。",
+          "於 24 小時追蹤 CT；若神經惡化需提前複檢。"
+        ]
+      },
+      "prototype": {
+        "global": [
+          "20260525",
+          "acute stroke",
+          "ER triage",
+          "IVT",
+          "EVT",
+          "ICH",
+          "SBP",
+          "hematoma expansion"
+        ],
+        "semantic": [
+          "中風",
+          "缺血性中風",
+          "出血性中風",
+          "分流",
+          "NIHSS",
+          "影像",
+          "血壓",
+          "血腫擴大",
+          "4F-PCC",
+          "INR",
+          "CTA",
+          "NCCT",
+          "IVT",
+          "EVT"
+        ],
+        "fragment": [
+          "缺血性中風 4.5 小時內符合條件可考慮 IVT；4.5–24 小時依 LVO 與進階影像評估 EVT。",
+          "ICH 病人 SBP 150–220 mmHg 時，快速降壓到約 140（建議維持 130–150）可改善預後。",
+          "血腫擴大（HE）以最初 3 小時風險最高，6–12h 約 15%、12–24h 約 6%、24h 後極少。"
+        ]
+      },
+      "versions": {
+        "simple_zh": "<h2>急性中風急診分流重點（@3）</h2><p>急診處理中風最重要是<strong>先用影像分型</strong>，再決定治療路徑。</p><h3>@1 缺血性中風（AIS）</h3><ul><li>4.5 小時內且符合條件，可考慮靜脈血栓溶解（IVT）。</li><li>若懷疑大血管阻塞（LVO），需快速評估是否進入 EVT 路徑。</li></ul><h3>&2 出血性中風（ICH / SAH）</h3><ul><li>ICH 時 SBP 150–220 mmHg，可快速降至約 140（維持 130–150）。</li><li>避免血壓急降到 &lt;130，可能有害。</li><li>出現腦幹壓迫、水腦或大體積小腦出血時，需及早神外評估。</li></ul><h3>@3 重要統計</h3><ul><li>HE（血腫擴大）高峰在前 3 小時。</li><li>6–12 小時約 15%，12–24 小時約 6%，24 小時後極少見。</li></ul>",
+        "professional_zh": "<h2>急性中風 ER 分流：缺血性與出血性路徑（@3）</h2><h3>@1 Ischemic stroke path</h3><ul><li>先完成 NCCT 排除出血，再依時間窗與禁忌症決定 IVT。</li><li>LVO 需並行 CTA/灌流影像，評估 EVT（可延伸至 24h）。</li></ul><h3>&2 Hemorrhagic stroke path</h3><ul><li>ICH 建議早期平穩降壓：SBP 150–220 時目標約 140（維持 130–150）。</li><li>避免 SBP 急降 &lt;130；如 ICP 上升需同時維持 CPP 60–70 mmHg。</li><li>若為抗凝相關 ICH，應立即逆轉凝血並啟動神外/重症流程。</li></ul><h3>@3 Evidence highlights</h3><ul><li>HE risk is time-dependent and highest within 3 hours after onset.</li><li>Follow-up CT at about 24h (or earlier when neurologic deterioration occurs) is recommended.</li></ul>",
+        "english": "<h2>ER Stroke Triage: Ischemic vs Hemorrhagic Pathways (@3)</h2><h3>@1 Ischemic pathway</h3><ul><li>Use NCCT first to exclude hemorrhage, then evaluate IVT eligibility within 4.5 hours.</li><li>When LVO is suspected, proceed rapidly to CTA/perfusion-based EVT selection.</li></ul><h3>&2 Hemorrhagic pathway</h3><ul><li>For ICH with SBP 150-220 mmHg, early controlled reduction toward ~140 (maintain 130-150) is reasonable.</li><li>Avoid abrupt SBP lowering below 130 mmHg.</li><li>Anticoagulant-related ICH requires immediate reversal and neurosurgical/neurocritical care coordination.</li></ul><h3>@3 Key statistics</h3><ul><li>Hematoma expansion risk peaks in the first 3 hours.</li><li>Approximate HE rates: 15% at 6-12h, 6% at 12-24h, and rare after 24h.</li></ul>"
+      }
+    },
+    {
+      "id": "edu009_20260526",
+      "title": "ICH 早期血壓與抗凝逆轉重點（&4）",
+      "source_file": "20260526.docx",
+      "source_url": "",
+      "source_label": "",
+      "source_urls": [],
+      "original_lang": "zh-TW",
+      "added_date": "2026-05-26",
+      "version": "1",
+      "tags": [
+        "ICH",
+        "血壓控制",
+        "血腫擴大",
+        "4F-PCC",
+        "FFP",
+        "INR",
+        "抗凝逆轉"
+      ],
+      "fastsr": {
+        "S": [
+          "急性 ICH 患者常合併高血壓與血腫擴大風險，需在最初數小時積極處置。"
+        ],
+        "O": [
+          "INTERACT3 顯示早期強化降壓（1 小時內目標 <140）可改善功能結果並降低 6 個月死亡。",
+          "VKA 相關 ICH 的 RCT：4F-PCC 3 小時內達 INR≤1.2 為 67%，FFP 為 9%；24h HE 為 18.3% vs 27.1%。",
+          "HE 發生率在首次 CT 距發病越早時越高，24 小時後 HE 幾乎為 0%。"
+        ],
+        "A": [
+          "ICH 降壓策略應平穩且避免過度；同時需個別化考量 CPP 與 ICP。",
+          "抗凝逆轉是 VKA 相關 ICH 早期關鍵介入。"
+        ],
+        "P": [
+          "SBP 150–220 mmHg 目標降至約 140（維持 130–150），避免 <130。",
+          "VKA 相關 ICH 優先給 4F-PCC + IV vitamin K 5–10 mg，並追蹤 INR 與 HE。"
+        ]
+      },
+      "prototype": {
+        "global": [
+          "20260526",
+          "acute stroke",
+          "ER triage",
+          "IVT",
+          "EVT",
+          "ICH",
+          "SBP",
+          "hematoma expansion"
+        ],
+        "semantic": [
+          "中風",
+          "缺血性中風",
+          "出血性中風",
+          "分流",
+          "NIHSS",
+          "影像",
+          "血壓",
+          "血腫擴大",
+          "4F-PCC",
+          "INR",
+          "CTA",
+          "NCCT",
+          "IVT",
+          "EVT"
+        ],
+        "fragment": [
+          "INTERACT3 顯示早期強化降壓（1 小時內目標 <140）可改善功能結果並降低 6 個月死亡。",
+          "VKA 相關 ICH 的 RCT：4F-PCC 3 小時內達 INR≤1.2 為 67%，FFP 為 9%；24h HE 為 18.3% vs 27.1%。",
+          "HE 發生率在首次 CT 距發病越早時越高，24 小時後 HE 幾乎為 0%。"
+        ]
+      },
+      "versions": {
+        "simple_zh": "<h2>ICH 早期血壓與抗凝逆轉重點（&4）</h2><h3>@1 早期降壓</h3><ul><li>SBP 150–220 mmHg 時，建議快速但平穩降到約 140，維持 130–150。</li><li>不建議急降到 &lt;130 mmHg，可能增加風險。</li></ul><h3>&2 血腫擴大（HE）時間窗</h3><ul><li>HE 風險在前 3 小時最高。</li><li>6–12h 約 15%，12–24h 約 6%，24h 後幾乎 0%。</li></ul><h3>@3 VKA 相關 ICH 逆轉統計</h3><ul><li>4F-PCC：3 小時內 INR ≤1.2 為 67%。</li><li>FFP：3 小時內 INR ≤1.2 為 9%。</li><li>24h HE：4F-PCC 18.3% vs FFP 27.1%。</li></ul><h3>&4 臨床提醒</h3><ul><li>VKA 相關 ICH 不論用 PCC 或血漿，均建議加 IV vitamin K 5–10 mg。</li></ul>",
+        "professional_zh": "<h2>ICH 早期處置：降壓與逆轉策略（&4）</h2><h3>@1 Blood pressure strategy</h3><ul><li>急性 ICH 且 SBP 150–220 mmHg 時，目標平穩降至約 140（130–150 區間）。</li><li>應避免急劇降至 &lt;130 mmHg。</li></ul><h3>&2 HE timing</h3><ul><li>HE risk is front-loaded in the first few hours after onset.</li><li>約 15%（6–12h）、6%（12–24h），24h 後極少。</li></ul><h3>@3 Reversal evidence</h3><ul><li>VKA-related ICH RCT：INR≤1.2 at 3h，4F-PCC 67% vs FFP 9%。</li><li>24h HE：4F-PCC 18.3% vs FFP 27.1%。</li></ul><h3>&4 Practical notes</h3><ul><li>建議合併 IV vitamin K 5–10 mg，並追蹤 INR、神經狀態與追蹤 CT。</li></ul>",
+        "english": "<h2>Early ICH Management: BP and Anticoagulation Reversal (&4)</h2><h3>@1 Blood pressure</h3><ul><li>For acute ICH with SBP 150-220 mmHg, rapid but controlled reduction toward ~140 (maintain 130-150) is reasonable.</li><li>Avoid abrupt lowering below 130 mmHg.</li></ul><h3>&2 HE timing profile</h3><ul><li>HE risk is highest in the first 3 hours.</li><li>Approximate rates: 15% (6-12h), 6% (12-24h), and near-zero after 24h.</li></ul><h3>@3 Reversal statistics in VKA-related ICH</h3><ul><li>INR ≤1.2 at 3h: 67% with 4F-PCC vs 9% with FFP.</li><li>24h HE: 18.3% with 4F-PCC vs 27.1% with FFP.</li></ul><h3>&4 Practical point</h3><ul><li>Combine coagulation factor replacement with IV vitamin K (5-10 mg) and serial neurologic/CT reassessment.</li></ul>"
       }
     }
   ]
