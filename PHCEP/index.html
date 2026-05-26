@@ -236,7 +236,6 @@
         <button class="edu-filter-btn" data-mode="A" onclick="eduSetSearchMode('A')">A 評估</button>
         <button class="edu-filter-btn" data-mode="P" onclick="eduSetSearchMode('P')">P 治療</button>
       </div>
-      <button class="edu-add-btn" onclick="eduToggleAddForm()">＋ 新增資源</button>
     </div>
     <!-- Version selector row -->
     <div class="edu-version-bar" id="edu-version-bar">
@@ -247,78 +246,9 @@
       <button class="edu-ver-btn" data-ver="fastsr" onclick="eduSetDefaultVersion('fastsr')">🔬 SOAP</button>
     </div>
 
-    <!-- Add entry form panel (hidden by default) -->
-    <div id="edu-add-panel" class="edu-add-panel hidden">
-      <div class="edu-add-form">
-        <div class="edu-add-form-header">
-          <h3>新增衛教資源</h3>
-          <button class="edu-add-close" onclick="eduToggleAddForm()" title="關閉">✕</button>
-        </div>
-        <div class="edu-form-row">
-          <label>資源標題 *</label>
-          <input id="edu-form-title" type="text" placeholder="例：膝關節退化衛教" />
-        </div>
-        <div class="edu-form-grid2">
-          <div class="edu-form-row">
-            <label>來源 URL</label>
-            <input id="edu-form-url" type="url" placeholder="https://..." />
-          </div>
-          <div class="edu-form-row">
-            <label>來源名稱</label>
-            <input id="edu-form-source-label" type="text" placeholder="例：Openevidence / UpToDate" />
-          </div>
-        </div>
-        <div class="edu-form-row">
-          <label>標籤（以逗號分隔）</label>
-          <input id="edu-form-tags" type="text" placeholder="例：膝蓋, 退化, 關節炎" />
-        </div>
-        <div class="edu-form-row">
-          <label>原始文字（貼上英文或中文，按下按鈕進行 SOAP 自動分類）</label>
-          <textarea id="edu-form-original" rows="5" placeholder="貼上原文，可為英文、繁體或簡體中文..."></textarea>
-          <button class="edu-encode-btn" onclick="eduRunAutoEncode()">🔬 SOAP 自動分類 S/O/A/P</button>
-        </div>
-        <div class="edu-soap-editor">
-          <div class="edu-soap-section">
-            <label class="edu-soap-label edu-soap-s">S — 症狀／主訴／適應症</label>
-            <textarea id="edu-form-s" rows="4" placeholder="每行一句（自動分類後可手動調整）"></textarea>
-          </div>
-          <div class="edu-soap-section">
-            <label class="edu-soap-label edu-soap-o">O — 客觀發現／檢查</label>
-            <textarea id="edu-form-o" rows="4" placeholder="每行一句"></textarea>
-          </div>
-          <div class="edu-soap-section">
-            <label class="edu-soap-label edu-soap-a">A — 評估／診斷</label>
-            <textarea id="edu-form-a" rows="4" placeholder="每行一句"></textarea>
-          </div>
-          <div class="edu-soap-section">
-            <label class="edu-soap-label edu-soap-p">P — 計畫／治療建議</label>
-            <textarea id="edu-form-p" rows="4" placeholder="每行一句"></textarea>
-          </div>
-        </div>
-        <div class="edu-versions-editor">
-          <h4>語言版本（支援 HTML 格式標籤，如 &lt;p&gt;、&lt;ul&gt;、&lt;strong&gt;）</h4>
-          <div class="edu-form-row">
-            <label class="edu-soap-label edu-soap-s" style="display:inline-block;margin-bottom:6px">【簡易版】繁體中文（淺顯易懂）</label>
-            <textarea id="edu-form-simple-zh" rows="5" placeholder="<p>...</p>"></textarea>
-          </div>
-          <div class="edu-form-row">
-            <label class="edu-soap-label edu-soap-o" style="display:inline-block;margin-bottom:6px">【專業版】繁體中文（醫學術語）</label>
-            <textarea id="edu-form-pro-zh" rows="5" placeholder="<p>...</p>"></textarea>
-          </div>
-          <div class="edu-form-row">
-            <label class="edu-soap-label edu-soap-p" style="display:inline-block;margin-bottom:6px">[English] 英文版</label>
-            <textarea id="edu-form-en" rows="5" placeholder="<p>...</p>"></textarea>
-          </div>
-        </div>
-        <div class="edu-form-actions">
-          <button class="edu-save-btn" onclick="eduSaveNewEntry()">💾 儲存</button>
-          <button class="edu-cancel-btn" onclick="eduToggleAddForm()">取消</button>
-        </div>
-      </div>
-    </div>
-
     <!-- Entry list -->
     <div id="edu-list" class="edu-list"></div>
+    <div id="edu-pagination" class="edu-pagination hidden"></div>
 
     <!-- Detail viewer -->
     <div id="edu-viewer" class="edu-viewer hidden">
@@ -429,31 +359,39 @@
       <p class="section-desc">臨床治療流程圖</p>
     </div>
     <div class="workflow-content">
-      <h3 style="margin-bottom:10px;">急性中風分流工具（IVT / EVT / ICH/SAH/SDH）</h3>
-      <p style="margin-bottom:10px;color:var(--muted);font-size:.9rem;">整合 NIHSS、IVT 決策核對、特殊情況、延長時間窗、原發性出血性中風處置，以及 rtPA 後 ICH 與 Angioedema 處置。</p>
-      <iframe
-        src="Flowchart/Acute%20stroke%20triage.html"
-        title="急性中風分流工具"
-        style="width:100%;height:90vh;min-height:700px;border:1px solid var(--border);border-radius:12px;background:transparent;"
-        loading="lazy"
-        allowfullscreen
-      ></iframe>
-      <div class="divider" style="margin:24px 0;"></div>
-      <h3 style="margin-bottom:10px;">急性缺血性腦中風動脈取栓流程</h3>
-      <p style="margin-bottom:12px;color:var(--muted);font-size:.9rem;">急性缺血性腦中風血管內取栓治療（EVT）流程圖。</p>
-      <div class="workflow-images">
-        <figure>
-          <a href="workflow/EVT_Flowchart_01.png" target="_blank" rel="noopener">
-            <img src="workflow/EVT_Flowchart_01.png" alt="急性缺血性腦中風動脈取栓流程圖 (1)" class="workflow-img" />
-          </a>
-          <figcaption>急性缺血性腦中風動脈取栓流程圖（一）</figcaption>
-        </figure>
-        <figure>
-          <a href="workflow/EVT_Flowchart_02.png" target="_blank" rel="noopener">
-            <img src="workflow/EVT_Flowchart_02.png" alt="急性缺血性腦中風動脈取栓流程圖 (2)" class="workflow-img" />
-          </a>
-          <figcaption>急性缺血性腦中風動脈取栓流程圖（二）</figcaption>
-        </figure>
+      <div class="workflow-page active" data-workflow-page="0">
+        <h3 style="margin-bottom:10px;">急性中風分流工具（IVT / EVT / ICH/SAH/SDH）</h3>
+        <p style="margin-bottom:10px;color:var(--muted);font-size:.9rem;">整合 NIHSS、IVT 決策核對、特殊情況、延長時間窗、原發性出血性中風處置，以及 rtPA 後 ICH 與 Angioedema 處置。</p>
+        <iframe
+          src="Flowchart/Acute%20stroke%20triage.html"
+          title="急性中風分流工具"
+          style="width:100%;height:90vh;min-height:700px;border:1px solid var(--border);border-radius:12px;background:transparent;"
+          loading="lazy"
+          allowfullscreen
+        ></iframe>
+      </div>
+      <div class="workflow-page" data-workflow-page="1">
+        <h3 style="margin-bottom:10px;">急性缺血性腦中風動脈取栓流程</h3>
+        <p style="margin-bottom:12px;color:var(--muted);font-size:.9rem;">急性缺血性腦中風血管內取栓治療（EVT）流程圖。</p>
+        <div class="workflow-images">
+          <figure>
+            <a href="workflow/EVT_Flowchart_01.png" target="_blank" rel="noopener">
+              <img src="workflow/EVT_Flowchart_01.png" alt="急性缺血性腦中風動脈取栓流程圖 (1)" class="workflow-img" />
+            </a>
+            <figcaption>急性缺血性腦中風動脈取栓流程圖（一）</figcaption>
+          </figure>
+          <figure>
+            <a href="workflow/EVT_Flowchart_02.png" target="_blank" rel="noopener">
+              <img src="workflow/EVT_Flowchart_02.png" alt="急性缺血性腦中風動脈取栓流程圖 (2)" class="workflow-img" />
+            </a>
+            <figcaption>急性缺血性腦中風動脈取栓流程圖（二）</figcaption>
+          </figure>
+        </div>
+      </div>
+      <div class="edu-pagination workflow-pagination">
+        <button id="workflow-prev" type="button" class="icd-page-btn">← 上一頁</button>
+        <span id="workflow-page-info">第 1 / 2 頁</span>
+        <button id="workflow-next" type="button" class="icd-page-btn">下一頁 →</button>
       </div>
     </div>
   </div>

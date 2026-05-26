@@ -103,7 +103,43 @@ function switchTab(name) {
   if (name === 'nhi') nhiOnTabShow();
   if (name === 'drug') drugOnTabShow();
   if (name === 'specmat') specmatOnTabShow();
+  if (name === 'workflow') workflowOnTabShow();
   if (name === 'settings') renderSettingsTab();
+}
+
+let workflowPageIndex = 0;
+function workflowOnTabShow() {
+  if (workflowOnTabShow._bound) {
+    workflowRenderPage();
+    return;
+  }
+  workflowOnTabShow._bound = true;
+  var prev = document.getElementById('workflow-prev');
+  var next = document.getElementById('workflow-next');
+  if (prev) prev.addEventListener('click', function() { workflowSetPage(workflowPageIndex - 1); });
+  if (next) next.addEventListener('click', function() { workflowSetPage(workflowPageIndex + 1); });
+  workflowRenderPage();
+}
+
+function workflowSetPage(nextIndex) {
+  workflowPageIndex = Math.max(0, Math.min(1, Number(nextIndex) || 0));
+  workflowRenderPage();
+}
+
+function workflowRenderPage() {
+  var pages = Array.from(document.querySelectorAll('#tab-workflow .workflow-page'));
+  if (!pages.length) return;
+  workflowPageIndex = Math.max(0, Math.min(workflowPageIndex, pages.length - 1));
+  pages.forEach(function(page, idx) {
+    page.classList.toggle('active', idx === workflowPageIndex);
+    page.classList.toggle('hidden', idx !== workflowPageIndex);
+  });
+  var prev = document.getElementById('workflow-prev');
+  var next = document.getElementById('workflow-next');
+  var info = document.getElementById('workflow-page-info');
+  if (prev) prev.disabled = workflowPageIndex <= 0;
+  if (next) next.disabled = workflowPageIndex >= pages.length - 1;
+  if (info) info.textContent = `第 ${workflowPageIndex + 1} / ${pages.length} 頁`;
 }
 
 // ---------------------------------------------------------------------------
@@ -896,6 +932,8 @@ let eduSearchMode = 'all';
 let eduCurrentEntry = null;
 let eduCurrentVersion = 'simple_zh';
 let eduDefaultVersion = 'simple_zh';
+const EDU_PAGE_SIZE = 10;
+let eduCurrentPage = 0;
 var EDU_ARTICLE_SCALE_LEVELS = [100, 125, 150, 175, 200];
 var eduArticleScaleIndex = 0;
 // Tolerance for scroll-height comparisons: covers sub-pixel/border rounding differences.
@@ -960,15 +998,14 @@ async function loadEduData() {
   try {
     const jsonData = await fetchJson(BASE + 'data/edu/patient_edu_data.json');
     // Support v2 (entries) and legacy v1 (files)
-    const baseEntries = jsonData.entries
+    eduData = jsonData.entries
       ? jsonData.entries
       : (jsonData.files || []).map(eduConvertV1);
-    const localEntries = eduCleanupPoorEntries();
-    eduData = [...baseEntries, ...localEntries];
   } catch (e) {
     console.error('edu data load failed:', e);
-    eduData = eduCleanupPoorEntries();
+    eduData = [];
   }
+  eduCurrentPage = 0;
   eduRenderList();
 }
 
@@ -977,24 +1014,6 @@ async function loadEduData() {
  * (plain-text articles from before the structured formatter was introduced).
  * Returns the cleaned local-entries array.
  */
-function eduCleanupPoorEntries() {
-  var locals = eduLoadLocal();
-  var before = locals.length;
-  var htmlTagRe = /<[a-zA-Z]/;
-  locals = locals.filter(function(e) {
-    if (!e._from_ebm) return true; // keep manually-added entries
-    var v = e.versions || {};
-    // Plain-text entry: none of the versions contain any HTML tag
-    var hasHtml = htmlTagRe.test(v.simple_zh || '') || htmlTagRe.test(v.professional_zh || '') || htmlTagRe.test(v.english || '');
-    return hasHtml;
-  });
-  if (locals.length < before) {
-    eduSaveLocal(locals);
-    console.log('[PHCEP] Removed ' + (before - locals.length) + ' poorly-formatted EBM article(s) from localStorage');
-  }
-  return locals;
-}
-
 function eduConvertV1(file) {
   return {
     id: file.id || ('edu_' + Math.random().toString(36).substr(2, 8)),
@@ -1010,20 +1029,12 @@ function eduConvertV1(file) {
   };
 }
 
-function eduLoadLocal() {
-  try { return JSON.parse(localStorage.getItem('phcep_edu_entries_v1') || '[]'); }
-  catch (e) { return []; }
-}
-
-function eduSaveLocal(entries) {
-  localStorage.setItem('phcep_edu_entries_v1', JSON.stringify(entries));
-}
-
 // ---------------------------------------------------------------------------
 // Render list view
 // ---------------------------------------------------------------------------
 function eduRenderList() {
   var list = document.getElementById('edu-list');
+  var pager = document.getElementById('edu-pagination');
   if (!list) return;
   var query = ((document.getElementById('edu-search') || {}).value || '').trim();
 
@@ -1039,11 +1050,16 @@ function eduRenderList() {
 
   if (results.length === 0) {
     list.innerHTML = '<p class="empty-msg" style="padding:24px;text-align:center;color:var(--muted)">尚無衛教資源</p>';
+    if (pager) pager.classList.add('hidden');
     return;
   }
 
   list.innerHTML = '';
-  results.forEach(function({ entry, score, protoScores, sectionScores }) {
+  var totalPages = Math.max(1, Math.ceil(results.length / EDU_PAGE_SIZE));
+  eduCurrentPage = Math.max(0, Math.min(eduCurrentPage, totalPages - 1));
+  var pageStart = eduCurrentPage * EDU_PAGE_SIZE;
+  var pageResults = results.slice(pageStart, pageStart + EDU_PAGE_SIZE);
+  pageResults.forEach(function({ entry, score, protoScores, sectionScores }) {
     var card = document.createElement('div');
     card.className = 'edu-entry-card';
 
@@ -1096,10 +1112,6 @@ function eduRenderList() {
     var srcBtn = entry.source_url
       ? `<a class="edu-vbtn edu-source-btn" href="${escHtml(entry.source_url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">Source ↗</a>`
       : '';
-    var deleteBtn = entry._local
-      ? `<button class="edu-vbtn edu-delete-btn" onclick="eduDeleteEntry('${escHtml(entry.id)}');event.stopPropagation()" title="刪除此條目">🗑</button>`
-      : '';
-
     card.innerHTML = `
       <div class="edu-card-top">
         <span class="edu-card-icon">📄</span>
@@ -1116,15 +1128,41 @@ function eduRenderList() {
         <button class="edu-vbtn" onclick="eduOpenEntry('${escHtml(entry.id)}','simple_zh');event.stopPropagation()">簡易版</button>
         <button class="edu-vbtn" onclick="eduOpenEntry('${escHtml(entry.id)}','professional_zh');event.stopPropagation()">專業版</button>
         <button class="edu-vbtn" onclick="eduOpenEntry('${escHtml(entry.id)}','english');event.stopPropagation()">English</button>
-        ${srcBtn}${deleteBtn}
+        ${srcBtn}
       </div>
     `;
     card.addEventListener('click', function() { eduOpenEntry(entry.id, eduDefaultVersion); });
     list.appendChild(card);
   });
+  eduRenderPagination(results.length);
+}
+
+function eduRenderPagination(totalCount) {
+  var pager = document.getElementById('edu-pagination');
+  if (!pager) return;
+  var totalPages = Math.max(1, Math.ceil(totalCount / EDU_PAGE_SIZE));
+  if (totalPages <= 1) {
+    pager.classList.add('hidden');
+    pager.innerHTML = '';
+    return;
+  }
+  pager.classList.remove('hidden');
+  pager.innerHTML = `
+    <button class="icd-page-btn" type="button" ${eduCurrentPage <= 0 ? 'disabled' : ''} onclick="eduSetPage(${eduCurrentPage - 1})">← 上一頁</button>
+    <span class="icd-page-info">第 ${eduCurrentPage + 1} / ${totalPages} 頁（每頁 ${EDU_PAGE_SIZE} 篇）</span>
+    <button class="icd-page-btn" type="button" ${eduCurrentPage >= totalPages - 1 ? 'disabled' : ''} onclick="eduSetPage(${eduCurrentPage + 1})">下一頁 →</button>
+  `;
+}
+
+function eduSetPage(pageIndex) {
+  eduCurrentPage = Math.max(0, Number(pageIndex) || 0);
+  eduRenderList();
+  var list = document.getElementById('edu-list');
+  if (list) list.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function eduSearch(query) {
+  eduCurrentPage = 0;
   // Show/hide the clear button
   var clearBtn = document.getElementById('edu-search-clear-btn');
   if (clearBtn) clearBtn.style.display = query ? 'block' : 'none';
@@ -1167,6 +1205,7 @@ function eduScrollToResults() {
 
 function eduSetSearchMode(mode) {
   eduSearchMode = mode;
+  eduCurrentPage = 0;
   document.querySelectorAll('.edu-filter-btn').forEach(function(btn) {
     btn.classList.toggle('active', btn.dataset.mode === mode);
   });
@@ -1459,11 +1498,11 @@ function eduOpenEntry(id, version) {
   var list = document.getElementById('edu-list');
   var toolbar = document.querySelector('.edu-toolbar');
   var versionBar = document.getElementById('edu-version-bar');
-  var addPanel = document.getElementById('edu-add-panel');
   if (list) list.classList.add('hidden');
   if (toolbar) toolbar.classList.add('hidden');
   if (versionBar) versionBar.classList.add('hidden');
-  if (addPanel) addPanel.classList.add('hidden');
+  var pager = document.getElementById('edu-pagination');
+  if (pager) pager.classList.add('hidden');
   document.getElementById('edu-viewer').classList.remove('hidden');
   var floatBtn = document.getElementById('edu-back-float');
   if (floatBtn) floatBtn.classList.remove('hidden');
@@ -2468,48 +2507,16 @@ function eduCloseViewer() {
   var list = document.getElementById('edu-list');
   var toolbar = document.querySelector('.edu-toolbar');
   var versionBar = document.getElementById('edu-version-bar');
+  var pager = document.getElementById('edu-pagination');
   if (list) list.classList.remove('hidden');
   if (toolbar) toolbar.classList.remove('hidden');
   if (versionBar) versionBar.classList.remove('hidden');
+  if (pager) pager.classList.remove('hidden');
   eduCurrentEntry = null;
+  eduRenderList();
   // Scroll to the top of the education section (search bar area)
   var eduTab = document.getElementById('tab-edu');
   if (eduTab) eduTab.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-// ---------------------------------------------------------------------------
-// Add entry form
-// ---------------------------------------------------------------------------
-function eduToggleAddForm() {
-  var panel = document.getElementById('edu-add-panel');
-  if (!panel) return;
-  panel.classList.toggle('hidden');
-  if (!panel.classList.contains('hidden')) {
-    eduClearAddForm();
-    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-}
-
-function eduClearAddForm() {
-  ['edu-form-title', 'edu-form-url', 'edu-form-source-label', 'edu-form-tags',
-   'edu-form-original', 'edu-form-s', 'edu-form-o', 'edu-form-a', 'edu-form-p',
-   'edu-form-simple-zh', 'edu-form-pro-zh', 'edu-form-en'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-}
-
-// FastSR auto-encoder: classifies pasted text into S/O/A/P
-function eduRunAutoEncode() {
-  var text = (document.getElementById('edu-form-original') || {}).value || '';
-  if (!text.trim()) { toast('⚠️ 請先貼上原始文字'); return; }
-  var encoded = eduEncodeFastSR(text);
-  var set = function(id, arr) { var el = document.getElementById(id); if (el) el.value = arr.join('\n'); };
-  set('edu-form-s', encoded.S);
-  set('edu-form-o', encoded.O);
-  set('edu-form-a', encoded.A);
-  set('edu-form-p', encoded.P);
-  toast(`✅ SOAP 分類完成：S(${encoded.S.length}) O(${encoded.O.length}) A(${encoded.A.length}) P(${encoded.P.length})`);
 }
 
 function eduEncodeFastSR(text) {
@@ -2539,52 +2546,6 @@ function eduClassifySentence(sent) {
   });
   var best = Object.entries(scores).sort((a, b) => b[1] - a[1])[0];
   return best[1] > 0 ? best[0] : 'S';
-}
-
-function eduSaveNewEntry() {
-  var get = function(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
-  var title = get('edu-form-title');
-  if (!title) { toast('⚠️ 請輸入資源標題'); return; }
-
-  var tags = get('edu-form-tags').split(/[,，、\s]+/).filter(Boolean);
-  var entry = {
-    id: 'edu_local_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
-    title,
-    source_url: get('edu-form-url'),
-    source_label: get('edu-form-source-label'),
-    original_lang: 'zh-TW',
-    added_date: new Date().toISOString().split('T')[0],
-    tags,
-    fastsr: {
-      S: get('edu-form-s').split('\n').filter(Boolean),
-      O: get('edu-form-o').split('\n').filter(Boolean),
-      A: get('edu-form-a').split('\n').filter(Boolean),
-      P: get('edu-form-p').split('\n').filter(Boolean)
-    },
-    versions: {
-      simple_zh: get('edu-form-simple-zh'),
-      professional_zh: get('edu-form-pro-zh'),
-      english: get('edu-form-en')
-    },
-    _local: true
-  };
-
-  var locals = eduLoadLocal();
-  locals.push(entry);
-  eduSaveLocal(locals);
-  eduData.push(entry);
-  eduToggleAddForm();
-  eduRenderList();
-  toast(`✅ 已儲存「${title}」`);
-}
-
-function eduDeleteEntry(id) {
-  if (!confirm('確定要刪除此衛教資源？')) return;
-  var locals = eduLoadLocal().filter(e => e.id !== id);
-  eduSaveLocal(locals);
-  eduData = eduData.filter(e => e.id !== id);
-  eduRenderList();
-  toast('🗑️ 已刪除');
 }
 
 // ---------------------------------------------------------------------------
