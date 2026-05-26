@@ -120,6 +120,15 @@
     th,td{padding:10px 12px;border:1px solid rgba(55,76,111,.86);vertical-align:top}
     th{background:#10213f;color:#dcebff}
     tbody tr:nth-child(odd){background:rgba(11,18,32,.42)}
+    [data-stroke-context]{display:none}
+    .decision-title{margin:0 0 8px;font-size:1rem}
+    .decision-placeholder{margin:0;color:var(--muted)}
+    .context-note{margin-top:12px;border:1px dashed rgba(96,165,250,.35);border-radius:12px;padding:12px 14px;color:var(--muted);background:rgba(96,165,250,.06)}
+    .tab-btn[disabled]{opacity:.45;cursor:not-allowed;filter:none}
+    .reversal-table{min-width:980px;table-layout:fixed}
+    .reversal-table th:nth-child(1),.reversal-table td:nth-child(1){width:18%}
+    .reversal-table th:nth-child(2),.reversal-table td:nth-child(2){width:22%}
+    .reversal-table th:nth-child(3),.reversal-table td:nth-child(3){width:60%;word-break:break-word}
     .special-check{width:auto;accent-color:var(--accent);transform:translateY(2px)}
     .ivt-columns{display:grid;grid-template-columns:minmax(280px,.9fr) minmax(340px,1.1fr);gap:16px;margin-top:12px}
     .status-good{border-color:rgba(34,197,94,.52);background:rgba(34,197,94,.08);color:#b6f5c9}
@@ -205,7 +214,7 @@
               <option value="hemorrhagic">出血性中風</option>
             </select>
           </div>
-          <div class="field">
+          <div class="field" data-stroke-context="hemorrhagic">
             <label for="strokeType">出血分型（出血路徑）</label>
             <select id="strokeType">
               <option value="ich">ICH（預設）</option>
@@ -228,7 +237,7 @@
           </div>
 
           <div class="field-grid four" style="margin-top:12px;">
-            <div class="field">
+            <div class="field" data-stroke-context="ischemic">
               <label for="lvo">疑似大血管阻塞（LVO）</label>
               <select id="lvo">
                 <option value="">請選擇</option>
@@ -237,7 +246,7 @@
                 <option value="unknown">未知</option>
               </select>
             </div>
-            <div class="field">
+            <div class="field" data-stroke-context="ischemic">
               <label for="ctpAvail">灌流影像（CTP/MRP）可得</label>
               <select id="ctpAvail">
                 <option value="">請選擇</option>
@@ -245,7 +254,7 @@
                 <option value="no">不可</option>
               </select>
             </div>
-            <div class="field">
+            <div class="field" data-stroke-context="ischemic">
               <label for="perfusionMismatch">灌流 mismatch / salvageable tissue</label>
               <select id="perfusionMismatch">
                 <option value="">請選擇</option>
@@ -254,7 +263,7 @@
                 <option value="unknown">未知</option>
               </select>
             </div>
-            <div class="field">
+            <div class="field" data-stroke-context="ischemic">
               <label for="dwiFlairMismatch">DWI-FLAIR mismatch</label>
               <select id="dwiFlairMismatch">
                 <option value="">請選擇</option>
@@ -266,7 +275,7 @@
           </div>
 
           <div class="field-grid four" style="margin-top:12px;">
-            <div class="field">
+            <div class="field" data-stroke-context="ischemic">
               <label for="evtTeam">EVT 團隊可立即執行</label>
               <select id="evtTeam">
                 <option value="">請選擇</option>
@@ -274,7 +283,7 @@
                 <option value="no">不可</option>
               </select>
             </div>
-            <div class="field">
+            <div class="field" data-stroke-context="hemorrhagic">
               <label for="cryo">Cryoprecipitate 可用</label>
               <select id="cryo">
                 <option value="">請選擇</option>
@@ -282,7 +291,7 @@
                 <option value="no">不可</option>
               </select>
             </div>
-            <div class="field">
+            <div class="field" data-stroke-context="selected">
               <label for="anticoag">抗凝狀態</label>
               <select id="anticoag">
                 <option value="">請選擇</option>
@@ -291,7 +300,7 @@
                 <option value="doac">DOAC</option>
               </select>
             </div>
-            <div class="field">
+            <div class="field" data-stroke-context="ischemic">
               <label for="acuteMI">急性心肌梗塞情境</label>
               <select id="acuteMI">
                 <option value="">請選擇</option>
@@ -304,42 +313,42 @@
           </div>
 
           <div class="field-grid thirds" style="margin-top:12px;">
-            <div class="field">
+            <div class="field" data-stroke-context="selected">
               <label for="inr">INR</label>
               <input id="inr" type="number" min="0" step="0.1" />
             </div>
-            <div class="field">
+            <div class="field" data-stroke-context="selected">
               <label for="aptt">aPTT (sec)</label>
               <input id="aptt" type="number" min="0" step="0.1" />
             </div>
-            <div class="field">
+            <div class="field" data-stroke-context="selected">
               <label for="platelets">血小板 (/mm³)</label>
               <input id="platelets" type="number" min="0" step="1000" />
             </div>
           </div>
 
           <div class="field-grid" style="margin-top:12px;grid-template-columns:repeat(2,minmax(0,1fr));">
-            <div class="field">
+            <div class="field" data-stroke-context="ischemic">
               <label><input id="recentLmwh" type="checkbox" style="width:auto;margin-right:8px;accent-color:var(--accent)" />24 小時內使用 LMWH</label>
             </div>
-            <div class="field">
+            <div class="field" data-stroke-context="ischemic">
               <label><input id="recentXa" type="checkbox" style="width:auto;margin-right:8px;accent-color:var(--accent)" />24 小時內使用 Xa 抑制劑</label>
             </div>
           </div>
 
           <div class="field-grid thirds" style="margin-top:12px;">
-            <div class="field">
+            <div class="field" data-stroke-context="ischemic">
               <label><input id="recentHeparin" type="checkbox" style="width:auto;margin-right:8px;accent-color:var(--accent)" />中風前使用 Heparin</label>
             </div>
-            <div class="field">
+            <div class="field" data-stroke-context="hemorrhagic">
               <label><input id="suspectedPostIvtICh" type="checkbox" style="width:auto;margin-right:8px;accent-color:var(--accent)" />rtPA 後疑似 ICH / 新神經惡化</label>
             </div>
-            <div class="field">
+            <div class="field" data-stroke-context="ischemic">
               <label><input id="persistentDeficitAfterGlucose" type="checkbox" style="width:auto;margin-right:8px;accent-color:var(--accent)" />血糖校正後仍有神經學缺損</label>
             </div>
           </div>
 
-          <details style="margin-top:14px;">
+          <details style="margin-top:14px;" data-stroke-context="ischemic">
             <summary>特殊病史、影像風險與臨床修飾因子</summary>
             <div class="check-grid" style="margin-top:12px;">
               <label class="check-card"><input id="disablingVisual" type="checkbox" /><span><span class="label-main">輕微中風但視野缺損</span><span class="label-note">Mild stroke with disability</span></span></label>
@@ -458,8 +467,9 @@
     </section>
 
 
-    <section class="card tab-panel" id="panel-ivt" role="tabpanel" aria-labelledby="tab-ivt" data-tab-panel="ivt" style="margin-top:18px;">
+    <section class="card tab-panel" id="panel-ivt" role="tabpanel" aria-labelledby="tab-ivt" data-tab-panel="ivt" data-panel-context="ischemic" style="margin-top:18px;">
       <h2>IVT 治療決策核對表（2025 台灣腦中風學會）</h2>
+      <div id="ivtContextNote" class="context-note hidden">目前為出血性中風路徑，IVT 核對表已自動收合。</div>
       <div class="field-grid four">
         <div class="field">
           <label for="ivtTimestamp">核對時間戳記</label>
@@ -491,11 +501,12 @@
       </div>
     </section>
 
-    <section class="card tab-panel" id="panel-special" role="tabpanel" aria-labelledby="tab-special" data-tab-panel="special" style="margin-top:18px;">
+    <section class="card tab-panel" id="panel-special" role="tabpanel" aria-labelledby="tab-special" data-tab-panel="special" data-panel-context="ischemic" style="margin-top:18px;">
       <h2>特殊情況與情境統計（2025 台灣腦中風學會）</h2>
+      <div id="specialContextNote" class="context-note hidden">目前為出血性中風路徑，缺血性再灌流特殊情境已自動收合。</div>
       <p class="muted">以下情況可在共享決策與影像條件下考慮 IVT，表格會自動帶入目前已符合的項目。統計區塊依分流情境自動展開。</p>
       <div class="table-wrap">
-        <table>
+        <table class="reversal-table">
           <thead>
             <tr>
               <th>適用</th>
@@ -807,6 +818,7 @@
     let latestAutoRequired = Object.fromEntries(REQUIRED_ITEMS.map((item) => [item.id, false]));
     let latestAutoContra = Object.fromEntries(CONTRA_ITEMS.map((item) => [item.id, false]));
     let latestAutoSpecial = Object.fromEntries(SPECIAL_ROWS.map((row) => [row.id, false]));
+    let activateWorkflowPanel = () => {};
 
     function renderNihss() {
       const container = q('#nihssItems');
@@ -971,10 +983,45 @@
     function toggleStrokePathFields() {
       const strokePath = q('#strokePath').value;
       const isHemorrhagic = strokePath === 'hemorrhagic';
+      const isIschemic = strokePath === 'ischemic';
       q('#strokeType').disabled = !isHemorrhagic;
       q('#strokeType').closest('.field').style.opacity = isHemorrhagic ? '1' : '.55';
       q('#nihss-panel').style.display = strokePath === 'ischemic' ? '' : 'none';
       q('#hemorrhage-score-panel').style.display = isHemorrhagic ? '' : 'none';
+      qa('[data-stroke-context]').forEach((element) => {
+        const mode = element.dataset.strokeContext;
+        const visible = mode === 'selected'
+          ? !!strokePath
+          : mode === 'ischemic'
+            ? isIschemic
+            : mode === 'hemorrhagic'
+              ? isHemorrhagic
+              : false;
+        element.style.display = visible ? '' : 'none';
+      });
+      qa('[data-panel-context="ischemic"]').forEach((panel) => {
+        panel.style.display = isHemorrhagic ? 'none' : '';
+      });
+      const ivtNote = q('#ivtContextNote');
+      const specialNote = q('#specialContextNote');
+      if (ivtNote) ivtNote.classList.toggle('hidden', !isHemorrhagic);
+      if (specialNote) specialNote.classList.toggle('hidden', !isHemorrhagic);
+      ['ivt', 'special'].forEach((name) => {
+        const btn = q(`[data-tab-target="${name}"]`);
+        if (btn) btn.disabled = isHemorrhagic;
+      });
+      if (isHemorrhagic && (q('#panel-ivt').classList.contains('is-active') || q('#panel-special').classList.contains('is-active'))) {
+        activateWorkflowPanel('ich');
+      }
+    }
+
+    function hasClinicalInput(state) {
+      if (state.strokePath) return true;
+      if ([state.age, state.sbp, state.dbp, state.glucose, state.inr, state.aptt, state.platelets, state.ichScore, state.wfnsGrade, state.huntHessGrade, state.modifiedFisherGrade, state.time.hours]
+        .some((value) => Number.isFinite(value) && value > 0)) return true;
+      if (state.nihssScore > 0) return true;
+      if ([state.lvo, state.perfusionMismatch, state.dwiFlairMismatch, state.anticoag, state.acuteMI].some(Boolean)) return true;
+      return qa('input[type="checkbox"]').some((input) => input.checked);
     }
 
     function setCardState(id, active, contra = false) {
@@ -1051,6 +1098,13 @@
     }
 
     function updateSpecialSituationChecks(state) {
+      if (state.strokeType !== 'ischemic') {
+        latestAutoSpecial = Object.fromEntries(SPECIAL_ROWS.map((row) => [row.id, false]));
+        SPECIAL_ROWS.forEach((row) => { q(`#${row.id}`).checked = false; });
+        state.specialLabels = [];
+        state.specialState = Object.fromEntries(SPECIAL_ROWS.map((row) => [row.id, false]));
+        return;
+      }
       const autoSpecialState = {
         'ss-extend': state.time.mode === 'known' && state.time.hours > 4.5 && state.time.hours <= 9 && state.ctpAvail && state.perfusionMismatch === 'yes',
         'ss-wakeup': (state.time.mode === 'wakeup' || state.time.mode === 'unknown') && state.dwiFlairMismatch === 'yes',
@@ -1074,6 +1128,12 @@
     }
 
     function openRelevantStats(state) {
+      if (state.strokeType !== 'ischemic') {
+        ['#stat-extend', '#stat-wakeup', '#stat-mild', '#stat-nonrapid', '#stat-recent', '#stat-special'].forEach((selector) => {
+          q(selector).open = false;
+        });
+        return;
+      }
       const mappings = {
         '#stat-extend': state.specialState['ss-extend'],
         '#stat-wakeup': state.specialState['ss-wakeup'],
@@ -1222,6 +1282,18 @@
     }
 
     function updateDecision(state) {
+      if (!hasClinicalInput(state)) {
+        const emptyHtml = `
+          <h3 class="decision-title">臨床決策路徑</h3>
+          <p class="decision-placeholder">請輸入中風相關資訊</p>
+        `;
+        q('#decisionBox').innerHTML = emptyHtml;
+        q('#flowRecommendation').innerHTML = emptyHtml;
+        q('#summaryBox').textContent = '請輸入中風相關資訊';
+        state.headline = '請輸入中風相關資訊';
+        state.scenarioStats = [];
+        return;
+      }
       const recommendationLines = [];
       const scenarioStats = [];
       let headline = '持續評估中';
@@ -1233,7 +1305,10 @@
       if (state.hemorrhagicPath) {
         headline = state.strokeType === 'sah' ? '已分流為 SAH 路徑：不適用 IVT' : state.strokeType === 'sdh' ? '已分流為 SDH 路徑：不適用 IVT' : '已分流為 ICH 路徑：不適用 IVT';
         headlineClass = 'badge class-iii';
-        recommendationLines.push('請切換至「出血性中風處置」分頁：血壓控制（ICH目標SBP 140 mmHg）、逆轉抗凝、NCCT血腫監測、神外與重症照護。');
+        recommendationLines.push('請切換至「出血性中風處置」分頁：完成血壓控制、逆轉抗凝、NCCT 血腫監測、神外與重症照護。');
+        if (state.strokeType === 'ich') recommendationLines.push(`ICH 目標：盡快平穩降壓至 SBP 約 140 mmHg（維持 130–150 mmHg）；ICH score ${Number.isFinite(state.ichScore) ? state.ichScore : '未填'}。`);
+        if (state.strokeType === 'sah') recommendationLines.push(`SAH 重點：未固定動脈瘤前維持 SBP <160–180 mmHg；WFNS ${Number.isFinite(state.wfnsGrade) ? state.wfnsGrade : '未填'}、H&H ${Number.isFinite(state.huntHessGrade) ? state.huntHessGrade : '未填'}、mFisher ${Number.isFinite(state.modifiedFisherGrade) ? state.modifiedFisherGrade : '未填'}。`);
+        if (state.strokeType === 'sdh') recommendationLines.push('SDH 重點：確認血腫厚度、中線偏移與意識變化，及早啟動神經外科評估。');
       } else if (state.standardEligible) {
         headline = '符合標準 IVT 路徑（≤4.5h）';
         headlineClass = 'badge class-i';
@@ -1258,23 +1333,34 @@
         recommendationLines.push('請持續監測、完成病因分類、啟動次級預防與復健安排。');
       }
 
-      if (Number.isFinite(state.sbp) && Number.isFinite(state.dbp) && (state.sbp > 185 || state.dbp > 110)) recommendationLines.push('rtPA 前需先將血壓控制至 <185/110 mmHg。');
-      recommendationLines.push('rtPA / EVT 後 24h 及 EVT post 目標 BP 均維持 <180/105 mmHg。');
-      if (state.evtCandidate && !state.evtTeam && !state.hemorrhagicPath) recommendationLines.push('轉院前請同步完成影像資料、血壓控制與聯絡接收團隊。');
-      if (q('#suspectedPostIvtICh').checked) recommendationLines.push(state.cryo ? '目前已啟動 ICH 反轉資源（含 cryoprecipitate）。' : '目前 ICH 反轉資源不足，需即刻血品支援。');
-      if (state.disablingSymptoms.length > 0 && state.nihssScore <= 5) recommendationLines.push(`雖 NIHSS ≤5，但存在失能症狀：${state.disablingSymptoms.join('、')}。`);
-      if (state.anticoag === 'doac') scenarioStats.push('Taiwan NHIA 2024：DOAC 未增加 bleeding risk vs 無抗凝；仍須檢視最後用藥時間。');
-      if (Number.isFinite(state.age) && state.age > 70) scenarioStats.push('TTT-AIS Taiwan：71–80 歲 low-dose 0.6 mg/kg 可能有較佳風險平衡；>80 歲證據不足。');
-      if (q('#recentStroke1to3m').checked) scenarioStats.push('SITS-EAST：近期中風再 IVT，sICH 與 3 月功能獨立未見顯著差異。');
-      if (q('#ckdEskd').checked) scenarioStats.push('CKD/ESKD：若 aPTT ≤40 sec，IVT 仍可考慮；台灣資料 OR 0.60 改善 6 月結局。');
-      if (q('#activeCancer').checked || q('#severeLiverDisease').checked || q('#leukoaraiosis').checked || q('#fib4High').checked || q('#caaHighRisk').checked || q('#cmb10').checked) {
-        scenarioStats.push('特殊條件需個別權衡：癌症、肝病、WML、FIB-4、CAA、CMB 等均可能提高出血風險。');
+      if (state.hemorrhagicPath) {
+        recommendationLines.push(`抗凝狀態：${state.anticoag === 'warfarin' ? 'Warfarin' : state.anticoag === 'doac' ? 'DOAC' : state.anticoag === 'none' ? '無' : '待補'}；INR ${Number.isFinite(state.inr) ? state.inr : '未填'}；aPTT ${Number.isFinite(state.aptt) ? state.aptt : '未填'}。`);
+        recommendationLines.push(q('#suspectedPostIvtICh').checked
+          ? (state.cryo ? 'rtPA 後疑似 ICH：目前已啟動反轉資源（含 cryoprecipitate）。' : 'rtPA 後疑似 ICH：需立即啟動血品支援與 cryoprecipitate。')
+          : `Cryoprecipitate：${state.cryo ? '可立即取得' : '未確認 / 不可得'}。`);
+        if (state.anticoag === 'warfarin') scenarioStats.push('VKA-related ICH：4F-PCC + Vitamin K 為首選，3 小時內 INR ≤1.2 達成率明顯優於 FFP。');
+        if (q('#suspectedPostIvtICh').checked) scenarioStats.push('rtPA 後 ICH：先停藥、緊急 NCCT/CTA、TXA、cryo 與神外評估。');
+      } else {
+        if (Number.isFinite(state.sbp) && Number.isFinite(state.dbp) && (state.sbp > 185 || state.dbp > 110)) recommendationLines.push('rtPA 前需先將血壓控制至 <185/110 mmHg。');
+        recommendationLines.push('rtPA / EVT 後 24h 及 EVT post 目標 BP 均維持 <180/105 mmHg。');
+        if (state.evtCandidate && !state.evtTeam) recommendationLines.push('轉院前請同步完成影像資料、血壓控制與聯絡接收團隊。');
+        if (state.disablingSymptoms.length > 0 && state.nihssScore <= 5) recommendationLines.push(`雖 NIHSS ≤5，但存在失能症狀：${state.disablingSymptoms.join('、')}。`);
+        if (state.anticoag === 'doac') scenarioStats.push('Taiwan NHIA 2024：DOAC 未增加 bleeding risk vs 無抗凝；仍須檢視最後用藥時間。');
+        if (Number.isFinite(state.age) && state.age > 70) scenarioStats.push('TTT-AIS Taiwan：71–80 歲 low-dose 0.6 mg/kg 可能有較佳風險平衡；>80 歲證據不足。');
+        if (q('#recentStroke1to3m').checked) scenarioStats.push('SITS-EAST：近期中風再 IVT，sICH 與 3 月功能獨立未見顯著差異。');
+        if (q('#ckdEskd').checked) scenarioStats.push('CKD/ESKD：若 aPTT ≤40 sec，IVT 仍可考慮；台灣資料 OR 0.60 改善 6 月結局。');
+        if (q('#activeCancer').checked || q('#severeLiverDisease').checked || q('#leukoaraiosis').checked || q('#fib4High').checked || q('#caaHighRisk').checked || q('#cmb10').checked) {
+          scenarioStats.push('特殊條件需個別權衡：癌症、肝病、WML、FIB-4、CAA、CMB 等均可能提高出血風險。');
+        }
       }
 
       const decisionHtml = `
+        <h3 class="decision-title">臨床決策路徑</h3>
         <div class="inline-list" style="margin-bottom:8px;"><span class="${headlineClass}">${headline}</span></div>
         <div><strong>${timeText}</strong></div>
-        <div class="muted" style="margin-top:6px;">NIHSS ${state.nihssScore}（${state.nihssSeverity}）｜BP ${state.sbp}/${state.dbp}｜Glucose ${state.glucose}｜LVO：${state.lvo === 'yes' ? '是' : state.lvo === 'no' ? '否' : '未知'}</div>
+        <div class="muted" style="margin-top:6px;">${state.hemorrhagicPath
+          ? `BP ${state.sbp}/${state.dbp}｜Glucose ${state.glucose}｜抗凝：${state.anticoag === 'warfarin' ? 'Warfarin' : state.anticoag === 'doac' ? 'DOAC' : state.anticoag === 'none' ? '無' : '待補'}`
+          : `NIHSS ${state.nihssScore}（${state.nihssSeverity}）｜BP ${state.sbp}/${state.dbp}｜Glucose ${state.glucose}｜LVO：${state.lvo === 'yes' ? '是' : state.lvo === 'no' ? '否' : '未知'}`}</div>
         <ul style="margin:10px 0 0 18px;padding:0;">
           ${recommendationLines.map((line) => `<li>${line}</li>`).join('')}
         </ul>
@@ -1282,17 +1368,26 @@
       q('#decisionBox').innerHTML = decisionHtml;
       q('#flowRecommendation').innerHTML = decisionHtml;
 
-      const summaryLines = [
-        `• ${headline}`,
-        `• ${timeText}`,
-        `• 中風分流型態：${state.strokeType === 'ischemic' ? '缺血性（AIS）' : state.strokeType === 'ich' ? '原發性出血性（ICH）' : state.strokeType === 'sah' ? '原發性出血性（SAH）' : state.strokeType === 'sdh' ? '出血性（SDH）' : '待影像分類'}`,
-        `• ${state.strokeType === 'ischemic' ? `NIHSS：${state.nihssScore}（${state.nihssSeverity}）` : `出血分數：ICH ${Number.isFinite(state.ichScore) ? state.ichScore : '未填'}；WFNS ${Number.isFinite(state.wfnsGrade) ? state.wfnsGrade : '未填'}；H&H ${Number.isFinite(state.huntHessGrade) ? state.huntHessGrade : '未填'}；mFisher ${Number.isFinite(state.modifiedFisherGrade) ? state.modifiedFisherGrade : '未填'}`}`,
-        `• 影像：${state.imagingClear === 'yes' ? '已排除 ICH' : state.imagingClear === 'pending' ? '待判讀' : '已有出血'}`,
-        `• IVT 必要條件：${state.requiredLabels.length ? state.requiredLabels.join('；') : '尚未滿足'}`,
-        `• IVT 絕對禁忌：${state.contraLabels.length ? state.contraLabels.join('；') : '目前未見自動帶入之絕對禁忌'}`,
-        `• 特殊情況：${state.specialLabels.length ? state.specialLabels.join('；') : '無'}`,
-        `• 情境統計：${scenarioStats.length ? scenarioStats.join(' ｜ ') : '目前無額外自動展開統計'}`,
-      ];
+      const summaryLines = ['臨床決策路徑', `• ${headline}`, `• ${timeText}`, `• 中風分流型態：${state.strokeType === 'ischemic' ? '缺血性（AIS）' : state.strokeType === 'ich' ? '原發性出血性（ICH）' : state.strokeType === 'sah' ? '原發性出血性（SAH）' : state.strokeType === 'sdh' ? '出血性（SDH）' : '待影像分類'}`];
+      if (state.strokeType === 'ischemic') {
+        summaryLines.push(`• NIHSS：${state.nihssScore}（${state.nihssSeverity}）`);
+        summaryLines.push(`• 影像：${state.imagingClear === 'yes' ? '已排除 ICH' : state.imagingClear === 'pending' ? '待判讀' : '已有出血'}`);
+        summaryLines.push(`• 再灌流評估：LVO ${state.lvo === 'yes' ? '是' : state.lvo === 'no' ? '否' : '未知'}；CTP ${state.ctpAvail ? '可得' : '未確認 / 不可得'}；perfusion mismatch ${state.perfusionMismatch || '未填'}；DWI-FLAIR mismatch ${state.dwiFlairMismatch || '未填'}；EVT 團隊 ${state.evtTeam ? '可立即啟動' : '未確認 / 不可得'}`);
+        summaryLines.push(`• IVT 必要條件：${state.requiredLabels.length ? state.requiredLabels.join('；') : '尚未滿足'}`);
+        summaryLines.push(`• IVT 絕對禁忌：${state.contraLabels.length ? state.contraLabels.join('；') : '目前未見自動帶入之絕對禁忌'}`);
+        summaryLines.push(`• 特殊情況：${state.specialLabels.length ? state.specialLabels.join('；') : '無'}`);
+        summaryLines.push(`• 情境統計：${scenarioStats.length ? scenarioStats.join(' ｜ ') : '目前無額外自動展開統計'}`);
+      } else if (state.hemorrhagicPath) {
+        summaryLines.push(`• 影像：${state.imagingClear === 'pending' ? '待判讀' : '已有出血'}`);
+        if (state.strokeType === 'ich') summaryLines.push(`• ICH score：${Number.isFinite(state.ichScore) ? state.ichScore : '未填'}`);
+        if (state.strokeType === 'sah') summaryLines.push(`• SAH 分數：WFNS ${Number.isFinite(state.wfnsGrade) ? state.wfnsGrade : '未填'}；H&H ${Number.isFinite(state.huntHessGrade) ? state.huntHessGrade : '未填'}；mFisher ${Number.isFinite(state.modifiedFisherGrade) ? state.modifiedFisherGrade : '未填'}`);
+        if (state.strokeType === 'sdh') summaryLines.push('• SDH 重點：請補充血腫厚度、中線偏移與神外評估結果');
+        summaryLines.push(`• 抗凝 / 逆轉：抗凝狀態 ${state.anticoag === 'warfarin' ? 'Warfarin' : state.anticoag === 'doac' ? 'DOAC' : state.anticoag === 'none' ? '無' : '待補'}；INR ${Number.isFinite(state.inr) ? state.inr : '未填'}；aPTT ${Number.isFinite(state.aptt) ? state.aptt : '未填'}；Cryoprecipitate ${state.cryo ? '可得' : '未確認 / 不可得'}`);
+        summaryLines.push(`• rtPA 相關：${q('#suspectedPostIvtICh').checked ? '疑似 rtPA 後 ICH / 新神經惡化' : '目前未見 rtPA 相關出血情境'}`);
+        summaryLines.push(`• 補充重點：${scenarioStats.length ? scenarioStats.join(' ｜ ') : '請完成血壓控制、逆轉抗凝與神外會診'}`);
+      } else {
+        summaryLines.push('• 請先完成影像分類並選擇中風分流型態');
+      }
       q('#summaryBox').textContent = summaryLines.join('\n');
       state.headline = headline;
       state.scenarioStats = scenarioStats;
@@ -1300,6 +1395,16 @@
 
     function updateStatusBoxes(state) {
       const status = q('#ivtStatus');
+      if (!state.strokePath) {
+        status.className = 'ivt-status';
+        status.innerHTML = '<strong>請先選擇中風分流型態</strong><br>輸入影像分類後，系統會自動展開相對應欄位與核對表。';
+        return;
+      }
+      if (state.hemorrhagicPath) {
+        status.className = 'ivt-status';
+        status.innerHTML = '<strong>目前為出血性中風路徑</strong><br>IVT 核對表不適用，請改看出血性中風處置與逆轉治療。';
+        return;
+      }
       if (state.requiredMet && state.contraPresent.length === 0) {
         status.className = 'ivt-status status-good';
         status.innerHTML = '<strong>符合 IVT 適應症</strong><br>所有必要條件已符合，且目前未見自動帶入之絕對禁忌。';
@@ -1328,20 +1433,11 @@
     }
 
     function buildCopySummary(state) {
+      const summary = (q('#summaryBox').textContent || '').trim() || '請輸入中風相關資訊';
       return [
         '急性中風分流摘要',
         `時間：${new Date().toLocaleString('zh-TW', { hour12: false })}`,
-        `中風分流型態：${state.strokeType}`,
-        `${state.strokeType === 'ischemic' ? `NIHSS：${state.nihssScore}（${state.nihssSeverity}）` : `出血分數：ICH ${Number.isFinite(state.ichScore) ? state.ichScore : '未填'}；WFNS ${Number.isFinite(state.wfnsGrade) ? state.wfnsGrade : '未填'}；H&H ${Number.isFinite(state.huntHessGrade) ? state.huntHessGrade : '未填'}；mFisher ${Number.isFinite(state.modifiedFisherGrade) ? state.modifiedFisherGrade : '未填'}`}`,
-        `時間窗：${Number.isFinite(state.time.hours) ? `${state.time.description} ${state.time.hours.toFixed(2)} 小時` : `${state.time.description} / 資料不足`}`,
-        `BP / 血糖：${state.sbp}/${state.dbp} mmHg，Glucose ${state.glucose} mg/dL`,
-        `LVO / EVT：LVO=${state.lvo}，EVT team=${state.evtTeam ? '可得' : '不可得'}`,
-        `主建議：${state.headline}`,
-        `IVT 必要條件：${state.requiredLabels.length ? state.requiredLabels.join('；') : '未完全符合'}`,
-        `IVT 絕對禁忌：${state.contraLabels.length ? state.contraLabels.join('；') : '未自動帶入'}`,
-        `特殊情況：${state.specialLabels.length ? state.specialLabels.join('；') : '無'}`,
-        `相關統計：${state.scenarioStats.length ? state.scenarioStats.join(' ｜ ') : '無'}`,
-        'rtPA / EVT 後 BP 目標：<180/105 mmHg。',
+        summary,
       ].join('\n');
     }
 
@@ -1400,9 +1496,14 @@
           panel.classList.toggle('is-active', active);
         });
       };
+      activateWorkflowPanel = activate;
       buttons.forEach((btn, index) => {
-        btn.addEventListener('click', () => activate(btn.dataset.tabTarget));
+        btn.addEventListener('click', () => {
+          if (btn.disabled) return;
+          activate(btn.dataset.tabTarget);
+        });
         btn.addEventListener('keydown', (event) => {
+          if (btn.disabled) return;
           if (event.key === 'Home') {
             event.preventDefault();
             const firstBtn = buttons[0];

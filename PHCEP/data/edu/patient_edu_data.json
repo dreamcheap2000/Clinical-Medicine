@@ -21,18 +21,33 @@
       ],
       "fastsr": {
         "S": [
-          "輕度缺血性中風（NIHSS ≤5）或高風險 TIA 病人，急性期需評估短期雙抗血小板。"
+          "輕度缺血性中風 / 高風險 TIA：Ticagrelor 雙抗血小板治療重點 此主題適用於 非心因性 、症狀較輕的急性缺血性中風（常見 NIHSS ≤5）或高風險 TIA。",
+          "5% 6.",
+          "6% 缺血性中風 5.",
+          "0% 6.",
+          "3% 重大出血 0.",
+          "4% 0.",
+          "1% 嚴重出血 0.",
+          "5% 0.",
+          "1% 換言之，雙抗血小板可帶來約 1% 左右的絕對缺血事件降低，但同時會增加少量重大出血，因此並非所有輕症患者都適合。",
+          "臨床表現輕，但屬於 真正的缺血事件 而非中風模仿症。",
+          "高風險 TIA 或小中風，尤其是症狀剛發生、復發風險最高的前 24–72 小時。",
+          "不適合長期雙抗；通常應在短期完成後回到單一抗血小板策略。",
+          "臨床上若病人已知對 clopidogrel 反應不佳、需快速且可預測的 P2Y12 抑制，或有特定流程考量，才較常考慮 ticagrelor 方案。",
+          "若已有活動性出血、近期重大出血病史、或影像顯示出血轉化高風險，需改採更保守策略。",
+          "若病人其實是心房顫動等心因性栓塞，重點應轉向抗凝，而不是把雙抗當成長期替代方案。",
+          "臨床結論： Ticagrelor 雙抗可用於選定的輕度 AIS / 高風險 TIA 病人，目標是壓低早期再發，但必須同時評估出血風險與替代方案。"
         ],
         "O": [
-          "THALES：30 天 stroke/death 5.5% vs 6.6%（HR 0.83）。",
-          "缺血性中風 5.0% vs 6.3%；重大出血 0.4% vs 0.1%。"
+          "核心試驗結果：THALES 指標 Ticagrelor + Aspirin Aspirin 單藥 30 天中風或死亡 5."
         ],
         "A": [
-          "ticagrelor+aspirin 可降低早期缺血事件，但出血風險上升。"
+          "Ticagrelor 合併 aspirin 的價值在於降低早期再發缺血事件，但必須和出血風險一起衡量，且最大效益集中在最初數天到 10 天內。",
+          "什麼情境最值得考慮 急性期需要降低早期再發風險，且病灶判斷偏向非心因性血栓機轉。",
+          "和 clopidogrel 雙抗的比較 網絡統合分析顯示，clopidogrel-aspirin 在部分比較中排名更前，也可能和較低功能失能風險相關。"
         ],
         "P": [
-          "建議與 clopidogrel-based DAPT 一起做個別化風險評估。",
-          "優先在最初 10 天聚焦療效與出血監測。"
+          "實務上的三個警語 最大淨效益發生在 治療最初 10 天 ，不應無限制延長雙抗時間。"
         ]
       },
       "prototype": {
@@ -59,62 +74,75 @@
           "ticagrelor",
           "雙抗血小板",
           "openevidence",
-          "輕度缺血性中風（nihss",
+          "高風險",
+          "高風",
+          "風險",
+          "雙抗血小板治療重點",
+          "板治",
+          "治療",
+          "療重",
+          "此主題適用於",
+          "此主",
+          "主題",
+          "題適",
+          "適用",
+          "用於",
+          "非心因性",
+          "非心",
+          "心因",
+          "因性",
+          "症狀較輕的急性缺血性中風（常見",
+          "症狀",
+          "狀較",
+          "較輕",
+          "輕的",
+          "的急",
           "風（",
-          "（n",
-          "ni",
-          "ih",
-          "hs",
-          "ss",
+          "（常",
+          "常見",
+          "nihss",
           "≤5）或高風險",
           "≤5",
           "5）",
           "）或",
           "或高",
-          "高風",
-          "風險",
-          "病人",
-          "急性期需評估短期雙抗血小板",
-          "性期",
-          "期需",
-          "需評",
-          "評估",
-          "估短",
-          "短期",
-          "期雙",
-          "thales：30",
-          "天",
-          "stroke",
-          "death",
-          "5",
           "5%",
-          "vs",
-          "6",
-          "6%（hr",
-          "0",
-          "83）",
+          "6%",
           "缺血性中風",
           "0%",
           "3%",
           "重大出血"
         ],
         "semantic": [
-          "中風",
-          "stroke",
-          "NIHSS",
-          "ticagrelor"
+          "症狀",
+          "患者",
+          "病人",
+          "病史",
+          "不適",
+          "適合",
+          "症",
+          "結果",
+          "評估",
+          "考慮",
+          "分析",
+          "因此",
+          "判斷",
+          "機轉",
+          "相關",
+          "合併",
+          "治療"
         ],
         "fragment": [
           "輕度缺血性中風/TIA：Ticagrelor 雙抗血小板重點",
-          "輕度缺血性中風（NIHSS ≤5）或高風險 TIA 病人，急性期需評估短期雙抗血小板。",
-          "THALES：30 天 stroke/death 5.5% vs 6.6%（HR 0.83）。",
-          "ticagrelor+aspirin 可降低早期缺血事件，但出血風險上升。",
-          "建議與 clopidogrel-based DAPT 一起做個別化風險評估。"
+          "輕度缺血性中風 / 高風險 TIA：Ticagrelor 雙抗血小板治療重點 此主題適用於 非心因性 、症狀較輕的急性缺血性中風（常見 NIHSS ≤5）或高風險 TIA。",
+          "核心試驗結果：THALES 指標 Ticagrelor + Aspirin Aspirin 單藥 30 天中風或死亡 5.",
+          "和 clopidogrel 雙抗的比較 網絡統合分析顯示，clopidogrel-aspirin 在部分比較中排名更前，也可能和較低功能失能風險相關。",
+          "實務上的三個警語 最大淨效益發生在 治療最初 10 天 ，不應無限制延長雙抗時間。"
         ]
       },
       "versions": {
-        "simple_zh": "<h2>輕度缺血性中風/TIA 的 ticagrelor 重點</h2><ul><li>可降低 30 天內再中風或死亡風險。</li><li>同時會增加重大出血風險，需密切監測。</li><li>治療效益多集中在前 10 天。</li></ul><p><strong>參考：</strong>THALES trial、OpenEvidence 摘要。</p>",
-        "professional_zh": "<h2>Ticagrelor-aspirin in minor AIS/high-risk TIA</h2><table><thead><tr><th>Outcome</th><th>Ticagrelor+Aspirin</th><th>Aspirin</th></tr></thead><tbody><tr><td>Stroke/death (30 d)</td><td>5.5%</td><td>6.6%</td></tr><tr><td>Major hemorrhage</td><td>0.4%</td><td>0.1%</td></tr></tbody></table><p>Clinical use should balance early ischemic benefit versus bleeding risk, with strongest net benefit in the first 10 days.</p><p><strong>Source:</strong> OpenEvidence summary of THALES and comparative meta-analysis.</p>",
+        "simple_zh": "<h2>輕度缺血性中風 / 高風險 TIA：Ticagrelor 雙抗血小板治療重點</h2>\n<p>此主題適用於<strong>非心因性</strong>、症狀較輕的急性缺血性中風（常見 NIHSS ≤5）或高風險 TIA。Ticagrelor 合併 aspirin 的價值在於降低早期再發缺血事件，但必須和出血風險一起衡量，且最大效益集中在最初數天到 10 天內。</p>\n<h3>核心試驗結果：THALES</h3>\n<table><thead><tr><th>指標</th><th>Ticagrelor + Aspirin</th><th>Aspirin 單藥</th></tr></thead><tbody>\n<tr><td>30 天中風或死亡</td><td>5.5%</td><td>6.6%</td></tr>\n<tr><td>缺血性中風</td><td>5.0%</td><td>6.3%</td></tr>\n<tr><td>重大出血</td><td>0.4%</td><td>0.1%</td></tr>\n<tr><td>嚴重出血</td><td>0.5%</td><td>0.1%</td></tr>\n</tbody></table>\n<p>換言之，雙抗血小板可帶來約 1% 左右的絕對缺血事件降低，但同時會增加少量重大出血，因此並非所有輕症患者都適合。</p>\n<h3>什麼情境最值得考慮</h3>\n<ul>\n  <li>急性期需要降低早期再發風險，且病灶判斷偏向非心因性血栓機轉。</li>\n  <li>臨床表現輕，但屬於<strong>真正的缺血事件</strong>而非中風模仿症。</li>\n  <li>高風險 TIA 或小中風，尤其是症狀剛發生、復發風險最高的前 24–72 小時。</li>\n  <li>不適合長期雙抗；通常應在短期完成後回到單一抗血小板策略。</li>\n</ul>\n<h3>和 clopidogrel 雙抗的比較</h3>\n<p>網絡統合分析顯示，clopidogrel-aspirin 在部分比較中排名更前，也可能和較低功能失能風險相關。臨床上若病人已知對 clopidogrel 反應不佳、需快速且可預測的 P2Y12 抑制，或有特定流程考量，才較常考慮 ticagrelor 方案。</p>\n<h3>實務上的三個警語</h3>\n<ol>\n  <li>最大淨效益發生在<strong>治療最初 10 天</strong>，不應無限制延長雙抗時間。</li>\n  <li>若已有活動性出血、近期重大出血病史、或影像顯示出血轉化高風險，需改採更保守策略。</li>\n  <li>若病人其實是心房顫動等心因性栓塞，重點應轉向抗凝，而不是把雙抗當成長期替代方案。</li>\n</ol>\n<p><strong>臨床結論：</strong>Ticagrelor 雙抗可用於選定的輕度 AIS / 高風險 TIA 病人，目標是壓低早期再發，但必須同時評估出血風險與替代方案。</p>\n",
+        "professional_zh": "<h2>輕度缺血性中風 / 高風險 TIA：Ticagrelor 雙抗血小板治療重點</h2>\n<p>此主題適用於<strong>非心因性</strong>、症狀較輕的急性缺血性中風（常見 NIHSS ≤5）或高風險 TIA。Ticagrelor 合併 aspirin 的價值在於降低早期再發缺血事件，但必須和出血風險一起衡量，且最大效益集中在最初數天到 10 天內。</p>\n<h3>核心試驗結果：THALES</h3>\n<table><thead><tr><th>指標</th><th>Ticagrelor + Aspirin</th><th>Aspirin 單藥</th></tr></thead><tbody>\n<tr><td>30 天中風或死亡</td><td>5.5%</td><td>6.6%</td></tr>\n<tr><td>缺血性中風</td><td>5.0%</td><td>6.3%</td></tr>\n<tr><td>重大出血</td><td>0.4%</td><td>0.1%</td></tr>\n<tr><td>嚴重出血</td><td>0.5%</td><td>0.1%</td></tr>\n</tbody></table>\n<p>換言之，雙抗血小板可帶來約 1% 左右的絕對缺血事件降低，但同時會增加少量重大出血，因此並非所有輕症患者都適合。</p>\n<h3>什麼情境最值得考慮</h3>\n<ul>\n  <li>急性期需要降低早期再發風險，且病灶判斷偏向非心因性血栓機轉。</li>\n  <li>臨床表現輕，但屬於<strong>真正的缺血事件</strong>而非中風模仿症。</li>\n  <li>高風險 TIA 或小中風，尤其是症狀剛發生、復發風險最高的前 24–72 小時。</li>\n  <li>不適合長期雙抗；通常應在短期完成後回到單一抗血小板策略。</li>\n</ul>\n<h3>和 clopidogrel 雙抗的比較</h3>\n<p>網絡統合分析顯示，clopidogrel-aspirin 在部分比較中排名更前，也可能和較低功能失能風險相關。臨床上若病人已知對 clopidogrel 反應不佳、需快速且可預測的 P2Y12 抑制，或有特定流程考量，才較常考慮 ticagrelor 方案。</p>\n<h3>實務上的三個警語</h3>\n<ol>\n  <li>最大淨效益發生在<strong>治療最初 10 天</strong>，不應無限制延長雙抗時間。</li>\n  <li>若已有活動性出血、近期重大出血病史、或影像顯示出血轉化高風險，需改採更保守策略。</li>\n  <li>若病人其實是心房顫動等心因性栓塞，重點應轉向抗凝，而不是把雙抗當成長期替代方案。</li>\n</ol>\n<p><strong>臨床結論：</strong>Ticagrelor 雙抗可用於選定的輕度 AIS / 高風險 TIA 病人，目標是壓低早期再發，但必須同時評估出血風險與替代方案。</p>\n",
         "english": "<h2>Ticagrelor Dual Antiplatelet: Key Points</h2><ul><li>Reduces early recurrent ischemic events in minor AIS/high-risk TIA.</li><li>Increases major bleeding risk.</li><li>Net benefit is front-loaded in the first 10 days.</li></ul>"
       }
     },
@@ -137,18 +165,26 @@
       ],
       "fastsr": {
         "S": [
-          "早期帕金森病患者擔心 levodopa 後續異動症與劑量快速上升。"
+          "早期帕金森病：降低異動症風險的藥物策略 早期帕金森病治療不只是在「控制當下症狀」，也在於延後後續 levodopa 劑量快速上升與異動症（dyskinesia）的累積風險。",
+          "近期資料顯示，在適當病人中提早加入 amantadine 或 MAO-B inhibitor，可能有助於減少這類長期併發症。",
+          "PREMANDYSK 試驗重點 PREMANDYSK 試驗顯示，早期把 amantadine immediate-release 200 mg/day 加到 levodopa 治療中，18 個月內異動症發生率約從 22% 降到 11%，同時 levodopa 累積加量也較少，差距約 70 mg。",
+          "MAO-B inhibitor 的角色 另一組 3 年頭對頭回溯資料顯示，無論 selegiline 或 rasagiline，都和較少的 levodopa 日增量及較低 dyskinesia score 有關，支持在早期病程中把 MAO-B inhibitor 視為「延緩劑量升高」的策略之一。",
+          "哪些病人特別值得提早布局 年紀較輕、預期病程較長，未來較容易累積 levodopa-induced dyskinesia。",
+          "目前症狀已需要 levodopa，但醫師希望避免短時間內劑量快速上升。",
+          "有運動波動或輕度 OFF time 徵象，希望及早穩定用藥曲線。",
+          "常見副作用與選藥提醒 Amantadine： 可能出現幻覺、周邊水腫、頭暈、口乾；對高齡或認知脆弱病人要更保守。",
+          "Safinamide： 間接比較資料顯示對 OFF time 可能略優於 rasagiline，但是否用於超早期病人仍需看實際症狀與可近性。",
+          "實務處理方式 先確認病人的核心治療目標：當前症狀控制、延後異動症、或減少日後劑量升高。",
+          "定期追蹤幻覺、姿勢性低血壓、水腫、睡眠與認知變化，避免為了延後異動症反而換來更差的整體耐受性。",
+          "臨床結論： 早期帕金森病不一定要等異動症出現才處理；在合適病人中，提早規劃輔助治療，有機會把未來用藥負擔和異動症風險一起壓低。"
         ],
-        "O": [
-          "PREMANDYSK：18 個月異動症 11% vs 22%。",
-          "早期加用 amantadine 可減少 levodopa 劑量上升幅度。"
-        ],
+        "O": [],
         "A": [
-          "早期輔助藥物可能降低運動併發症，但需個別化。"
+          "合併認知、副作用或多重用藥負擔時，則需更仔細選擇藥物。",
+          "若已開始 levodopa，且預期未來需要逐步加量，可考慮早期加入 amantadine 或 MAO-B inhibitor。"
         ],
         "P": [
-          "與神經科共同決策是否加入 amantadine/MAO-B inhibitor。",
-          "規律追蹤異動症、OFF time 與副作用。"
+          "MAO-B inhibitor： 通常較容易長期使用，但仍要留意失眠、藥物交互作用與個體耐受性。"
         ]
       },
       "prototype": {
@@ -174,60 +210,67 @@
           "異動症",
           "amantadine",
           "mao",
-          "b",
           "inhibitor",
           "openevidence",
-          "早期帕金森病患者擔心",
-          "病患",
-          "患者",
-          "者擔",
-          "擔心",
-          "levodopa",
-          "後續異動症與劑量快速上升",
+          "早期帕金森病：降低異動症風險的藥物策略",
+          "：降",
+          "降低",
+          "低異",
+          "症風",
+          "風險",
+          "險的",
+          "早期帕金森病治療不只是在「控制當下症狀」",
+          "病治",
+          "治療",
+          "療不",
+          "不只",
+          "只是",
+          "是在",
+          "在「",
+          "「控",
+          "控制",
+          "制當",
+          "當下",
+          "下症",
+          "症狀",
+          "狀」",
+          "也在於延後後續",
+          "也在",
+          "在於",
+          "於延",
+          "延後",
+          "後後",
           "後續",
-          "續異",
-          "症與",
-          "與劑",
+          "levodopa",
+          "劑量快速上升與異動症（dyskinesia）的累積風險",
           "劑量",
           "量快",
           "快速",
           "速上",
           "上升",
-          "premandysk：18",
-          "個月異動症",
-          "個月",
-          "月異",
-          "11%",
-          "vs",
-          "22%",
-          "早期加用",
-          "期加",
-          "加用",
-          "可減少",
-          "可減",
-          "劑量上升幅度",
-          "量上",
-          "升幅",
-          "幅度",
-          "早期輔助藥物可能降低運動併發症",
-          "期輔",
-          "輔助",
-          "助藥"
+          "升與"
         ],
         "semantic": [
-          "帕金森"
+          "症狀",
+          "病人",
+          "症",
+          "腫",
+          "考慮",
+          "合併",
+          "治療",
+          "藥物",
+          "避免"
         ],
         "fragment": [
           "早期帕金森病：減少異動症的藥物策略",
-          "早期帕金森病患者擔心 levodopa 後續異動症與劑量快速上升。",
-          "早期加用 amantadine 可減少 levodopa 劑量上升幅度。",
-          "早期輔助藥物可能降低運動併發症，但需個別化。",
-          "與神經科共同決策是否加入 amantadine/MAO-B inhibitor。"
+          "PREMANDYSK 試驗重點 PREMANDYSK 試驗顯示，早期把 amantadine immediate-release 200 mg/day 加到 levodopa 治療中，18 個月內異動症發生率約從 22% 降到 11%，同時 levodopa 累積加量也較少，差距約 70 mg。",
+          "若已開始 levodopa，且預期未來需要逐步加量，可考慮早期加入 amantadine 或 MAO-B inhibitor。",
+          "MAO-B inhibitor： 通常較容易長期使用，但仍要留意失眠、藥物交互作用與個體耐受性。"
         ]
       },
       "versions": {
-        "simple_zh": "<h2>早期帕金森病：如何降低異動症風險</h2><ul><li>早期加用 amantadine 可能降低異動症發生率。</li><li>MAO-B 抑制劑可作為減少 levodopa 劑量上升策略。</li><li>需留意幻覺、水腫、頭暈等副作用。</li></ul><p><strong>參考：</strong>PREMANDYSK、OpenEvidence 摘要。</p>",
-        "professional_zh": "<h2>Early PD strategy for dyskinesia prevention</h2><p>Evidence supports considering early adjunctive therapy (amantadine or MAO-B inhibitors) to reduce dyskinesia risk and levodopa dose escalation in selected patients.</p><p><strong>Source:</strong> OpenEvidence synthesis of PREMANDYSK and comparative studies.</p>",
+        "simple_zh": "<h2>早期帕金森病：降低異動症風險的藥物策略</h2>\n<p>早期帕金森病治療不只是在「控制當下症狀」，也在於延後後續 levodopa 劑量快速上升與異動症（dyskinesia）的累積風險。近期資料顯示，在適當病人中提早加入 amantadine 或 MAO-B inhibitor，可能有助於減少這類長期併發症。</p>\n<h3>PREMANDYSK 試驗重點</h3>\n<p>PREMANDYSK 試驗顯示，早期把 amantadine immediate-release 200 mg/day 加到 levodopa 治療中，18 個月內異動症發生率約從 22% 降到 11%，同時 levodopa 累積加量也較少，差距約 70 mg。</p>\n<h3>MAO-B inhibitor 的角色</h3>\n<p>另一組 3 年頭對頭回溯資料顯示，無論 selegiline 或 rasagiline，都和較少的 levodopa 日增量及較低 dyskinesia score 有關，支持在早期病程中把 MAO-B inhibitor 視為「延緩劑量升高」的策略之一。</p>\n<h3>哪些病人特別值得提早布局</h3>\n<ul>\n  <li>年紀較輕、預期病程較長，未來較容易累積 levodopa-induced dyskinesia。</li>\n  <li>目前症狀已需要 levodopa，但醫師希望避免短時間內劑量快速上升。</li>\n  <li>有運動波動或輕度 OFF time 徵象，希望及早穩定用藥曲線。</li>\n  <li>合併認知、副作用或多重用藥負擔時，則需更仔細選擇藥物。</li>\n</ul>\n<h3>常見副作用與選藥提醒</h3>\n<ul>\n  <li><strong>Amantadine：</strong>可能出現幻覺、周邊水腫、頭暈、口乾；對高齡或認知脆弱病人要更保守。</li>\n  <li><strong>MAO-B inhibitor：</strong>通常較容易長期使用，但仍要留意失眠、藥物交互作用與個體耐受性。</li>\n  <li><strong>Safinamide：</strong>間接比較資料顯示對 OFF time 可能略優於 rasagiline，但是否用於超早期病人仍需看實際症狀與可近性。</li>\n</ul>\n<h3>實務處理方式</h3>\n<ol>\n  <li>先確認病人的核心治療目標：當前症狀控制、延後異動症、或減少日後劑量升高。</li>\n  <li>若已開始 levodopa，且預期未來需要逐步加量，可考慮早期加入 amantadine 或 MAO-B inhibitor。</li>\n  <li>定期追蹤幻覺、姿勢性低血壓、水腫、睡眠與認知變化，避免為了延後異動症反而換來更差的整體耐受性。</li>\n</ol>\n<p><strong>臨床結論：</strong>早期帕金森病不一定要等異動症出現才處理；在合適病人中，提早規劃輔助治療，有機會把未來用藥負擔和異動症風險一起壓低。</p>\n",
+        "professional_zh": "<h2>早期帕金森病：降低異動症風險的藥物策略</h2>\n<p>早期帕金森病治療不只是在「控制當下症狀」，也在於延後後續 levodopa 劑量快速上升與異動症（dyskinesia）的累積風險。近期資料顯示，在適當病人中提早加入 amantadine 或 MAO-B inhibitor，可能有助於減少這類長期併發症。</p>\n<h3>PREMANDYSK 試驗重點</h3>\n<p>PREMANDYSK 試驗顯示，早期把 amantadine immediate-release 200 mg/day 加到 levodopa 治療中，18 個月內異動症發生率約從 22% 降到 11%，同時 levodopa 累積加量也較少，差距約 70 mg。</p>\n<h3>MAO-B inhibitor 的角色</h3>\n<p>另一組 3 年頭對頭回溯資料顯示，無論 selegiline 或 rasagiline，都和較少的 levodopa 日增量及較低 dyskinesia score 有關，支持在早期病程中把 MAO-B inhibitor 視為「延緩劑量升高」的策略之一。</p>\n<h3>哪些病人特別值得提早布局</h3>\n<ul>\n  <li>年紀較輕、預期病程較長，未來較容易累積 levodopa-induced dyskinesia。</li>\n  <li>目前症狀已需要 levodopa，但醫師希望避免短時間內劑量快速上升。</li>\n  <li>有運動波動或輕度 OFF time 徵象，希望及早穩定用藥曲線。</li>\n  <li>合併認知、副作用或多重用藥負擔時，則需更仔細選擇藥物。</li>\n</ul>\n<h3>常見副作用與選藥提醒</h3>\n<ul>\n  <li><strong>Amantadine：</strong>可能出現幻覺、周邊水腫、頭暈、口乾；對高齡或認知脆弱病人要更保守。</li>\n  <li><strong>MAO-B inhibitor：</strong>通常較容易長期使用，但仍要留意失眠、藥物交互作用與個體耐受性。</li>\n  <li><strong>Safinamide：</strong>間接比較資料顯示對 OFF time 可能略優於 rasagiline，但是否用於超早期病人仍需看實際症狀與可近性。</li>\n</ul>\n<h3>實務處理方式</h3>\n<ol>\n  <li>先確認病人的核心治療目標：當前症狀控制、延後異動症、或減少日後劑量升高。</li>\n  <li>若已開始 levodopa，且預期未來需要逐步加量，可考慮早期加入 amantadine 或 MAO-B inhibitor。</li>\n  <li>定期追蹤幻覺、姿勢性低血壓、水腫、睡眠與認知變化，避免為了延後異動症反而換來更差的整體耐受性。</li>\n</ol>\n<p><strong>臨床結論：</strong>早期帕金森病不一定要等異動症出現才處理；在合適病人中，提早規劃輔助治療，有機會把未來用藥負擔和異動症風險一起壓低。</p>\n",
         "english": "<h2>Early Parkinson Disease: Dyskinesia Prevention</h2><p>Early add-on strategies may lower dyskinesia risk and slow levodopa escalation, with individualized safety monitoring.</p>"
       }
     },
@@ -250,17 +293,36 @@
       ],
       "fastsr": {
         "S": [
-          "水腦患者常需長期分流，臨床關注可調壓分流閥的效益。"
+          "可調式腦室分流閥（Strata valve）臨床重點 Strata 是可由外部磁性工具非侵入調整的腦室腹腔分流閥，適合需要依臨床變化反覆微調引流壓力的水腦病人。",
+          "其特色在於 五段式 performance level 與內建 anti-siphon 機制，可在過度引流與引流不足之間做更細緻的平衡。",
+          "五段設定與開啟壓力 Performance level 平均開啟壓力 0.",
+          "5 3.",
+          "3 mmHg 1.",
+          "0 5.",
+          "1 mmHg 1.",
+          "5 7.",
+          "7 mmHg 2.",
+          "0 10.",
+          "7 mmHg 2.",
+          "5 13.",
+          "1 mmHg 裝置平均阻力約 2.",
+          "2 ± 1.",
+          "0 mmHg/ml/min，且 anti-siphon 裝置在測試條件下可穩定運作，有助於降低站立時過度引流風險。",
+          "為什麼可調式閥門重要 病人症狀、腦室大小、姿勢相關引流需求可能隨時間變化。",
+          "可調式閥門可在門診根據頭痛、步態、意識、影像與過度引流徵象微調。",
+          "雖然資料多來自觀察性研究，但方向一致支持可調式系統的實務優勢。",
+          "臨床追蹤重點 確認目前 performance level 與調整後症狀是否一致改善。",
+          "若病人出現頭痛、姿勢性不適、硬膜下積液或腦室再擴大，需重新評估是否引流過多或不足。"
         ],
         "O": [
-          "Strata valve 具 5 個壓力等級，可外部磁控調整。",
-          "觀察與統合資料顯示可調式閥門較固定壓力閥有較低修正率。"
+          "可調式與固定壓力閥的結果比較 近期族群資料顯示，可調式閥門（包含 Strata）整體修正率約 14%，低於固定壓力閥的 30%。",
+          "另有統合分析指出，可調式閥門的 revision surgery rate 約 12%，固定閥約 32%；subdural collection 約 9% vs 22%。"
         ],
-        "A": [
-          "可調式分流閥在需要長期動態調整壓力的病人具優勢。"
-        ],
+        "A": [],
         "P": [
-          "術後需規律追蹤臨床症狀與影像，必要時調整 performance level。"
+          "若每次都要靠手術更換固定壓力閥門，修正成本高且風險大。",
+          "必要時以手持工具或影像確認閥門設定，避免設定偏差。",
+          "臨床結論： Strata valve 的價值不只在「可調」，更在於它讓分流治療能跟著病人的病程動態修正，降低不必要再次手術的機會。"
         ]
       },
       "prototype": {
@@ -290,54 +352,70 @@
           "可調壓",
           "調壓",
           "openevidence",
-          "水腦患者常需長期分流",
-          "腦患",
-          "患者",
-          "者常",
-          "常需",
-          "需長",
-          "長期",
-          "期分",
-          "臨床關注可調壓分流閥的效益",
+          "可調式腦室分流閥（strata",
+          "valve）臨床重點",
+          "va",
+          "al",
+          "lv",
+          "ve",
+          "e）",
+          "）臨",
           "臨床",
-          "床關",
-          "關注",
-          "注可",
-          "壓分",
-          "閥的",
-          "的效",
-          "效益",
-          "具",
-          "5",
-          "個壓力等級",
-          "個壓",
-          "壓力",
-          "力等",
-          "等級",
-          "可外部磁控調整",
-          "可外",
+          "床重",
+          "是可由外部磁性工具非侵入調整的腦室腹腔分流閥",
+          "是可",
+          "可由",
+          "由外",
           "外部",
           "部磁",
-          "磁控",
-          "控調",
+          "磁性",
+          "性工",
+          "工具",
+          "具非",
+          "非侵",
+          "侵入",
+          "入調",
           "調整",
-          "觀察與統合資料顯示可調式閥門較固定壓力閥有較低修正率",
-          "觀察",
-          "察與",
-          "與統"
+          "整的",
+          "的腦",
+          "室腹",
+          "腹腔",
+          "腔分",
+          "適合需要依臨床變化反覆微調引流壓力的水腦病人",
+          "適合",
+          "合需",
+          "需要",
+          "要依",
+          "依臨"
         ],
-        "semantic": [],
+        "semantic": [
+          "症狀",
+          "病人",
+          "不適",
+          "適合",
+          "症",
+          "痛",
+          "CT",
+          "結果",
+          "rate",
+          "評估",
+          "分析",
+          "相關",
+          "治療",
+          "手術",
+          "避免",
+          "surgery"
+        ],
         "fragment": [
           "可調式腦室分流閥（Strata）重點",
-          "水腦患者常需長期分流，臨床關注可調壓分流閥的效益。",
-          "Strata valve 具 5 個壓力等級，可外部磁控調整。",
-          "可調式分流閥在需要長期動態調整壓力的病人具優勢。",
-          "術後需規律追蹤臨床症狀與影像，必要時調整 performance level。"
+          "可調式腦室分流閥（Strata valve）臨床重點 Strata 是可由外部磁性工具非侵入調整的腦室腹腔分流閥，適合需要依臨床變化反覆微調引流壓力的水腦病人。",
+          "另有統合分析指出，可調式閥門的 revision surgery rate 約 12%，固定閥約 32%；subdural collection 約 9% vs 22%。",
+          "臨床結論： Strata valve 的價值不只在「可調」，更在於它讓分流治療能跟著病人的病程動態修正，降低不必要再次手術的機會。"
         ]
       },
       "versions": {
-        "simple_zh": "<h2>可調式腦室分流閥（Strata）</h2><ul><li>可非侵入調整 5 個壓力等級。</li><li>含 anti-siphon 設計，降低過度引流風險。</li><li>研究顯示修正手術率可低於固定壓力閥。</li></ul><p><strong>參考：</strong>OpenEvidence（UpToDate 來源彙整）。</p>",
-        "professional_zh": "<h2>Programmable Strata shunt valve</h2><p>The Strata valve offers noninvasive pressure-level adjustment (0.5–2.5) with anti-siphon protection and may reduce revision burden compared with fixed-pressure valves in observational datasets.</p><p><strong>Source:</strong> OpenEvidence synthesis.</p>",
+        "simple_zh": "<h2>可調式腦室分流閥（Strata valve）臨床重點</h2>\n<p>Strata 是可由外部磁性工具非侵入調整的腦室腹腔分流閥，適合需要依臨床變化反覆微調引流壓力的水腦病人。其特色在於<strong>五段式 performance level</strong> 與內建 anti-siphon 機制，可在過度引流與引流不足之間做更細緻的平衡。</p>\n<h3>五段設定與開啟壓力</h3>\n<table><thead><tr><th>Performance level</th><th>平均開啟壓力</th></tr></thead><tbody>\n<tr><td>0.5</td><td>3.3 mmHg</td></tr>\n<tr><td>1.0</td><td>5.1 mmHg</td></tr>\n<tr><td>1.5</td><td>7.7 mmHg</td></tr>\n<tr><td>2.0</td><td>10.7 mmHg</td></tr>\n<tr><td>2.5</td><td>13.1 mmHg</td></tr>\n</tbody></table>\n<p>裝置平均阻力約 2.2 ± 1.0 mmHg/ml/min，且 anti-siphon 裝置在測試條件下可穩定運作，有助於降低站立時過度引流風險。</p>\n<h3>為什麼可調式閥門重要</h3>\n<ul>\n  <li>病人症狀、腦室大小、姿勢相關引流需求可能隨時間變化。</li>\n  <li>若每次都要靠手術更換固定壓力閥門，修正成本高且風險大。</li>\n  <li>可調式閥門可在門診根據頭痛、步態、意識、影像與過度引流徵象微調。</li>\n</ul>\n<h3>可調式與固定壓力閥的結果比較</h3>\n<p>近期族群資料顯示，可調式閥門（包含 Strata）整體修正率約 14%，低於固定壓力閥的 30%。另有統合分析指出，可調式閥門的 revision surgery rate 約 12%，固定閥約 32%；subdural collection 約 9% vs 22%。雖然資料多來自觀察性研究，但方向一致支持可調式系統的實務優勢。</p>\n<h3>臨床追蹤重點</h3>\n<ol>\n  <li>確認目前 performance level 與調整後症狀是否一致改善。</li>\n  <li>必要時以手持工具或影像確認閥門設定，避免設定偏差。</li>\n  <li>若病人出現頭痛、姿勢性不適、硬膜下積液或腦室再擴大，需重新評估是否引流過多或不足。</li>\n</ol>\n<p><strong>臨床結論：</strong>Strata valve 的價值不只在「可調」，更在於它讓分流治療能跟著病人的病程動態修正，降低不必要再次手術的機會。</p>\n",
+        "professional_zh": "<h2>可調式腦室分流閥（Strata valve）臨床重點</h2>\n<p>Strata 是可由外部磁性工具非侵入調整的腦室腹腔分流閥，適合需要依臨床變化反覆微調引流壓力的水腦病人。其特色在於<strong>五段式 performance level</strong> 與內建 anti-siphon 機制，可在過度引流與引流不足之間做更細緻的平衡。</p>\n<h3>五段設定與開啟壓力</h3>\n<table><thead><tr><th>Performance level</th><th>平均開啟壓力</th></tr></thead><tbody>\n<tr><td>0.5</td><td>3.3 mmHg</td></tr>\n<tr><td>1.0</td><td>5.1 mmHg</td></tr>\n<tr><td>1.5</td><td>7.7 mmHg</td></tr>\n<tr><td>2.0</td><td>10.7 mmHg</td></tr>\n<tr><td>2.5</td><td>13.1 mmHg</td></tr>\n</tbody></table>\n<p>裝置平均阻力約 2.2 ± 1.0 mmHg/ml/min，且 anti-siphon 裝置在測試條件下可穩定運作，有助於降低站立時過度引流風險。</p>\n<h3>為什麼可調式閥門重要</h3>\n<ul>\n  <li>病人症狀、腦室大小、姿勢相關引流需求可能隨時間變化。</li>\n  <li>若每次都要靠手術更換固定壓力閥門，修正成本高且風險大。</li>\n  <li>可調式閥門可在門診根據頭痛、步態、意識、影像與過度引流徵象微調。</li>\n</ul>\n<h3>可調式與固定壓力閥的結果比較</h3>\n<p>近期族群資料顯示，可調式閥門（包含 Strata）整體修正率約 14%，低於固定壓力閥的 30%。另有統合分析指出，可調式閥門的 revision surgery rate 約 12%，固定閥約 32%；subdural collection 約 9% vs 22%。雖然資料多來自觀察性研究，但方向一致支持可調式系統的實務優勢。</p>\n<h3>臨床追蹤重點</h3>\n<ol>\n  <li>確認目前 performance level 與調整後症狀是否一致改善。</li>\n  <li>必要時以手持工具或影像確認閥門設定，避免設定偏差。</li>\n  <li>若病人出現頭痛、姿勢性不適、硬膜下積液或腦室再擴大，需重新評估是否引流過多或不足。</li>\n</ol>\n<p><strong>臨床結論：</strong>Strata valve 的價值不只在「可調」，更在於它讓分流治療能跟著病人的病程動態修正，降低不必要再次手術的機會。</p>\n",
         "english": "<h2>Programmable CSF Shunt Valve (Strata)</h2><p>Five-level magnetic adjustability and anti-siphon design support individualized CSF diversion management.</p>"
       }
     },
@@ -360,18 +438,22 @@
       ],
       "fastsr": {
         "S": [
-          "蜘蛛網膜下腔出血病人需同時評估神經狀態與影像出血量。"
+          "WFNS 與 Hunt-Hess 反映 臨床神經學嚴重度 ，Modified Fisher 則反映 影像上的出血量與遲發性腦缺血 / vasospasm 風險 。",
+          "Hunt-Hess：反映臨床表現與手術風險 Grade 1：幾乎無症狀或僅輕微頭痛、輕度頸部僵硬 Grade 2：中重度頭痛、明顯頸部僵硬，除顱神經麻痺外無明顯局灶缺損 Grade 3：嗜睡、混亂，或輕度局灶神經學缺損 Grade 4：昏睡、明顯偏癱 Grade 5：深昏迷、去大腦姿勢 它有助於快速捕捉病人在急診或加護病房的臨床狀態，但同樣不應脫離影像與病因處置單獨使用。",
+          "臨床上如何一起用 先用 WFNS / Hunt-Hess 了解病人此刻的神經學嚴重度與照護強度需求。",
+          "再用 Modified Fisher 估計 vasospasm / DCI 風險，安排監測與後續介入。",
+          "若要和家屬討論預後，應結合年齡、動脈瘤處置時機、水腦、再出血與全身併發症，而不只看單一量表。",
+          "臨床結論： WFNS、Hunt-Hess、Modified Fisher 各自回答不同問題：臨床多重器官照護強度、初始神經嚴重度，以及遲發性腦缺血風險。",
+          "整合使用最實用。"
         ],
-        "O": [
-          "WFNS 依 GCS 與運動缺損分級。",
-          "Modified Fisher 反映 SAH/IVH 對遲發性腦缺血風險。"
-        ],
+        "O": [],
         "A": [
-          "不同分級工具各自反映預後與血管痙攣風險，需併用。"
+          "SAH 嚴重度分級整合：WFNS、Hunt-Hess、Modified Fisher 蛛網膜下腔出血（SAH）評估不能只看單一分數。",
+          "三者合併判讀，比只依賴其中一項更接近 bedside 決策需要。",
+          "WFNS：以 GCS 與 motor deficit 為主 Grade 1：GCS 15，無 motor deficit Grade 2：GCS 13–14，無 motor deficit Grade 3：GCS 13–14，合併 motor deficit Grade 4：GCS 7–12，可有或無 motor deficit Grade 5：GCS 3–6，可有或無 motor deficit 系統性回顧顯示 WFNS 對不良預後通常呈階梯上升趨勢，但不同研究中相鄰級距的辨識度並不完全一致，因此比較適合做整體風險分層，而非單獨決定處置。",
+          "Modified Fisher：抓的是 vasospasm / DCI 風險 Grade 0：無 SAH 或 IVH Grade 1：少量 SAH，無 IVH Grade 2：少量 SAH，合併雙側 IVH Grade 3：厚層 SAH，無雙側 IVH Grade 4：厚層 SAH，合併雙側 IVH 文獻指出， 完全填滿 cistern/fissure 的 thick SAH 與 雙側 IVH 是延遲性腦缺血的重要預測因子，因此 Modified Fisher 對後續 TCD 監測、nimodipine 治療與 DCI 觀察特別有價值。"
         ],
-        "P": [
-          "臨床建議同時記錄 WFNS、Hunt-Hess、Modified Fisher 並動態追蹤。"
-        ]
+        "P": []
       },
       "prototype": {
         "global": [
@@ -395,64 +477,69 @@
           "血管",
           "管痙",
           "痙攣",
-          "蜘蛛網膜下腔出血病人需同時評估神經狀態與影像出血量",
-          "蜘蛛",
-          "蛛網",
-          "網膜",
-          "膜下",
-          "下腔",
-          "腔出",
-          "出血",
-          "血病",
-          "病人",
-          "人需",
-          "需同",
-          "同時",
-          "時評",
-          "評估",
-          "估神",
-          "神經",
-          "經狀",
-          "狀態",
-          "態與",
-          "與影",
-          "影像",
-          "像出",
-          "血量",
-          "依",
-          "gcs",
-          "與運動缺損分級",
-          "與運",
-          "運動",
-          "動缺",
-          "缺損",
-          "損分",
+          "與",
           "反映",
-          "ivh",
-          "對遲發性腦缺血風險",
-          "對遲",
+          "臨床神經學嚴重度",
+          "臨床",
+          "床神",
+          "神經",
+          "經學",
+          "學嚴",
+          "則反映",
+          "則反",
+          "影像上的出血量與遲發性腦缺血",
+          "影像",
+          "像上",
+          "上的",
+          "的出",
+          "出血",
+          "血量",
+          "量與",
+          "與遲",
           "遲發",
           "發性",
           "性腦",
-          "腦缺"
+          "腦缺",
+          "缺血",
+          "vasospasm",
+          "風險",
+          "hess：反映臨床表現與手術風險",
+          "he",
+          "es",
+          "ss",
+          "s：",
+          "：反",
+          "映臨",
+          "床表",
+          "表現",
+          "現與",
+          "與手",
+          "手術",
+          "術風",
+          "grade"
         ],
         "semantic": [
-          "SAH",
-          "WFNS",
-          "Hunt",
-          "Fisher"
+          "症狀",
+          "病人",
+          "適合",
+          "症",
+          "痛",
+          "評估",
+          "因此",
+          "合併",
+          "治療",
+          "手術",
+          "處置"
         ],
         "fragment": [
           "SAH 嚴重度分級：WFNS、Hunt-Hess、Modified Fisher",
-          "蜘蛛網膜下腔出血病人需同時評估神經狀態與影像出血量。",
-          "Modified Fisher 反映 SAH/IVH 對遲發性腦缺血風險。",
-          "不同分級工具各自反映預後與血管痙攣風險，需併用。",
-          "臨床建議同時記錄 WFNS、Hunt-Hess、Modified Fisher 並動態追蹤。"
+          "Hunt-Hess：反映臨床表現與手術風險 Grade 1：幾乎無症狀或僅輕微頭痛、輕度頸部僵硬 Grade 2：中重度頭痛、明顯頸部僵硬，除顱神經麻痺外無明顯局灶缺損 Grade 3：嗜睡、混亂，或輕度局灶神經學缺損 Grade 4：昏睡、明顯偏癱 Grade 5：深昏迷、去大腦姿勢 它有助於快速捕捉病人在急診或加護病房的臨床狀態，但同樣不應脫離影像與病因處置單獨使用。",
+          "WFNS：以 GCS 與 motor deficit 為主 Grade 1：GCS 15，無 motor deficit Grade 2：GCS 13–14，無 motor deficit Grade 3：GCS 13–14，合併 motor deficit Grade 4：GCS 7–12，可有或無 motor deficit Grade 5：GCS 3–6，可有或無 motor deficit 系統性回顧顯示 WFNS 對不良預後通常呈階梯上升趨勢，但不同研究中相鄰級距的辨識度並不完全一致，因此比較適合做整體風險分層，而非單獨決定處置。"
         ]
       },
       "versions": {
-        "simple_zh": "<h2>SAH 分級怎麼看？</h2><ul><li><strong>WFNS：</strong>偏重意識與神經學缺損。</li><li><strong>Hunt-Hess：</strong>偏重臨床嚴重度與手術風險。</li><li><strong>Modified Fisher：</strong>偏重遲發性腦缺血/血管痙攣風險。</li></ul><p>三者建議一起記錄，不可互相取代。</p>",
-        "professional_zh": "<h2>SAH grading integration</h2><p>WFNS and Hunt-Hess capture clinical severity, while modified Fisher grades hemorrhage pattern and vasospasm/DCI risk. Prognostic utility varies across cohorts; integrated interpretation is recommended.</p><p><strong>Source:</strong> OpenEvidence summary.</p>",
+        "simple_zh": "<h2>SAH 嚴重度分級整合：WFNS、Hunt-Hess、Modified Fisher</h2>\n<p>蛛網膜下腔出血（SAH）評估不能只看單一分數。WFNS 與 Hunt-Hess 反映<strong>臨床神經學嚴重度</strong>，Modified Fisher 則反映<strong>影像上的出血量與遲發性腦缺血 / vasospasm 風險</strong>。三者合併判讀，比只依賴其中一項更接近 bedside 決策需要。</p>\n<h3>WFNS：以 GCS 與 motor deficit 為主</h3>\n<ul>\n  <li>Grade 1：GCS 15，無 motor deficit</li>\n  <li>Grade 2：GCS 13–14，無 motor deficit</li>\n  <li>Grade 3：GCS 13–14，合併 motor deficit</li>\n  <li>Grade 4：GCS 7–12，可有或無 motor deficit</li>\n  <li>Grade 5：GCS 3–6，可有或無 motor deficit</li>\n</ul>\n<p>系統性回顧顯示 WFNS 對不良預後通常呈階梯上升趨勢，但不同研究中相鄰級距的辨識度並不完全一致，因此比較適合做整體風險分層，而非單獨決定處置。</p>\n<h3>Hunt-Hess：反映臨床表現與手術風險</h3>\n<ul>\n  <li>Grade 1：幾乎無症狀或僅輕微頭痛、輕度頸部僵硬</li>\n  <li>Grade 2：中重度頭痛、明顯頸部僵硬，除顱神經麻痺外無明顯局灶缺損</li>\n  <li>Grade 3：嗜睡、混亂，或輕度局灶神經學缺損</li>\n  <li>Grade 4：昏睡、明顯偏癱</li>\n  <li>Grade 5：深昏迷、去大腦姿勢</li>\n</ul>\n<p>它有助於快速捕捉病人在急診或加護病房的臨床狀態，但同樣不應脫離影像與病因處置單獨使用。</p>\n<h3>Modified Fisher：抓的是 vasospasm / DCI 風險</h3>\n<ul>\n  <li>Grade 0：無 SAH 或 IVH</li>\n  <li>Grade 1：少量 SAH，無 IVH</li>\n  <li>Grade 2：少量 SAH，合併雙側 IVH</li>\n  <li>Grade 3：厚層 SAH，無雙側 IVH</li>\n  <li>Grade 4：厚層 SAH，合併雙側 IVH</li>\n</ul>\n<p>文獻指出，<strong>完全填滿 cistern/fissure 的 thick SAH</strong> 與<strong>雙側 IVH</strong> 是延遲性腦缺血的重要預測因子，因此 Modified Fisher 對後續 TCD 監測、nimodipine 治療與 DCI 觀察特別有價值。</p>\n<h3>臨床上如何一起用</h3>\n<ol>\n  <li>先用 WFNS / Hunt-Hess 了解病人此刻的神經學嚴重度與照護強度需求。</li>\n  <li>再用 Modified Fisher 估計 vasospasm / DCI 風險，安排監測與後續介入。</li>\n  <li>若要和家屬討論預後，應結合年齡、動脈瘤處置時機、水腦、再出血與全身併發症，而不只看單一量表。</li>\n</ol>\n<p><strong>臨床結論：</strong>WFNS、Hunt-Hess、Modified Fisher 各自回答不同問題：臨床多重器官照護強度、初始神經嚴重度，以及遲發性腦缺血風險。整合使用最實用。</p>\n",
+        "professional_zh": "<h2>SAH 嚴重度分級整合：WFNS、Hunt-Hess、Modified Fisher</h2>\n<p>蛛網膜下腔出血（SAH）評估不能只看單一分數。WFNS 與 Hunt-Hess 反映<strong>臨床神經學嚴重度</strong>，Modified Fisher 則反映<strong>影像上的出血量與遲發性腦缺血 / vasospasm 風險</strong>。三者合併判讀，比只依賴其中一項更接近 bedside 決策需要。</p>\n<h3>WFNS：以 GCS 與 motor deficit 為主</h3>\n<ul>\n  <li>Grade 1：GCS 15，無 motor deficit</li>\n  <li>Grade 2：GCS 13–14，無 motor deficit</li>\n  <li>Grade 3：GCS 13–14，合併 motor deficit</li>\n  <li>Grade 4：GCS 7–12，可有或無 motor deficit</li>\n  <li>Grade 5：GCS 3–6，可有或無 motor deficit</li>\n</ul>\n<p>系統性回顧顯示 WFNS 對不良預後通常呈階梯上升趨勢，但不同研究中相鄰級距的辨識度並不完全一致，因此比較適合做整體風險分層，而非單獨決定處置。</p>\n<h3>Hunt-Hess：反映臨床表現與手術風險</h3>\n<ul>\n  <li>Grade 1：幾乎無症狀或僅輕微頭痛、輕度頸部僵硬</li>\n  <li>Grade 2：中重度頭痛、明顯頸部僵硬，除顱神經麻痺外無明顯局灶缺損</li>\n  <li>Grade 3：嗜睡、混亂，或輕度局灶神經學缺損</li>\n  <li>Grade 4：昏睡、明顯偏癱</li>\n  <li>Grade 5：深昏迷、去大腦姿勢</li>\n</ul>\n<p>它有助於快速捕捉病人在急診或加護病房的臨床狀態，但同樣不應脫離影像與病因處置單獨使用。</p>\n<h3>Modified Fisher：抓的是 vasospasm / DCI 風險</h3>\n<ul>\n  <li>Grade 0：無 SAH 或 IVH</li>\n  <li>Grade 1：少量 SAH，無 IVH</li>\n  <li>Grade 2：少量 SAH，合併雙側 IVH</li>\n  <li>Grade 3：厚層 SAH，無雙側 IVH</li>\n  <li>Grade 4：厚層 SAH，合併雙側 IVH</li>\n</ul>\n<p>文獻指出，<strong>完全填滿 cistern/fissure 的 thick SAH</strong> 與<strong>雙側 IVH</strong> 是延遲性腦缺血的重要預測因子，因此 Modified Fisher 對後續 TCD 監測、nimodipine 治療與 DCI 觀察特別有價值。</p>\n<h3>臨床上如何一起用</h3>\n<ol>\n  <li>先用 WFNS / Hunt-Hess 了解病人此刻的神經學嚴重度與照護強度需求。</li>\n  <li>再用 Modified Fisher 估計 vasospasm / DCI 風險，安排監測與後續介入。</li>\n  <li>若要和家屬討論預後，應結合年齡、動脈瘤處置時機、水腦、再出血與全身併發症，而不只看單一量表。</li>\n</ol>\n<p><strong>臨床結論：</strong>WFNS、Hunt-Hess、Modified Fisher 各自回答不同問題：臨床多重器官照護強度、初始神經嚴重度，以及遲發性腦缺血風險。整合使用最實用。</p>\n",
         "english": "<h2>SAH Grading Systems</h2><p>Use WFNS, Hunt-Hess, and modified Fisher together for bedside severity and DCI-risk stratification.</p>"
       }
     },
@@ -624,17 +711,29 @@
       ],
       "fastsr": {
         "S": [
-          "臨床需確認 non-RAPID 灌流軟體是否可用於延長時間窗分流。"
+          "EXTEND 試驗奠定的門檻 EXTEND 針對發病後 4.",
+          "2 Mismatch volume > 10 mL Ischemic core < 70 mL 低灌注區以 Tmax > 6 秒界定 這些條件的臨床重點在於：要有足夠可救腦組織，但核心梗塞不能已經太大。",
+          "TASTE 試驗告訴我們：non-RAPID 並非不可行 TASTE 在多數研究中心使用 MIStar，而非 RAPID。",
+          "其核心定義改以 Delay Time >3 秒對應 Tmax >6 秒，並以相對 CBF <30% 定義核心，另外採用 mismatch ratio >1.",
+          "8、mismatch volume >15 mL。",
+          "這說明臨床上可用非 RAPID 平台，但門檻必須和所依據的試驗一起被「整套」驗證，而不能只靠肉眼看 perfusion map。",
+          "哪些條件一定要有 Automated post-processing： 不能只靠視覺判讀。",
+          "ECASS-4 使用非自動化方式並未顯示同等療效。",
+          "標準化參數： 必須清楚定義 core、penumbra、mismatch，且門檻固定。",
+          "院內一致性： 影像醫師、神經科、急診與介入團隊對同一套閾值有共同語言。",
+          "臨床怎麼用最安全 若院內已建立 non-RAPID 平台與固定門檻，可納入延長時間窗流程。",
+          "臨床結論： non-RAPID 軟體可作為延長時間窗 IVT 分流工具，但關鍵在於自動化、門檻一致、流程夠快，而不是軟體名稱本身。"
         ],
         "O": [
-          "EXTEND 條件：mismatch ratio>1.2、mismatch volume>10 mL、core<70 mL。",
-          "重點為自動化後處理與可重現門檻，而非限定特定品牌。"
+          "5–9 小時的缺血性中風病人，使用 CTP 或 MRI perfusion-diffusion 篩選，核心條件包括： Mismatch ratio > 1."
         ],
         "A": [
-          "只要門檻對齊試驗證據，non-RAPID 可作為可行分流工具。"
+          "若軟體或門檻尚未標準化，不應以「大概看起來有 penumbra」替代正式自動分析。",
+          "影像條件符合只是第一步，仍需合併年齡、出血風險、功能基線與共享決策。"
         ],
         "P": [
-          "流程需預設門檻與<5分鐘判讀目標，避免延誤再灌流。"
+          "延長時間窗 IVT：non-RAPID 灌流軟體是否可用 結論是 可以 ，但前提不是「換一套品牌」而已，而是這套軟體必須能做到和臨床試驗一致的 自動化後處理 、可重現的核心 / penumbra 門檻，以及不延誤治療的判讀速度。",
+          "處理速度： 理想上數分鐘內產出結果，避免治療延遲抵銷影像選案的好處。"
         ]
       },
       "prototype": {
@@ -665,57 +764,62 @@
           "extend",
           "mismatch",
           "ais",
-          "臨床需確認",
-          "臨床",
-          "床需",
-          "需確",
-          "確認",
-          "灌流軟體是否可用於延長時間窗分流",
-          "體是",
-          "是否",
-          "否可",
-          "可用",
-          "用於",
-          "於延",
-          "窗分",
-          "條件：mismatch",
-          "條件",
-          "件：",
-          "：m",
-          "mi",
-          "is",
-          "sm",
-          "ma",
-          "at",
-          "tc",
-          "ch",
-          "ratio",
-          "1",
-          "2",
+          "試驗奠定的門檻",
+          "試驗",
+          "驗奠",
+          "奠定",
+          "定的",
+          "的門",
+          "針對發病後",
+          "針對",
+          "對發",
+          "發病",
+          "病後",
           "volume",
           "10",
           "ml",
+          "ischemic",
           "core",
           "70",
-          "重點為自動化後處理與可重現門檻",
-          "重點"
+          "低灌注區以",
+          "低灌",
+          "灌注",
+          "注區",
+          "區以",
+          "tmax",
+          "秒界定",
+          "秒界",
+          "界定",
+          "這些條件的臨床重點在於：要有足夠可救腦組織",
+          "這些",
+          "些條",
+          "條件",
+          "件的",
+          "的臨",
+          "臨床",
+          "床重"
         ],
         "semantic": [
-          "中風",
-          "RAPID",
-          "mismatch"
+          "病人",
+          "MRI",
+          "CT",
+          "結果",
+          "分析",
+          "合併",
+          "治療",
+          "避免"
         ],
         "fragment": [
           "延長時間窗中風分流：non-RAPID 灌流軟體門檻",
-          "臨床需確認 non-RAPID 灌流軟體是否可用於延長時間窗分流。",
-          "EXTEND 條件：mismatch ratio>1.2、mismatch volume>10 mL、core<70 mL。",
-          "只要門檻對齊試驗證據，non-RAPID 可作為可行分流工具。",
-          "流程需預設門檻與<5分鐘判讀目標，避免延誤再灌流。"
+          "2 Mismatch volume > 10 mL Ischemic core < 70 mL 低灌注區以 Tmax > 6 秒界定 這些條件的臨床重點在於：要有足夠可救腦組織，但核心梗塞不能已經太大。",
+          "5–9 小時的缺血性中風病人，使用 CTP 或 MRI perfusion-diffusion 篩選，核心條件包括： Mismatch ratio > 1.",
+          "若軟體或門檻尚未標準化，不應以「大概看起來有 penumbra」替代正式自動分析。",
+          "延長時間窗 IVT：non-RAPID 灌流軟體是否可用 結論是 可以 ，但前提不是「換一套品牌」而已，而是這套軟體必須能做到和臨床試驗一致的 自動化後處理 、可重現的核心 / penumbra 門檻，以及不延誤治療的判讀速度。"
         ]
       },
       "versions": {
-        "simple_zh": "<h2>non-RAPID 灌流軟體可否用在延長時間窗？</h2><p>可以，但必須具備<strong>自動化後處理</strong>與<strong>對齊試驗的標準門檻</strong>。</p><ul><li>Mismatch ratio &gt; 1.2</li><li>Mismatch volume &gt; 10 mL</li><li>Core volume &lt; 70 mL</li></ul><p><strong>參考：</strong>EXTEND/TASTE 試驗與 OpenEvidence 摘要。</p>",
-        "professional_zh": "<h2>Non-RAPID perfusion triage</h2><p>Extended-window thrombolysis selection may use non-RAPID platforms when automated postprocessing and validated threshold criteria are implemented consistently.</p>",
+        "simple_zh": "<h2>延長時間窗 IVT：non-RAPID 灌流軟體是否可用</h2>\n<p>結論是<strong>可以</strong>，但前提不是「換一套品牌」而已，而是這套軟體必須能做到和臨床試驗一致的<strong>自動化後處理</strong>、可重現的核心 / penumbra 門檻，以及不延誤治療的判讀速度。</p>\n<h3>EXTEND 試驗奠定的門檻</h3>\n<p>EXTEND 針對發病後 4.5–9 小時的缺血性中風病人，使用 CTP 或 MRI perfusion-diffusion 篩選，核心條件包括：</p>\n<ul>\n  <li>Mismatch ratio &gt; 1.2</li>\n  <li>Mismatch volume &gt; 10 mL</li>\n  <li>Ischemic core &lt; 70 mL</li>\n  <li>低灌注區以 Tmax &gt; 6 秒界定</li>\n</ul>\n<p>這些條件的臨床重點在於：要有足夠可救腦組織，但核心梗塞不能已經太大。</p>\n<h3>TASTE 試驗告訴我們：non-RAPID 並非不可行</h3>\n<p>TASTE 在多數研究中心使用 MIStar，而非 RAPID。其核心定義改以 Delay Time &gt;3 秒對應 Tmax &gt;6 秒，並以相對 CBF &lt;30% 定義核心，另外採用 mismatch ratio &gt;1.8、mismatch volume &gt;15 mL。這說明臨床上可用非 RAPID 平台，但門檻必須和所依據的試驗一起被「整套」驗證，而不能只靠肉眼看 perfusion map。</p>\n<h3>哪些條件一定要有</h3>\n<ol>\n  <li><strong>Automated post-processing：</strong>不能只靠視覺判讀。ECASS-4 使用非自動化方式並未顯示同等療效。</li>\n  <li><strong>標準化參數：</strong>必須清楚定義 core、penumbra、mismatch，且門檻固定。</li>\n  <li><strong>處理速度：</strong>理想上數分鐘內產出結果，避免治療延遲抵銷影像選案的好處。</li>\n  <li><strong>院內一致性：</strong>影像醫師、神經科、急診與介入團隊對同一套閾值有共同語言。</li>\n</ol>\n<h3>臨床怎麼用最安全</h3>\n<ul>\n  <li>若院內已建立 non-RAPID 平台與固定門檻，可納入延長時間窗流程。</li>\n  <li>若軟體或門檻尚未標準化，不應以「大概看起來有 penumbra」替代正式自動分析。</li>\n  <li>影像條件符合只是第一步，仍需合併年齡、出血風險、功能基線與共享決策。</li>\n</ul>\n<p><strong>臨床結論：</strong>non-RAPID 軟體可作為延長時間窗 IVT 分流工具，但關鍵在於自動化、門檻一致、流程夠快，而不是軟體名稱本身。</p>\n",
+        "professional_zh": "<h2>延長時間窗 IVT：non-RAPID 灌流軟體是否可用</h2>\n<p>結論是<strong>可以</strong>，但前提不是「換一套品牌」而已，而是這套軟體必須能做到和臨床試驗一致的<strong>自動化後處理</strong>、可重現的核心 / penumbra 門檻，以及不延誤治療的判讀速度。</p>\n<h3>EXTEND 試驗奠定的門檻</h3>\n<p>EXTEND 針對發病後 4.5–9 小時的缺血性中風病人，使用 CTP 或 MRI perfusion-diffusion 篩選，核心條件包括：</p>\n<ul>\n  <li>Mismatch ratio &gt; 1.2</li>\n  <li>Mismatch volume &gt; 10 mL</li>\n  <li>Ischemic core &lt; 70 mL</li>\n  <li>低灌注區以 Tmax &gt; 6 秒界定</li>\n</ul>\n<p>這些條件的臨床重點在於：要有足夠可救腦組織，但核心梗塞不能已經太大。</p>\n<h3>TASTE 試驗告訴我們：non-RAPID 並非不可行</h3>\n<p>TASTE 在多數研究中心使用 MIStar，而非 RAPID。其核心定義改以 Delay Time &gt;3 秒對應 Tmax &gt;6 秒，並以相對 CBF &lt;30% 定義核心，另外採用 mismatch ratio &gt;1.8、mismatch volume &gt;15 mL。這說明臨床上可用非 RAPID 平台，但門檻必須和所依據的試驗一起被「整套」驗證，而不能只靠肉眼看 perfusion map。</p>\n<h3>哪些條件一定要有</h3>\n<ol>\n  <li><strong>Automated post-processing：</strong>不能只靠視覺判讀。ECASS-4 使用非自動化方式並未顯示同等療效。</li>\n  <li><strong>標準化參數：</strong>必須清楚定義 core、penumbra、mismatch，且門檻固定。</li>\n  <li><strong>處理速度：</strong>理想上數分鐘內產出結果，避免治療延遲抵銷影像選案的好處。</li>\n  <li><strong>院內一致性：</strong>影像醫師、神經科、急診與介入團隊對同一套閾值有共同語言。</li>\n</ol>\n<h3>臨床怎麼用最安全</h3>\n<ul>\n  <li>若院內已建立 non-RAPID 平台與固定門檻，可納入延長時間窗流程。</li>\n  <li>若軟體或門檻尚未標準化，不應以「大概看起來有 penumbra」替代正式自動分析。</li>\n  <li>影像條件符合只是第一步，仍需合併年齡、出血風險、功能基線與共享決策。</li>\n</ul>\n<p><strong>臨床結論：</strong>non-RAPID 軟體可作為延長時間窗 IVT 分流工具，但關鍵在於自動化、門檻一致、流程夠快，而不是軟體名稱本身。</p>\n",
         "english": "<h2>Non-RAPID Perfusion Selection</h2><p>Use validated automated thresholds rather than brand-specific requirements.</p>"
       }
     },
@@ -738,18 +842,31 @@
       ],
       "fastsr": {
         "S": [
-          "出血性中風病人常需快速判斷是否外科介入。"
+          "小腦出血是最明確的手術適應症，幕上出血則偏向選擇性微創手術與個案化決策。",
+          "最強適應症：小腦出血 直徑 >3 cm 或體積 >15 mL 的小腦血腫，若合併腦幹壓迫、阻塞性水腦或神經惡化，應立即神經外科評估。",
+          "若已出現腦室受壓、水腦或意識惡化，等待觀察通常風險更高。",
+          "幕上 ICH：哪些人偏向 MIS 血腫體積約 >20–30 mL GCS 約 5–12 分 葉狀（lobar）位置，證據通常優於深部出血 能在 24 小時內完成早期介入 目前資料支持 MIS 可望降低死亡率，功能預後也可能改善，但證據仍屬中等品質，因此適合由具經驗團隊根據病人整體條件選案。",
+          "MIS 不可得，但屬淺層葉狀血腫、距皮質表面近、具可逆壓迫效應時。",
+          "小腦血腫伴腦幹壓迫或阻塞性水腦。",
+          "哪些情境手術效益差 深部 ICH（視丘、腦橋）多半不適合常規開顱清除。",
+          "腦幹 ICH 一般缺乏可證實的外科獲益。",
+          "Intra-axial / parenchymal tumor 屬高風險出血修飾因子，遇到腦實質腫瘤時要優先把它當作「可能次發性出血」來處理。",
+          "Pituitary tumor 的出血風險更高，若病人影像或病史提示 pituitary apoplexy，更要避免把它誤認成一般 AIS 後直接走 rtPA 流程。",
+          "同步處理血壓、抗凝逆轉、呼吸道與重症監護，不要把手術評估和內科穩定化分開思考。"
         ],
         "O": [
-          "小腦出血>3 cm 或>15 mL 且有腦幹壓迫/水腦，外科效益最明確。",
-          "幕上 ICH 在特定條件下可考慮 MIS；深部/腦幹通常效益有限。"
+          "臨床決策順序 先用 NCCT 確認出血位置、體積與是否壓迫腦室 / 腦幹。",
+          "必要時以 CTA / MRI 追查次發性原因：動脈瘤、AVM、腫瘤。"
         ],
         "A": [
-          "外科效益依部位、體積、意識狀態與手術時機而變。",
-          "腦實質腫瘤與 pituitary tumor 伴較高出血風險，需獨立標示高風險。"
+          "ICH 外科處置與腫瘤相關出血風險 ICH 是否需要手術，不是單看「有沒有血腫」，而是要同時評估 位置、體積、神經惡化、腦幹壓迫、水腦 與是否存在腫瘤等次發性出血因子。",
+          "什麼時候仍要考慮開顱 出現腦疝脫或快速惡化，需立即減壓。",
+          "腫瘤相關出血風險 Extra-axial tumor （如 meningioma）出血風險相對較低，並不等於一律不能再灌流，但仍要個別判斷。",
+          "臨床結論： 小腦出血合併壓迫效應最應積極手術；幕上 ICH 偏向精準選案的 MIS；若合併腦實質或 pituitary tumor，應把腫瘤相關出血風險明確納入分流。"
         ],
         "P": [
-          "流程需將 ICH 與 SAH 分流，並在高風險腫瘤情境下優先神外評估。"
+          "這類病人外科清除常屬救命處置，與單純保守治療相比，存活機會較佳。",
+          "GCS 極低、雙側瞳孔固定散大時，整體預後很差，需和家屬充分討論治療目標。"
         ]
       },
       "prototype": {
@@ -779,59 +896,203 @@
           "腦腫瘤",
           "腦腫",
           "出血風險",
-          "出血性中風病人常需快速判斷是否外科介入",
-          "血性",
-          "性中",
-          "中風",
-          "風病",
-          "病人",
-          "人常",
-          "常需",
-          "需快",
-          "快速",
-          "速判",
-          "判斷",
-          "斷是",
-          "是否",
-          "否外",
-          "科介",
-          "介入",
-          "3",
-          "cm",
-          "或",
-          "15",
-          "ml",
-          "且有腦幹壓迫",
-          "且有",
-          "有腦",
-          "腦幹",
-          "幹壓",
-          "壓迫",
-          "水腦",
-          "外科效益最明確",
-          "科效",
-          "效益",
-          "益最",
+          "小腦出血是最明確的手術適應症",
+          "血是",
+          "是最",
           "最明",
-          "明確"
+          "明確",
+          "確的",
+          "的手",
+          "術適",
+          "適應",
+          "應症",
+          "幕上出血則偏向選擇性微創手術與個案化決策",
+          "幕上",
+          "上出",
+          "血則",
+          "則偏",
+          "偏向",
+          "向選",
+          "選擇",
+          "擇性",
+          "性微",
+          "術與",
+          "與個",
+          "個案",
+          "案化",
+          "化決",
+          "決策",
+          "最強適應症：小腦出血",
+          "最強",
+          "強適",
+          "症：",
+          "：小",
+          "直徑",
+          ">3",
+          "cm",
+          "或體積"
         ],
         "semantic": [
-          "中風",
-          "ICH",
-          "SAH"
+          "病人",
+          "病史",
+          "不適",
+          "適應症",
+          "適合",
+          "症",
+          "腫",
+          "MRI",
+          "CT",
+          "評估",
+          "考慮",
+          "因此",
+          "判斷",
+          "原因",
+          "相關",
+          "合併",
+          "治療",
+          "手術",
+          "處置",
+          "避免",
+          "surgery"
         ],
         "fragment": [
           "ICH 外科處置與腫瘤相關出血風險",
-          "出血性中風病人常需快速判斷是否外科介入。",
-          "小腦出血>3 cm 或>15 mL 且有腦幹壓迫/水腦，外科效益最明確。",
-          "腦實質腫瘤與 pituitary tumor 伴較高出血風險，需獨立標示高風險。",
-          "流程需將 ICH 與 SAH 分流，並在高風險腫瘤情境下優先神外評估。"
+          "幕上 ICH：哪些人偏向 MIS 血腫體積約 >20–30 mL GCS 約 5–12 分 葉狀（lobar）位置，證據通常優於深部出血 能在 24 小時內完成早期介入 目前資料支持 MIS 可望降低死亡率，功能預後也可能改善，但證據仍屬中等品質，因此適合由具經驗團隊根據病人整體條件選案。",
+          "臨床決策順序 先用 NCCT 確認出血位置、體積與是否壓迫腦室 / 腦幹。",
+          "ICH 外科處置與腫瘤相關出血風險 ICH 是否需要手術，不是單看「有沒有血腫」，而是要同時評估 位置、體積、神經惡化、腦幹壓迫、水腦 與是否存在腫瘤等次發性出血因子。",
+          "GCS 極低、雙側瞳孔固定散大時，整體預後很差，需和家屬充分討論治療目標。"
         ]
       },
       "versions": {
-        "simple_zh": "<h2>ICH 手術何時考慮？</h2><ul><li><strong>最強適應症：</strong>大體積小腦出血合併腦幹壓迫或水腦。</li><li><strong>幕上 ICH：</strong>特定條件可考慮微創手術（MIS）。</li><li><strong>深部/腦幹 ICH：</strong>多數情況手術效益有限。</li><li><strong>腫瘤提醒：</strong>腦實質腫瘤與 pituitary tumor 出血風險較高，需獨立高風險評估。</li></ul><p><strong>參考：</strong>JAMA/JAMA Neurol 研究與 OpenEvidence 摘要。</p>",
-        "professional_zh": "<h2>Surgical indications in ICH and tumor-related hemorrhage risk</h2><p>Cerebellar hemorrhage with brainstem compression or hydrocephalus has the clearest surgical benefit. Supratentorial ICH may benefit from selected MIS strategies. Intra-axial and pituitary tumors should be treated as high-risk hemorrhagic modifiers in triage.</p>",
+        "simple_zh": "<h2>ICH 外科處置與腫瘤相關出血風險</h2>\n<p>ICH 是否需要手術，不是單看「有沒有血腫」，而是要同時評估<strong>位置、體積、神經惡化、腦幹壓迫、水腦</strong>與是否存在腫瘤等次發性出血因子。小腦出血是最明確的手術適應症，幕上出血則偏向選擇性微創手術與個案化決策。</p>\n<h3>最強適應症：小腦出血</h3>\n<ul>\n  <li>直徑 &gt;3 cm 或體積 &gt;15 mL 的小腦血腫，若合併腦幹壓迫、阻塞性水腦或神經惡化，應立即神經外科評估。</li>\n  <li>這類病人外科清除常屬救命處置，與單純保守治療相比，存活機會較佳。</li>\n  <li>若已出現腦室受壓、水腦或意識惡化，等待觀察通常風險更高。</li>\n</ul>\n<h3>幕上 ICH：哪些人偏向 MIS</h3>\n<ul>\n  <li>血腫體積約 &gt;20–30 mL</li>\n  <li>GCS 約 5–12 分</li>\n  <li>葉狀（lobar）位置，證據通常優於深部出血</li>\n  <li>能在 24 小時內完成早期介入</li>\n</ul>\n<p>目前資料支持 MIS 可望降低死亡率，功能預後也可能改善，但證據仍屬中等品質，因此適合由具經驗團隊根據病人整體條件選案。</p>\n<h3>什麼時候仍要考慮開顱</h3>\n<ul>\n  <li>出現腦疝脫或快速惡化，需立即減壓。</li>\n  <li>MIS 不可得，但屬淺層葉狀血腫、距皮質表面近、具可逆壓迫效應時。</li>\n  <li>小腦血腫伴腦幹壓迫或阻塞性水腦。</li>\n</ul>\n<h3>哪些情境手術效益差</h3>\n<ul>\n  <li>深部 ICH（視丘、腦橋）多半不適合常規開顱清除。</li>\n  <li>GCS 極低、雙側瞳孔固定散大時，整體預後很差，需和家屬充分討論治療目標。</li>\n  <li>腦幹 ICH 一般缺乏可證實的外科獲益。</li>\n</ul>\n<h3>腫瘤相關出血風險</h3>\n<ul>\n  <li><strong>Extra-axial tumor</strong>（如 meningioma）出血風險相對較低，並不等於一律不能再灌流，但仍要個別判斷。</li>\n  <li><strong>Intra-axial / parenchymal tumor</strong> 屬高風險出血修飾因子，遇到腦實質腫瘤時要優先把它當作「可能次發性出血」來處理。</li>\n  <li><strong>Pituitary tumor</strong> 的出血風險更高，若病人影像或病史提示 pituitary apoplexy，更要避免把它誤認成一般 AIS 後直接走 rtPA 流程。</li>\n</ul>\n<h3>臨床決策順序</h3>\n<ol>\n  <li>先用 NCCT 確認出血位置、體積與是否壓迫腦室 / 腦幹。</li>\n  <li>必要時以 CTA / MRI 追查次發性原因：動脈瘤、AVM、腫瘤。</li>\n  <li>同步處理血壓、抗凝逆轉、呼吸道與重症監護，不要把手術評估和內科穩定化分開思考。</li>\n</ol>\n<p><strong>臨床結論：</strong>小腦出血合併壓迫效應最應積極手術；幕上 ICH 偏向精準選案的 MIS；若合併腦實質或 pituitary tumor，應把腫瘤相關出血風險明確納入分流。</p>\n",
+        "professional_zh": "<h2>ICH 外科處置與腫瘤相關出血風險</h2>\n<p>ICH 是否需要手術，不是單看「有沒有血腫」，而是要同時評估<strong>位置、體積、神經惡化、腦幹壓迫、水腦</strong>與是否存在腫瘤等次發性出血因子。小腦出血是最明確的手術適應症，幕上出血則偏向選擇性微創手術與個案化決策。</p>\n<h3>最強適應症：小腦出血</h3>\n<ul>\n  <li>直徑 &gt;3 cm 或體積 &gt;15 mL 的小腦血腫，若合併腦幹壓迫、阻塞性水腦或神經惡化，應立即神經外科評估。</li>\n  <li>這類病人外科清除常屬救命處置，與單純保守治療相比，存活機會較佳。</li>\n  <li>若已出現腦室受壓、水腦或意識惡化，等待觀察通常風險更高。</li>\n</ul>\n<h3>幕上 ICH：哪些人偏向 MIS</h3>\n<ul>\n  <li>血腫體積約 &gt;20–30 mL</li>\n  <li>GCS 約 5–12 分</li>\n  <li>葉狀（lobar）位置，證據通常優於深部出血</li>\n  <li>能在 24 小時內完成早期介入</li>\n</ul>\n<p>目前資料支持 MIS 可望降低死亡率，功能預後也可能改善，但證據仍屬中等品質，因此適合由具經驗團隊根據病人整體條件選案。</p>\n<h3>什麼時候仍要考慮開顱</h3>\n<ul>\n  <li>出現腦疝脫或快速惡化，需立即減壓。</li>\n  <li>MIS 不可得，但屬淺層葉狀血腫、距皮質表面近、具可逆壓迫效應時。</li>\n  <li>小腦血腫伴腦幹壓迫或阻塞性水腦。</li>\n</ul>\n<h3>哪些情境手術效益差</h3>\n<ul>\n  <li>深部 ICH（視丘、腦橋）多半不適合常規開顱清除。</li>\n  <li>GCS 極低、雙側瞳孔固定散大時，整體預後很差，需和家屬充分討論治療目標。</li>\n  <li>腦幹 ICH 一般缺乏可證實的外科獲益。</li>\n</ul>\n<h3>腫瘤相關出血風險</h3>\n<ul>\n  <li><strong>Extra-axial tumor</strong>（如 meningioma）出血風險相對較低，並不等於一律不能再灌流，但仍要個別判斷。</li>\n  <li><strong>Intra-axial / parenchymal tumor</strong> 屬高風險出血修飾因子，遇到腦實質腫瘤時要優先把它當作「可能次發性出血」來處理。</li>\n  <li><strong>Pituitary tumor</strong> 的出血風險更高，若病人影像或病史提示 pituitary apoplexy，更要避免把它誤認成一般 AIS 後直接走 rtPA 流程。</li>\n</ul>\n<h3>臨床決策順序</h3>\n<ol>\n  <li>先用 NCCT 確認出血位置、體積與是否壓迫腦室 / 腦幹。</li>\n  <li>必要時以 CTA / MRI 追查次發性原因：動脈瘤、AVM、腫瘤。</li>\n  <li>同步處理血壓、抗凝逆轉、呼吸道與重症監護，不要把手術評估和內科穩定化分開思考。</li>\n</ol>\n<p><strong>臨床結論：</strong>小腦出血合併壓迫效應最應積極手術；幕上 ICH 偏向精準選案的 MIS；若合併腦實質或 pituitary tumor，應把腫瘤相關出血風險明確納入分流。</p>\n",
         "english": "<h2>ICH Surgery and Tumor Risk</h2><p>Escalate quickly for cerebellar mass effect and flag intra-axial/pituitary tumor scenarios as high-risk.</p>"
+      }
+    },
+    {
+      "id": "edu001_2023_________________",
+      "title": "2023台灣腦中風學會自發性腦出血處置指引",
+      "source_file": "2023台灣腦中風學會自發性腦出血處置指引.pdf",
+      "source_url": "https://raw.githubusercontent.com/dreamcheap2000/Clinical-Medicine/main/Patient%20education/2023台灣腦中風學會自發性腦出血處置指引.pdf",
+      "source_label": "",
+      "source_urls": [
+        "https://raw.githubusercontent.com/dreamcheap2000/Clinical-Medicine/main/Patient%20education/2023台灣腦中風學會自發性腦出血處置指引.pdf"
+      ],
+      "original_lang": "zh-TW",
+      "added_date": "2026-05-22",
+      "version": "1",
+      "tags": [
+        "ICH",
+        "指引",
+        "血壓控制",
+        "抗凝逆轉"
+      ],
+      "fastsr": {
+        "S": [],
+        "O": [],
+        "A": [],
+        "P": []
+      },
+      "prototype": {
+        "global": [
+          "2023台灣腦中風學會自發性腦出血處置指引"
+        ],
+        "semantic": [
+          "ICH"
+        ],
+        "fragment": [
+          "2023台灣腦中風學會自發性腦出血處置指引"
+        ]
+      },
+      "versions": {
+        "simple_zh": "<h2>2023 台灣腦中風學會自發性腦出血處置指引</h2><p>收錄自發性腦出血（ICH）之早期血壓控制、血腫擴大監測、抗凝逆轉與重症照護建議。</p><p>若需完整條文與圖表，請直接開啟原始 PDF。</p><p>📎 <a href=\"https://raw.githubusercontent.com/dreamcheap2000/Clinical-Medicine/main/Patient%20education/2023台灣腦中風學會自發性腦出血處置指引.pdf\" target=\"_blank\" rel=\"noopener\">開啟 / 下載 PDF</a></p>",
+        "professional_zh": "<h2>2023 台灣腦中風學會自發性腦出血處置指引</h2><p>本檔案可作為 ICH bedside 參考，涵蓋血壓目標、血腫擴大高風險期、抗凝逆轉、神經外科介入與重症照護要點。</p><p>若需逐條引用原始建議等級與圖表，請直接閱讀 PDF 原文。</p><p>📎 <a href=\"https://raw.githubusercontent.com/dreamcheap2000/Clinical-Medicine/main/Patient%20education/2023台灣腦中風學會自發性腦出血處置指引.pdf\" target=\"_blank\" rel=\"noopener\">開啟 / 下載 PDF</a></p>",
+        "english": ""
+      }
+    },
+    {
+      "id": "edu002_2025__________________________",
+      "title": "2025台灣腦中風學會急性缺血性腦中風靜脈血栓溶解治療指引更新",
+      "source_file": "2025台灣腦中風學會急性缺血性腦中風靜脈血栓溶解治療指引更新.pdf",
+      "source_url": "https://raw.githubusercontent.com/dreamcheap2000/Clinical-Medicine/main/Patient%20education/2025台灣腦中風學會急性缺血性腦中風靜脈血栓溶解治療指引更新.pdf",
+      "source_label": "",
+      "source_urls": [
+        "https://raw.githubusercontent.com/dreamcheap2000/Clinical-Medicine/main/Patient%20education/2025台灣腦中風學會急性缺血性腦中風靜脈血栓溶解治療指引更新.pdf"
+      ],
+      "original_lang": "zh-TW",
+      "added_date": "2026-05-22",
+      "version": "1",
+      "tags": [
+        "AIS",
+        "IVT",
+        "指引",
+        "alteplase",
+        "tenecteplase"
+      ],
+      "fastsr": {
+        "S": [],
+        "O": [],
+        "A": [],
+        "P": []
+      },
+      "prototype": {
+        "global": [
+          "2025台灣腦中風學會急性缺血性腦中風靜脈血栓溶解治療指引更新"
+        ],
+        "semantic": [
+          "AIS",
+          "IVT"
+        ],
+        "fragment": [
+          "2025台灣腦中風學會急性缺血性腦中風靜脈血栓溶解治療指引更新"
+        ]
+      },
+      "versions": {
+        "simple_zh": "<h2>2025 台灣腦中風學會 IVT 指引更新</h2><p>收錄急性缺血性腦中風靜脈血栓溶解治療之必要條件、禁忌症、延長時間窗與特殊情境建議。</p><p>📎 <a href=\"https://raw.githubusercontent.com/dreamcheap2000/Clinical-Medicine/main/Patient%20education/2025台灣腦中風學會急性缺血性腦中風靜脈血栓溶解治療指引更新.pdf\" target=\"_blank\" rel=\"noopener\">開啟 / 下載 PDF</a></p>",
+        "professional_zh": "<h2>2025 台灣腦中風學會急性缺血性腦中風靜脈血栓溶解治療指引更新</h2><p>本 PDF 提供 AIS IVT 的正式條文，包含標準 4.5 小時內適應症、延長時間窗、睡醒中風、特殊病史與再灌流流程更新。</p><p>📎 <a href=\"https://raw.githubusercontent.com/dreamcheap2000/Clinical-Medicine/main/Patient%20education/2025台灣腦中風學會急性缺血性腦中風靜脈血栓溶解治療指引更新.pdf\" target=\"_blank\" rel=\"noopener\">開啟 / 下載 PDF</a></p>",
+        "english": ""
+      }
+    },
+    {
+      "id": "edu016_____________",
+      "title": "急性缺血性腦中風處置建議",
+      "source_file": "急性缺血性腦中風處置建議.pdf",
+      "source_url": "https://raw.githubusercontent.com/dreamcheap2000/Clinical-Medicine/main/Patient%20education/急性缺血性腦中風處置建議.pdf",
+      "source_label": "",
+      "source_urls": [
+        "https://raw.githubusercontent.com/dreamcheap2000/Clinical-Medicine/main/Patient%20education/急性缺血性腦中風處置建議.pdf"
+      ],
+      "original_lang": "zh-TW",
+      "added_date": "2026-05-22",
+      "version": "1",
+      "tags": [
+        "AIS",
+        "急診分流",
+        "EVT",
+        "次級預防"
+      ],
+      "fastsr": {
+        "S": [],
+        "O": [],
+        "A": [],
+        "P": []
+      },
+      "prototype": {
+        "global": [
+          "急性缺血性腦中風處置建議"
+        ],
+        "semantic": [
+          "AIS",
+          "EVT"
+        ],
+        "fragment": [
+          "急性缺血性腦中風處置建議"
+        ]
+      },
+      "versions": {
+        "simple_zh": "<h2>急性缺血性腦中風處置建議</h2><p>提供 AIS 從急診分流、IVT / EVT、到後續次級預防的整體參考流程。</p><p>📎 <a href=\"https://raw.githubusercontent.com/dreamcheap2000/Clinical-Medicine/main/Patient%20education/急性缺血性腦中風處置建議.pdf\" target=\"_blank\" rel=\"noopener\">開啟 / 下載 PDF</a></p>",
+        "professional_zh": "<h2>急性缺血性腦中風處置建議</h2><p>本 PDF 可作為 AIS 臨床流程備查，內容涵蓋初始影像、再灌流治療選擇、重症照護與次級預防建議。</p><p>📎 <a href=\"https://raw.githubusercontent.com/dreamcheap2000/Clinical-Medicine/main/Patient%20education/急性缺血性腦中風處置建議.pdf\" target=\"_blank\" rel=\"noopener\">開啟 / 下載 PDF</a></p>",
+        "english": ""
       }
     },
     {
@@ -2195,17 +2456,35 @@
       ],
       "fastsr": {
         "S": [
-          "疑似中風需快速完成院前通報與急診初始評估。"
+          "急診第一步：把時間與影像先釐清 確認發病時間或最後正常時間（last-known-well）。",
+          "立即量測血糖，排除低血糖等中風模仿症。",
+          "標準 IVT 窗口（≤4.",
+          "5 小時） 若病人為 AIS、無絕對禁忌、可把 BP 控制在 <185/110 mmHg、且血糖落在 50–400 mg/dL，可啟動 IVT。",
+          "常用 alteplase 0.",
+          "25 mg/kg。",
+          "延長時間窗與睡醒中風 4.",
+          "這些路徑的重點不是「時間比較長」而已，而是要證明仍有可救腦組織。",
+          "若同時符合 IVT，不應因準備 EVT 而延遲 IVT。",
+          "若本院無 EVT 團隊，應在完成初步穩定與影像後立即轉運。",
+          "若病因為心房顫動等心因性栓塞，後續重點是安排抗凝起始時機，而非長期雙抗。"
         ],
         "O": [
-          "先做 NCCT 排除出血，再依 NIHSS、時間窗與 LVO 影像評估。",
-          "4.5 小時內優先評估 IVT；6–24 小時依影像篩選 EVT。"
+          "真正影響結果的不是單一藥物，而是整體流程是否能在最短時間內完成 NCCT、LVO 評估、IVT 適應症核對與 EVT 串接。",
+          "完成 NCCT 區分 AIS 與 ICH；若懷疑 LVO，儘速加做 CTA / MRA。",
+          "9 mg/kg 或 tenecteplase 0.",
+          "5–9 小時： 需以 CTP / MRP 評估 penumbra-core mismatch，並採共享決策。",
+          "睡醒或發病時間不明： 若 MRI 顯示 DWI-FLAIR mismatch，可依影像篩選考慮 IVT。",
+          "6–24 小時需結合 advanced imaging（如 CTP 或 multiphase CTA）確認仍有 salvageable tissue。",
+          "流程時間目標 節點 目標 Door-to-CT ≤25 分鐘 Door-to-Needle ≤60 分鐘 疑 LVO 的 CTA 盡量在初始影像後立即完成 Door-to-Puncture 理想 ≤90 分鐘 臨床結論： 缺血性中風分流的價值在於快速把病人導向最合適的再灌流路徑：標準 IVT、延長窗影像篩選、或 EVT，並避免任何不必要的流程延誤。"
         ],
         "A": [
-          "缺血性路徑須與出血性路徑先分流，不可混用處置。"
+          "同步抽 CBC、PT/INR、aPTT、心電圖與必要生化，但不應因此延誤影像或治療。",
+          "LVO 與 EVT 評估 前循環 LVO 在 6 小時內通常直接進入 EVT 評估。",
+          "輕度 non-cardioembolic stroke 或高風險 TIA，可考慮短期雙抗以降低早期復發。"
         ],
         "P": [
-          "以 NIHSS 作為缺血性路徑核心分數，並即時啟動 IVT/EVT 流程。"
+          "急性中風分流流程：缺血性路徑（AIS） 缺血性中風分流的原則是 先影像、快分類、快啟動再灌流 。",
+          "急性期後續處置 IVT / EVT 後 24 小時內目標 BP 一般維持 <180/105 mmHg。"
         ]
       },
       "prototype": {
@@ -2230,64 +2509,76 @@
           "nihss",
           "ivt",
           "evt",
-          "疑似中風需快速完成院前通報與急診初始評估",
-          "疑似",
-          "似中",
-          "風需",
-          "需快",
-          "快速",
-          "速完",
-          "完成",
-          "成院",
-          "院前",
-          "前通",
-          "通報",
-          "報與",
-          "與急",
+          "急診第一步：把時間與影像先釐清",
           "急診",
-          "診初",
-          "初始",
-          "始評",
-          "評估",
-          "先做",
-          "ncct",
-          "排除出血",
-          "排除",
-          "除出",
-          "出血",
-          "再依",
-          "時間窗與",
+          "診第",
+          "第一",
+          "一步",
+          "步：",
+          "：把",
+          "把時",
           "時間",
-          "間窗",
-          "窗與",
-          "lvo",
-          "影像評估",
+          "間與",
+          "與影",
           "影像",
-          "像評",
-          "4",
-          "5",
-          "小時內優先評估",
-          "小時",
-          "時內",
-          "內優"
+          "像先",
+          "先釐",
+          "釐清",
+          "確認發病時間或最後正常時間（last",
+          "確認",
+          "認發",
+          "發病",
+          "病時",
+          "間或",
+          "或最",
+          "最後",
+          "後正",
+          "正常",
+          "常時",
+          "間（",
+          "（l",
+          "la",
+          "as",
+          "st",
+          "known",
+          "well）",
+          "立即量測血糖",
+          "立即",
+          "即量",
+          "量測",
+          "測血",
+          "血糖",
+          "排除低血糖等中風模仿症"
         ],
         "semantic": [
-          "中風",
-          "IVT",
-          "EVT",
-          "NIHSS"
+          "病人",
+          "適應症",
+          "症",
+          "MRI",
+          "CT",
+          "結果",
+          "評估",
+          "考慮",
+          "因此",
+          "懷疑",
+          "治療",
+          "藥物",
+          "處置",
+          "原則",
+          "禁忌",
+          "避免"
         ],
         "fragment": [
           "急性中風分流流程（缺血性路徑）",
-          "疑似中風需快速完成院前通報與急診初始評估。",
-          "先做 NCCT 排除出血，再依 NIHSS、時間窗與 LVO 影像評估。",
-          "缺血性路徑須與出血性路徑先分流，不可混用處置。",
-          "以 NIHSS 作為缺血性路徑核心分數，並即時啟動 IVT/EVT 流程。"
+          "5 小時） 若病人為 AIS、無絕對禁忌、可把 BP 控制在 <185/110 mmHg、且血糖落在 50–400 mg/dL，可啟動 IVT。",
+          "流程時間目標 節點 目標 Door-to-CT ≤25 分鐘 Door-to-Needle ≤60 分鐘 疑 LVO 的 CTA 盡量在初始影像後立即完成 Door-to-Puncture 理想 ≤90 分鐘 臨床結論： 缺血性中風分流的價值在於快速把病人導向最合適的再灌流路徑：標準 IVT、延長窗影像篩選、或 EVT，並避免任何不必要的流程延誤。",
+          "輕度 non-cardioembolic stroke 或高風險 TIA，可考慮短期雙抗以降低早期復發。",
+          "急性期後續處置 IVT / EVT 後 24 小時內目標 BP 一般維持 <180/105 mmHg。"
         ]
       },
       "versions": {
-        "simple_zh": "<h2>急性中風：缺血性路徑</h2><ol><li>先做 NCCT 排除出血。</li><li>使用 NIHSS 評估神經缺損嚴重度。</li><li>≤4.5h 評估 IVT；LVO 於 6–24h 評估 EVT。</li></ol><p><strong>參考：</strong>2025 台灣腦中風學會急性缺血性中風指引、OpenEvidence 整理。</p>",
-        "professional_zh": "<h2>Ischemic stroke triage pathway</h2><p>Imaging-first classification, NIHSS-based severity assessment, and time-window/LVO-driven reperfusion decisions are mandatory. IVT and EVT pathways should be activated without delay when eligible.</p><p><strong>References:</strong> TSOC 2025 AIS guideline; OpenEvidence synthesis.</p>",
+        "simple_zh": "<h2>急性中風分流流程：缺血性路徑（AIS）</h2>\n<p>缺血性中風分流的原則是<strong>先影像、快分類、快啟動再灌流</strong>。真正影響結果的不是單一藥物，而是整體流程是否能在最短時間內完成 NCCT、LVO 評估、IVT 適應症核對與 EVT 串接。</p>\n<h3>急診第一步：把時間與影像先釐清</h3>\n<ul>\n  <li>確認發病時間或最後正常時間（last-known-well）。</li>\n  <li>立即量測血糖，排除低血糖等中風模仿症。</li>\n  <li>完成 NCCT 區分 AIS 與 ICH；若懷疑 LVO，儘速加做 CTA / MRA。</li>\n  <li>同步抽 CBC、PT/INR、aPTT、心電圖與必要生化，但不應因此延誤影像或治療。</li>\n</ul>\n<h3>標準 IVT 窗口（≤4.5 小時）</h3>\n<p>若病人為 AIS、無絕對禁忌、可把 BP 控制在 &lt;185/110 mmHg、且血糖落在 50–400 mg/dL，可啟動 IVT。常用 alteplase 0.9 mg/kg 或 tenecteplase 0.25 mg/kg。</p>\n<h3>延長時間窗與睡醒中風</h3>\n<ul>\n  <li><strong>4.5–9 小時：</strong>需以 CTP / MRP 評估 penumbra-core mismatch，並採共享決策。</li>\n  <li><strong>睡醒或發病時間不明：</strong>若 MRI 顯示 DWI-FLAIR mismatch，可依影像篩選考慮 IVT。</li>\n  <li>這些路徑的重點不是「時間比較長」而已，而是要證明仍有可救腦組織。</li>\n</ul>\n<h3>LVO 與 EVT 評估</h3>\n<ul>\n  <li>前循環 LVO 在 6 小時內通常直接進入 EVT 評估。</li>\n  <li>6–24 小時需結合 advanced imaging（如 CTP 或 multiphase CTA）確認仍有 salvageable tissue。</li>\n  <li>若同時符合 IVT，不應因準備 EVT 而延遲 IVT。</li>\n  <li>若本院無 EVT 團隊，應在完成初步穩定與影像後立即轉運。</li>\n</ul>\n<h3>急性期後續處置</h3>\n<ul>\n  <li>IVT / EVT 後 24 小時內目標 BP 一般維持 &lt;180/105 mmHg。</li>\n  <li>輕度 non-cardioembolic stroke 或高風險 TIA，可考慮短期雙抗以降低早期復發。</li>\n  <li>若病因為心房顫動等心因性栓塞，後續重點是安排抗凝起始時機，而非長期雙抗。</li>\n</ul>\n<h3>流程時間目標</h3>\n<table><thead><tr><th>節點</th><th>目標</th></tr></thead><tbody>\n<tr><td>Door-to-CT</td><td>≤25 分鐘</td></tr>\n<tr><td>Door-to-Needle</td><td>≤60 分鐘</td></tr>\n<tr><td>疑 LVO 的 CTA</td><td>盡量在初始影像後立即完成</td></tr>\n<tr><td>Door-to-Puncture</td><td>理想 ≤90 分鐘</td></tr>\n</tbody></table>\n<p><strong>臨床結論：</strong>缺血性中風分流的價值在於快速把病人導向最合適的再灌流路徑：標準 IVT、延長窗影像篩選、或 EVT，並避免任何不必要的流程延誤。</p>\n",
+        "professional_zh": "<h2>急性中風分流流程：缺血性路徑（AIS）</h2>\n<p>缺血性中風分流的原則是<strong>先影像、快分類、快啟動再灌流</strong>。真正影響結果的不是單一藥物，而是整體流程是否能在最短時間內完成 NCCT、LVO 評估、IVT 適應症核對與 EVT 串接。</p>\n<h3>急診第一步：把時間與影像先釐清</h3>\n<ul>\n  <li>確認發病時間或最後正常時間（last-known-well）。</li>\n  <li>立即量測血糖，排除低血糖等中風模仿症。</li>\n  <li>完成 NCCT 區分 AIS 與 ICH；若懷疑 LVO，儘速加做 CTA / MRA。</li>\n  <li>同步抽 CBC、PT/INR、aPTT、心電圖與必要生化，但不應因此延誤影像或治療。</li>\n</ul>\n<h3>標準 IVT 窗口（≤4.5 小時）</h3>\n<p>若病人為 AIS、無絕對禁忌、可把 BP 控制在 &lt;185/110 mmHg、且血糖落在 50–400 mg/dL，可啟動 IVT。常用 alteplase 0.9 mg/kg 或 tenecteplase 0.25 mg/kg。</p>\n<h3>延長時間窗與睡醒中風</h3>\n<ul>\n  <li><strong>4.5–9 小時：</strong>需以 CTP / MRP 評估 penumbra-core mismatch，並採共享決策。</li>\n  <li><strong>睡醒或發病時間不明：</strong>若 MRI 顯示 DWI-FLAIR mismatch，可依影像篩選考慮 IVT。</li>\n  <li>這些路徑的重點不是「時間比較長」而已，而是要證明仍有可救腦組織。</li>\n</ul>\n<h3>LVO 與 EVT 評估</h3>\n<ul>\n  <li>前循環 LVO 在 6 小時內通常直接進入 EVT 評估。</li>\n  <li>6–24 小時需結合 advanced imaging（如 CTP 或 multiphase CTA）確認仍有 salvageable tissue。</li>\n  <li>若同時符合 IVT，不應因準備 EVT 而延遲 IVT。</li>\n  <li>若本院無 EVT 團隊，應在完成初步穩定與影像後立即轉運。</li>\n</ul>\n<h3>急性期後續處置</h3>\n<ul>\n  <li>IVT / EVT 後 24 小時內目標 BP 一般維持 &lt;180/105 mmHg。</li>\n  <li>輕度 non-cardioembolic stroke 或高風險 TIA，可考慮短期雙抗以降低早期復發。</li>\n  <li>若病因為心房顫動等心因性栓塞，後續重點是安排抗凝起始時機，而非長期雙抗。</li>\n</ul>\n<h3>流程時間目標</h3>\n<table><thead><tr><th>節點</th><th>目標</th></tr></thead><tbody>\n<tr><td>Door-to-CT</td><td>≤25 分鐘</td></tr>\n<tr><td>Door-to-Needle</td><td>≤60 分鐘</td></tr>\n<tr><td>疑 LVO 的 CTA</td><td>盡量在初始影像後立即完成</td></tr>\n<tr><td>Door-to-Puncture</td><td>理想 ≤90 分鐘</td></tr>\n</tbody></table>\n<p><strong>臨床結論：</strong>缺血性中風分流的價值在於快速把病人導向最合適的再灌流路徑：標準 IVT、延長窗影像篩選、或 EVT，並避免任何不必要的流程延誤。</p>\n",
         "english": "<h2>Ischemic Stroke Workflow</h2><p>Use NIHSS for severity, then route to IVT/EVT based on onset window and vascular imaging.</p>"
       }
     },
@@ -2311,17 +2602,32 @@
       ],
       "fastsr": {
         "S": [
-          "影像證實出血後，需立即進入出血性中風路徑，不可進行 IVT。"
+          "急性中風分流流程：出血性路徑（ICH / SAH） 出血性中風和缺血性中風最大的不同，在於目標不是「打通血管」，而是 阻止血腫擴大、降低再出血、維持腦灌流與及早處理可逆病因 。",
+          "抗凝相關 ICH 逆轉 Warfarin： 4F-PCC + Vitamin K 為首選，逆轉速度與降低血腫擴大均優於 FFP。",
+          "Dabigatran： Idarucizumab。",
+          "逆轉策略越早啟動，越有機會降低 HE 與後續惡化。",
+          "大型血腫、意識惡化、腦疝脫徵象或需要減壓。",
+          "影像懷疑次發性病因，如 AVM、動脈瘤或腫瘤。",
+          "以 WFNS、Hunt-Hess、Modified Fisher 同步做臨床與影像風險分層。",
+          "出血性分流的 bedside 提醒 不要把 ICH/SAH 的病人留在缺血性再灌流流程中等待。",
+          "血壓控制、逆轉抗凝、追蹤影像與神外會診應同步，而不是依序慢慢完成。",
+          "臨床結論： 出血性中風分流講求的是快辨識、快逆轉、快監測、快會診；一旦走錯成缺血性流程，風險會明顯增加。"
         ],
         "O": [
-          "ICH：SBP 150–220 mmHg 可降至約 140（維持 130–150）。",
-          "SAH 需 CTA/DSA 找動脈瘤並評估血管痙攣與水腦。"
+          "因此一旦 NCCT 證實出血，分流重點會立即轉向血壓、抗凝逆轉、神外與重症監護。",
+          "若懷疑血腫仍在擴大，需安排追蹤 NCCT，並特別注意發病最初 3 小時的高風險期。",
+          "SAH 分流重點 NCCT 確認 SAH 後，儘速安排 CTA 或 DSA 找出動脈瘤。"
         ],
         "A": [
-          "出血性中風需依亞型採不同分數與處置策略。"
+          "Xa inhibitors： Andexanet alfa；若不可得，可考慮 4F-PCC 作替代。",
+          "什麼時候要找神經外科 小腦出血合併腦幹壓迫或阻塞性水腦。"
         ],
         "P": [
-          "ICH 使用 ICH score；SAH 記錄 Modified Fisher、Hunt-Hess、WFNS，並及早神外/介入評估。"
+          "ICH：最先處理什麼 若 SBP 150–220 mmHg，建議快速但平穩降至約 140 mmHg，維持在 130–150 mmHg。",
+          "避免 SBP 急降到 <130 mmHg，以免腦灌流不足。",
+          "動脈瘤尚未固定前，通常維持 SBP <160–180 mmHg，避免再出血。",
+          "盡早完成 coiling / clipping，並常規使用 nimodipine 預防延遲性腦缺血。",
+          "若出血其實來自腫瘤、動脈瘤或其他結構病因，真正的 definitive treatment 是處理病因本身。"
         ]
       },
       "prototype": {
@@ -2353,60 +2659,67 @@
           "fisher",
           "hunt",
           "hess",
-          "影像證實出血後",
-          "影像",
-          "像證",
-          "證實",
-          "實出",
-          "血後",
-          "需立即進入出血性中風路徑",
-          "需立",
-          "立即",
-          "即進",
-          "進入",
-          "入出",
-          "風路",
-          "不可進行",
-          "不可",
-          "可進",
-          "進行",
-          "ivt",
-          "ich：sbp",
-          "150–220",
-          "mmhg",
-          "可降至約",
-          "可降",
-          "降至",
-          "至約",
-          "140（維持",
-          "14",
-          "40",
-          "0（",
-          "（維",
-          "維持",
-          "130–150）",
-          "需"
+          "急性中風分流流程：出血性路徑（ich",
+          "程：",
+          "：出",
+          "徑（",
+          "（i",
+          "出血性中風和缺血性中風最大的不同",
+          "風和",
+          "和缺",
+          "缺血",
+          "風最",
+          "最大",
+          "大的",
+          "的不",
+          "不同",
+          "在於目標不是「打通血管」",
+          "在於",
+          "於目",
+          "目標",
+          "標不",
+          "不是",
+          "是「",
+          "「打",
+          "打通",
+          "通血",
+          "血管",
+          "管」",
+          "而是",
+          "阻止血腫擴大",
+          "阻止",
+          "止血",
+          "血腫",
+          "腫擴",
+          "擴大"
         ],
         "semantic": [
-          "中風",
-          "ICH",
-          "SAH",
-          "IVT",
-          "WFNS",
-          "Hunt",
-          "Fisher"
+          "病人",
+          "症",
+          "腫",
+          "CT",
+          "考慮",
+          "因此",
+          "懷疑",
+          "相關",
+          "合併",
+          "建議",
+          "預防",
+          "注意",
+          "避免",
+          "treatment"
         ],
         "fragment": [
           "急性中風分流流程（出血性路徑：ICH/SAH）",
-          "影像證實出血後，需立即進入出血性中風路徑，不可進行 IVT。",
-          "ICH：SBP 150–220 mmHg 可降至約 140（維持 130–150）。",
-          "出血性中風需依亞型採不同分數與處置策略。",
-          "ICH 使用 ICH score；SAH 記錄 Modified Fisher、Hunt-Hess、WFNS，並及早神外/介入評估。"
+          "急性中風分流流程：出血性路徑（ICH / SAH） 出血性中風和缺血性中風最大的不同，在於目標不是「打通血管」，而是 阻止血腫擴大、降低再出血、維持腦灌流與及早處理可逆病因 。",
+          "SAH 分流重點 NCCT 確認 SAH 後，儘速安排 CTA 或 DSA 找出動脈瘤。",
+          "Xa inhibitors： Andexanet alfa；若不可得，可考慮 4F-PCC 作替代。",
+          "ICH：最先處理什麼 若 SBP 150–220 mmHg，建議快速但平穩降至約 140 mmHg，維持在 130–150 mmHg。"
         ]
       },
       "versions": {
-        "simple_zh": "<h2>急性中風：出血性路徑</h2><ul><li><strong>ICH：</strong>使用 ICH score，重點為降壓、抗凝逆轉、血腫監測。</li><li><strong>SAH：</strong>使用 Modified Fisher + Hunt-Hess + WFNS，重點為動脈瘤處置與痙攣預防。</li></ul><p>出血型態需先分流再治療，避免與缺血性路徑混用。</p>",
-        "professional_zh": "<h2>Hemorrhagic stroke pathway (ICH/SAH)</h2><p>Once hemorrhage is confirmed, manage by subtype-specific scoring and protocol: ICH score for intracerebral hemorrhage; modified Fisher/Hunt-Hess/WFNS for SAH. Immediate BP control, reversal strategy, and neurosurgical coordination are required.</p>",
+        "simple_zh": "<h2>急性中風分流流程：出血性路徑（ICH / SAH）</h2>\n<p>出血性中風和缺血性中風最大的不同，在於目標不是「打通血管」，而是<strong>阻止血腫擴大、降低再出血、維持腦灌流與及早處理可逆病因</strong>。因此一旦 NCCT 證實出血，分流重點會立即轉向血壓、抗凝逆轉、神外與重症監護。</p>\n<h3>ICH：最先處理什麼</h3>\n<ul>\n  <li>若 SBP 150–220 mmHg，建議快速但平穩降至約 140 mmHg，維持在 130–150 mmHg。</li>\n  <li>避免 SBP 急降到 &lt;130 mmHg，以免腦灌流不足。</li>\n  <li>若懷疑血腫仍在擴大，需安排追蹤 NCCT，並特別注意發病最初 3 小時的高風險期。</li>\n</ul>\n<h3>抗凝相關 ICH 逆轉</h3>\n<ul>\n  <li><strong>Warfarin：</strong>4F-PCC + Vitamin K 為首選，逆轉速度與降低血腫擴大均優於 FFP。</li>\n  <li><strong>Dabigatran：</strong>Idarucizumab。</li>\n  <li><strong>Xa inhibitors：</strong>Andexanet alfa；若不可得，可考慮 4F-PCC 作替代。</li>\n  <li>逆轉策略越早啟動，越有機會降低 HE 與後續惡化。</li>\n</ul>\n<h3>什麼時候要找神經外科</h3>\n<ul>\n  <li>小腦出血合併腦幹壓迫或阻塞性水腦。</li>\n  <li>大型血腫、意識惡化、腦疝脫徵象或需要減壓。</li>\n  <li>影像懷疑次發性病因，如 AVM、動脈瘤或腫瘤。</li>\n</ul>\n<h3>SAH 分流重點</h3>\n<ul>\n  <li>NCCT 確認 SAH 後，儘速安排 CTA 或 DSA 找出動脈瘤。</li>\n  <li>動脈瘤尚未固定前，通常維持 SBP &lt;160–180 mmHg，避免再出血。</li>\n  <li>盡早完成 coiling / clipping，並常規使用 nimodipine 預防延遲性腦缺血。</li>\n  <li>以 WFNS、Hunt-Hess、Modified Fisher 同步做臨床與影像風險分層。</li>\n</ul>\n<h3>出血性分流的 bedside 提醒</h3>\n<ol>\n  <li>不要把 ICH/SAH 的病人留在缺血性再灌流流程中等待。</li>\n  <li>血壓控制、逆轉抗凝、追蹤影像與神外會診應同步，而不是依序慢慢完成。</li>\n  <li>若出血其實來自腫瘤、動脈瘤或其他結構病因，真正的 definitive treatment 是處理病因本身。</li>\n</ol>\n<p><strong>臨床結論：</strong>出血性中風分流講求的是快辨識、快逆轉、快監測、快會診；一旦走錯成缺血性流程，風險會明顯增加。</p>\n",
+        "professional_zh": "<h2>急性中風分流流程：出血性路徑（ICH / SAH）</h2>\n<p>出血性中風和缺血性中風最大的不同，在於目標不是「打通血管」，而是<strong>阻止血腫擴大、降低再出血、維持腦灌流與及早處理可逆病因</strong>。因此一旦 NCCT 證實出血，分流重點會立即轉向血壓、抗凝逆轉、神外與重症監護。</p>\n<h3>ICH：最先處理什麼</h3>\n<ul>\n  <li>若 SBP 150–220 mmHg，建議快速但平穩降至約 140 mmHg，維持在 130–150 mmHg。</li>\n  <li>避免 SBP 急降到 &lt;130 mmHg，以免腦灌流不足。</li>\n  <li>若懷疑血腫仍在擴大，需安排追蹤 NCCT，並特別注意發病最初 3 小時的高風險期。</li>\n</ul>\n<h3>抗凝相關 ICH 逆轉</h3>\n<ul>\n  <li><strong>Warfarin：</strong>4F-PCC + Vitamin K 為首選，逆轉速度與降低血腫擴大均優於 FFP。</li>\n  <li><strong>Dabigatran：</strong>Idarucizumab。</li>\n  <li><strong>Xa inhibitors：</strong>Andexanet alfa；若不可得，可考慮 4F-PCC 作替代。</li>\n  <li>逆轉策略越早啟動，越有機會降低 HE 與後續惡化。</li>\n</ul>\n<h3>什麼時候要找神經外科</h3>\n<ul>\n  <li>小腦出血合併腦幹壓迫或阻塞性水腦。</li>\n  <li>大型血腫、意識惡化、腦疝脫徵象或需要減壓。</li>\n  <li>影像懷疑次發性病因，如 AVM、動脈瘤或腫瘤。</li>\n</ul>\n<h3>SAH 分流重點</h3>\n<ul>\n  <li>NCCT 確認 SAH 後，儘速安排 CTA 或 DSA 找出動脈瘤。</li>\n  <li>動脈瘤尚未固定前，通常維持 SBP &lt;160–180 mmHg，避免再出血。</li>\n  <li>盡早完成 coiling / clipping，並常規使用 nimodipine 預防延遲性腦缺血。</li>\n  <li>以 WFNS、Hunt-Hess、Modified Fisher 同步做臨床與影像風險分層。</li>\n</ul>\n<h3>出血性分流的 bedside 提醒</h3>\n<ol>\n  <li>不要把 ICH/SAH 的病人留在缺血性再灌流流程中等待。</li>\n  <li>血壓控制、逆轉抗凝、追蹤影像與神外會診應同步，而不是依序慢慢完成。</li>\n  <li>若出血其實來自腫瘤、動脈瘤或其他結構病因，真正的 definitive treatment 是處理病因本身。</li>\n</ol>\n<p><strong>臨床結論：</strong>出血性中風分流講求的是快辨識、快逆轉、快監測、快會診；一旦走錯成缺血性流程，風險會明顯增加。</p>\n",
         "english": "<h2>Hemorrhagic Stroke Workflow</h2><p>Use subtype-specific scoring (ICH vs SAH) and proceed with dedicated hemorrhage management protocols.</p>"
       }
     },
@@ -2429,17 +2742,32 @@
       ],
       "fastsr": {
         "S": [
-          "阿茲海默症失智患者躁動行為影響照護與安全。"
+          "阿茲海默症躁動：Brexpiprazole 治療重點 Brexpiprazole 是目前少數對 阿茲海默症相關躁動 具有正式核准適應症的藥物。",
+          "它的臨床定位不是立刻鎮靜，而是對於持續性躁動、攻擊性、照護負擔高，且非藥物介入不足以控制的病人，提供一個較有證據支持的藥物選項。",
+          "療效證據 第 3 期試驗顯示，2–3 mg/day 的 brexpiprazole 可改善 Cohen-Mansfield Agitation Inventory（CMAI）與 CGI-S。",
+          "主要 12 週研究中，CMAI 與 placebo 的差異約為 −5.",
+          "32 分，且約 68.",
+          "4% 病人可達到至少 20% 的改善，對照組為 47.",
+          "用藥節奏比起點更重要 起始常從 0.",
+          "5 mg/day 開始。",
+          "於前 2 週逐步調升到 1–2 mg/day。",
+          "目標劑量通常是 2 mg/day，部分病人可到 3 mg/day。",
+          "它 不適合 PRN 使用，因為真正和 placebo 拉開差距常需要 6–12 週。",
+          "哪些病人最值得考慮 躁動持續存在，影響安全、住院照護或家庭照顧負荷。",
+          "已先處理疼痛、便秘、感染、睡眠、環境刺激等可逆因素。",
+          "安全性與警語 臨床試驗中，單一不良事件達到「≥5% 且高於 placebo」的訊號不明顯，整體耐受性尚可。",
+          "因不良事件停藥比例和 placebo 接近。",
+          "但它仍屬抗精神病藥，對失智相關精神病病人有 black box warning，需和家屬明確討論死亡風險與用藥目標。",
+          "臨床實務要點 先界定症狀是躁動、譫妄、焦慮、失眠，還是環境誘發行為問題。",
+          "若病人同時有明顯鎮靜、步態惡化、跌倒或吞嚥問題，需重新權衡是否繼續加量。"
         ],
-        "O": [
-          "brexpiprazole 2–3 mg/day 在 phase 3 試驗改善 CMAI 與 CGI-S。",
-          "反應率（CMAI 改善≥20%）68.4% vs 47.4%。"
-        ],
+        "O": [],
         "A": [
-          "6–12 週後較明顯與安慰劑分離，需提前設定照護期望。"
+          "起始低劑量，緩慢調整，並在 6–12 週重新評估是否達到可感知的照護效益。"
         ],
         "P": [
-          "從 0.5 mg/day 緩慢上調，目標 2–3 mg/day；監測副作用與黑框警示。"
+          "非藥物策略不足，且家屬 / 團隊清楚接受「改善需要數週」的預期。",
+          "臨床結論： Brexpiprazole 的價值在於它讓 AD 躁動有較明確的藥物證據基礎，但成功使用的關鍵仍是慢速 titration、監測副作用，以及不忽略非藥物介入。"
         ]
       },
       "prototype": {
@@ -2473,52 +2801,64 @@
           "brexpiprazole",
           "cmai",
           "openevidence",
-          "阿茲海默症失智患者躁動行為影響照護與安全",
-          "症失",
-          "失智",
-          "智患",
-          "患者",
-          "者躁",
-          "動行",
-          "行為",
-          "為影",
-          "影響",
-          "響照",
-          "照護",
-          "護與",
-          "與安",
-          "安全",
-          "2–3",
-          "mg",
-          "day",
-          "在",
-          "phase",
-          "3",
-          "試驗改善",
-          "試驗",
-          "驗改",
-          "改善",
-          "與",
-          "cgi",
-          "s",
-          "反應率（cmai",
-          "反應",
-          "應率"
+          "是目前少數對",
+          "是目",
+          "目前",
+          "前少",
+          "少數",
+          "數對",
+          "阿茲海默症相關躁動",
+          "症相",
+          "相關",
+          "關躁",
+          "具有正式核准適應症的藥物",
+          "具有",
+          "有正",
+          "正式",
+          "式核",
+          "核准",
+          "准適",
+          "適應",
+          "應症",
+          "症的",
+          "的藥",
+          "藥物",
+          "它的臨床定位不是立刻鎮靜",
+          "它的",
+          "的臨",
+          "臨床",
+          "床定",
+          "定位",
+          "位不",
+          "不是",
+          "是立"
         ],
         "semantic": [
-          "brexpiprazole"
+          "症狀",
+          "疼痛",
+          "病人",
+          "不適",
+          "適應症",
+          "適合",
+          "症",
+          "痛",
+          "疼",
+          "評估",
+          "考慮",
+          "相關",
+          "治療",
+          "藥物"
         ],
         "fragment": [
           "阿茲海默症躁動：Brexpiprazole 治療重點",
-          "阿茲海默症失智患者躁動行為影響照護與安全。",
-          "brexpiprazole 2–3 mg/day 在 phase 3 試驗改善 CMAI 與 CGI-S。",
-          "6–12 週後較明顯與安慰劑分離，需提前設定照護期望。",
-          "從 0.5 mg/day 緩慢上調，目標 2–3 mg/day；監測副作用與黑框警示。"
+          "療效證據 第 3 期試驗顯示，2–3 mg/day 的 brexpiprazole 可改善 Cohen-Mansfield Agitation Inventory（CMAI）與 CGI-S。",
+          "起始低劑量，緩慢調整，並在 6–12 週重新評估是否達到可感知的照護效益。",
+          "臨床結論： Brexpiprazole 的價值在於它讓 AD 躁動有較明確的藥物證據基礎，但成功使用的關鍵仍是慢速 titration、監測副作用，以及不忽略非藥物介入。"
         ]
       },
       "versions": {
-        "simple_zh": "<h2>阿茲海默症躁動：Brexpiprazole</h2><ul><li>目前核准劑量為 2–3 mg/day（需漸進調整）。</li><li>臨床效益通常在 6–12 週逐漸明顯。</li><li>需注意失智相關精神病死亡風險黑框警示。</li></ul><p><strong>參考：</strong>OpenEvidence / phase 3 RCT 摘要。</p>",
-        "professional_zh": "<h2>Brexpiprazole for agitation in AD dementia</h2><p>Phase 3 data show significant improvement in CMAI and CGI-S versus placebo at 2–3 mg/day. Clinical separation may take 6–12 weeks; treatment should follow gradual titration with adverse-event monitoring.</p>",
+        "simple_zh": "<h2>阿茲海默症躁動：Brexpiprazole 治療重點</h2>\n<p>Brexpiprazole 是目前少數對<strong>阿茲海默症相關躁動</strong>具有正式核准適應症的藥物。它的臨床定位不是立刻鎮靜，而是對於持續性躁動、攻擊性、照護負擔高，且非藥物介入不足以控制的病人，提供一個較有證據支持的藥物選項。</p>\n<h3>療效證據</h3>\n<p>第 3 期試驗顯示，2–3 mg/day 的 brexpiprazole 可改善 Cohen-Mansfield Agitation Inventory（CMAI）與 CGI-S。主要 12 週研究中，CMAI 與 placebo 的差異約為 −5.32 分，且約 68.4% 病人可達到至少 20% 的改善，對照組為 47.4%。</p>\n<h3>用藥節奏比起點更重要</h3>\n<ul>\n  <li>起始常從 0.5 mg/day 開始。</li>\n  <li>於前 2 週逐步調升到 1–2 mg/day。</li>\n  <li>目標劑量通常是 2 mg/day，部分病人可到 3 mg/day。</li>\n  <li>它<strong>不適合 PRN</strong> 使用，因為真正和 placebo 拉開差距常需要 6–12 週。</li>\n</ul>\n<h3>哪些病人最值得考慮</h3>\n<ul>\n  <li>躁動持續存在，影響安全、住院照護或家庭照顧負荷。</li>\n  <li>已先處理疼痛、便秘、感染、睡眠、環境刺激等可逆因素。</li>\n  <li>非藥物策略不足，且家屬 / 團隊清楚接受「改善需要數週」的預期。</li>\n</ul>\n<h3>安全性與警語</h3>\n<ul>\n  <li>臨床試驗中，單一不良事件達到「≥5% 且高於 placebo」的訊號不明顯，整體耐受性尚可。</li>\n  <li>因不良事件停藥比例和 placebo 接近。</li>\n  <li>但它仍屬抗精神病藥，對失智相關精神病病人有 black box warning，需和家屬明確討論死亡風險與用藥目標。</li>\n</ul>\n<h3>臨床實務要點</h3>\n<ol>\n  <li>先界定症狀是躁動、譫妄、焦慮、失眠，還是環境誘發行為問題。</li>\n  <li>起始低劑量，緩慢調整，並在 6–12 週重新評估是否達到可感知的照護效益。</li>\n  <li>若病人同時有明顯鎮靜、步態惡化、跌倒或吞嚥問題，需重新權衡是否繼續加量。</li>\n</ol>\n<p><strong>臨床結論：</strong>Brexpiprazole 的價值在於它讓 AD 躁動有較明確的藥物證據基礎，但成功使用的關鍵仍是慢速 titration、監測副作用，以及不忽略非藥物介入。</p>\n",
+        "professional_zh": "<h2>阿茲海默症躁動：Brexpiprazole 治療重點</h2>\n<p>Brexpiprazole 是目前少數對<strong>阿茲海默症相關躁動</strong>具有正式核准適應症的藥物。它的臨床定位不是立刻鎮靜，而是對於持續性躁動、攻擊性、照護負擔高，且非藥物介入不足以控制的病人，提供一個較有證據支持的藥物選項。</p>\n<h3>療效證據</h3>\n<p>第 3 期試驗顯示，2–3 mg/day 的 brexpiprazole 可改善 Cohen-Mansfield Agitation Inventory（CMAI）與 CGI-S。主要 12 週研究中，CMAI 與 placebo 的差異約為 −5.32 分，且約 68.4% 病人可達到至少 20% 的改善，對照組為 47.4%。</p>\n<h3>用藥節奏比起點更重要</h3>\n<ul>\n  <li>起始常從 0.5 mg/day 開始。</li>\n  <li>於前 2 週逐步調升到 1–2 mg/day。</li>\n  <li>目標劑量通常是 2 mg/day，部分病人可到 3 mg/day。</li>\n  <li>它<strong>不適合 PRN</strong> 使用，因為真正和 placebo 拉開差距常需要 6–12 週。</li>\n</ul>\n<h3>哪些病人最值得考慮</h3>\n<ul>\n  <li>躁動持續存在，影響安全、住院照護或家庭照顧負荷。</li>\n  <li>已先處理疼痛、便秘、感染、睡眠、環境刺激等可逆因素。</li>\n  <li>非藥物策略不足，且家屬 / 團隊清楚接受「改善需要數週」的預期。</li>\n</ul>\n<h3>安全性與警語</h3>\n<ul>\n  <li>臨床試驗中，單一不良事件達到「≥5% 且高於 placebo」的訊號不明顯，整體耐受性尚可。</li>\n  <li>因不良事件停藥比例和 placebo 接近。</li>\n  <li>但它仍屬抗精神病藥，對失智相關精神病病人有 black box warning，需和家屬明確討論死亡風險與用藥目標。</li>\n</ul>\n<h3>臨床實務要點</h3>\n<ol>\n  <li>先界定症狀是躁動、譫妄、焦慮、失眠，還是環境誘發行為問題。</li>\n  <li>起始低劑量，緩慢調整，並在 6–12 週重新評估是否達到可感知的照護效益。</li>\n  <li>若病人同時有明顯鎮靜、步態惡化、跌倒或吞嚥問題，需重新權衡是否繼續加量。</li>\n</ol>\n<p><strong>臨床結論：</strong>Brexpiprazole 的價值在於它讓 AD 躁動有較明確的藥物證據基礎，但成功使用的關鍵仍是慢速 titration、監測副作用，以及不忽略非藥物介入。</p>\n",
         "english": "<h2>Brexpiprazole in AD Agitation</h2><p>Evidence supports 2–3 mg/day with gradual titration; monitor for antipsychotic safety signals.</p>"
       }
     },
@@ -2542,20 +2882,35 @@
       ],
       "fastsr": {
         "S": [
-          "急性 ICH 在最初數小時有高血腫擴大風險。",
-          "rtPA 後出現新神經惡化需快速區分 ICH 或再阻塞。"
+          "ICH 早期處置：血壓、抗凝逆轉與 rtPA 後惡化 自發性腦出血（ICH）的早期預後，很大程度取決於能否在 最初數小時 內壓低血腫擴大（hematoma expansion, HE）風險。",
+          "最重要的三件事是：快速但平穩的降壓、即時逆轉抗凝，以及一旦 rtPA 後惡化就立刻切換到出血反轉流程。",
+          "為什麼前 24 小時這麼重要 HE 最高峰發生在最初 3 小時；6–12 小時仍有約 15%，12–24 小時約 6%，24 小時後就很少見。",
+          "因此一旦病人神經學惡化、GCS 下降或頭痛劇烈改變，應立即安排追蹤 NCCT，而不是等到固定時間點。",
+          "2 67% 9% 24 小時血腫擴大 18.",
+          "3% 27.",
+          "1% 實務上，VKA-related ICH 應優先使用 4F-PCC，並同步給 Vitamin K 5–10 mg IV，才能把短效逆轉和持續性逆轉都補齊。",
+          "Xa inhibitor： Andexanet alfa 為首選；若院內不可得，可用 4F-PCC 作替代方案，但逆轉完整度較差。",
+          "rtPA 後一旦惡化：先當 ICH 處理 立即停止 rtPA 與其他抗栓藥。",
+          "先給 TXA 1 g IV。",
+          "Cryoprecipitate 先給 10 單位，目標 fibrinogen ≥200 mg/dL。",
+          "若持續惡化或血腫大，追加 PCC / 血小板 / 凝血因子並會診神外。",
+          "重症照護提醒 同時處理發燒、高血糖、吞嚥障礙與呼吸道保護，不要只盯著影像。",
+          "若病人原本在 IVT/EVT 路徑中，發生出血後整個治療目標已改變，團隊需立刻同步更新。",
+          "臨床結論： ICH 初期管理的成功關鍵是速度與一致性：迅速降壓、迅速逆轉、迅速追蹤惡化訊號，才能真正降低血腫擴大帶來的傷害。"
         ],
         "O": [
-          "HE 高峰多在前 3 小時；6–12h 約 15%，12–24h 約 6%。",
-          "VKA-ICH：4F-PCC 3h INR≤1.2（67%）優於 FFP（9%）。"
+          "緊急做 NCCT / CTA，並抽 CBC、PT/INR、aPTT、fibrinogen、type & screen。"
         ],
         "A": [
-          "ICH 目標為平穩降壓與快速逆轉抗凝；避免 SBP 急降 <130。",
-          "rtPA 後惡化在排除出血後可評估抗血小板/tirofiban 策略。"
+          "若 ICP 升高或 CPP 不足，降壓必須和腦灌流管理一起考慮。",
+          "Warfarin 相關 ICH：4F-PCC 優於 FFP 指標 4F-PCC FFP 3 小時內 INR ≤1.",
+          "DOAC 相關逆轉 Dabigatran： Idarucizumab 5 g IV。",
+          "急性期是否重啟抗栓，必須依病因與再出血風險個別化判斷。"
         ],
         "P": [
-          "SBP 150–220 目標約 140（維持 130–150）。",
-          "VKA 相關 ICH 優先 4F-PCC + IV vitamin K。"
+          "血壓控制：快，但不能過頭 對 SBP 150–220 mmHg 的輕中度 ICH，建議降到約 140 mmHg，並維持在 130–150 mmHg。",
+          "最好在發病後 2 小時內啟動治療，並在 1 小時內達到目標。",
+          "避免把 SBP 急速壓到 <130 mmHg，因為可能造成腦灌流不足。"
         ]
       },
       "prototype": {
@@ -2584,58 +2939,70 @@
           "inr",
           "tirofiban",
           "openevidence",
-          "急性",
-          "在最初數小時有高血腫擴大風險",
-          "在最",
+          "早期處置：血壓",
+          "期處",
+          "置：",
+          "：血",
+          "後惡化",
+          "自發性腦出血（ich）的早期預後",
+          "自發",
+          "發性",
+          "性腦",
+          "腦出",
+          "出血",
+          "血（",
+          "（i",
+          "ic",
+          "ch",
+          "h）",
+          "）的",
+          "的早",
+          "期預",
+          "預後",
+          "很大程度取決於能否在",
+          "很大",
+          "大程",
+          "程度",
+          "度取",
+          "取決",
+          "決於",
+          "於能",
+          "能否",
+          "否在",
+          "最初數小時",
           "最初",
           "初數",
           "數小",
           "小時",
-          "時有",
-          "有高",
-          "高血",
-          "血腫",
-          "腫擴",
-          "擴大",
-          "大風",
-          "風險",
-          "後出現新神經惡化需快速區分",
-          "後出",
-          "出現",
-          "現新",
-          "新神",
-          "神經",
-          "經惡",
-          "化需",
-          "需快",
-          "快速",
-          "速區",
-          "區分",
-          "或再阻塞",
-          "或再",
-          "再阻",
-          "阻塞",
-          "he",
-          "高峰多在前",
-          "高峰",
-          "峰多",
-          "多在"
+          "內壓低血腫擴大（hematoma"
         ],
         "semantic": [
-          "ICH",
-          "PCC"
+          "病人",
+          "症",
+          "痛",
+          "腫",
+          "CT",
+          "考慮",
+          "因此",
+          "判斷",
+          "相關",
+          "治療",
+          "建議",
+          "管理",
+          "處置",
+          "避免"
         ],
         "fragment": [
           "ICH 早期血壓、抗凝逆轉與 rtPA 後惡化處置",
-          "rtPA 後出現新神經惡化需快速區分 ICH 或再阻塞。",
-          "VKA-ICH：4F-PCC 3h INR≤1.2（67%）優於 FFP（9%）。",
-          "rtPA 後惡化在排除出血後可評估抗血小板/tirofiban 策略。",
-          "VKA 相關 ICH 優先 4F-PCC + IV vitamin K。"
+          "ICH 早期處置：血壓、抗凝逆轉與 rtPA 後惡化 自發性腦出血（ICH）的早期預後，很大程度取決於能否在 最初數小時 內壓低血腫擴大（hematoma expansion, HE）風險。",
+          "緊急做 NCCT / CTA，並抽 CBC、PT/INR、aPTT、fibrinogen、type & screen。",
+          "Warfarin 相關 ICH：4F-PCC 優於 FFP 指標 4F-PCC FFP 3 小時內 INR ≤1.",
+          "血壓控制：快，但不能過頭 對 SBP 150–220 mmHg 的輕中度 ICH，建議降到約 140 mmHg，並維持在 130–150 mmHg。"
         ]
       },
       "versions": {
-        "simple_zh": "<h2>ICH 急性期處置重點</h2><ul><li>SBP 150–220 mmHg：快速但平穩降至約 140（維持 130–150）。</li><li>避免急降至 &lt;130 mmHg。</li><li>VKA 相關 ICH：優先 4F-PCC + 維生素 K。</li><li>rtPA 後神經惡化：先排除出血，再進一步決策。</li></ul><p><strong>參考：</strong>2023 ICH guideline、OpenEvidence 摘要。</p>",
-        "professional_zh": "<h2>Early ICH management and post-IVT deterioration</h2><p>Hematoma expansion risk is highest early, requiring rapid BP optimization and anticoagulation reversal. For VKA-associated ICH, 4F-PCC plus IV vitamin K is preferred. Post-IVT neurological worsening requires urgent hemorrhage exclusion and targeted rescue strategy.</p>",
+        "simple_zh": "<h2>ICH 早期處置：血壓、抗凝逆轉與 rtPA 後惡化</h2>\n<p>自發性腦出血（ICH）的早期預後，很大程度取決於能否在<strong>最初數小時</strong>內壓低血腫擴大（hematoma expansion, HE）風險。最重要的三件事是：快速但平穩的降壓、即時逆轉抗凝，以及一旦 rtPA 後惡化就立刻切換到出血反轉流程。</p>\n<h3>血壓控制：快，但不能過頭</h3>\n<ul>\n  <li>對 SBP 150–220 mmHg 的輕中度 ICH，建議降到約 140 mmHg，並維持在 130–150 mmHg。</li>\n  <li>最好在發病後 2 小時內啟動治療，並在 1 小時內達到目標。</li>\n  <li>避免把 SBP 急速壓到 &lt;130 mmHg，因為可能造成腦灌流不足。</li>\n  <li>若 ICP 升高或 CPP 不足，降壓必須和腦灌流管理一起考慮。</li>\n</ul>\n<h3>為什麼前 24 小時這麼重要</h3>\n<p>HE 最高峰發生在最初 3 小時；6–12 小時仍有約 15%，12–24 小時約 6%，24 小時後就很少見。因此一旦病人神經學惡化、GCS 下降或頭痛劇烈改變，應立即安排追蹤 NCCT，而不是等到固定時間點。</p>\n<h3>Warfarin 相關 ICH：4F-PCC 優於 FFP</h3>\n<table><thead><tr><th>指標</th><th>4F-PCC</th><th>FFP</th></tr></thead><tbody>\n<tr><td>3 小時內 INR ≤1.2</td><td>67%</td><td>9%</td></tr>\n<tr><td>24 小時血腫擴大</td><td>18.3%</td><td>27.1%</td></tr>\n</tbody></table>\n<p>實務上，VKA-related ICH 應優先使用 4F-PCC，並同步給 Vitamin K 5–10 mg IV，才能把短效逆轉和持續性逆轉都補齊。</p>\n<h3>DOAC 相關逆轉</h3>\n<ul>\n  <li><strong>Dabigatran：</strong>Idarucizumab 5 g IV。</li>\n  <li><strong>Xa inhibitor：</strong>Andexanet alfa 為首選；若院內不可得，可用 4F-PCC 作替代方案，但逆轉完整度較差。</li>\n</ul>\n<h3>rtPA 後一旦惡化：先當 ICH 處理</h3>\n<ol>\n  <li>立即停止 rtPA 與其他抗栓藥。</li>\n  <li>緊急做 NCCT / CTA，並抽 CBC、PT/INR、aPTT、fibrinogen、type &amp; screen。</li>\n  <li>先給 TXA 1 g IV。</li>\n  <li>Cryoprecipitate 先給 10 單位，目標 fibrinogen ≥200 mg/dL。</li>\n  <li>若持續惡化或血腫大，追加 PCC / 血小板 / 凝血因子並會診神外。</li>\n</ol>\n<h3>重症照護提醒</h3>\n<ul>\n  <li>同時處理發燒、高血糖、吞嚥障礙與呼吸道保護，不要只盯著影像。</li>\n  <li>急性期是否重啟抗栓，必須依病因與再出血風險個別化判斷。</li>\n  <li>若病人原本在 IVT/EVT 路徑中，發生出血後整個治療目標已改變，團隊需立刻同步更新。</li>\n</ul>\n<p><strong>臨床結論：</strong>ICH 初期管理的成功關鍵是速度與一致性：迅速降壓、迅速逆轉、迅速追蹤惡化訊號，才能真正降低血腫擴大帶來的傷害。</p>\n",
+        "professional_zh": "<h2>ICH 早期處置：血壓、抗凝逆轉與 rtPA 後惡化</h2>\n<p>自發性腦出血（ICH）的早期預後，很大程度取決於能否在<strong>最初數小時</strong>內壓低血腫擴大（hematoma expansion, HE）風險。最重要的三件事是：快速但平穩的降壓、即時逆轉抗凝，以及一旦 rtPA 後惡化就立刻切換到出血反轉流程。</p>\n<h3>血壓控制：快，但不能過頭</h3>\n<ul>\n  <li>對 SBP 150–220 mmHg 的輕中度 ICH，建議降到約 140 mmHg，並維持在 130–150 mmHg。</li>\n  <li>最好在發病後 2 小時內啟動治療，並在 1 小時內達到目標。</li>\n  <li>避免把 SBP 急速壓到 &lt;130 mmHg，因為可能造成腦灌流不足。</li>\n  <li>若 ICP 升高或 CPP 不足，降壓必須和腦灌流管理一起考慮。</li>\n</ul>\n<h3>為什麼前 24 小時這麼重要</h3>\n<p>HE 最高峰發生在最初 3 小時；6–12 小時仍有約 15%，12–24 小時約 6%，24 小時後就很少見。因此一旦病人神經學惡化、GCS 下降或頭痛劇烈改變，應立即安排追蹤 NCCT，而不是等到固定時間點。</p>\n<h3>Warfarin 相關 ICH：4F-PCC 優於 FFP</h3>\n<table><thead><tr><th>指標</th><th>4F-PCC</th><th>FFP</th></tr></thead><tbody>\n<tr><td>3 小時內 INR ≤1.2</td><td>67%</td><td>9%</td></tr>\n<tr><td>24 小時血腫擴大</td><td>18.3%</td><td>27.1%</td></tr>\n</tbody></table>\n<p>實務上，VKA-related ICH 應優先使用 4F-PCC，並同步給 Vitamin K 5–10 mg IV，才能把短效逆轉和持續性逆轉都補齊。</p>\n<h3>DOAC 相關逆轉</h3>\n<ul>\n  <li><strong>Dabigatran：</strong>Idarucizumab 5 g IV。</li>\n  <li><strong>Xa inhibitor：</strong>Andexanet alfa 為首選；若院內不可得，可用 4F-PCC 作替代方案，但逆轉完整度較差。</li>\n</ul>\n<h3>rtPA 後一旦惡化：先當 ICH 處理</h3>\n<ol>\n  <li>立即停止 rtPA 與其他抗栓藥。</li>\n  <li>緊急做 NCCT / CTA，並抽 CBC、PT/INR、aPTT、fibrinogen、type &amp; screen。</li>\n  <li>先給 TXA 1 g IV。</li>\n  <li>Cryoprecipitate 先給 10 單位，目標 fibrinogen ≥200 mg/dL。</li>\n  <li>若持續惡化或血腫大，追加 PCC / 血小板 / 凝血因子並會診神外。</li>\n</ol>\n<h3>重症照護提醒</h3>\n<ul>\n  <li>同時處理發燒、高血糖、吞嚥障礙與呼吸道保護，不要只盯著影像。</li>\n  <li>急性期是否重啟抗栓，必須依病因與再出血風險個別化判斷。</li>\n  <li>若病人原本在 IVT/EVT 路徑中，發生出血後整個治療目標已改變，團隊需立刻同步更新。</li>\n</ul>\n<p><strong>臨床結論：</strong>ICH 初期管理的成功關鍵是速度與一致性：迅速降壓、迅速逆轉、迅速追蹤惡化訊號，才能真正降低血腫擴大帶來的傷害。</p>\n",
         "english": "<h2>Early ICH and Post-IVT Management</h2><p>Prioritize controlled BP reduction, rapid reversal, and immediate reassessment pathways for neurological worsening.</p>"
       }
     }
