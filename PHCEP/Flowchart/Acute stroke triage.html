@@ -154,7 +154,7 @@
       <button type="button" id="tab-triage" role="tab" aria-controls="panel-triage" aria-selected="true" class="tab-btn active" data-tab-target="triage">主分流 / 流程圖</button>
       <button type="button" id="tab-ivt" role="tab" aria-controls="panel-ivt" aria-selected="false" class="tab-btn" data-tab-target="ivt">IVT 核對表</button>
       <button type="button" id="tab-special" role="tab" aria-controls="panel-special" aria-selected="false" class="tab-btn" data-tab-target="special">特殊情況與統計</button>
-      <button type="button" id="tab-ich" role="tab" aria-controls="panel-ich" aria-selected="false" class="tab-btn" data-tab-target="ich">ICH / Angioedema</button>
+      <button type="button" id="tab-ich" role="tab" aria-controls="panel-ich" aria-selected="false" class="tab-btn" data-tab-target="ich">出血性中風處置</button>
     </div>
 
     <section class="tab-panel is-active" id="panel-triage" role="tabpanel" aria-labelledby="tab-triage" data-tab-panel="triage">
@@ -202,8 +202,9 @@
             <select id="strokeType">
               <option value="undifferentiated">待影像分類 / 未分型（影像尚未判讀）</option>
               <option value="ischemic">缺血性中風（AIS，已排除出血）</option>
-              <option value="ich">出血性中風（ICH）</option>
-              <option value="sah">出血性中風（SAH）</option>
+              <option value="ich">原發性出血性中風（ICH）</option>
+              <option value="sah">原發性出血性中風（SAH）</option>
+              <option value="sdh">出血性中風（SDH，硬腦膜下血腫）</option>
             </select>
           </div>
           <div class="field">
@@ -288,7 +289,7 @@
             </div>
           </div>
 
-          <div class="field-grid four" style="margin-top:12px;">
+          <div class="field-grid thirds" style="margin-top:12px;">
             <div class="field">
               <label for="inr">INR</label>
               <input id="inr" type="number" min="0" step="0.1" value="1.0" />
@@ -301,16 +302,9 @@
               <label for="platelets">血小板 (/mm³)</label>
               <input id="platelets" type="number" min="0" step="1000" value="210000" />
             </div>
-            <div class="field">
-              <label for="manualNihss">NIHSS 總分（可手動覆寫）</label>
-              <input id="manualNihss" type="number" min="0" max="42" value="0" />
-            </div>
           </div>
 
-          <div class="field-grid thirds" style="margin-top:12px;">
-            <div class="field">
-              <label><input id="syncNihss" type="checkbox" checked style="width:auto;margin-right:8px;accent-color:var(--accent)" />同步 NIHSS 量表總分至主輸入</label>
-            </div>
+          <div class="field-grid" style="margin-top:12px;grid-template-columns:repeat(2,minmax(0,1fr));">
             <div class="field">
               <label><input id="recentLmwh" type="checkbox" style="width:auto;margin-right:8px;accent-color:var(--accent)" />24 小時內使用 LMWH</label>
             </div>
@@ -560,14 +554,96 @@
     </section>
 
     <section class="card tab-panel" id="panel-ich" role="tabpanel" aria-labelledby="tab-ich" data-tab-panel="ich" style="margin-top:18px;">
-      <h2>ICH Management Protocol / rtPA 相關併發症</h2>
+      <h2>出血性中風處置</h2>
+      <p class="muted" style="margin-bottom:14px;">出血性中風約佔所有中風的 15–20%，分為原發性（ICH/SAH/SDH）與 rtPA 治療後繼發性出血，兩者處置原則不同，必須明確區分。</p>
+
+      <!-- ===== SECTION 1: PRIMARY HEMORRHAGIC STROKE ===== -->
+      <div class="panel-note" style="margin-bottom:16px;">
+        <h3 style="color:var(--bad)">⚠️ 原發性出血性中風（ICH / SAH / SDH）</h3>
+        <p class="tiny muted">此為初始診斷即為出血性中風，<strong>不適用 rtPA / IVT</strong>；請立即啟動以下處置。</p>
+
+        <div class="divider"></div>
+
+        <details open>
+          <summary>自發性腦出血（ICH）— 早期血壓管理</summary>
+          <ul style="margin:10px 0 0 18px;padding:0;">
+            <li><strong>適用情境：</strong>SBP 150–220 mmHg 的輕度至中度 ICH。</li>
+            <li><strong>目標：</strong>發病後 2 小時內開始降壓，1 小時內達 SBP ≈ 140 mmHg（維持 130–150 mmHg）。<span class="badge class-iia" style="margin-left:6px;">IIa, C-LD</span></li>
+            <li>INTERACT3 試驗：早期強化降壓（1h 內目標 &lt;140 mmHg）可改善複合功能預後。</li>
+            <li><strong>禁忌：</strong>SBP 急降至 &lt;130 mmHg 可能有害，應避免；大量 ICH / ICP 升高時維持 CPP ≥ 60–70 mmHg。</li>
+          </ul>
+        </details>
+
+        <details style="margin-top:10px;">
+          <summary>NCCT 血腫擴大（HE）預測影像標誌</summary>
+          <ul style="margin:10px 0 0 18px;padding:0;">
+            <li><strong>HE 時間窗：</strong>高峰在最初 3 小時；6–12h 約 15%；12–24h 約 6%；24h 後極為罕見（&lt;1%）。</li>
+            <li><strong>CTA 斑點標記（spot sign）：</strong>0–2 小時內預測力最高，隨時間遞減。</li>
+            <li><strong>NCCT 高風險徵象：</strong>低密度徵象（hypodensity）、液面（fluid level）、漩渦徵（swirl sign）、黑洞徵（black hole sign）、混合徵（blend sign）、島狀徵（island sign）、衛星徵（satellite sign）。</li>
+            <li><strong>追蹤：</strong>發病後約 24h 常規追蹤 NCCT；出現神經惡化（GCS 下降）應即刻追蹤。</li>
+          </ul>
+        </details>
+
+        <details style="margin-top:10px;">
+          <summary>抗凝相關 ICH 逆轉治療</summary>
+          <div class="table-wrap" style="margin-top:10px;">
+            <table>
+              <thead><tr><th>藥物</th><th>逆轉藥</th><th>劑量 / 備注</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Warfarin（VKA）</strong></td><td>4F-PCC（首選）+ Vitamin K</td><td>30 IU/kg IV；3h 內 INR ≤1.2：67% vs FFP 9%；24h HE：18.3% vs 27.1%。合併 Vit K 5–10 mg IV。較高劑量（2000–3000 IU）需注意 VTE 風險。</td></tr>
+                <tr><td><strong>Dabigatran</strong></td><td>Idarucizumab（Praxbind）</td><td>5 g IV（兩瓶各 2.5 g，接連給予）。</td></tr>
+                <tr><td><strong>Xa 抑制劑（Rivaroxaban/Apixaban/Edoxaban）</strong></td><td>Andexanet alfa（首選）；備用：4F-PCC 50 IU/kg</td><td>4F-PCC 為不完全逆轉方案，Andexanet alfa 效果更完整。</td></tr>
+                <tr><td><strong>Heparin</strong></td><td>Protamine sulfate</td><td>1 mg/100 IU heparin；依最後用藥時間調整。</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+
+        <details style="margin-top:10px;">
+          <summary>外科手術適應症</summary>
+          <ul style="margin:10px 0 0 18px;padding:0;">
+            <li><strong>小腦出血（最強適應症）：</strong>直徑 &gt;3 cm 或體積 &gt;15 mL 合併臨床或影像腦幹壓迫、阻塞性水腦 → 立即神外評估（開顱或微創手術）。</li>
+            <li><strong>幕上 ICH — 微創手術（MIS）：</strong>ICH 體積 &gt;20–30 mL，GCS 5–12，葉狀位置，24h 內早期介入；JAMA Neurol 2025 meta-analysis 支持 MIS 降低死亡率。</li>
+            <li><strong>幕上 ICH — 開顱手術：</strong>出現腦疝脫徵象惡化者；距皮質表面 &lt;1 cm 淺層葉狀 ICH（STICH II）。</li>
+            <li><strong>深部 ICH（視丘/腦橋）：</strong>手術通常無益或有害；GCS ≤4 或雙側瞳孔固定擴大，預後極差。</li>
+            <li><strong>腦幹 ICH：</strong>外科介入幾乎無益。</li>
+          </ul>
+        </details>
+
+        <div class="divider"></div>
+
+        <details>
+          <summary>蜘蛛網膜下腔出血（SAH）重點處置</summary>
+          <ul style="margin:10px 0 0 18px;padding:0;">
+            <li><strong>初始血壓：</strong>動脈瘤未固定前維持 SBP &lt;160–180 mmHg（避免再出血），動脈瘤固定後可放寬。</li>
+            <li><strong>緊急影像：</strong>NCCT 確認 SAH 後，立即 CTA（或 DSA）評估動脈瘤。</li>
+            <li><strong>動脈瘤固定：</strong>血管內栓塞（coiling，多數首選）vs. 開顱夾閉（clipping）；在 24–72h 內儘快處置以預防再出血。</li>
+            <li><strong>Nimodipine：</strong>60 mg q4h × 21 天，預防遲發性腦缺血（DCI）/ 血管痙攣。<span class="badge class-i" style="margin-left:6px;">I, A</span></li>
+            <li><strong>腦血管痙攣：</strong>發病後 3–14 天高峰；每日 TCD 監測，必要時血管造影與動脈內治療。</li>
+            <li><strong>水腦：</strong>急性（發病數小時內）需緊急腦室引流（EVD）；慢性水腦考慮分流手術。</li>
+          </ul>
+        </details>
+
+        <details style="margin-top:10px;">
+          <summary>硬腦膜下血腫（SDH）重點處置</summary>
+          <ul style="margin:10px 0 0 18px;padding:0;">
+            <li>SDH 常見於抗凝劑使用者、高齡輕微外傷。處置重點：逆轉抗凝（見上表）、神外評估。</li>
+            <li><strong>急性 SDH 手術適應症：</strong>血腫厚度 &gt;10 mm、中線移位 &gt;5 mm，或有意識惡化→緊急開顱清除。</li>
+            <li><strong>慢性 SDH：</strong>鑽孔引流為主要術式；部分無症狀 / 小型可保守觀察。</li>
+            <li>若在 rtPA / EVT 治療後發現 SDH，請切換至「rtPA 後 ICH」處置路徑。</li>
+          </ul>
+        </details>
+      </div>
+
+      <!-- ===== SECTION 2: POST-rtPA COMPLICATIONS ===== -->
       <div class="protocol-grid">
         <div class="panel-note">
-          <h3>rtPA 後 ICH 處置（步驟化）</h3>
-          <ol>
+          <h3 style="color:var(--warn)">🔴 rtPA 治療後繼發性 ICH（IVT 相關併發症）</h3>
+          <p class="tiny muted">此為缺血性中風接受 rtPA 靜脈血栓溶解後出現的出血轉化，<strong>與原發性 ICH 機轉及處置不同</strong>，主要涉及 fibrinogen 耗竭。</p>
+          <ol style="margin-top:8px;">
             <li>立即停止 rtPA / 抗栓藥，啟動急救團隊與神經外科會診。</li>
-            <li>緊急 NCCT / CTA，抽 CBC、PT/INR、aPTT、fibrinogen、type &amp; screen。</li>
-            <li>先給 <strong>TXA 1 g IV</strong>；若院內 protocol 採 aminocaproic acid，依院規追加。</li>
+            <li>緊急 NCCT / CTA，抽 CBC、PT/INR、aPTT、<strong>fibrinogen</strong>、type &amp; screen。</li>
+            <li>先給 <strong>TXA 1 g IV</strong>（tranexamic acid）；若院內 protocol 採 aminocaproic acid，依院規追加。</li>
             <li><strong>Cryoprecipitate</strong> 建議先給 10 單位；文獻平均約 8.7 units，可使 fibrinogen 上升 55±24 mg/dL，目標 fibrinogen ≥200 mg/dL。</li>
             <li>若持續惡化或大量血腫，考慮 PCC、血小板 / 凝血因子補充與外科處置。</li>
             <li>嚴格血壓控制、重症監測、必要時氣道保護與 ICP 管理。</li>
@@ -576,7 +652,7 @@
           <div class="tiny muted">rtPA / EVT 後 24h 維持 BP &lt;180/105 mmHg；EVT post 同樣以 &lt;180/105 mmHg 為原則。</div>
         </div>
         <div class="panel-note">
-          <h3>Angioedema 與神經惡化</h3>
+          <h3>Angioedema 與 rtPA 後神經惡化</h3>
           <ul>
             <li><strong>rtPA 後 angioedema：</strong>發生率 0.2–7.9%；ACEI 使用者風險增加 3–4 倍。</li>
             <li><strong>第一線治療：</strong>IV methylprednisolone 125 mg + IV diphenhydramine 50 mg + IV famotidine 20 mg。</li>
@@ -845,7 +921,6 @@
           ? '距最後正常時間（小時）'
           : '距發病 / 最後正常時間（小時）';
       q('#knownHours').disabled = mode === 'wakeup';
-      q('#manualNihss').disabled = q('#syncNihss').checked;
     }
 
     function setCardState(id, active, contra = false) {
@@ -976,8 +1051,7 @@
 
     function currentState() {
       const nihssRaw = getNihssScore();
-      if (q('#syncNihss').checked) q('#manualNihss').value = nihssRaw;
-      const nihssScore = Number(q('#manualNihss').value || 0);
+      const nihssScore = nihssRaw;
       return {
         age: Number(q('#age').value || 0),
         sbp: Number(q('#sbp').value || 0),
@@ -994,7 +1068,7 @@
         dwiFlairMismatch: q('#dwiFlairMismatch').value,
         evtTeam: q('#evtTeam').value === 'yes',
         cryo: q('#cryo').value === 'yes',
-        imagingClear: (() => { const st = q('#strokeType').value; return st === 'ischemic' ? 'yes' : (st === 'ich' || st === 'sah') ? 'no' : 'pending'; })(),
+        imagingClear: (() => { const st = q('#strokeType').value; return st === 'ischemic' ? 'yes' : (st === 'ich' || st === 'sah' || st === 'sdh') ? 'no' : 'pending'; })(),
         acuteMI: q('#acuteMI').value,
         time: parseTimeWindow(),
         nihssRaw,
@@ -1005,7 +1079,7 @@
     }
 
     function updateFlow(state) {
-      const hemorrhagicPath = state.strokeType === 'ich' || state.strokeType === 'sah' || state.imagingClear === 'no';
+      const hemorrhagicPath = state.strokeType === 'ich' || state.strokeType === 'sah' || state.strokeType === 'sdh' || state.imagingClear === 'no';
       const validTime = Number.isFinite(state.time.hours) && state.time.hours >= 0;
       const standardIvtWindow = state.time.mode === 'known' && validTime && state.time.hours <= 4.5;
       const extendedWindow = state.time.mode === 'known' && validTime && state.time.hours > 4.5 && state.time.hours <= 9;
@@ -1017,7 +1091,7 @@
       const wakeupEligible = !hemorrhagicPath && wakeupWindow && state.dwiFlairMismatch === 'yes';
       const anyReperfusion = standardEligible || extendedEligible || wakeupEligible || evtCandidate;
 
-      setNode('node-a', hemorrhagicPath ? 'warning' : 'current', hemorrhagicPath ? '目前走出血性中風（ICH/SAH）路徑。' : state.imagingClear === 'pending' ? '影像判讀中，先完成 NCCT / CTA。' : 'NCCT 已排除 ICH，進入缺血性中風分流。');
+      setNode('node-a', hemorrhagicPath ? 'warning' : 'current', hemorrhagicPath ? '目前走出血性中風（ICH/SAH/SDH）路徑，請切換至「出血性中風處置」分頁。' : state.imagingClear === 'pending' ? '影像判讀中，先完成 NCCT / CTA。' : 'NCCT 已排除 ICH，進入缺血性中風分流。');
       setNode('node-b', state.nihssScore > 0 ? 'compatible' : 'warning', `NIHSS ${state.nihssScore}（${state.nihssSeverity}）。`);
 
       if (standardEligible) {
@@ -1066,7 +1140,7 @@
       }
 
       if (!anyReperfusion || hemorrhagicPath) {
-        setNode('node-h', 'compatible', hemorrhagicPath ? '已分類為 ICH/SAH，請優先出血控制、逆轉抗凝與神外評估。' : '目前不符再灌流條件，建議最佳藥物治療與次級預防。');
+        setNode('node-h', 'compatible', hemorrhagicPath ? `已分類為${state.strokeType === 'sah' ? 'SAH' : state.strokeType === 'sdh' ? 'SDH' : 'ICH'}，請切換至「出血性中風處置」分頁進行血壓控制、逆轉抗凝與神外評估。` : '目前不符再灌流條件，建議最佳藥物治療與次級預防。');
       } else {
         setNode('node-h', 'inactive', '已有再灌流候選路徑。');
       }
@@ -1095,9 +1169,9 @@
         : `${state.time.description}：資料不足`;
 
       if (state.hemorrhagicPath) {
-        headline = state.strokeType === 'sah' ? '已分流為 SAH 路徑：不適用 IVT' : '已分流為出血性中風路徑：不適用 IVT';
+        headline = state.strokeType === 'sah' ? '已分流為 SAH 路徑：不適用 IVT' : state.strokeType === 'sdh' ? '已分流為 SDH 路徑：不適用 IVT' : '已分流為 ICH 路徑：不適用 IVT';
         headlineClass = 'badge class-iii';
-        recommendationLines.push('請優先執行 ICH/SAH 流程：血壓控制、逆轉抗凝、神外與重症照護。');
+        recommendationLines.push('請切換至「出血性中風處置」分頁：血壓控制（ICH目標SBP 140 mmHg）、逆轉抗凝、NCCT血腫監測、神外與重症照護。');
       } else if (state.standardEligible) {
         headline = '符合標準 IVT 路徑（≤4.5h）';
         headlineClass = 'badge class-i';
@@ -1149,7 +1223,7 @@
       const summaryLines = [
         `• ${headline}`,
         `• ${timeText}`,
-        `• 中風分流型態：${state.strokeType === 'ischemic' ? '缺血性（AIS）' : state.strokeType === 'ich' ? '出血性（ICH）' : state.strokeType === 'sah' ? '出血性（SAH）' : '待影像分類'}`,
+        `• 中風分流型態：${state.strokeType === 'ischemic' ? '缺血性（AIS）' : state.strokeType === 'ich' ? '原發性出血性（ICH）' : state.strokeType === 'sah' ? '原發性出血性（SAH）' : state.strokeType === 'sdh' ? '出血性（SDH）' : '待影像分類'}`,
         `• NIHSS：${state.nihssScore}（${state.nihssSeverity}）`,
         `• 影像：${state.imagingClear === 'yes' ? '已排除 ICH' : state.imagingClear === 'pending' ? '待判讀' : '已有出血'}`,
         `• IVT 必要條件：${state.requiredLabels.length ? state.requiredLabels.join('；') : '尚未滿足'}`,
