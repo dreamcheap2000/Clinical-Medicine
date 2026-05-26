@@ -1301,6 +1301,9 @@
       const timeText = Number.isFinite(state.time.hours) && state.time.hours >= 0
         ? `${state.time.description}：${state.time.hours.toFixed(2)} 小時`
         : `${state.time.description}：資料不足`;
+      const sbpText = Number.isFinite(state.sbp) ? state.sbp : '未填';
+      const dbpText = Number.isFinite(state.dbp) ? state.dbp : '未填';
+      const glucoseText = Number.isFinite(state.glucose) ? state.glucose : '未填';
 
       if (state.hemorrhagicPath) {
         headline = state.strokeType === 'sah' ? '已分流為 SAH 路徑：不適用 IVT' : state.strokeType === 'sdh' ? '已分流為 SDH 路徑：不適用 IVT' : '已分流為 ICH 路徑：不適用 IVT';
@@ -1359,8 +1362,8 @@
         <div class="inline-list" style="margin-bottom:8px;"><span class="${headlineClass}">${headline}</span></div>
         <div><strong>${timeText}</strong></div>
         <div class="muted" style="margin-top:6px;">${state.hemorrhagicPath
-          ? `BP ${state.sbp}/${state.dbp}｜Glucose ${state.glucose}｜抗凝：${state.anticoag === 'warfarin' ? 'Warfarin' : state.anticoag === 'doac' ? 'DOAC' : state.anticoag === 'none' ? '無' : '待補'}`
-          : `NIHSS ${state.nihssScore}（${state.nihssSeverity}）｜BP ${state.sbp}/${state.dbp}｜Glucose ${state.glucose}｜LVO：${state.lvo === 'yes' ? '是' : state.lvo === 'no' ? '否' : '未知'}`}</div>
+          ? `BP ${sbpText}/${dbpText}｜Glucose ${glucoseText}｜抗凝：${state.anticoag === 'warfarin' ? 'Warfarin' : state.anticoag === 'doac' ? 'DOAC' : state.anticoag === 'none' ? '無' : '待補'}`
+          : `NIHSS ${state.nihssScore}（${state.nihssSeverity}）｜BP ${sbpText}/${dbpText}｜Glucose ${glucoseText}｜LVO：${state.lvo === 'yes' ? '是' : state.lvo === 'no' ? '否' : '未知'}`}</div>
         <ul style="margin:10px 0 0 18px;padding:0;">
           ${recommendationLines.map((line) => `<li>${line}</li>`).join('')}
         </ul>
