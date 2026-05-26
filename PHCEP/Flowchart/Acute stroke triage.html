@@ -152,9 +152,8 @@
 
     <div class="section-tabs" role="tablist" aria-label="內容分頁">
       <button type="button" id="tab-triage" role="tab" aria-controls="panel-triage" aria-selected="true" class="tab-btn active" data-tab-target="triage">主分流 / 流程圖</button>
-      <button type="button" id="tab-stats" role="tab" aria-controls="panel-stats" aria-selected="false" class="tab-btn" data-tab-target="stats">情境統計</button>
       <button type="button" id="tab-ivt" role="tab" aria-controls="panel-ivt" aria-selected="false" class="tab-btn" data-tab-target="ivt">IVT 核對表</button>
-      <button type="button" id="tab-special" role="tab" aria-controls="panel-special" aria-selected="false" class="tab-btn" data-tab-target="special">特殊情況</button>
+      <button type="button" id="tab-special" role="tab" aria-controls="panel-special" aria-selected="false" class="tab-btn" data-tab-target="special">特殊情況與統計</button>
       <button type="button" id="tab-ich" role="tab" aria-controls="panel-ich" aria-selected="false" class="tab-btn" data-tab-target="ich">ICH / Angioedema</button>
     </div>
 
@@ -198,35 +197,27 @@
           </div>
 
           <div class="field-grid four" style="margin-top:12px;">
-            <div class="field">
-              <label for="strokeType">中風型態分流</label>
-              <select id="strokeType">
-                <option value="undifferentiated">待影像分類 / 未分型</option>
-                <option value="ischemic">缺血性中風（AIS）</option>
-                <option value="ich">出血性中風（ICH）</option>
-                <option value="sah">出血性中風（SAH）</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="sbp">收縮壓 SBP (mmHg)</label>
-              <input id="sbp" type="number" min="0" value="170" />
-            </div>
-            <div class="field">
-              <label for="dbp">舒張壓 DBP (mmHg)</label>
-              <input id="dbp" type="number" min="0" value="95" />
-            </div>
-            <div class="field">
-              <label for="glucose">血糖 (mg/dL)</label>
-              <input id="glucose" type="number" min="0" value="128" />
-            </div>
-            <div class="field">
-              <label for="imagingClear">腦部影像排除顱內出血</label>
-              <select id="imagingClear">
-                <option value="yes">是</option>
-                <option value="pending">尚待判讀</option>
-                <option value="no">否 / 已有出血</option>
-              </select>
-            </div>
+          <div class="field">
+            <label for="strokeType">中風型態（影像分型）</label>
+            <select id="strokeType">
+              <option value="undifferentiated">待影像分類 / 未分型（影像尚未判讀）</option>
+              <option value="ischemic">缺血性中風（AIS，已排除出血）</option>
+              <option value="ich">出血性中風（ICH）</option>
+              <option value="sah">出血性中風（SAH）</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="sbp">收縮壓 SBP (mmHg)</label>
+            <input id="sbp" type="number" min="0" value="170" />
+          </div>
+          <div class="field">
+            <label for="dbp">舒張壓 DBP (mmHg)</label>
+            <input id="dbp" type="number" min="0" value="95" />
+          </div>
+          <div class="field">
+            <label for="glucose">血糖 (mg/dL)</label>
+            <input id="glucose" type="number" min="0" value="128" />
+          </div>
           </div>
 
           <div class="field-grid four" style="margin-top:12px;">
@@ -413,9 +404,7 @@
 
         <aside class="section-stack sticky" id="flowchart-panel">
           <section class="card">
-            <h2>NIHSS / 流程圖</h2>
-            <div class="tiny muted">滑鼠移到 NIHSS 欄位可快速查看評分選項。</div>
-            <div id="nihssHoverGrid" class="nihss-hover-grid" aria-label="NIHSS評分選項快速參考"></div>
+            <h2>流程圖</h2>
             <div class="gfast-score">
               <div>NIHSS 總分：<strong id="nihssScoreSide">0</strong></div>
               <div class="muted">嚴重度：<span id="nihssSeveritySide">無中風症狀</span></div>
@@ -439,9 +428,58 @@
       </main>
     </section>
 
-    <section class="card tab-panel" id="panel-stats" role="tabpanel" aria-labelledby="tab-stats" data-tab-panel="stats" style="margin-top:18px;">
-      <h2>情境統計與證據摘要</h2>
-      <p class="muted">會依目前分流情境自動展開最相關的證據區塊。</p>
+
+    <section class="card tab-panel" id="panel-ivt" role="tabpanel" aria-labelledby="tab-ivt" data-tab-panel="ivt" style="margin-top:18px;">
+      <h2>IVT 治療決策核對表（2025 台灣腦中風學會）</h2>
+      <div class="field-grid four">
+        <div class="field">
+          <label for="ivtTimestamp">核對時間戳記</label>
+          <input id="ivtTimestamp" type="datetime-local" />
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button id="ivtSelectAllRequired" type="button" class="mini">必要條件全選</button>
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button id="ivtSelectAllContra" type="button" class="mini btn-ghost">禁忌全選</button>
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button id="ivtClearAll" type="button" class="mini btn-secondary">清除手動勾選</button>
+        </div>
+      </div>
+      <div id="ivtStatus" class="ivt-status" style="margin-top:12px;"></div>
+      <div class="ivt-columns">
+        <div>
+          <h3>必要條件</h3>
+          <div id="requiredChecklist" class="check-grid"></div>
+        </div>
+        <div>
+          <h3>絕對禁忌（Not recommended）</h3>
+          <div id="contraChecklist" class="check-grid"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card tab-panel" id="panel-special" role="tabpanel" aria-labelledby="tab-special" data-tab-panel="special" style="margin-top:18px;">
+      <h2>特殊情況與情境統計（2025 台灣腦中風學會）</h2>
+      <p class="muted">以下情況可在共享決策與影像條件下考慮 IVT，表格會自動帶入目前已符合的項目。統計區塊依分流情境自動展開。</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>適用</th>
+              <th>臨床情境</th>
+              <th>建議 / 證據</th>
+              <th>相關統計 / 補充</th>
+            </tr>
+          </thead>
+          <tbody id="specialSituationBody"></tbody>
+        </table>
+      </div>
+      <div class="divider"></div>
+      <h3>情境統計與證據摘要</h3>
       <div class="stats-grid">
         <details id="stat-extend">
           <summary>4.5–9h + perfusion imaging（EXTEND trial）</summary>
@@ -503,57 +541,6 @@
             <li>流程需兼顧「判讀速度」與「門檻一致性」，避免延誤再灌流決策。</li>
           </ul>
         </details>
-      </div>
-    </section>
-
-    <section class="card tab-panel" id="panel-ivt" role="tabpanel" aria-labelledby="tab-ivt" data-tab-panel="ivt" style="margin-top:18px;">
-      <h2>IVT 治療決策核對表（2025 台灣腦中風學會）</h2>
-      <div class="field-grid four">
-        <div class="field">
-          <label for="ivtTimestamp">核對時間戳記</label>
-          <input id="ivtTimestamp" type="datetime-local" />
-        </div>
-        <div class="field">
-          <label>&nbsp;</label>
-          <button id="ivtSelectAllRequired" type="button" class="mini">必要條件全選</button>
-        </div>
-        <div class="field">
-          <label>&nbsp;</label>
-          <button id="ivtSelectAllContra" type="button" class="mini btn-ghost">禁忌全選</button>
-        </div>
-        <div class="field">
-          <label>&nbsp;</label>
-          <button id="ivtClearAll" type="button" class="mini btn-secondary">清除手動勾選</button>
-        </div>
-      </div>
-      <div id="ivtStatus" class="ivt-status" style="margin-top:12px;"></div>
-      <div class="ivt-columns">
-        <div>
-          <h3>必要條件</h3>
-          <div id="requiredChecklist" class="check-grid"></div>
-        </div>
-        <div>
-          <h3>絕對禁忌（Not recommended）</h3>
-          <div id="contraChecklist" class="check-grid"></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="card tab-panel" id="panel-special" role="tabpanel" aria-labelledby="tab-special" data-tab-panel="special" style="margin-top:18px;">
-      <h2>IVT 特殊情況綜合評估表（2025 台灣腦中風學會）</h2>
-      <p class="muted">以下情況可在共享決策與影像條件下考慮 IVT，表格會自動帶入目前已符合的項目。</p>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>適用</th>
-              <th>臨床情境</th>
-              <th>建議 / 證據</th>
-              <th>相關統計 / 補充</th>
-            </tr>
-          </thead>
-          <tbody id="specialSituationBody"></tbody>
-        </table>
       </div>
       <div class="divider"></div>
       <h3>心因性栓塞風險與出血風險評估（AF）</h3>
@@ -631,7 +618,7 @@
       { id: 'req-suspected', label: '臨床懷疑是急性缺血性腦中風', note: '依 NIHSS 與整體臨床判斷，自動帶入。' },
       { id: 'req-time', label: '中風發病在 4.5 小時內', note: '僅限已知發病時間之標準 IVT 窗口。' },
       { id: 'req-age', label: '年齡在 18 歲以上', note: '由年齡輸入自動判定。' },
-      { id: 'req-imaging', label: '腦部影像排除顱內出血', note: '由 NCCT / MRI 判讀結果帶入。' },
+      { id: 'req-imaging', label: '腦部影像排除顱內出血', note: '由中風型態影像分型自動帶入（選「缺血性中風（AIS）」即符合）。' },
     ];
 
     const CONTRA_ITEMS = [
@@ -1007,7 +994,7 @@
         dwiFlairMismatch: q('#dwiFlairMismatch').value,
         evtTeam: q('#evtTeam').value === 'yes',
         cryo: q('#cryo').value === 'yes',
-        imagingClear: q('#imagingClear').value,
+        imagingClear: q('#strokeType').value === 'ischemic' ? 'yes' : (q('#strokeType').value === 'ich' || q('#strokeType').value === 'sah') ? 'no' : 'pending',
         acuteMI: q('#acuteMI').value,
         time: parseTimeWindow(),
         nihssRaw,
@@ -1035,7 +1022,7 @@
 
       if (standardEligible) {
         setNode('node-c', 'compatible', '標準 IVT 窗口且符合 2025 台灣核對表。');
-      } else if (standardIvtWindow) {
+      } else if (!hemorrhagicPath && standardIvtWindow) {
         const reason = state.contraLabels[0] || (!state.requiredMet ? '必要條件尚未齊備。' : '需進一步補齊資料。');
         setNode('node-c', 'contra', `≤4.5h 但目前不符：${reason}`);
       } else {
@@ -1192,11 +1179,6 @@
       q('#nihssSeverity').textContent = nihssSeverity(state.nihssRaw);
       q('#nihssScoreSide').textContent = String(state.nihssRaw);
       q('#nihssSeveritySide').textContent = nihssSeverity(state.nihssRaw);
-      NIHSS_ITEMS.forEach((item) => {
-        const src = q(`#${item.id}`);
-        const dest = q(`[data-nihss-hover="${item.id}"]`);
-        if (src && dest && dest.value !== src.value) dest.value = src.value;
-      });
     }
 
     function buildCopySummary(state) {
@@ -1301,7 +1283,6 @@
     }
 
     renderNihss();
-    renderNihssHover();
     renderChecklist();
     renderSpecialRows();
     renderAfCalculators();
