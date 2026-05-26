@@ -30,6 +30,11 @@
     .desc{margin:0;color:var(--muted);max-width:1100px}
     .anchor-nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
     .anchor-nav a{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:999px;text-decoration:none;background:#132746;border:1px solid #2f528e;font-size:.84rem}
+    .section-tabs{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 14px}
+    .tab-btn{width:auto;padding:8px 14px;border-radius:999px;background:#132746;border:1px solid #2f528e;color:var(--text)}
+    .tab-btn.active{background:#1d3a67;border-color:#60a5fa;box-shadow:0 0 0 1px rgba(96,165,250,.35) inset}
+    .tab-panel{display:none}
+    .tab-panel.is-active{display:block}
     .two-col{display:grid;grid-template-columns:minmax(700px,1.15fr) minmax(360px,.85fr);gap:18px;align-items:start}
     .card{background:linear-gradient(180deg,rgba(24,35,60,.95),rgba(16,25,45,.96));border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 18px 44px rgba(0,0,0,.22)}
     .card h2,.card h3{margin-top:0}
@@ -84,6 +89,10 @@
     .nihss-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
     .nihss-item{display:grid;gap:6px;padding:12px;border-radius:12px;border:1px solid rgba(60,82,120,.74);background:rgba(10,17,30,.86)}
     .nihss-item span{font-size:.87rem;color:#dbe6fb}
+    .nihss-hover-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
+    .nihss-hover-item{position:relative;padding:9px 10px;border-radius:10px;border:1px solid rgba(60,82,120,.74);background:rgba(10,17,30,.86);font-size:.82rem;cursor:help}
+    .nihss-hover-item .tip{display:none;position:absolute;left:0;top:calc(100% + 6px);width:min(360px,90vw);padding:10px;border-radius:10px;border:1px solid rgba(96,165,250,.38);background:#0d1528;z-index:20;white-space:normal}
+    .nihss-hover-item:hover .tip{display:block}
     .nihss-summary{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-top:12px}
     .inline-list{display:flex;gap:8px;flex-wrap:wrap}
     .flowchart{display:grid;gap:10px;margin-top:12px}
@@ -119,7 +128,7 @@
     .hidden{display:none !important}
     @keyframes pulse{0%{transform:translateY(0)}50%{transform:translateY(-1px)}100%{transform:translateY(0)}}
     @media (max-width:1240px){.two-col{grid-template-columns:1fr}.sticky{position:static}.protocol-grid,.ivt-columns,.scenario-list,.field-grid.four,.field-grid.thirds{grid-template-columns:1fr 1fr}}
-    @media (max-width:860px){.field-grid,.check-grid,.gfast-grid,.nihss-grid,.ivt-columns,.protocol-grid,.scenario-list,.field-grid.thirds,.field-grid.four{grid-template-columns:1fr}.copy-fab{left:18px;right:18px;min-width:0}.wrap{padding-bottom:110px}}
+    @media (max-width:860px){.field-grid,.check-grid,.gfast-grid,.nihss-grid,.ivt-columns,.protocol-grid,.scenario-list,.field-grid.thirds,.field-grid.four,.nihss-hover-grid{grid-template-columns:1fr}.copy-fab{left:18px;right:18px;min-width:0}.wrap{padding-bottom:110px}}
   </style>
 </head>
 <body>
@@ -127,15 +136,7 @@
     <header class="hero">
       <div>
         <h1>急性中風分流流程圖（IVT / EVT）</h1>
-        <p class="desc">整合 GFAST、NIHSS、2025 台灣腦中風學會 IVT 決策核對、特殊情況綜合評估、延長時間窗/睡醒中風證據、rtPA 後 ICH 與 angioedema 處置。右側流程圖會依目前輸入自動發光高亮。</p>
-        <nav class="anchor-nav" aria-label="快速導覽">
-          <a href="#main-inputs">主輸入</a>
-          <a href="#flowchart-panel">GFAST / 流程圖</a>
-          <a href="#stats-section">情境統計</a>
-          <a href="#ivt-checklist">IVT 核對表</a>
-          <a href="#special-situations">特殊情況表</a>
-          <a href="#ich-protocol">ICH / Angioedema 處置</a>
-        </nav>
+        <p class="desc">整合 NIHSS、2025 台灣腦中風學會 IVT 決策核對、特殊情況綜合評估、延長時間窗/睡醒中風證據、rtPA 後 ICH 與 angioedema 處置。右側流程圖會依目前輸入自動發光高亮。</p>
       </div>
       <div class="panel-note tiny">
         <div><strong>重要提醒</strong></div>
@@ -144,9 +145,18 @@
       </div>
     </header>
 
-    <main class="two-col">
-      <div class="section-stack">
-        <section class="card" id="main-inputs">
+    <div class="section-tabs" role="tablist" aria-label="內容分頁">
+      <button type="button" class="tab-btn active" data-tab-target="triage">主分流 / 流程圖</button>
+      <button type="button" class="tab-btn" data-tab-target="stats">情境統計</button>
+      <button type="button" class="tab-btn" data-tab-target="ivt">IVT 核對表</button>
+      <button type="button" class="tab-btn" data-tab-target="special">特殊情況</button>
+      <button type="button" class="tab-btn" data-tab-target="ich">ICH / Angioedema</button>
+    </div>
+
+    <section class="tab-panel is-active" data-tab-panel="triage">
+      <main class="two-col">
+        <div class="section-stack">
+          <section class="card" id="main-inputs">
           <h2>主分流輸入</h2>
           <div class="field-grid thirds">
             <div class="field">
@@ -382,42 +392,38 @@
 
           <div class="recommendation" id="decisionBox" style="margin-top:14px;"></div>
           <div class="result-box" id="summaryBox" aria-live="polite" style="margin-top:12px;"></div>
-        </section>
-      </div>
+          </section>
+        </div>
 
-      <aside class="section-stack sticky" id="flowchart-panel">
-        <section class="card">
-          <h2>GFAST Scale</h2>
-          <div class="gfast-grid">
-            <label class="gfast-item"><input id="g-gaze" type="checkbox" /><span><strong>G：凝視偏移</strong><br><span class="muted tiny">雙眼向一側強迫偏移</span></span></label>
-            <label class="gfast-item"><input id="g-face" type="checkbox" /><span><strong>F：臉部下垂</strong><br><span class="muted tiny">單側臉部不對稱或下垂</span></span></label>
-            <label class="gfast-item"><input id="g-arm" type="checkbox" /><span><strong>A：手臂無力</strong><br><span class="muted tiny">單側手臂無力，無法抵抗重力</span></span></label>
-            <label class="gfast-item"><input id="g-speech" type="checkbox" /><span><strong>S：語言障礙</strong><br><span class="muted tiny">說話不清楚、無法說話或語言混亂</span></span></label>
-          </div>
-          <div class="gfast-score">
-            <div>GFAST 分數（T 不計分）：<strong id="gfastScore">0 / 4</strong></div>
-            <div class="muted">T：時間緊急（Time）→ 立即送醫</div>
-            <div id="gfastFlag" class="positive-pill hidden">疑似中風，立即啟動處理流程</div>
-          </div>
+        <aside class="section-stack sticky" id="flowchart-panel">
+          <section class="card">
+            <h2>NIHSS / 流程圖</h2>
+            <div class="tiny muted">滑鼠移到 NIHSS 欄位可快速查看評分選項。</div>
+            <div id="nihssHoverGrid" class="nihss-hover-grid"></div>
+            <div class="gfast-score">
+              <div>NIHSS 總分：<strong id="nihssScoreSide">0</strong></div>
+              <div class="muted">嚴重度：<span id="nihssSeveritySide">無中風症狀</span></div>
+            </div>
 
-          <div class="recommendation" id="flowRecommendation" style="margin-top:14px;"></div>
+            <div class="recommendation" id="flowRecommendation" style="margin-top:14px;"></div>
 
-          <div class="flowchart" aria-label="acute stroke flowchart">
-            <div class="node" id="node-a"><span class="title">A. 急診疑似急性缺血性中風 → 立即 NCCT/CTA</span><span class="sub">先排除顱內出血，並同步篩查 LVO / 影像治療條件。</span><small></small></div>
-            <div class="node" id="node-b"><span class="title">B. GFAST / NIHSS 評估 → 時間窗判斷</span><span class="sub">整合床邊篩檢、神經缺損嚴重度、已知 / 睡醒 / 不明發病。</span><small></small></div>
-            <div class="node" id="node-c"><span class="title">C. ≤4.5h → rtPA 評估（健保給付）</span><span class="sub">符合 IVT 核對表、無絕對禁忌、可將 BP 控制至 &lt;185/110。</span><small></small></div>
-            <div class="node" id="node-d"><span class="title">D. 4.5–9h → 需灌流影像篩選（EXTEND / WAKE-UP 證據）</span><span class="sub">需 CTP/MRP 或等效影像，與病人共享決策；非健保給付。</span><small></small></div>
-            <div class="node" id="node-e"><span class="title">E. 睡醒 / 不明發病時間 → 影像篩選（DWI-FLAIR mismatch）</span><span class="sub">符合影像條件時可考慮 IVT（IIb, B）。</span><small></small></div>
-            <div class="node" id="node-f"><span class="title">F. ≤24h + LVO → EVT 評估</span><span class="sub">CTA / CTP / MRP 判讀，必要時與 IVT 並行啟動。</span><small></small></div>
-            <div class="node" id="node-g"><span class="title">G. EVT 團隊不可得 → 立即轉院</span><span class="sub">確認轉運窗口、影像與血壓控制同步完成。</span><small></small></div>
-            <div class="node" id="node-h"><span class="title">H. 超過時間窗或不符適應症 → 最佳藥物治療</span><span class="sub">抗血小板 / 抗栓塞、次級預防與監測；必要時自費 / 研究方案討論。</span><small></small></div>
-            <div class="node" id="node-i"><span class="title">I. rtPA 後 ICH 處置 → 停藥 + TXA + Cryoprecipitate + 外科</span><span class="sub">另須處理 angioedema / 神經惡化等 rtPA 併發症。</span><small></small></div>
-          </div>
-        </section>
-      </aside>
-    </main>
+            <div class="flowchart" aria-label="acute stroke flowchart">
+              <div class="node" id="node-a"><span class="title">A. 急診疑似急性缺血性中風 → 立即 NCCT/CTA</span><span class="sub">先排除顱內出血，並同步篩查 LVO / 影像治療條件。</span><small></small></div>
+              <div class="node" id="node-b"><span class="title">B. NIHSS 評估 → 時間窗判斷</span><span class="sub">整合神經缺損嚴重度、已知 / 睡醒 / 不明發病。</span><small></small></div>
+              <div class="node" id="node-c"><span class="title">C. ≤4.5h → rtPA 評估（健保給付）</span><span class="sub">符合 IVT 核對表、無絕對禁忌、可將 BP 控制至 &lt;185/110。</span><small></small></div>
+              <div class="node" id="node-d"><span class="title">D. 4.5–9h → 需灌流影像篩選（EXTEND / WAKE-UP 證據）</span><span class="sub">需 CTP/MRP 或等效影像，與病人共享決策；非健保給付。</span><small></small></div>
+              <div class="node" id="node-e"><span class="title">E. 睡醒 / 不明發病時間 → 影像篩選（DWI-FLAIR mismatch）</span><span class="sub">符合影像條件時可考慮 IVT（IIb, B）。</span><small></small></div>
+              <div class="node" id="node-f"><span class="title">F. ≤24h + LVO → EVT 評估</span><span class="sub">CTA / CTP / MRP 判讀，必要時與 IVT 並行啟動。</span><small></small></div>
+              <div class="node" id="node-g"><span class="title">G. EVT 團隊不可得 → 立即轉院</span><span class="sub">確認轉運窗口、影像與血壓控制同步完成。</span><small></small></div>
+              <div class="node" id="node-h"><span class="title">H. 超過時間窗或不符適應症 → 最佳藥物治療</span><span class="sub">抗血小板 / 抗栓塞、次級預防與監測；必要時自費 / 研究方案討論。</span><small></small></div>
+              <div class="node" id="node-i"><span class="title">I. rtPA 後 ICH 處置 → 停藥 + TXA + Cryoprecipitate + 外科</span><span class="sub">另須處理 angioedema / 神經惡化等 rtPA 併發症。</span><small></small></div>
+            </div>
+          </section>
+        </aside>
+      </main>
+    </section>
 
-    <section class="card" id="stats-section" style="margin-top:18px;">
+    <section class="card tab-panel" data-tab-panel="stats" id="stats-section" style="margin-top:18px;">
       <h2>情境統計與證據摘要</h2>
       <p class="muted">會依目前分流情境自動展開最相關的證據區塊。</p>
       <div class="stats-grid">
@@ -469,10 +475,18 @@
             <li><strong>AIS + acute MI：</strong>一般可考慮；STEMI &lt;1 週避免；NSTEMI &lt;3 個月可斟酌。</li>
           </ul>
         </details>
+        <details id="stat-nonrapid">
+          <summary>Non-RAPID 灌流軟體與延長時間窗分流重點</summary>
+          <ul>
+            <li>延長時間窗分流可使用 non-RAPID 軟體，但需具備 <strong>automated post-processing</strong> 與可重現閾值。</li>
+            <li>核心原則為對齊試驗門檻（core / penumbra / mismatch），而非限定特定品牌。</li>
+            <li>流程需兼顧「判讀速度」與「門檻一致性」，避免延誤再灌流決策。</li>
+          </ul>
+        </details>
       </div>
     </section>
 
-    <section class="card" id="ivt-checklist" style="margin-top:18px;">
+    <section class="card tab-panel" data-tab-panel="ivt" id="ivt-checklist" style="margin-top:18px;">
       <h2>IVT 治療決策核對表（2025 台灣腦中風學會）</h2>
       <div class="field-grid four">
         <div class="field">
@@ -505,7 +519,7 @@
       </div>
     </section>
 
-    <section class="card" id="special-situations" style="margin-top:18px;">
+    <section class="card tab-panel" data-tab-panel="special" id="special-situations" style="margin-top:18px;">
       <h2>IVT 特殊情況綜合評估表（2025 台灣腦中風學會）</h2>
       <p class="muted">以下情況可在共享決策與影像條件下考慮 IVT，表格會自動帶入目前已符合的項目。</p>
       <div class="table-wrap">
@@ -523,7 +537,7 @@
       </div>
     </section>
 
-    <section class="card" id="ich-protocol" style="margin-top:18px;">
+    <section class="card tab-panel" data-tab-panel="ich" id="ich-protocol" style="margin-top:18px;">
       <h2>ICH Management Protocol / rtPA 相關併發症</h2>
       <div class="protocol-grid">
         <div class="panel-note">
@@ -579,7 +593,7 @@
     ];
 
     const REQUIRED_ITEMS = [
-      { id: 'req-suspected', label: '臨床懷疑是急性缺血性腦中風', note: '依 GFAST / NIHSS 與整體臨床判斷，自動帶入。' },
+      { id: 'req-suspected', label: '臨床懷疑是急性缺血性腦中風', note: '依 NIHSS 與整體臨床判斷，自動帶入。' },
       { id: 'req-time', label: '中風發病在 4.5 小時內', note: '僅限已知發病時間之標準 IVT 窗口。' },
       { id: 'req-age', label: '年齡在 18 歲以上', note: '由年齡輸入自動判定。' },
       { id: 'req-imaging', label: '腦部影像排除顱內出血', note: '由 NCCT / MRI 判讀結果帶入。' },
@@ -638,11 +652,21 @@
       const container = q('#nihssItems');
       container.innerHTML = NIHSS_ITEMS.map((item) => `
         <label class="nihss-item" for="${item.id}">
-          <span>${item.label}</span>
+          <span title="${item.options.map(([value, text]) => `${value}=${text}`).join(' ｜ ')}">${item.label}</span>
           <select id="${item.id}" data-nihss>
             ${item.options.map(([value, text], index) => `<option value="${value}" ${index === 0 ? 'selected' : ''}>${value} = ${text}</option>`).join('')}
           </select>
         </label>
+      `).join('');
+    }
+
+    function renderNihssHover() {
+      const grid = q('#nihssHoverGrid');
+      grid.innerHTML = NIHSS_ITEMS.map((item) => `
+        <div class="nihss-hover-item">
+          <strong>${item.label}</strong>
+          <div class="tip">${item.options.map(([value, text]) => `${value}=${text}`).join('<br>')}</div>
+        </div>
       `).join('');
     }
 
@@ -685,16 +709,6 @@
       const sleep = new Date(now.getTime() - 8 * 3600000);
       q('#wakeTime').value = formatDateLocal(wake);
       q('#sleepStart').value = formatDateLocal(sleep);
-    }
-
-    function getGfastState() {
-      const positives = [
-        ['g-gaze', 'G 凝視偏移'],
-        ['g-face', 'F 臉部下垂'],
-        ['g-arm', 'A 手臂無力'],
-        ['g-speech', 'S 語言障礙'],
-      ].filter(([id]) => q(`#${id}`).checked).map(([, label]) => label);
-      return { score: positives.length, positives };
     }
 
     function getNihssScore() {
@@ -768,7 +782,7 @@
 
     function updateAutoChecklist(state) {
       const autoRequiredState = {
-        'req-suspected': state.gfast.score >= 1 || state.nihssScore > 0,
+        'req-suspected': state.nihssScore > 0,
         'req-time': state.time.mode === 'known' && Number.isFinite(state.time.hours) && state.time.hours <= 4.5,
         'req-age': state.age >= 18,
         'req-imaging': state.imagingClear === 'yes',
@@ -847,6 +861,7 @@
         '#stat-extend': state.specialState['ss-extend'],
         '#stat-wakeup': state.specialState['ss-wakeup'],
         '#stat-mild': state.specialState['ss-mild'],
+        '#stat-nonrapid': state.specialState['ss-extend'] || state.specialState['ss-wakeup'],
         '#stat-recent': q('#recentStroke1to3m').checked || state.age > 70 || state.anticoag === 'doac',
         '#stat-special': [
           q('#ckdEskd').checked,
@@ -892,7 +907,6 @@
         imagingClear: q('#imagingClear').value,
         acuteMI: q('#acuteMI').value,
         time: parseTimeWindow(),
-        gfast: getGfastState(),
         nihssRaw,
         nihssScore,
         nihssSeverity: nihssSeverity(nihssScore),
@@ -913,7 +927,7 @@
       const anyReperfusion = standardEligible || extendedEligible || wakeupEligible || evtCandidate;
 
       setNode('node-a', state.imagingClear === 'no' ? 'warning' : 'current', state.imagingClear === 'yes' ? 'NCCT 已排除 ICH，請並行評估 LVO。' : state.imagingClear === 'pending' ? '影像判讀中，先完成 NCCT / CTA。' : '影像已有出血，應轉為 ICH 路徑。');
-      setNode('node-b', (state.gfast.score >= 1 || state.nihssScore > 0) ? 'compatible' : 'warning', `GFAST ${state.gfast.score}/4；NIHSS ${state.nihssScore}（${state.nihssSeverity}）。`);
+      setNode('node-b', state.nihssScore > 0 ? 'compatible' : 'warning', `NIHSS ${state.nihssScore}（${state.nihssSeverity}）。`);
 
       if (standardEligible) {
         setNode('node-c', 'compatible', '標準 IVT 窗口且符合 2025 台灣核對表。');
@@ -1014,7 +1028,6 @@
         recommendationLines.push('請持續監測、完成病因分類、啟動次級預防與復健安排。');
       }
 
-      if (state.gfast.score >= 1) recommendationLines.push('GFAST 陽性，疑似中風應立即啟動處理流程。');
       if (state.sbp > 185 || state.dbp > 110) recommendationLines.push('rtPA 前需先將血壓控制至 <185/110 mmHg。');
       recommendationLines.push('rtPA / EVT 後 24h 及 EVT post 目標 BP 均維持 <180/105 mmHg。');
       if (state.evtCandidate && !state.evtTeam) recommendationLines.push('轉院前請同步完成影像資料、血壓控制與聯絡接收團隊。');
@@ -1042,7 +1055,6 @@
       const summaryLines = [
         `• ${headline}`,
         `• ${timeText}`,
-        `• GFAST：${state.gfast.score}/4${state.gfast.positives.length ? `（${state.gfast.positives.join('、')}）` : ''}`,
         `• NIHSS：${state.nihssScore}（${state.nihssSeverity}）`,
         `• 影像：${state.imagingClear === 'yes' ? '已排除 ICH' : state.imagingClear === 'pending' ? '待判讀' : '已有出血'}`,
         `• IVT 必要條件：${state.requiredLabels.length ? state.requiredLabels.join('；') : '尚未滿足'}`,
@@ -1067,18 +1079,17 @@
       }
     }
 
-    function updateGfastDisplay(state) {
-      q('#gfastScore').textContent = `${state.gfast.score} / 4`;
-      q('#gfastFlag').classList.toggle('hidden', state.gfast.score < 1);
+    function updateNihssDisplay(state) {
       q('#nihssScore').textContent = String(state.nihssRaw);
       q('#nihssSeverity').textContent = nihssSeverity(state.nihssRaw);
+      q('#nihssScoreSide').textContent = String(state.nihssRaw);
+      q('#nihssSeveritySide').textContent = nihssSeverity(state.nihssRaw);
     }
 
     function buildCopySummary(state) {
       return [
         '急性中風分流摘要',
         `時間：${new Date().toLocaleString('zh-TW', { hour12: false })}`,
-        `GFAST：${state.gfast.score}/4${state.gfast.positives.length ? `（${state.gfast.positives.join('、')}）` : '（無明確陽性）'}`,
         `NIHSS：${state.nihssScore}（${state.nihssSeverity}）`,
         `時間窗：${Number.isFinite(state.time.hours) ? `${state.time.description} ${state.time.hours.toFixed(2)} 小時` : `${state.time.description} / 資料不足`}`,
         `BP / 血糖：${state.sbp}/${state.dbp} mmHg，Glucose ${state.glucose} mg/dL`,
@@ -1128,15 +1139,28 @@
       updateFlow(state);
       updateDecision(state);
       updateStatusBoxes(state);
-      updateGfastDisplay(state);
+      updateNihssDisplay(state);
       openRelevantStats(state);
     }
 
+    function initTabs() {
+      const buttons = qa('[data-tab-target]');
+      const panels = qa('[data-tab-panel]');
+      const activate = (name) => {
+        buttons.forEach((btn) => btn.classList.toggle('active', btn.dataset.tabTarget === name));
+        panels.forEach((panel) => panel.classList.toggle('is-active', panel.dataset.tabPanel === name));
+      };
+      buttons.forEach((btn) => btn.addEventListener('click', () => activate(btn.dataset.tabTarget)));
+      activate('triage');
+    }
+
     renderNihss();
+    renderNihssHover();
     renderChecklist();
     renderSpecialRows();
     setDefaults();
     toggleAutoFields();
+    initTabs();
 
     qa('input:not([data-required]):not([data-contra]):not(.special-check), select').forEach((element) => {
       element.addEventListener('change', updateAll);
