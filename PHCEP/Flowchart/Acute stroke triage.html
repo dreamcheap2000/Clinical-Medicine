@@ -92,7 +92,8 @@
     .nihss-hover-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
     .nihss-hover-item{position:relative;padding:9px 10px;border-radius:10px;border:1px solid rgba(60,82,120,.74);background:rgba(10,17,30,.86);font-size:.82rem;cursor:help}
     .nihss-hover-item .tip{display:none;position:absolute;left:0;top:calc(100% + 6px);width:min(360px,90vw);padding:10px;border-radius:10px;border:1px solid rgba(96,165,250,.38);background:#0d1528;z-index:20;white-space:normal}
-    .nihss-hover-item:hover .tip{display:block}
+    .nihss-hover-item .tip ul{margin:0;padding-left:18px}
+    .nihss-hover-item:hover .tip,.nihss-hover-item:focus-within .tip{display:block}
     .nihss-summary{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-top:12px}
     .inline-list{display:flex;gap:8px;flex-wrap:wrap}
     .flowchart{display:grid;gap:10px;margin-top:12px}
@@ -399,7 +400,7 @@
           <section class="card">
             <h2>NIHSS / 流程圖</h2>
             <div class="tiny muted">滑鼠移到 NIHSS 欄位可快速查看評分選項。</div>
-            <div id="nihssHoverGrid" class="nihss-hover-grid"></div>
+            <div id="nihssHoverGrid" class="nihss-hover-grid" aria-label="NIHSS評分選項快速參考"></div>
             <div class="gfast-score">
               <div>NIHSS 總分：<strong id="nihssScoreSide">0</strong></div>
               <div class="muted">嚴重度：<span id="nihssSeveritySide">無中風症狀</span></div>
@@ -652,7 +653,7 @@
       const container = q('#nihssItems');
       container.innerHTML = NIHSS_ITEMS.map((item) => `
         <label class="nihss-item" for="${item.id}">
-          <span title="${item.options.map(([value, text]) => `${value}=${text}`).join(' ｜ ')}">${item.label}</span>
+          <span title="${item.options.map(([value, text]) => `${value}=${text}`).join(' | ')}">${item.label}</span>
           <select id="${item.id}" data-nihss>
             ${item.options.map(([value, text], index) => `<option value="${value}" ${index === 0 ? 'selected' : ''}>${value} = ${text}</option>`).join('')}
           </select>
@@ -663,9 +664,9 @@
     function renderNihssHover() {
       const grid = q('#nihssHoverGrid');
       grid.innerHTML = NIHSS_ITEMS.map((item) => `
-        <div class="nihss-hover-item">
+        <div class="nihss-hover-item" tabindex="0">
           <strong>${item.label}</strong>
-          <div class="tip">${item.options.map(([value, text]) => `${value}=${text}`).join('<br>')}</div>
+          <div class="tip"><ul>${item.options.map(([value, text]) => `<li>${value}=${text}</li>`).join('')}</ul></div>
         </div>
       `).join('');
     }
