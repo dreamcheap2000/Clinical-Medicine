@@ -994,7 +994,7 @@
         dwiFlairMismatch: q('#dwiFlairMismatch').value,
         evtTeam: q('#evtTeam').value === 'yes',
         cryo: q('#cryo').value === 'yes',
-        imagingClear: q('#strokeType').value === 'ischemic' ? 'yes' : (q('#strokeType').value === 'ich' || q('#strokeType').value === 'sah') ? 'no' : 'pending',
+        imagingClear: (() => { const st = q('#strokeType').value; return st === 'ischemic' ? 'yes' : (st === 'ich' || st === 'sah') ? 'no' : 'pending'; })(),
         acuteMI: q('#acuteMI').value,
         time: parseTimeWindow(),
         nihssRaw,
