@@ -1350,14 +1350,14 @@
       SPECIAL_ROWS.forEach((row) => { manualSpecial[row.id] = false; });
       updateAll();
     });
-    q('#imagingNonSevere').addEventListener('change', () => {
-      if (q('#imagingNonSevere').checked) q('#largeInfarct').checked = false;
-      updateAll();
-    });
-    q('#largeInfarct').addEventListener('change', () => {
-      if (q('#largeInfarct').checked) q('#imagingNonSevere').checked = false;
-      updateAll();
-    });
+    function bindMutuallyExclusiveCheckbox(primarySelector, secondarySelector) {
+      q(primarySelector).addEventListener('change', () => {
+        if (q(primarySelector).checked) q(secondarySelector).checked = false;
+        updateAll();
+      });
+    }
+    bindMutuallyExclusiveCheckbox('#imagingNonSevere', '#largeInfarct');
+    bindMutuallyExclusiveCheckbox('#largeInfarct', '#imagingNonSevere');
 
     updateAll();
   </script>
