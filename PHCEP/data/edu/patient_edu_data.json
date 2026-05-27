@@ -832,7 +832,7 @@
       "source_urls": [],
       "original_lang": "zh-TW",
       "added_date": "2026-05-27",
-      "version": "1.0",
+      "version": "1",
       "tags": [
         "ICH",
         "ICH Score",
@@ -953,7 +953,7 @@
       "source_urls": [],
       "original_lang": "zh-TW",
       "added_date": "2026-05-27",
-      "version": "1.0",
+      "version": "1",
       "tags": [
         "mNIHSS",
         "NIHSS",
@@ -1071,7 +1071,7 @@
       "source_urls": [],
       "original_lang": "zh-TW",
       "added_date": "2026-05-27",
-      "version": "1.0",
+      "version": "1",
       "tags": [
         "腰椎管狹窄",
         "神經性跛行",
@@ -2067,7 +2067,7 @@
       ],
       "original_lang": "zh-TW",
       "added_date": "2026-05-27",
-      "version": "1.1",
+      "version": "2",
       "tags": [
         "中風預防",
         "危險因子",
