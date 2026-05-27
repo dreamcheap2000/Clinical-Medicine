@@ -409,22 +409,55 @@
           </details>
           <details id="hemorrhage-score-panel" style="margin-top:14px;display:none;">
             <summary>出血性中風分數（ICH / SAH）</summary>
-            <div class="field-grid four" style="margin-top:12px;">
-              <div class="field">
-                <label for="ichScore">ICH Score（ICH）</label>
-                <input id="ichScore" type="number" min="0" max="6" step="1" />
+
+            <!-- ICH Score Calculator — shown when strokeType = ich -->
+            <div id="ich-score-section" style="margin-top:12px;">
+              <h3 style="font-size:.95rem;margin:0 0 10px;color:var(--accent-soft);">ICH Score 計算機（自發性腦出血 30 天死亡率預測）</h3>
+              <div class="nihss-grid" id="ichCalcGrid"></div>
+              <div class="score-box" style="margin-top:10px;">
+                <div>ICH Score：<strong id="ichScoreVal">0</strong> / 6</div>
+                <div class="muted" style="margin-top:4px;" id="ichMortalityText">預測 30 天死亡率：0%</div>
               </div>
-              <div class="field">
-                <label for="wfnsGrade">WFNS Grade（SAH）</label>
-                <input id="wfnsGrade" type="number" min="1" max="5" step="1" />
-              </div>
-              <div class="field">
-                <label for="huntHessGrade">Hunt &amp; Hess（SAH）</label>
-                <input id="huntHessGrade" type="number" min="1" max="5" step="1" />
-              </div>
-              <div class="field">
-                <label for="modifiedFisherGrade">Modified Fisher（SAH）</label>
-                <input id="modifiedFisherGrade" type="number" min="0" max="4" step="1" />
+              <input type="hidden" id="ichScore" value="0" />
+            </div>
+
+            <!-- SAH Scores — shown when strokeType = sah -->
+            <div id="sah-score-section" style="margin-top:12px;display:none;">
+              <h3 style="font-size:.95rem;margin:0 0 10px;color:var(--accent-soft);">SAH 嚴重度分級</h3>
+              <div class="field-grid thirds" style="margin-top:0;">
+                <div class="field">
+                  <label for="wfnsGrade">WFNS Grade</label>
+                  <select id="wfnsGrade">
+                    <option value="">未選擇</option>
+                    <option value="1">Grade 1：GCS 15，無運動障礙</option>
+                    <option value="2">Grade 2：GCS 13–14，無運動障礙</option>
+                    <option value="3">Grade 3：GCS 13–14，有運動障礙</option>
+                    <option value="4">Grade 4：GCS 7–12</option>
+                    <option value="5">Grade 5：GCS 3–6</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="huntHessGrade">Hunt &amp; Hess</label>
+                  <select id="huntHessGrade">
+                    <option value="">未選擇</option>
+                    <option value="1">Grade 1：幾乎無症狀或輕微頭痛</option>
+                    <option value="2">Grade 2：中重度頭痛、頸部僵硬</option>
+                    <option value="3">Grade 3：嗜睡或輕度局灶神經缺損</option>
+                    <option value="4">Grade 4：昏睡、明顯偏癱</option>
+                    <option value="5">Grade 5：深昏迷、去大腦姿勢</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="modifiedFisherGrade">Modified Fisher（vasospasm 風險）</label>
+                  <select id="modifiedFisherGrade">
+                    <option value="">未選擇</option>
+                    <option value="0">Grade 0：無 SAH 或 IVH（風險 6.5%）</option>
+                    <option value="1">Grade 1：少量 SAH，無 IVH（14.3%）</option>
+                    <option value="2">Grade 2：少量 SAH，雙側 IVH（38.4%）</option>
+                    <option value="3">Grade 3：大量 SAH，無 IVH（57.1%）</option>
+                    <option value="4">Grade 4：大量 SAH，雙側 IVH（69.4%）</option>
+                  </select>
+                </div>
               </div>
             </div>
           </details>
@@ -725,10 +758,10 @@
       { id: 'nihss4', label: '4. 凝視 (Best Gaze)', options: [[0,'正常'],[1,'部分凝視麻痺'],[2,'強迫偏斜']] },
       { id: 'nihss5', label: '5. 視野 (Visual)', options: [[0,'無缺損'],[1,'部分偏盲'],[2,'完全偏盲'],[3,'雙側盲']] },
       { id: 'nihss6', label: '6. 臉部麻痺 (Facial Palsy)', options: [[0,'正常'],[1,'輕微'],[2,'部分麻痺'],[3,'完全麻痺']] },
-      { id: 'nihss7', label: '7. 左上肢運動 (Left Arm)', options: [[0,'無下沉'],[1,'10秒內下沉'],[2,'有力但不抗重力'],[3,'無力'],[4,'無活動'],[0,'UN=截肢 / 關節固定（不計分）']] },
-      { id: 'nihss8', label: '8. 右上肢運動 (Right Arm)', options: [[0,'無下沉'],[1,'10秒內下沉'],[2,'有力但不抗重力'],[3,'無力'],[4,'無活動'],[0,'UN=截肢 / 關節固定（不計分）']] },
-      { id: 'nihss9', label: '9. 左下肢運動 (Left Leg)', options: [[0,'無下沉（5秒）'],[1,'5秒內下沉'],[2,'有力但不抗重力'],[3,'無力'],[4,'無活動']] },
-      { id: 'nihss10', label: '10. 右下肢運動 (Right Leg)', options: [[0,'無下沉（5秒）'],[1,'5秒內下沉'],[2,'有力但不抗重力'],[3,'無力'],[4,'無活動']] },
+      { id: 'nihss7', label: '7. 左上肢運動 (Left Arm)', options: [[0,'無下沉（保持 10 秒）'],[1,'下沉（10 秒內未落床）'],[2,'落床（10 秒內）'],[3,'無法抗重力'],[4,'無活動'],['UN','截肢 / 關節固定（不計分）']] },
+      { id: 'nihss8', label: '8. 右上肢運動 (Right Arm)', options: [[0,'無下沉（保持 10 秒）'],[1,'下沉（10 秒內未落床）'],[2,'落床（10 秒內）'],[3,'無法抗重力'],[4,'無活動'],['UN','截肢 / 關節固定（不計分）']] },
+      { id: 'nihss9', label: '9. 左下肢運動 (Left Leg)', options: [[0,'無下沉（保持 5 秒）'],[1,'下沉（未落床，5 秒前）'],[2,'落床（5 秒前）'],[3,'無法抗重力'],[4,'無活動'],['UN','截肢 / 關節固定（不計分）']] },
+      { id: 'nihss10', label: '10. 右下肢運動 (Right Leg)', options: [[0,'無下沉（保持 5 秒）'],[1,'下沉（未落床，5 秒前）'],[2,'落床（5 秒前）'],[3,'無法抗重力'],[4,'無活動'],['UN','截肢 / 關節固定（不計分）']] },
       { id: 'nihss11', label: '11. 肢體共濟失調 (Limb Ataxia)', options: [[0,'無'],[1,'一側'],[2,'雙側']] },
       { id: 'nihss12', label: '12. 感覺 (Sensory)', options: [[0,'正常'],[1,'輕度至中度喪失'],[2,'嚴重至完全喪失']] },
       { id: 'nihss13', label: '13. 最佳語言 (Best Language)', options: [[0,'正常'],[1,'輕度失語'],[2,'重度失語'],[3,'無語言 / 完全失語']] },
@@ -813,6 +846,78 @@
     const HASBLED_RATES = [1.13, 1.02, 1.88, 3.74, 8.70, 12.5, 12.5, 12.5, 12.5, 12.5];
 
     const manualRequired = Object.fromEntries(REQUIRED_ITEMS.map((item) => [item.id, false]));
+
+    // ─── ICH Score data ───────────────────────────────────────────────
+    const ICH_SCORE_ITEMS = [
+      { id: 'ich-gcs', label: 'GCS（意識程度）', options: [
+        [0, 'GCS 13–15　→ 0 分'],
+        [1, 'GCS 5–12　→ 1 分'],
+        [2, 'GCS 3–4　→ 2 分'],
+      ]},
+      { id: 'ich-vol', label: '出血量（ICH Volume）', options: [
+        [0, '< 30 cm³　→ 0 分'],
+        [1, '≥ 30 cm³　→ 1 分'],
+      ]},
+      { id: 'ich-ivh', label: '腦室內擴散（IVH）', options: [
+        [0, '無腦室內擴散　→ 0 分'],
+        [1, '有腦室內擴散　→ 1 分'],
+      ]},
+      { id: 'ich-infra', label: '幕下出血（Infratentorial）', options: [
+        [0, '幕上（大腦半球等）　→ 0 分'],
+        [1, '幕下（小腦 / 腦幹）　→ 1 分'],
+      ]},
+      { id: 'ich-age', label: '年齡', options: [
+        [0, '< 80 歲　→ 0 分'],
+        [1, '≥ 80 歲　→ 1 分'],
+      ]},
+    ];
+    // Predicted 30-day mortality % by ICH score (0–6)
+    const ICH_MORTALITY = [0, 13, 26, 72, 97, 100, 100];
+
+    function renderIchCalculator() {
+      const grid = q('#ichCalcGrid');
+      if (!grid) return;
+      grid.innerHTML = ICH_SCORE_ITEMS.map((item) => `
+        <label class="nihss-item" for="${item.id}">
+          <span>${item.label}</span>
+          <select id="${item.id}" data-ich-calc>
+            ${item.options.map(([value, text], idx) => `<option value="${value}"${idx === 0 ? ' selected' : ''}>${text}</option>`).join('')}
+          </select>
+        </label>
+      `).join('');
+      qa('[data-ich-calc]').forEach((sel) => sel.addEventListener('change', () => { updateIchScore(); updateAll(); }));
+      updateIchScore();
+    }
+
+    function updateIchScore() {
+      const score = ICH_SCORE_ITEMS.reduce((sum, item) => {
+        const el = q(`#${item.id}`);
+        return sum + Number(el ? el.value : 0);
+      }, 0);
+      const mortality = ICH_MORTALITY[Math.min(score, 6)];
+      const scoreEl = q('#ichScoreVal');
+      const mortEl = q('#ichMortalityText');
+      const hidden = q('#ichScore');
+      if (scoreEl) scoreEl.textContent = String(score);
+      if (mortEl) {
+        mortEl.textContent = `預測 30 天死亡率：${mortality}%`;
+        const alertClass = mortality === 0 ? 'alert-good' : mortality <= 26 ? 'alert-warn' : 'alert-bad';
+        mortEl.className = alertClass;
+      }
+      if (hidden) hidden.value = String(score);
+    }
+
+    function toggleHemorrhageScoreSections() {
+      const strokePath = q('#strokePath').value;
+      const strokeType = q('#strokeType').value;
+      const isIch = strokePath === 'hemorrhagic' && strokeType === 'ich';
+      const isSah = strokePath === 'hemorrhagic' && strokeType === 'sah';
+      const ichSec = q('#ich-score-section');
+      const sahSec = q('#sah-score-section');
+      if (ichSec) ichSec.style.display = isIch ? '' : 'none';
+      if (sahSec) sahSec.style.display = isSah ? '' : 'none';
+    }
+    // ─── end ICH Score ────────────────────────────────────────────────
     const manualContra = Object.fromEntries(CONTRA_ITEMS.map((item) => [item.id, false]));
     const manualSpecial = Object.fromEntries(SPECIAL_ROWS.map((row) => [row.id, false]));
     let latestAutoRequired = Object.fromEntries(REQUIRED_ITEMS.map((item) => [item.id, false]));
@@ -930,7 +1035,10 @@
     }
 
     function getNihssScore() {
-      return qa('[data-nihss]').reduce((sum, select) => sum + Number(select.value || 0), 0);
+      return qa('[data-nihss]').reduce((sum, select) => {
+        const val = select.value;
+        return val === 'UN' ? sum : sum + Number(val || 0);
+      }, 0);
     }
 
     function nihssSeverity(score) {
@@ -1309,7 +1417,10 @@
         headline = state.strokeType === 'sah' ? '已分流為 SAH 路徑：不適用 IVT' : state.strokeType === 'sdh' ? '已分流為 SDH 路徑：不適用 IVT' : '已分流為 ICH 路徑：不適用 IVT';
         headlineClass = 'badge class-iii';
         recommendationLines.push('請切換至「出血性中風處置」分頁：完成血壓控制、逆轉抗凝、NCCT 血腫監測、神外與重症照護。');
-        if (state.strokeType === 'ich') recommendationLines.push(`ICH 目標：盡快平穩降壓至 SBP 約 140 mmHg（維持 130–150 mmHg）；ICH score ${Number.isFinite(state.ichScore) ? state.ichScore : '未填'}。`);
+        if (state.strokeType === 'ich') {
+          const ichMortRec = Number.isFinite(state.ichScore) ? ICH_MORTALITY[Math.min(state.ichScore, 6)] : null;
+          recommendationLines.push(`ICH 目標：盡快平穩降壓至 SBP 約 140 mmHg（維持 130–150 mmHg）；ICH score ${Number.isFinite(state.ichScore) ? `${state.ichScore}（預測 30 天死亡率 ${ichMortRec}%）` : '未填'}。`);
+        }
         if (state.strokeType === 'sah') recommendationLines.push(`SAH 重點：未固定動脈瘤前維持 SBP <160–180 mmHg；WFNS ${Number.isFinite(state.wfnsGrade) ? state.wfnsGrade : '未填'}、H&H ${Number.isFinite(state.huntHessGrade) ? state.huntHessGrade : '未填'}、mFisher ${Number.isFinite(state.modifiedFisherGrade) ? state.modifiedFisherGrade : '未填'}。`);
         if (state.strokeType === 'sdh') recommendationLines.push('SDH 重點：確認血腫厚度、中線偏移與意識變化，及早啟動神經外科評估。');
       } else if (state.standardEligible) {
@@ -1382,7 +1493,10 @@
         summaryLines.push(`• 情境統計：${scenarioStats.length ? scenarioStats.join(' ｜ ') : '目前無額外自動展開統計'}`);
       } else if (state.hemorrhagicPath) {
         summaryLines.push(`• 影像：${state.imagingClear === 'pending' ? '待判讀' : '已有出血'}`);
-        if (state.strokeType === 'ich') summaryLines.push(`• ICH score：${Number.isFinite(state.ichScore) ? state.ichScore : '未填'}`);
+        if (state.strokeType === 'ich') {
+          const ichMort = Number.isFinite(state.ichScore) ? ICH_MORTALITY[Math.min(state.ichScore, 6)] : null;
+          summaryLines.push(`• ICH score：${Number.isFinite(state.ichScore) ? `${state.ichScore}（預測 30 天死亡率 ${ichMort}%）` : '未填'}`);
+        }
         if (state.strokeType === 'sah') summaryLines.push(`• SAH 分數：WFNS ${Number.isFinite(state.wfnsGrade) ? state.wfnsGrade : '未填'}；H&H ${Number.isFinite(state.huntHessGrade) ? state.huntHessGrade : '未填'}；mFisher ${Number.isFinite(state.modifiedFisherGrade) ? state.modifiedFisherGrade : '未填'}`);
         if (state.strokeType === 'sdh') summaryLines.push('• SDH 重點：請補充血腫厚度、中線偏移與神外評估結果');
         summaryLines.push(`• 抗凝 / 逆轉：抗凝狀態 ${state.anticoag === 'warfarin' ? 'Warfarin' : state.anticoag === 'doac' ? 'DOAC' : state.anticoag === 'none' ? '無' : '待補'}；INR ${Number.isFinite(state.inr) ? state.inr : '未填'}；aPTT ${Number.isFinite(state.aptt) ? state.aptt : '未填'}；Cryoprecipitate ${state.cryo ? '可得' : '未確認 / 不可得'}`);
@@ -1427,7 +1541,7 @@
       } else {
         const scoreText = state.strokeType === 'sah'
           ? `WFNS ${Number.isFinite(state.wfnsGrade) ? state.wfnsGrade : '未填'} / H&H ${Number.isFinite(state.huntHessGrade) ? state.huntHessGrade : '未填'} / mFisher ${Number.isFinite(state.modifiedFisherGrade) ? state.modifiedFisherGrade : '未填'}`
-          : `ICH score ${Number.isFinite(state.ichScore) ? state.ichScore : '未填'}`;
+          : `ICH score ${Number.isFinite(state.ichScore) ? `${state.ichScore}（死亡率 ${ICH_MORTALITY[Math.min(state.ichScore, 6)]}%）` : '未填'}`;
         q('#nihssScore').textContent = '—';
         q('#nihssSeverity').textContent = scoreText;
         q('#nihssScoreSide').textContent = '—';
@@ -1475,6 +1589,7 @@
     function updateAll() {
       toggleAutoFields();
       toggleStrokePathFields();
+      toggleHemorrhageScoreSections();
       const state = currentState();
       updateAutoChecklist(state);
       updateSpecialSituationChecks(state);
@@ -1534,12 +1649,14 @@
     }
 
     renderNihss();
+    renderIchCalculator();
     renderChecklist();
     renderSpecialRows();
     renderAfCalculators();
     setDefaults();
     toggleAutoFields();
     toggleStrokePathFields();
+    toggleHemorrhageScoreSections();
     initTabs();
 
     qa('input:not([data-required]):not([data-contra]):not(.special-check), select').forEach((element) => {
