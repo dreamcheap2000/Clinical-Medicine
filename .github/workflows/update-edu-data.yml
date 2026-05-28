@@ -24,7 +24,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install mammoth openai
+        run: pip install mammoth openai openpyxl
 
       - name: Generate patient_edu_data.json
         env:

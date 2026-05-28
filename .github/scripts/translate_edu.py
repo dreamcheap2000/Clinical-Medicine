@@ -648,13 +648,14 @@ def process_document(
                 title = existing_title or ai_extract_title(client, text)
             except Exception as e:
                 print(f"  ⚠️ AI translation failed: {e}")
-                professional_zh = ev.get("professional_zh") or ""
-                simple_zh       = ev.get("simple_zh") or ""
+                professional_zh = ev.get("professional_zh") or professional_en
+                simple_zh       = ev.get("simple_zh") or professional_en
                 english = ev.get("english") or professional_en
                 title = existing_title or filename
         else:
-            professional_zh = ev.get("professional_zh") or ""
-            simple_zh       = ev.get("simple_zh") or ""
+            # Keep English HTML visible locally when AI translation is unavailable.
+            professional_zh = ev.get("professional_zh") or professional_en
+            simple_zh       = ev.get("simple_zh") or professional_en
             english = ev.get("english") or professional_en
             title = existing_title or filename
 

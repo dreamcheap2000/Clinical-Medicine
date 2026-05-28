@@ -55,9 +55,9 @@ Each education entry contains:
 
 #### GitHub Actions auto-translation (GitHub Models AI)
 
-When a `.docx` or `.txt` file is pushed to `Patient education/`:
+When a `.docx`, `.txt`, or `.xlsx` file is pushed to `Patient education/`:
 
-1. Content is treated as the **professional version** (`professional_zh` or `english` depending on detected language).
+1. Content is treated as the **professional version** (`professional_zh` or `english` depending on detected language); `.xlsx` workbooks are rendered as categorized HTML tables.
 2. The **GitHub Models API** (`https://models.inference.ai.azure.com`, default model `gpt-4o-mini` — see [GitHub Models docs](https://docs.github.com/en/github-models) for available model names) is called using the built-in `GITHUB_TOKEN` — **no external secrets required**.
 3. FastSR auto-classifies sentences into S/O/A/P structure.
 4. **Three prototype representations** are pre-computed and stored in the JSON for fast client-side scoring.
@@ -102,13 +102,16 @@ Push .docx → GitHub Actions trigger → build_edu_data.py
 
 **Trigger**: `.github/workflows/update-edu-data.yml` — fires on `push` to `main` when `Patient education/**` changes, or manually via `workflow_dispatch`.
 
-**Sidecar metadata** (optional): Place `<filename>.meta.json` next to the `.docx` to supply metadata that the pipeline cannot reliably extract from the document body:
+**Sidecar metadata** (optional): Place `<filename>.meta.json` next to the source file to supply metadata that the pipeline cannot reliably extract from the document body:
 
 ```json
 {
   "source_urls": ["https://...", "https://..."],
   "tags": ["TAME", "慢性疼痛"],
-  "title": "optional title override"
+  "title": "optional title override",
+  "sections": [
+    { "marker": "@1", "title": "split article title", "tags": ["optional", "tags"] }
+  ]
 }
 ```
 

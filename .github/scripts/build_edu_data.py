@@ -18,6 +18,7 @@ are preserved unchanged.
 Supported file types:
   .docx  → converted to HTML with mammoth
   .txt   → plain text, wrapped in <p> tags
+  .xlsx  → workbook tables rendered to HTML
   other  → stored with a direct GitHub raw URL
 """
 
@@ -25,6 +26,7 @@ import json
 import os
 import re
 import datetime
+from html import escape
 from pathlib import Path
 
 REPO_ROOT   = Path(__file__).resolve().parents[2]
@@ -35,6 +37,11 @@ GITHUB_RAW_BASE = (
     "https://raw.githubusercontent.com/dreamcheap2000/Clinical-Medicine/main/"
     "Patient%20education/"
 )
+
+SECTION_MARKER_RE = re.compile(r"^\s*([@#&])\s*(\d+)?(?:\s+(.+?))?\s*$")
+MAX_SECTION_ID_LENGTH = 40
+FASTSR_TEXT_LIMIT = 12000
+MAX_LINK_PLACEHOLDER_TEXT_LENGTH = 18
 
 
 def docx_to_html(docx_path: Path) -> tuple[str, str]:
@@ -62,9 +69,67 @@ p[style-name='Heading 3'] => h4:fresh
 def txt_to_html(txt_path: Path) -> tuple[str, str]:
     """Read a plain text file and wrap paragraphs in <p> tags."""
     raw = txt_path.read_text(encoding="utf-8", errors="replace")
-    paragraphs = [p.strip() for p in raw.split("\n\n") if p.strip()]
-    html = "".join(f"<p>{p.replace(chr(10), '<br>')}</p>" for p in paragraphs)
+    html = plain_text_to_html(raw)
     return html, raw
+
+
+def plain_text_to_html(raw: str) -> str:
+    """Convert plain text into paragraph-oriented HTML."""
+    paragraphs = [p.strip() for p in raw.split("\n\n") if p.strip()]
+    return "".join(
+        f"<p>{escape(p).replace('\n', '<br>')}</p>"
+        for p in paragraphs
+    )
+
+
+def xlsx_to_html(xlsx_path: Path) -> tuple[str, str]:
+    """Render workbook sheets as HTML tables and plain text."""
+    try:
+        from openpyxl import load_workbook
+    except ImportError as exc:
+        raise ImportError(
+            "openpyxl is required. Install with: pip install openpyxl"
+        ) from exc
+
+    wb = load_workbook(xlsx_path, data_only=True)
+    html_parts: list[str] = []
+    plain_parts: list[str] = []
+
+    for ws in wb.worksheets:
+        rows: list[list[str]] = []
+        for row in ws.iter_rows(values_only=True):
+            vals = ["" if v is None else str(v).strip() for v in row]
+            non_empty_indices = [i for i, v in enumerate(vals) if v]
+            last_non_empty = max(non_empty_indices, default=-1)
+            if last_non_empty < 0:
+                continue
+            rows.append(vals[: last_non_empty + 1])
+
+        if not rows:
+            continue
+
+        html_parts.append(f"<h3>{escape(ws.title)}</h3>")
+        plain_parts.append(ws.title)
+
+        if len(rows) == 1:
+            html_parts.append(f"<p>{escape(' | '.join(rows[0]))}</p>")
+            plain_parts.append(" | ".join(rows[0]))
+            continue
+
+        header = rows[0]
+        body = rows[1:]
+        html_parts.append("<table><thead><tr>")
+        html_parts.extend(f"<th>{escape(cell)}</th>" for cell in header)
+        html_parts.append("</tr></thead><tbody>")
+        for row in body:
+            padded = row + [""] * max(0, len(header) - len(row))
+            html_parts.append("<tr>")
+            html_parts.extend(f"<td>{escape(cell)}</td>" for cell in padded[:len(header)])
+            html_parts.append("</tr>")
+            plain_parts.append(" | ".join(cell for cell in padded[:len(header)] if cell))
+        html_parts.append("</tbody></table>")
+
+    return "".join(html_parts), "\n".join(plain_parts)
 
 
 def strip_leading_title_para(html: str, stem: str) -> str:
@@ -91,6 +156,13 @@ def sanitize_id(filename: str, idx: int) -> str:
     stem = Path(filename).stem
     stem_ascii = re.sub(r"[^a-zA-Z0-9_\-]", "_", stem)[:30]
     return f"edu{idx+1:03d}" if not stem_ascii else f"edu{idx+1:03d}_{stem_ascii}"
+
+
+def sanitize_section_id(filename: str, marker: str, idx: int) -> str:
+    stem = Path(filename).stem
+    marker_ascii = re.sub(r"[^a-zA-Z0-9_\-]", "_", marker).strip("_")
+    base = re.sub(r"[^a-zA-Z0-9_\-]", "_", f"{stem}_{marker_ascii}")[:MAX_SECTION_ID_LENGTH]
+    return f"edu{idx+1:03d}" if not base else f"edu{idx+1:03d}_{base}"
 
 
 def load_existing() -> dict:
@@ -127,6 +199,91 @@ def load_sidecar(fpath: Path) -> dict:
         return {}
 
 
+def normalize_marker(raw_marker: str, fallback_index: int | None = None) -> tuple[str, str]:
+    """Normalize @/#/& markers to a stable @N form and return title hint."""
+    match = SECTION_MARKER_RE.match(raw_marker.strip())
+    if not match:
+        marker = raw_marker.strip()
+        return marker, ""
+    symbol, number, title_hint = match.groups()
+    symbol = "@" if symbol in {"#", "&"} else symbol
+    number = number or (str(fallback_index) if fallback_index is not None else "")
+    marker = f"{symbol}{number}" if number else symbol
+    return marker, (title_hint or "").strip()
+
+
+def get_sidecar_sections(sidecar: dict) -> dict[str, dict]:
+    """Return section metadata keyed by normalized marker."""
+    sections: dict[str, dict] = {}
+    for idx, item in enumerate(sidecar.get("sections", []), start=1):
+        marker, _ = normalize_marker(str(item.get("marker", f"@{idx}")), idx)
+        sections[marker] = item
+    return sections
+
+
+def split_marked_text(text: str) -> list[dict]:
+    """Split marker-delimited text into sections."""
+    sections: list[dict] = []
+    current: dict | None = None
+    auto_index = 0
+
+    for raw_line in text.splitlines():
+        stripped = raw_line.strip()
+        raw_match = SECTION_MARKER_RE.match(stripped)
+        if raw_match:
+            has_explicit_number = bool(raw_match.group(2))
+            if not has_explicit_number:
+                auto_index += 1
+            marker, title_hint = normalize_marker(
+                stripped,
+                auto_index if not has_explicit_number else None,
+            )
+            if current and marker == current.get("marker"):
+                current["title_hint"] = title_hint or current.get("title_hint", "")
+                continue
+            if current and any(line.strip() for line in current["lines"]):
+                sections.append(current)
+            if current and not any(line.strip() for line in current["lines"]):
+                current["marker"] = marker
+                current["title_hint"] = title_hint or current.get("title_hint", "")
+            else:
+                current = {"marker": marker, "title_hint": title_hint, "lines": []}
+            continue
+        if current is not None:
+            current["lines"].append(raw_line.rstrip())
+
+    if current and any(line.strip() for line in current["lines"]):
+        sections.append(current)
+
+    return [
+        {
+            "marker": sec["marker"],
+            "title_hint": sec.get("title_hint", ""),
+            "text": "\n".join(sec["lines"]).strip(),
+        }
+        for sec in sections
+    ]
+
+
+def is_link_only_entry(entry: dict | None) -> bool:
+    """Return True when an entry is only a bare download-link placeholder."""
+    if not entry:
+        return True
+    versions = entry.get("versions") or {}
+    simple = (versions.get("simple_zh") or "").strip()
+    professional = (versions.get("professional_zh") or "").strip()
+    english = (versions.get("english") or "").strip()
+    if english:
+        return False
+    combined = " ".join(v for v in [simple, professional] if v)
+    if not combined:
+        return True
+    text_only = re.sub(r"<[^>]+>", " ", combined)
+    text_only = re.sub(r"\s+", " ", text_only).strip()
+    link_count = combined.count("href=")
+    return link_count >= 1 and len(text_only.replace("📎", "").strip()) <= MAX_LINK_PLACEHOLDER_TEXT_LENGTH
+
+
 def _needs_ai(versions: dict) -> bool:
     """Return True if any language version is missing or incomplete."""
     return not (
@@ -144,7 +301,7 @@ def build():
     # Import translation helper
     import sys
     sys.path.insert(0, str(Path(__file__).parent))
-    from translate_edu import process_document, build_prototypes
+    from translate_edu import process_document, build_prototypes, build_fastsr
 
     existing_data = load_existing()
     existing_entries = existing_data.get("entries") or []
@@ -157,6 +314,16 @@ def build():
         src = e.get("source_file", "")
         if src:
             existing_by_stem[Path(src).stem] = e
+    existing_by_filename_title = {
+        (e.get("source_file", ""), e.get("title", "")): e
+        for e in existing_entries
+        if e.get("source_file") and e.get("title")
+    }
+    existing_by_source_label = {
+        e.get("source_label", ""): e
+        for e in existing_entries
+        if e.get("source_label")
+    }
 
     file_list = sorted(
         f for f in EDU_FOLDER.iterdir()
@@ -182,6 +349,7 @@ def build():
         extra_urls: list[str] = sidecar.get("source_urls", [])
         title_override: str = sidecar.get("title", "")
         extra_tags: list[str] = sidecar.get("tags", [])
+        sidecar_sections = get_sidecar_sections(sidecar)
 
         existing_entry = existing_by_stem.get(stem) or existing_by_title.get(stem)
 
@@ -192,7 +360,49 @@ def build():
         elif suffix == ".txt":
             html_content, plain_text = txt_to_html(fpath)
             html_content = strip_leading_title_para(html_content, stem)
+        elif suffix == ".xlsx":
+            html_content, plain_text = xlsx_to_html(fpath)
+            merged_tags = list(dict.fromkeys(((existing_entry or {}).get("tags") or []) + extra_tags))
+            title = title_override or (existing_entry or {}).get("title") or stem
+            fastsr = (
+                (existing_entry or {}).get("fastsr")
+                or build_fastsr(plain_text[:FASTSR_TEXT_LIMIT])
+            )
+            source_urls = list(dict.fromkeys(extra_urls + ((existing_entry or {}).get("source_urls") or [])))
+            if not source_urls:
+                source_urls = [GITHUB_RAW_BASE + filename.replace(" ", "%20")]
+            source_url = source_urls[0]
+            existing_versions = (existing_entry or {}).get("versions") or {}
+            entry = {
+                "id": (existing_entry or {}).get("id") or sanitize_id(filename, idx),
+                "title": title,
+                "source_file": filename,
+                "source_url": source_url,
+                "source_label": (existing_entry or {}).get("source_label") or filename,
+                "source_urls": source_urls,
+                "original_lang": (existing_entry or {}).get("original_lang", "zh-TW"),
+                "added_date": (existing_entry or {}).get("added_date") or datetime.date.today().isoformat(),
+                "version": (existing_entry or {}).get("version", "1"),
+                "tags": merged_tags,
+                "fastsr": fastsr,
+                "prototype": build_prototypes(
+                    title=title,
+                    tags=merged_tags,
+                    fastsr=fastsr,
+                ),
+                "versions": {
+                    "simple_zh": html_content,
+                    "professional_zh": html_content,
+                    "english": existing_versions.get("english", ""),
+                },
+            }
+            new_entries.append(entry)
+            processed_titles.add(entry["title"])
+            continue
         else:
+            if suffix == ".pdf" and is_link_only_entry(existing_entry):
+                print("  ↷ Skipping PDF link-only placeholder")
+                continue
             raw_url = GITHUB_RAW_BASE + filename.replace(" ", "%20")
             merged_tags = list(dict.fromkeys(((existing_entry or {}).get("tags") or []) + extra_tags))
             title = title_override or (existing_entry or {}).get("title") or stem
@@ -227,6 +437,59 @@ def build():
             }
             new_entries.append(entry)
             processed_titles.add(entry["title"])
+            continue
+
+        sections = split_marked_text(plain_text) if sidecar_sections else []
+        if sections:
+            used_existing_ids: set[str] = set()
+            for section_idx, section in enumerate(sections, start=1):
+                marker = section["marker"]
+                label = f"{filename} {marker}"
+                section_meta = sidecar_sections.get(marker, {})
+                section_tags = list(dict.fromkeys(extra_tags + section_meta.get("tags", [])))
+                section_entry = existing_by_source_label.get(label)
+                if not section_entry:
+                    candidate = existing_by_filename_title.get((filename, section_meta.get("title", "")))
+                    if candidate and candidate.get("id") not in used_existing_ids:
+                        section_entry = candidate
+                section_text = section["text"]
+                section_html = plain_text_to_html(section_text)
+                section_existing_title = (
+                    section_meta.get("title")
+                    or section.get("title_hint")
+                    or (section_entry.get("title") if section_entry else None)
+                )
+                section_doc = process_document(
+                    section_text,
+                    section_html,
+                    f"{stem}_{marker.lstrip('@')}",
+                    existing_title=section_existing_title,
+                    extra_urls=extra_urls,
+                    existing_versions=(section_entry or {}).get("versions"),
+                    existing_fastsr=(section_entry or {}).get("fastsr"),
+                )
+                entry = {
+                    "id": (section_entry or {}).get("id") or sanitize_section_id(filename, marker, idx + section_idx),
+                    "title": section_doc["title"],
+                    "source_file": filename,
+                    "source_url": section_doc["source_url"],
+                    "source_label": label,
+                    "source_urls": section_doc.get("source_urls", []),
+                    "original_lang": (section_entry or {}).get("original_lang") or ("zh-TW" if section_doc["versions"]["professional_zh"] else "en"),
+                    "added_date": (section_entry or {}).get("added_date") or datetime.date.today().isoformat(),
+                    "version": (section_entry or {}).get("version", "1"),
+                    "tags": list(dict.fromkeys(((section_entry or {}).get("tags") or []) + section_tags)),
+                    "fastsr": section_doc["fastsr"],
+                    "prototype": build_prototypes(
+                        title=section_doc["title"],
+                        tags=list(dict.fromkeys(((section_entry or {}).get("tags") or []) + section_tags)),
+                        fastsr=section_doc["fastsr"],
+                    ),
+                    "versions": section_doc["versions"],
+                }
+                new_entries.append(entry)
+                processed_titles.add(entry["title"])
+                used_existing_ids.add(entry["id"])
             continue
 
         # Check if this file was already processed.
