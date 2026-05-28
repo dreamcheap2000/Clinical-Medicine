@@ -224,15 +224,25 @@ def split_marked_text(text: str) -> list[dict]:
     """Split marker-delimited text into sections."""
     sections: list[dict] = []
     current: dict | None = None
-    section_index = 0
+    auto_index = 0
 
     for raw_line in text.splitlines():
         stripped = raw_line.strip()
         if SECTION_MARKER_RE.match(stripped):
-            marker, title_hint = normalize_marker(stripped, section_index + 1)
+            raw_match = SECTION_MARKER_RE.match(stripped)
+            assert raw_match is not None
+            has_explicit_number = bool(raw_match.group(2))
+            if not has_explicit_number:
+                auto_index += 1
+            marker, title_hint = normalize_marker(
+                stripped,
+                auto_index if not has_explicit_number else None,
+            )
+            if current and marker == current.get("marker"):
+                current["title_hint"] = title_hint or current.get("title_hint", "")
+                continue
             if current and any(line.strip() for line in current["lines"]):
                 sections.append(current)
-                section_index += 1
             if current and not any(line.strip() for line in current["lines"]):
                 current["marker"] = marker
                 current["title_hint"] = title_hint or current.get("title_hint", "")
