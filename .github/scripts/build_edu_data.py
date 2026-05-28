@@ -77,7 +77,7 @@ def plain_text_to_html(raw: str) -> str:
     """Convert plain text into paragraph-oriented HTML."""
     paragraphs = [p.strip() for p in raw.split("\n\n") if p.strip()]
     return "".join(
-        f"<p>{escape(p).replace(chr(10), '<br>')}</p>"
+        f"<p>{escape(p).replace('\n', '<br>')}</p>"
         for p in paragraphs
     )
 
