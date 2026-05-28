@@ -230,7 +230,8 @@ def split_marked_text(text: str) -> list[dict]:
         stripped = raw_line.strip()
         if SECTION_MARKER_RE.match(stripped):
             raw_match = SECTION_MARKER_RE.match(stripped)
-            assert raw_match is not None
+            if raw_match is None:
+                raise ValueError(f"Invalid section marker: {stripped}")
             has_explicit_number = bool(raw_match.group(2))
             if not has_explicit_number:
                 auto_index += 1
@@ -262,7 +263,6 @@ def split_marked_text(text: str) -> list[dict]:
             "text": "\n".join(sec["lines"]).strip(),
         }
         for sec in sections
-        if sec.get("text") or any(line.strip() for line in sec.get("lines", []))
     ]
 
 
@@ -315,6 +315,11 @@ def build():
         src = e.get("source_file", "")
         if src:
             existing_by_stem[Path(src).stem] = e
+    existing_by_filename_title = {
+        (e.get("source_file", ""), e.get("title", "")): e
+        for e in existing_entries
+        if e.get("source_file") and e.get("title")
+    }
     existing_by_source_label = {
         e.get("source_label", ""): e
         for e in existing_entries
@@ -445,14 +450,9 @@ def build():
                 section_tags = list(dict.fromkeys(extra_tags + section_meta.get("tags", [])))
                 section_entry = existing_by_source_label.get(label)
                 if not section_entry:
-                    for candidate in existing_entries:
-                        if candidate.get("source_file") != filename:
-                            continue
-                        if candidate.get("id") in used_existing_ids:
-                            continue
-                        if section_meta.get("title") and candidate.get("title") == section_meta["title"]:
-                            section_entry = candidate
-                            break
+                    candidate = existing_by_filename_title.get((filename, section_meta.get("title", "")))
+                    if candidate and candidate.get("id") not in used_existing_ids:
+                        section_entry = candidate
                 section_text = section["text"]
                 section_html = plain_text_to_html(section_text)
                 section_existing_title = (
