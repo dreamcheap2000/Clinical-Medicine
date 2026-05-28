@@ -1,0 +1,19 @@
+{
+  "sections": [
+    {
+      "marker": "@1",
+      "title": "延長時間窗 IVT 之灌注影像選案（非 RAPID 軟體）",
+      "tags": ["IVT", "CT perfusion", "RAPID", "EXTEND", "缺血性中風", "再灌流"]
+    },
+    {
+      "marker": "@2",
+      "title": "ICH 外科處置與腫瘤相關出血風險",
+      "tags": ["ICH", "外科手術", "微創清除", "craniotomy", "血腫", "預後"]
+    },
+    {
+      "marker": "@3",
+      "title": "腦腫瘤相關出血的影像判讀與鑑別",
+      "tags": ["腦腫瘤", "腦出血", "MRI", "MRS", "灌注影像", "鑑別診斷"]
+    }
+  ]
+}
