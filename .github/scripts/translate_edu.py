@@ -653,8 +653,8 @@ def process_document(
                 english = ev.get("english") or professional_en
                 title = existing_title or filename
         else:
-            professional_zh = ev.get("professional_zh") or ""
-            simple_zh       = ev.get("simple_zh") or ""
+            professional_zh = ev.get("professional_zh") or professional_en
+            simple_zh       = ev.get("simple_zh") or professional_en
             english = ev.get("english") or professional_en
             title = existing_title or filename
 
