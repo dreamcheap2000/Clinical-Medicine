@@ -39,6 +39,9 @@ GITHUB_RAW_BASE = (
 )
 
 SECTION_MARKER_RE = re.compile(r"^\s*([@#&])\s*(\d+)?(?:\s+(.+?))?\s*$")
+MAX_SECTION_ID_LENGTH = 40
+FASTSR_TEXT_LIMIT = 12000
+MAX_LINK_PLACEHOLDER_TEXT_LENGTH = 18
 
 
 def docx_to_html(docx_path: Path) -> tuple[str, str]:
@@ -96,10 +99,8 @@ def xlsx_to_html(xlsx_path: Path) -> tuple[str, str]:
         rows: list[list[str]] = []
         for row in ws.iter_rows(values_only=True):
             vals = ["" if v is None else str(v).strip() for v in row]
-            last_non_empty = max(
-                (i for i, v in enumerate(vals) if v),
-                default=-1,
-            )
+            non_empty_indices = [i for i, v in enumerate(vals) if v]
+            last_non_empty = max(non_empty_indices, default=-1)
             if last_non_empty < 0:
                 continue
             rows.append(vals[: last_non_empty + 1])
@@ -160,7 +161,7 @@ def sanitize_id(filename: str, idx: int) -> str:
 def sanitize_section_id(filename: str, marker: str, idx: int) -> str:
     stem = Path(filename).stem
     marker_ascii = re.sub(r"[^a-zA-Z0-9_\-]", "_", marker).strip("_")
-    base = re.sub(r"[^a-zA-Z0-9_\-]", "_", f"{stem}_{marker_ascii}")[:40]
+    base = re.sub(r"[^a-zA-Z0-9_\-]", "_", f"{stem}_{marker_ascii}")[:MAX_SECTION_ID_LENGTH]
     return f"edu{idx+1:03d}" if not base else f"edu{idx+1:03d}_{base}"
 
 
@@ -228,10 +229,8 @@ def split_marked_text(text: str) -> list[dict]:
 
     for raw_line in text.splitlines():
         stripped = raw_line.strip()
-        if SECTION_MARKER_RE.match(stripped):
-            raw_match = SECTION_MARKER_RE.match(stripped)
-            if raw_match is None:
-                raise ValueError(f"Invalid section marker: {stripped}")
+        raw_match = SECTION_MARKER_RE.match(stripped)
+        if raw_match:
             has_explicit_number = bool(raw_match.group(2))
             if not has_explicit_number:
                 auto_index += 1
@@ -282,7 +281,7 @@ def is_link_only_entry(entry: dict | None) -> bool:
     text_only = re.sub(r"<[^>]+>", " ", combined)
     text_only = re.sub(r"\s+", " ", text_only).strip()
     link_count = combined.count("href=")
-    return link_count >= 1 and len(text_only.replace("📎", "").strip()) <= 18
+    return link_count >= 1 and len(text_only.replace("📎", "").strip()) <= MAX_LINK_PLACEHOLDER_TEXT_LENGTH
 
 
 def _needs_ai(versions: dict) -> bool:
@@ -367,7 +366,7 @@ def build():
             title = title_override or (existing_entry or {}).get("title") or stem
             fastsr = (
                 (existing_entry or {}).get("fastsr")
-                or build_fastsr(plain_text[:12000])
+                or build_fastsr(plain_text[:FASTSR_TEXT_LIMIT])
             )
             source_urls = list(dict.fromkeys(extra_urls + ((existing_entry or {}).get("source_urls") or [])))
             if not source_urls:
