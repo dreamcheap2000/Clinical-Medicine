@@ -19,6 +19,53 @@ import os
 import re
 from typing import Optional
 
+OPENEVIDENCE_URL = "https://www.openevidence.com/"
+OPENEVIDENCE_LABEL = "OpenEvidence"
+
+REFERENCE_MARK_RE = re.compile(r"\s*\[(?:\d+(?:-\d+)?(?:,\s*\d+(?:-\d+)?)*)\]")
+HTML_TAG_RE = re.compile(r"<[^>]+>")
+NUMERIC_TOKEN_RE = re.compile(r"[<>≤≥]?\s*\d+(?:\.\d+)?%?")
+
+
+def _normalize_html_spacing(html: str) -> str:
+    """Normalize spacing in generated HTML to avoid wide gaps and uneven alignment."""
+    if not html:
+        return ""
+    normalized = html.replace("\u00a0", " ")
+    normalized = re.sub(r"[ \t]{2,}", " ", normalized)
+    normalized = re.sub(r"\s+\n", "\n", normalized)
+    normalized = re.sub(r"\n{3,}", "\n\n", normalized)
+    return normalized.strip()
+
+
+def _strip_reference_marks(html: str) -> str:
+    """Remove inline [N] / [N-M] reference marks from English article content."""
+    if not html:
+        return ""
+    return REFERENCE_MARK_RE.sub("", html)
+
+
+def _html_to_text(html: str) -> str:
+    """Convert HTML to plain text for lightweight numeric consistency checks."""
+    text = HTML_TAG_RE.sub(" ", html or "")
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
+
+
+def _missing_numeric_tokens(source_html: str, translated_html: str) -> list[str]:
+    """Return numeric tokens present in source but absent in translated content."""
+    source_tokens = {
+        token.replace(" ", "")
+        for token in NUMERIC_TOKEN_RE.findall(_html_to_text(source_html))
+        if any(ch.isdigit() for ch in token)
+    }
+    translated_tokens = {
+        token.replace(" ", "")
+        for token in NUMERIC_TOKEN_RE.findall(_html_to_text(translated_html))
+        if any(ch.isdigit() for ch in token)
+    }
+    return sorted(tok for tok in source_tokens if tok not in translated_tokens)
+
 
 # ---------------------------------------------------------------------------
 # GitHub Models client (uses GITHUB_TOKEN — no external secret needed)
@@ -334,7 +381,9 @@ def ai_translate_to_english(client: "OpenAI", professional_zh_html: str) -> str:
     """Translate professional Chinese HTML to professional English HTML."""
     prompt = (
         "Translate the following Traditional Chinese professional medical content into "
-        "professional English. Maintain all medical terminology, structure, and detail. "
+        "professional English. Maintain all medical terminology, structure, detail, and all "
+        "numeric/statistical values exactly. Remove inline bracketed reference markers like [1] "
+        "or [1-2] from the output. "
         "Return only HTML.\n\n"
         + professional_zh_html
     )
@@ -345,7 +394,9 @@ def ai_translate_zh_from_en(client: "OpenAI", professional_en_html: str) -> str:
     """Translate professional English HTML to professional Traditional Chinese HTML."""
     prompt = (
         "Translate the following professional English medical content into professional "
-        "Traditional Chinese (繁體中文, 台灣用語與語氣). Maintain all medical terminology and structure. "
+        "Traditional Chinese (繁體中文, 台灣用語與語氣). Maintain all medical terminology, structure, "
+        "and every numeric/statistical statement (percentages, sample size, CI, p-value, dose, "
+        "score, time window) without omission. "
         + TAIWAN_LOCALE_GUIDANCE + " "
         "Return only HTML.\n\n"
         + professional_en_html
@@ -418,7 +469,9 @@ def ai_generate_english_from_professional_zh(client: "OpenAI", professional_zh_h
     """Translate a professional Traditional Chinese article to professional English."""
     prompt = (
         "Translate the following professional Traditional Chinese patient education article "
-        "into professional English. Maintain all medical accuracy, structure, and terminology. "
+        "into professional English. Maintain all medical accuracy, structure, terminology, and "
+        "all numeric/statistical values exactly. Remove inline bracketed reference markers like "
+        "[1] or [1-2] from the output. "
         "Return only HTML.\n\n"
         + professional_zh_html
     )
@@ -457,11 +510,13 @@ def convert_ebm_note(
     ef = existing_fastsr or {}
 
     urls = list(dict.fromkeys(extract_urls(note_text)))
-    source_url = urls[0] if urls else ""
-    source_label = ""
-    if source_url:
+    source_url = urls[0] if urls else OPENEVIDENCE_URL
+    source_label = OPENEVIDENCE_LABEL if not urls else ""
+    if urls and source_url:
         domain = re.sub(r"https?://(www\.)?", "", source_url).split("/")[0]
         source_label = domain
+    if not urls:
+        urls = [OPENEVIDENCE_URL]
 
     if client:
         try:
@@ -507,6 +562,11 @@ def convert_ebm_note(
         professional_zh = ev.get("professional_zh", "") or f"<p>{note_text}</p>"
         simple_zh = ev.get("simple_zh", "") or professional_zh
         english = ev.get("english", "")
+
+    english = _strip_reference_marks(english)
+    professional_zh = _normalize_html_spacing(professional_zh)
+    simple_zh = _normalize_html_spacing(simple_zh)
+    english = _normalize_html_spacing(english)
 
     # FastSR classification
     if ef and not _fastsr_needs_ai(ef):
@@ -580,12 +640,14 @@ def process_document(
     """
     lang = detect_language(text)
     urls = list(dict.fromkeys(extract_urls(text) + (extra_urls or [])))
-    source_url = urls[0] if urls else ""
-    source_label = ""
+    source_url = urls[0] if urls else OPENEVIDENCE_URL
+    source_label = OPENEVIDENCE_LABEL if not urls else ""
     # Try to infer source label from URL
-    if source_url:
+    if urls and source_url:
         domain = re.sub(r"https?://(www\.)?", "", source_url).split("/")[0]
         source_label = domain
+    if not urls:
+        urls = [OPENEVIDENCE_URL]
 
     ev = existing_versions or {}
     ef = existing_fastsr or {}
@@ -629,8 +691,14 @@ def process_document(
         if client:
             try:
                 if ev.get("professional_zh", "").strip():
-                    professional_zh = ev["professional_zh"]
-                    print("  ✔ Reusing existing professional_zh")
+                    reused_professional_zh = ev["professional_zh"]
+                    missing_stats = _missing_numeric_tokens(professional_en, reused_professional_zh)
+                    if missing_stats:
+                        print(f"  ↻ Regenerating professional_zh to preserve stats: {missing_stats[:8]}")
+                        professional_zh = ai_translate_zh_from_en(client, html)
+                    else:
+                        professional_zh = reused_professional_zh
+                        print("  ✔ Reusing existing professional_zh")
                 else:
                     professional_zh = ai_translate_zh_from_en(client, html)
 
@@ -658,6 +726,11 @@ def process_document(
             simple_zh       = ev.get("simple_zh") or professional_en
             english = ev.get("english") or professional_en
             title = existing_title or filename
+
+    english = _strip_reference_marks(english)
+    professional_zh = _normalize_html_spacing(professional_zh)
+    simple_zh = _normalize_html_spacing(simple_zh)
+    english = _normalize_html_spacing(english)
 
     # FastSR classification — prefer AI when available; reuse existing if quality is OK
     if ef and not _fastsr_needs_ai(ef):
