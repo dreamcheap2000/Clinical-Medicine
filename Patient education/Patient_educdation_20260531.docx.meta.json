@@ -1,0 +1,263 @@
+{
+  "sections": [
+    {
+      "marker": "@1",
+      "title": "Ticagrelor 合併 Aspirin 用於輕型缺血性中風 / 高風險 TIA",
+      "tags": [
+        "Ticagrelor",
+        "Aspirin",
+        "DAPT",
+        "TIA",
+        "缺血性中風"
+      ]
+    },
+    {
+      "marker": "@2",
+      "title": "早期帕金森病：減少異動症的藥物策略",
+      "tags": [
+        "帕金森病",
+        "異動症",
+        "amantadine",
+        "MAO-B inhibitor",
+        "OpenEvidence"
+      ]
+    },
+    {
+      "marker": "@3",
+      "title": "SAH 嚴重度分級：WFNS、Hunt-Hess、Modified Fisher",
+      "tags": [
+        "SAH",
+        "WFNS",
+        "Hunt-Hess",
+        "Modified Fisher",
+        "血管痙攣"
+      ]
+    },
+    {
+      "marker": "@4",
+      "title": "急性缺血性腦中風：延長時間窗與睡醒中風 IVT 評估",
+      "tags": [
+        "急性缺血性腦中風",
+        "IVT",
+        "延長時間窗",
+        "睡醒中風",
+        "DWI-FLAIR mismatch",
+        "灌流影像"
+      ]
+    },
+    {
+      "marker": "@5",
+      "title": "急性中風分流流程（出血性路徑：ICH/SAH）",
+      "tags": [
+        "出血性中風",
+        "ICH",
+        "SAH",
+        "ICH score",
+        "Modified Fisher",
+        "Hunt-Hess"
+      ]
+    },
+    {
+      "marker": "@6",
+      "title": "延長時間窗 IVT 之灌注影像選案（非 RAPID 軟體）",
+      "tags": [
+        "IVT",
+        "CT perfusion",
+        "RAPID",
+        "EXTEND",
+        "缺血性中風",
+        "再灌流"
+      ]
+    },
+    {
+      "marker": "@7",
+      "title": "ICH 外科處置與腫瘤相關出血風險",
+      "tags": [
+        "ICH surgery",
+        "小腦出血",
+        "微創手術",
+        "腦腫瘤",
+        "出血風險",
+        "ICH",
+        "外科手術",
+        "微創清除"
+      ]
+    },
+    {
+      "marker": "@8",
+      "title": "腦腫瘤相關出血的影像判讀與鑑別",
+      "tags": [
+        "腦腫瘤",
+        "腦出血",
+        "MRI",
+        "MRS",
+        "灌注影像",
+        "鑑別診斷"
+      ]
+    },
+    {
+      "marker": "@9",
+      "title": "Brexpiprazole 用於阿茲海默症激動：適應症與用藥重點",
+      "tags": [
+        "Brexpiprazole",
+        "Alzheimer disease",
+        "Agitation",
+        "失智症",
+        "精神行為症狀"
+      ]
+    },
+    {
+      "marker": "@10",
+      "title": "ICH 早期血壓、抗凝逆轉與 rtPA 後惡化處置",
+      "tags": [
+        "ICH",
+        "血壓控制",
+        "4F-PCC",
+        "INR",
+        "tirofiban",
+        "OpenEvidence",
+        "抗凝逆轉",
+        "rtPA"
+      ]
+    },
+    {
+      "marker": "@11",
+      "title": "ICH Score：自發性腦出血 30 天死亡率預測",
+      "tags": [
+        "ICH",
+        "ICH Score",
+        "腦出血",
+        "死亡率",
+        "預後評估",
+        "急性中風"
+      ]
+    },
+    {
+      "marker": "@12",
+      "title": "修正版 NIHSS（mNIHSS）評估與魚精蛋白注意事項",
+      "tags": [
+        "mNIHSS",
+        "NIHSS",
+        "神經學評估",
+        "Protamine",
+        "魚精蛋白",
+        "腦中風"
+      ]
+    },
+    {
+      "marker": "@13",
+      "title": "腰椎管狹窄的手法治療與神經滑動復健",
+      "tags": [
+        "腰椎管狹窄",
+        "神經性跛行",
+        "手法治療",
+        "神經滑動運動",
+        "物理治療",
+        "腰椎復健",
+        "神經滑動",
+        "神經動態技術"
+      ]
+    },
+    {
+      "marker": "@14",
+      "title": "心律不整的中風及栓塞風險，及服用抗凝血劑的出血風險評估",
+      "tags": [
+        "心房顫動",
+        "AF",
+        "中風",
+        "栓塞風險",
+        "抗凝血劑",
+        "CHA2DS2-VASc",
+        "HAS-BLED"
+      ]
+    },
+    {
+      "marker": "@15",
+      "title": "經期相關癲癇與血管迷走性暈厥：臨床鑑別與處置",
+      "tags": [
+        "catamenial seizure",
+        "vasovagal syncope",
+        "epilepsy",
+        "syncope",
+        "menstrual cycle",
+        "鑑別診斷"
+      ]
+    },
+    {
+      "marker": "@16",
+      "title": "臨床失智評估量表(CDR)",
+      "tags": [
+        "CDR",
+        "失智",
+        "評估",
+        "認知評估"
+      ]
+    },
+    {
+      "marker": "@17",
+      "title": "頭暈評估與頸動脈超音波適應症",
+      "tags": [
+        "dizziness",
+        "cervicogenic dizziness",
+        "BPPV",
+        "vestibular migraine",
+        "carotid duplex"
+      ]
+    },
+    {
+      "marker": "@18",
+      "title": "物理治療疼痛管理指引",
+      "tags": [
+        "慢性疼痛",
+        "物理治療",
+        "下背痛",
+        "退化性膝關節炎",
+        "TENS",
+        "超音波治療",
+        "透熱療法",
+        "運動治療"
+      ]
+    },
+    {
+      "marker": "@19",
+      "title": "無痛關節鬆動術",
+      "tags": [
+        "肩膀",
+        "冰凍肩",
+        "沾黏",
+        "關節鬆動術",
+        "silent manipulation",
+        "frozen shoulder",
+        "adhesive capsulitis"
+      ]
+    },
+    {
+      "marker": "@20",
+      "title": "經動脈微細血管栓塞術治療慢性疼痛",
+      "tags": [
+        "TAME",
+        "栓塞術",
+        "慢性疼痛",
+        "微創治療",
+        "異常血管新生",
+        "退化性關節炎",
+        "五十肩",
+        "足底筋膜炎"
+      ]
+    },
+    {
+      "marker": "@21",
+      "title": "膝扭傷後的內側膝痛及後小腿痛",
+      "tags": [
+        "膝蓋",
+        "扭傷",
+        "韌帶",
+        "MCL",
+        "PCL",
+        "小腿",
+        "網球腿",
+        "腓腸肌"
+      ]
+    }
+  ]
+}
