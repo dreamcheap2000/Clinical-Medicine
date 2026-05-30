@@ -68,6 +68,16 @@ def _missing_numeric_tokens(source_html: str, translated_html: str) -> list[str]
     return sorted(tok for tok in source_tokens if tok not in translated_tokens)
 
 
+def _resolve_source_metadata(urls: list[str]) -> tuple[str, str, list[str]]:
+    """Resolve source_url/source_label/source_urls with OpenEvidence fallback."""
+    deduped = list(dict.fromkeys(urls))
+    if not deduped:
+        return OPENEVIDENCE_URL, OPENEVIDENCE_LABEL, [OPENEVIDENCE_URL]
+    source_url = deduped[0]
+    domain = re.sub(r"https?://(www\.)?", "", source_url).split("/")[0]
+    return source_url, domain, deduped
+
+
 # ---------------------------------------------------------------------------
 # GitHub Models client (uses GITHUB_TOKEN — no external secret needed)
 # ---------------------------------------------------------------------------
@@ -510,14 +520,7 @@ def convert_ebm_note(
     ev = existing_versions or {}
     ef = existing_fastsr or {}
 
-    urls = list(dict.fromkeys(extract_urls(note_text)))
-    source_url = urls[0] if urls else OPENEVIDENCE_URL
-    source_label = OPENEVIDENCE_LABEL if not urls else ""
-    if urls and source_url:
-        domain = re.sub(r"https?://(www\.)?", "", source_url).split("/")[0]
-        source_label = domain
-    if not urls:
-        urls = [OPENEVIDENCE_URL]
+    source_url, source_label, urls = _resolve_source_metadata(extract_urls(note_text))
 
     if client:
         try:
@@ -640,15 +643,7 @@ def process_document(
         existing_fastsr: Existing FastSR dict to reuse if quality is acceptable.
     """
     lang = detect_language(text)
-    urls = list(dict.fromkeys(extract_urls(text) + (extra_urls or [])))
-    source_url = urls[0] if urls else OPENEVIDENCE_URL
-    source_label = OPENEVIDENCE_LABEL if not urls else ""
-    # Try to infer source label from URL
-    if urls and source_url:
-        domain = re.sub(r"https?://(www\.)?", "", source_url).split("/")[0]
-        source_label = domain
-    if not urls:
-        urls = [OPENEVIDENCE_URL]
+    source_url, source_label, urls = _resolve_source_metadata(extract_urls(text) + (extra_urls or []))
 
     ev = existing_versions or {}
     ef = existing_fastsr or {}
@@ -695,24 +690,26 @@ def process_document(
                     reused_professional_zh = ev["professional_zh"]
                     missing_stats = _missing_numeric_tokens(professional_en, reused_professional_zh)
                     if missing_stats:
+                        shown = missing_stats[:MAX_MISSING_STATS_LOG_ITEMS]
+                        suffix = " ..." if len(missing_stats) > MAX_MISSING_STATS_LOG_ITEMS else ""
                         print(
                             "  ↻ Regenerating professional_zh to preserve stats: "
-                            f"{missing_stats[:MAX_MISSING_STATS_LOG_ITEMS]}"
+                            f"{shown}{suffix}"
                         )
-                        professional_zh = ai_translate_zh_from_en(client, html)
+                        professional_zh = ai_translate_zh_from_en(client, professional_en)
                     else:
                         professional_zh = reused_professional_zh
                         print("  ✔ Reusing existing professional_zh")
                 else:
-                    professional_zh = ai_translate_zh_from_en(client, html)
+                    professional_zh = ai_translate_zh_from_en(client, professional_en)
 
                 if has_simple_zh:
                     simple_zh = ev["simple_zh"]
                     print("  ✔ Reusing existing simple_zh")
                 else:
-                    simple_zh = ai_translate_to_simple_zh_from_en(client, html)
+                    simple_zh = ai_translate_to_simple_zh_from_en(client, professional_en)
 
-                if has_english and ev.get("english", "").strip() != html.strip():
+                if has_english and ev.get("english", "").strip() != professional_en.strip():
                     english = ev["english"]
                     print("  ✔ Reusing existing english")
                 else:
