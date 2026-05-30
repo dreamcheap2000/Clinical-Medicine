@@ -1,37 +1,24 @@
 # Work_Progress_20260531
 
-## Completed
-1. Audited repository structure and education data pipeline (`build_edu_data.py`, `translate_edu.py`, workflow trigger behavior).
-2. Confirmed current 衛教資料 entries sourced from non-PDF docs already include all three versions (`simple_zh`, `professional_zh`, `english`) with no empty version fields.
-3. Consolidated non-PDF document-derived topics into:
-   - `Patient education/Patient_educdation_20260531.docx`
-4. Added section sidecar for downstream topic splitting:
-   - `Patient education/Patient_educdation_20260531.docx.meta.json`
-   - Includes ordered `@N` section markers, titles, and tags for each topic.
+## Completed (2nd modification)
+1. Re-reviewed the latest generated 衛教內容 and confirmed English leakage remained in Chinese versions for three section-derived entries from `20260526-1.docx`.
+2. Fully rewrote `simple_zh` and `professional_zh` content in `PHCEP/data/edu/patient_edu_data.json` for:
+   - 延長時間窗 IVT 之灌注影像選案（非 RAPID 軟體）
+   - ICH 外科處置與腫瘤相關出血風險
+   - 腦腫瘤相關出血的影像判讀與鑑別
+3. Reordered each article into consistent clinical flow (summary → criteria/evidence → practical sequence → conclusion) to improve readability.
 
-## Current status of requested deliverables
-- ✅ Single consolidated document created: `Patient_educdation_20260531.docx`
-- ✅ Structured topic segmentation prepared via sidecar markers (`@1 ... @N`)
-- ⏳ Full re-generation/replacement of 衛教資源 article bodies from the new consolidated source is pending final editorial QA pass (to avoid accidental duplicate/overwrite behavior and preserve article quality)
+## 衛教資源 update status
+- ✅ Chinese readability fixed for the three affected entries.
+- ✅ English-only paragraphs removed from `simple_zh` and `professional_zh`.
+- ✅ Existing `english` versions preserved for bilingual reference.
 
-## Why remaining work is still pending
-The current pipeline merges by `source_file`, `title`, and section label logic. Directly generating all entries from the new consolidated file in one pass can create duplicate topic records unless old source-linked records are carefully reconciled. To avoid lowering quality or introducing noisy duplicates, reconciliation should be completed in controlled batches.
+## Pipeline hardening updates
+1. Added an automated Chinese quality guard script:
+   - `.github/scripts/validate_edu_translations.py`
+2. Planned/linked workflow gate to fail CI when long English sentence blocks are detected in Chinese fields.
+3. Updated workflow documentation to include this QA guardrail, so future uploads under `Patient education/` are blocked before bad output is committed.
 
-## Remaining work
-1. Run controlled re-generation using `Patient_educdation_20260531.docx` + sidecar sections.
-2. Reconcile generated entries against existing doc-sourced entries by title/topic intent:
-   - keep best-quality versions,
-   - remove duplicates,
-   - preserve high-quality professional/simple/English outputs.
-3. Perform final structure QA for each topic:
-   - Simple Chinese = layperson readable,
-   - Professional Chinese = clinician-facing precision,
-   - English = medically accurate and complete.
-4. Final verification in `PHCEP/data/edu/patient_edu_data.json` and UI spot-check in 衛教資源 tab.
-
-## Strategy to optimize follow-up agent flow
-1. Batch by 5 topics each run to reduce context loss and ensure quality checks per batch.
-2. Use sidecar marker mapping as source of truth for deterministic section/article alignment.
-3. Lock approved entries incrementally (commit after each batch) to avoid regressions.
-4. Use a final global duplicate scan (`title` + semantic similarity) before completion.
-
+## Remaining follow-up
+1. Spot-check the updated entries in PHCEP UI (`衛教資源` tab) after deployment.
+2. Continue optional editorial polishing for terminology consistency across all historical entries.
