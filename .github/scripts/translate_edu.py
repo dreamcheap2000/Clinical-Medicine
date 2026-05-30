@@ -25,6 +25,7 @@ OPENEVIDENCE_LABEL = "OpenEvidence"
 REFERENCE_MARK_RE = re.compile(r"\s*\[(?:\d+(?:-\d+)?(?:,\s*\d+(?:-\d+)?)*)\]")
 HTML_TAG_RE = re.compile(r"<[^>]+>")
 NUMERIC_TOKEN_RE = re.compile(r"[<>≤≥]?\s*\d+(?:\.\d+)?%?")
+MAX_MISSING_STATS_LOG_ITEMS = 8
 
 
 def _normalize_html_spacing(html: str) -> str:
@@ -694,7 +695,10 @@ def process_document(
                     reused_professional_zh = ev["professional_zh"]
                     missing_stats = _missing_numeric_tokens(professional_en, reused_professional_zh)
                     if missing_stats:
-                        print(f"  ↻ Regenerating professional_zh to preserve stats: {missing_stats[:8]}")
+                        print(
+                            "  ↻ Regenerating professional_zh to preserve stats: "
+                            f"{missing_stats[:MAX_MISSING_STATS_LOG_ITEMS]}"
+                        )
                         professional_zh = ai_translate_zh_from_en(client, html)
                     else:
                         professional_zh = reused_professional_zh
