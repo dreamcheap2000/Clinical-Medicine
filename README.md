@@ -90,6 +90,11 @@ Push .docx → GitHub Actions trigger → build_edu_data.py
                           │
                           └──────────────┬─────────────────────┘
                                          ▼
+                   validate_edu_translations.py (QA gate for zh fields)
+                    - fails CI on long English sentence blocks in
+                      simple_zh / professional_zh
+                                         │
+                                         ▼
                           Compute 3 prototypes (global/semantic/fragment)
                           for FastSR client-side scoring
                                          │
@@ -117,9 +122,10 @@ Push .docx → GitHub Actions trigger → build_edu_data.py
 
 **What to do when the pipeline output is insufficient:**
 1. Review the pipeline-generated entry in the live site (衛教資源 tab → search by title).
-2. Edit `PHCEP/data/edu/patient_edu_data.json` directly to replace `simple_zh`, `professional_zh`, `english`, and `fastsr` with carefully authored content.
-3. The pipeline **preserves manually-crafted entries** (those without `source_file`) on subsequent runs — they will not be overwritten.
-4. To override a docx-sourced entry permanently, remove its `source_file` field after manual editing.
+2. If workflow fails at translation QA, revise Chinese content first (avoid raw English paragraph carry-over), then rerun.
+3. Edit `PHCEP/data/edu/patient_edu_data.json` directly to replace `simple_zh`, `professional_zh`, `english`, and `fastsr` with carefully authored content.
+4. The pipeline **preserves manually-crafted entries** (those without `source_file`) on subsequent runs — they will not be overwritten.
+5. To override a docx-sourced entry permanently, remove its `source_file` field after manual editing.
 
 ### Key features
 

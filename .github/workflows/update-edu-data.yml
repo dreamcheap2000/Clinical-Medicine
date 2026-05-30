@@ -31,6 +31,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python3 .github/scripts/build_edu_data.py
 
+      - name: Validate Chinese translation quality
+        run: python3 .github/scripts/validate_edu_translations.py
+
       - name: Commit updated edu data
         run: |
           git config user.name "github-actions[bot]"
