@@ -1863,12 +1863,12 @@ function eduMountInteractiveWidgets(content, entry, version) {
     content.insertBefore(anchor, content.firstChild);
   }
   var isAfEntry = entry.id === 'edu001_AF';
-  if (version === 'simple_zh') {
-    ensureCalculatorAnchorExists('edu-cdr-calculator', entry.id === 'edu001_CDR');
-    ensureCalculatorAnchorExists('edu-ascod-calculator', eduIsAscodEntry(entry));
-    ensureCalculatorAnchorExists('edu-chadsvasc-calculator', isAfEntry);
-    ensureCalculatorAnchorExists('edu-hasbled-calculator', isAfEntry);
-  }
+  ensureCalculatorAnchorExists('edu-cdr-calculator', entry.id === 'edu001_CDR');
+  ensureCalculatorAnchorExists('edu-ascod-calculator', eduIsAscodEntry(entry));
+  ensureCalculatorAnchorExists('edu-chadsvasc-calculator', isAfEntry);
+  ensureCalculatorAnchorExists('edu-hasbled-calculator', isAfEntry);
+  ensureCalculatorAnchorExists('edu-ich-calculator', entry.id === 'id_20260527_1_ich_score');
+  ensureCalculatorAnchorExists('edu-sah-calculator', entry.id === 'id_202605211138_2_sah_scores');
   content.querySelectorAll('.edu-cdr-calculator').forEach(function(el) {
     eduWrapCalculator(el, 'cdr', english ? '🧮 Clinical Dementia Rating Calculator' : '🧮 臨床失智評估量表計算器', function(inner) {
       eduRenderCdrCalculator(inner);
@@ -1889,6 +1889,21 @@ function eduMountInteractiveWidgets(content, entry, version) {
       eduRenderHasbledCalculator(inner);
     });
   });
+  content.querySelectorAll('.edu-ich-calculator').forEach(function(el) {
+    eduWrapCalculator(el, 'ich', english ? '🧮 ICH Score Calculator' : '🧮 ICH Score 計算器', function(inner) {
+      eduRenderIchCalculator(inner);
+    });
+  });
+  content.querySelectorAll('.edu-sah-calculator').forEach(function(el) {
+    eduWrapCalculator(el, 'sah', english ? '🧮 SAH Severity Calculator' : '🧮 SAH 嚴重度分級計算器', function(inner) {
+      eduRenderSahCalculator(inner);
+    });
+  });
+  if (entry.id === 'edu001_CDR' && (version === 'professional_zh' || version === 'english')) {
+    content.querySelectorAll('.edu-cell-scroll').forEach(function(node) {
+      if ((node.textContent || '').trim()) node.title = node.textContent.trim();
+    });
+  }
 }
 
 function eduWrapCalculator(el, type, label, renderFn) {
@@ -2495,6 +2510,185 @@ function eduRenderHasbledCalculator(el) {
       lines.push(mark + ' ' + item.key + ' (+' + item.pts + '): ' + desc);
     });
     if (noteEl) lines.push((noteEl.textContent || '').trim());
+    return lines.join('\n');
+  }, english);
+  recalc();
+}
+
+function eduRenderIchCalculator(el) {
+  if (!el) return;
+  var english = eduCurrentVersion === 'english';
+  var mortality = { 0: '0%', 1: '13%', 2: '26%', 3: '72%', 4: '97%', 5: '100%', 6: '100%' };
+  el.innerHTML = '<div class="edu-calc-box edu-calc-box-ich"></div>';
+  var box = el.querySelector('.edu-calc-box-ich');
+  var intro = document.createElement('p');
+  intro.className = 'edu-calc-intro';
+  intro.textContent = english
+    ? 'Select each ICH Score component to estimate 30-day mortality risk.'
+    : '請選擇 ICH Score 各項指標，系統將自動估算 30 天死亡率風險。';
+  box.appendChild(intro);
+  var grid = document.createElement('div');
+  grid.className = 'edu-chads-grid';
+  box.appendChild(grid);
+
+  var state = { gcs: 0, volume: false, ivh: false, infratentorial: false, age80: false };
+  var gcsHost = document.createElement('div');
+  gcsHost.style.marginBottom = '8px';
+  grid.appendChild(gcsHost);
+  var gcsDd = eduCreateCalcDropdown({
+    value: 0,
+    options: [
+      { value: 0, label: english ? 'GCS 13–15 (+0)' : 'GCS 13–15（+0）', desc: english ? 'Mild impairment' : '輕度意識受損' },
+      { value: 1, label: english ? 'GCS 5–12 (+1)' : 'GCS 5–12（+1）', desc: english ? 'Moderate impairment' : '中度意識受損' },
+      { value: 2, label: english ? 'GCS 3–4 (+2)' : 'GCS 3–4（+2）', desc: english ? 'Severe impairment' : '重度意識受損' }
+    ],
+    placeholderText: english ? 'Hover to preview GCS category.' : '將滑鼠移到選項可預覽說明',
+    onChange: function(v) { state.gcs = Number(v || 0); recalc(); }
+  });
+  gcsHost.appendChild(gcsDd.el);
+
+  var checks = [
+    { key: 'volume', pts: 1, zh: 'ICH volume ≥ 30 cm³', en: 'ICH volume ≥ 30 cm³' },
+    { key: 'ivh', pts: 1, zh: '腦室內出血（IVH）', en: 'Intraventricular hemorrhage (IVH) present' },
+    { key: 'infratentorial', pts: 1, zh: '幕下出血（小腦/腦幹）', en: 'Infratentorial origin (cerebellum/brainstem)' },
+    { key: 'age80', pts: 1, zh: '年齡 ≥ 80 歲', en: 'Age ≥ 80 years' }
+  ];
+  checks.forEach(function(item) {
+    var row = document.createElement('label');
+    row.className = 'edu-chads-row';
+    var cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'edu-chads-cb';
+    cb.addEventListener('change', function() { state[item.key] = cb.checked; recalc(); });
+    var pts = document.createElement('span');
+    pts.className = 'edu-chads-pts';
+    pts.textContent = '+' + item.pts;
+    var desc = document.createElement('span');
+    desc.className = 'edu-chads-desc';
+    desc.textContent = english ? item.en : item.zh;
+    row.appendChild(cb); row.appendChild(pts); row.appendChild(desc);
+    grid.appendChild(row);
+  });
+
+  var resultEl = document.createElement('div');
+  resultEl.className = 'edu-calc-result edu-chads-result';
+  box.appendChild(resultEl);
+  var noteEl = document.createElement('div');
+  noteEl.className = 'edu-calc-note edu-chads-note';
+  box.appendChild(noteEl);
+
+  function recalc() {
+    var score = state.gcs + (state.volume ? 1 : 0) + (state.ivh ? 1 : 0) + (state.infratentorial ? 1 : 0) + (state.age80 ? 1 : 0);
+    score = Math.max(0, Math.min(6, score));
+    var risk = mortality[score] || '—';
+    resultEl.textContent = english
+      ? ('ICH Score: ' + score + '  |  Estimated 30-day mortality: ' + risk)
+      : ('ICH Score：' + score + '　|　預測 30 天死亡率：' + risk);
+    var note = score >= 4
+      ? (english ? 'Very high-risk category: use for early goals-of-care discussion with full clinical context.' : '屬極高風險分層，應盡早進行預後與照護目標溝通。')
+      : (english ? 'Use with serial imaging and neurologic trajectory; avoid single-score-only decisions.' : '需合併影像追蹤與神經學變化判讀，不宜單以分數決策。');
+    noteEl.innerHTML = '<div>• ' + escHtml(note) + '</div>';
+  }
+  eduAppendCalcCopyButton(box, function() {
+    var lines = [resultEl ? resultEl.textContent : ''];
+    lines.push((english ? 'GCS points: ' : 'GCS 得分：') + state.gcs);
+    checks.forEach(function(item) {
+      lines.push((state[item.key] ? '✓ ' : '✗ ') + (english ? item.en : item.zh));
+    });
+    if (noteEl) lines.push((noteEl.textContent || '').trim());
+    return lines.join('\n');
+  }, english);
+  recalc();
+}
+
+function eduRenderSahCalculator(el) {
+  if (!el) return;
+  var english = eduCurrentVersion === 'english';
+  el.innerHTML = '<div class="edu-calc-box edu-calc-box-sah"></div>';
+  var box = el.querySelector('.edu-calc-box-sah');
+  var intro = document.createElement('p');
+  intro.className = 'edu-calc-intro';
+  intro.textContent = english
+    ? 'Select WFNS, Hunt-Hess, and Modified Fisher grades to generate a bedside SAH severity summary.'
+    : '請選擇 WFNS、Hunt-Hess 與 Modified Fisher 分級，系統會產生 SAH 臨床整合摘要。';
+  box.appendChild(intro);
+
+  var grid = document.createElement('div');
+  grid.className = 'edu-calc-grid';
+  grid.style.gridTemplateColumns = 'repeat(auto-fit,minmax(220px,1fr))';
+  box.appendChild(grid);
+
+  var state = { wfns: 1, hh: 1, mf: 0 };
+  function addDropdown(label, key, options) {
+    var row = document.createElement('div');
+    row.className = 'edu-domain-row';
+    var lab = document.createElement('label');
+    lab.style.fontSize = '0.79rem';
+    lab.style.color = 'var(--muted)';
+    lab.textContent = label;
+    row.appendChild(lab);
+    var host = document.createElement('div');
+    row.appendChild(host);
+    var dd = eduCreateCalcDropdown({
+      value: state[key],
+      options: options,
+      placeholderText: english ? 'Hover to preview details.' : '將滑鼠移到選項可預覽說明',
+      onChange: function(v) { state[key] = Number(v); recalc(); }
+    });
+    host.appendChild(dd.el);
+    grid.appendChild(row);
+  }
+
+  addDropdown('WFNS', 'wfns', [1, 2, 3, 4, 5].map(function(v) {
+    var descZh = v <= 2 ? '臨床較穩定' : (v <= 3 ? '中度風險' : '重度神經學風險');
+    var descEn = v <= 2 ? 'Relatively stable neurologic status' : (v <= 3 ? 'Intermediate neurologic risk' : 'High neurologic severity');
+    return { value: v, label: 'Grade ' + v, desc: english ? descEn : descZh };
+  }));
+  addDropdown('Hunt-Hess', 'hh', [1, 2, 3, 4, 5].map(function(v) {
+    var descZh = v <= 2 ? '較輕度臨床表現' : (v <= 3 ? '中度臨床嚴重度' : '重度臨床嚴重度');
+    var descEn = v <= 2 ? 'Milder clinical presentation' : (v <= 3 ? 'Moderate clinical severity' : 'Severe clinical severity');
+    return { value: v, label: 'Grade ' + v, desc: english ? descEn : descZh };
+  }));
+  addDropdown('Modified Fisher', 'mf', [0, 1, 2, 3, 4].map(function(v) {
+    var descZh = v <= 1 ? 'DCI/血管痙攣風險較低' : (v <= 2 ? '中等影像風險' : '高 DCI/血管痙攣風險');
+    var descEn = v <= 1 ? 'Lower DCI/vasospasm risk' : (v <= 2 ? 'Intermediate imaging risk' : 'Higher DCI/vasospasm risk');
+    return { value: v, label: 'Grade ' + v, desc: english ? descEn : descZh };
+  }));
+
+  var resultEl = document.createElement('div');
+  resultEl.className = 'edu-calc-result';
+  box.appendChild(resultEl);
+  var noteEl = document.createElement('div');
+  noteEl.className = 'edu-calc-note';
+  box.appendChild(noteEl);
+
+  function recalc() {
+    var severeClinical = state.wfns >= 4 || state.hh >= 4;
+    var highDci = state.mf >= 3;
+    resultEl.textContent = english
+      ? ('WFNS ' + state.wfns + ' | Hunt-Hess ' + state.hh + ' | Modified Fisher ' + state.mf)
+      : ('WFNS ' + state.wfns + '｜Hunt-Hess ' + state.hh + '｜Modified Fisher ' + state.mf);
+    var notes = [];
+    if (severeClinical) {
+      notes.push(english ? 'High initial clinical severity: prioritize ICU-level monitoring and urgent aneurysm-securement planning.' : '初始臨床嚴重度高：建議加強加護監測並優先規劃動脈瘤固定。');
+    } else {
+      notes.push(english ? 'Clinical severity currently in lower-to-intermediate range; continue serial neurologic reassessment.' : '目前臨床嚴重度偏低至中等，仍需序列化神經學再評估。');
+    }
+    if (highDci) {
+      notes.push(english ? 'Modified Fisher high grade suggests elevated DCI/vasospasm risk; reinforce nimodipine adherence and surveillance.' : 'Modified Fisher 高分代表 DCI/血管痙攣風險升高，需強化 nimodipine 與監測。');
+    } else {
+      notes.push(english ? 'Imaging hemorrhage burden is not in the highest-risk tier for DCI, but risk is not zero.' : '影像風險非最高層級，但仍不可忽略 DCI 可能。');
+    }
+    noteEl.innerHTML = notes.map(function(n) { return '<div>• ' + escHtml(n) + '</div>'; }).join('');
+  }
+  eduAppendCalcCopyButton(box, function() {
+    var lines = [resultEl ? resultEl.textContent : ''];
+    if (noteEl) {
+      noteEl.querySelectorAll('div').forEach(function(node) {
+        var txt = (node.textContent || '').trim();
+        if (txt) lines.push(txt);
+      });
+    }
     return lines.join('\n');
   }, english);
   recalc();
