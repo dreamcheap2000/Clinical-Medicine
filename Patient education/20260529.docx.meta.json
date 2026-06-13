@@ -1,0 +1,34 @@
+{
+  "sections": [
+    {
+      "marker": "@1",
+      "title": "正常壓力水腦症分流術後改善預測因子",
+      "tags": ["正常壓力水腦症", "NPH", "分流手術", "預後", "tap test"]
+    },
+    {
+      "marker": "@2",
+      "title": "正常壓力水腦症的高容積腰椎穿刺與 CSF 生物標記",
+      "tags": ["正常壓力水腦症", "NPH", "lumbar puncture", "tap test", "CSF biomarker"]
+    },
+    {
+      "marker": "@3",
+      "title": "HFA-ICOS 分數：蒽環類化療前心毒性風險分層",
+      "tags": ["HFA-ICOS", "anthracycline", "cardio-oncology", "心毒性", "風險分層"]
+    },
+    {
+      "marker": "@4",
+      "title": "CTRCD 定義與影像追蹤重點",
+      "tags": ["CTRCD", "LVEF", "GLS", "cardio-oncology", "echocardiography"]
+    },
+    {
+      "marker": "@5",
+      "title": "嚴重 UTI 住院治療：第三代頭孢菌素與 aminoglycoside 風險",
+      "tags": ["UTI", "ceftriaxone", "aminoglycoside", "pyelonephritis", "腎毒性"]
+    },
+    {
+      "marker": "@6",
+      "title": "足底筋膜炎的體外震波治療劑量",
+      "tags": ["足底筋膜炎", "ESWT", "shock wave", "復健", "疼痛治療"]
+    }
+  ]
+}

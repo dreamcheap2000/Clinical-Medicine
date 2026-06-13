@@ -107,18 +107,22 @@ Push .docx → GitHub Actions trigger → build_edu_data.py
 
 **Trigger**: `.github/workflows/update-edu-data.yml` — fires on `push` to `main` when `Patient education/**` changes, or manually via `workflow_dispatch`.
 
-**Sidecar metadata** (optional): Place `<filename>.meta.json` next to the source file to supply metadata that the pipeline cannot reliably extract from the document body:
+**Sidecar metadata** (optional): Place `<filename>.meta.json` next to the source file to supply metadata that the pipeline cannot reliably extract from the document body. Section markers may use `@`, `#`, or `&` in the source document and are normalized by the pipeline:
 
 ```json
 {
   "source_urls": ["https://...", "https://..."],
   "tags": ["TAME", "慢性疼痛"],
   "title": "optional title override",
+  "ignore": false,
   "sections": [
     { "marker": "@1", "title": "split article title", "tags": ["optional", "tags"] }
   ]
 }
 ```
+
+- Set `"ignore": true` for helper exports or working notes kept in `Patient education/` that should **not** become site articles.
+- A single multi-section upload can expand into many entries; for example, the `20260529.docx`, `20260610.docx`, and `20260613.docx` batch produces 14 split articles.
 
 **What to do when the pipeline output is insufficient:**
 1. Review the pipeline-generated entry in the live site (衛教資源 tab → search by title).

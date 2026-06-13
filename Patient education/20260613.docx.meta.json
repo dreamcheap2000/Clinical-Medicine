@@ -1,0 +1,29 @@
+{
+  "sections": [
+    {
+      "marker": "@1",
+      "title": "膠質瘤 MRS 特徵與高低級別鑑別",
+      "tags": ["glioma", "MRS", "Ch/NAA", "Ch/Cr", "腦腫瘤"]
+    },
+    {
+      "marker": "@2",
+      "title": "重度心迷走神經功能異常：完整自律神經檢查",
+      "tags": ["autonomic testing", "cardiovagal", "QSART", "Valsalva", "CASS"]
+    },
+    {
+      "marker": "@3",
+      "title": "CASS：自律神經失調嚴重度分級",
+      "tags": ["CASS", "autonomic failure", "QSART", "Valsalva", "grading"]
+    },
+    {
+      "marker": "@4",
+      "title": "Valsalva maneuver 四期變化與臨床判讀",
+      "tags": ["Valsalva maneuver", "autonomic testing", "baroreflex", "orthostatic hypotension", "自律神經"]
+    },
+    {
+      "marker": "@5",
+      "title": "自律神經功能異常的病因檢查",
+      "tags": ["autonomic dysfunction", "etiology", "diabetes", "amyloidosis", "autoimmune"]
+    }
+  ]
+}
