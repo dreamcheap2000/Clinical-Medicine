@@ -176,6 +176,7 @@ def load_existing() -> dict:
 
 
 SIDECAR_SUFFIX = ".meta.json"
+SUPPORTED_SOURCE_SUFFIXES = {".docx", ".txt", ".xlsx", ".pdf"}
 
 
 def load_sidecar(fpath: Path) -> dict:
@@ -185,6 +186,7 @@ def load_sidecar(fpath: Path) -> dict:
       source_urls  – list of URLs (merged with any URLs found in the document)
       title        – override title string
       tags         – list of tag strings
+      ignore       – skip processing this file when true
       notes        – freeform notes (ignored by the pipeline)
 
     Returns an empty dict if no sidecar exists or parsing fails.
@@ -346,10 +348,17 @@ def build():
 
         # Load optional sidecar metadata
         sidecar = load_sidecar(fpath)
+        if sidecar.get("ignore"):
+            print("  ↷ Skipping ignored helper file")
+            continue
         extra_urls: list[str] = sidecar.get("source_urls", [])
         title_override: str = sidecar.get("title", "")
         extra_tags: list[str] = sidecar.get("tags", [])
         sidecar_sections = get_sidecar_sections(sidecar)
+
+        if suffix not in SUPPORTED_SOURCE_SUFFIXES:
+            print("  ↷ Skipping unsupported file type")
+            continue
 
         existing_entry = existing_by_stem.get(stem) or existing_by_title.get(stem)
 
