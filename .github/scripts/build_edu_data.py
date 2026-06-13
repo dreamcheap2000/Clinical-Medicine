@@ -346,6 +346,10 @@ def build():
 
         print(f"Processing [{suffix}]: {filename}")
 
+        if suffix not in SUPPORTED_SOURCE_SUFFIXES:
+            print("  ↷ Skipping unsupported file type")
+            continue
+
         # Load optional sidecar metadata
         sidecar = load_sidecar(fpath)
         if sidecar.get("ignore"):
@@ -355,10 +359,6 @@ def build():
         title_override: str = sidecar.get("title", "")
         extra_tags: list[str] = sidecar.get("tags", [])
         sidecar_sections = get_sidecar_sections(sidecar)
-
-        if suffix not in SUPPORTED_SOURCE_SUFFIXES:
-            print("  ↷ Skipping unsupported file type")
-            continue
 
         existing_entry = existing_by_stem.get(stem) or existing_by_title.get(stem)
 
