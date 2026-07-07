@@ -4,9 +4,10 @@
  * localStorage persistence.
  */
 
-import { renderForm }       from './modules/report-form.js';
-import { renderList }       from './modules/report-list.js';
-import { renderStatistics } from './modules/statistics.js';
+import { renderForm }          from './modules/report-form.js';
+import { renderList }          from './modules/report-list.js';
+import { renderStatistics }    from './modules/statistics.js';
+import { renderStrokeRehab }   from './modules/stroke-rehab-predictor.js';
 
 /* ================================================================== */
 /* Exam type registry                                                   */
@@ -163,6 +164,9 @@ function renderPage(target) {
         if (!report) { showError('Report not found.'); return; }
         loadTemplate(report.examType).then(tmpl => renderForm(tmpl, target.id)).catch(showError);
       }
+      break;
+    case 'stroke-rehab':
+      renderStrokeRehab();
       break;
     default:
       renderDashboard();
@@ -330,10 +334,11 @@ function boot() {
   const navLinks = document.getElementById('nav-links');
   if (navLinks) {
     const pages = [
-      { page: 'dashboard', label: '🏠 Home'       },
-      { page: 'new',       label: '➕ New Report'  },
-      { page: 'list',      label: '📋 Reports'     },
-      { page: 'stats',     label: '📊 Statistics'  },
+      { page: 'dashboard',    label: '🏠 Home'          },
+      { page: 'new',          label: '➕ New Report'     },
+      { page: 'list',         label: '📋 Reports'        },
+      { page: 'stats',        label: '📊 Statistics'     },
+      { page: 'stroke-rehab', label: '🦶 Stroke Rehab'  },
     ];
     navLinks.innerHTML = pages.map(p =>
       `<button data-page="${p.page}">${p.label}</button>`
