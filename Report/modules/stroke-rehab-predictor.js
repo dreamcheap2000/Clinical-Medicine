@@ -98,6 +98,20 @@ const SIX_MWT_BANDS = [
 /** Minimum clinically important difference for 6MWT in stroke (metres). */
 const MCID_6MWT = 30;
 
+/**
+ * Clinical thresholds used in the action panel.
+ * BBS ≤ 40: fall risk (Bogle Thorbahn & Newton 1996; Berg et al. 1992)
+ * FM-LE ≤ 12: severe lower-limb motor impairment (Fugl-Meyer scale)
+ * FM-LE ≤ 20: moderate lower-limb motor impairment
+ * MMSE ≤ 23: cognitive impairment (Folstein et al. 1975; sensitivity cut-off)
+ * NIHSS ≥ 16: severe stroke (Adams et al. 1999; AHA/ASA classification)
+ */
+const BBS_FALL_RISK_THRESHOLD    = 40;
+const FM_LE_SEVERE_THRESHOLD     = 12;
+const FM_LE_MODERATE_THRESHOLD   = 20;
+const MMSE_IMPAIRMENT_THRESHOLD  = 23;
+const NIHSS_SEVERE_THRESHOLD     = 16;
+
 /* ================================================================== */
 /*  PREDICTION FUNCTIONS                                                */
 /* ================================================================== */
@@ -553,6 +567,8 @@ function renderActionPanel(predicted6MWT, probPct, v, contribs) {
   const panel = document.getElementById('srp-actions');
   if (!panel) return;
 
+  // All applicable clinical actions are shown concurrently — a patient may have
+  // multiple co-occurring deficits that each warrant separate guidance.
   const actions = [];
 
   // 1. Overall prognosis interpretation
@@ -602,18 +618,18 @@ function renderActionPanel(predicted6MWT, probPct, v, contribs) {
     }
   }
 
-  // 3. Balance if BBS low
-  if (v.bbs <= 28) {
+  // 3. Balance if BBS indicates fall risk (threshold: BBS ≤ BBS_FALL_RISK_THRESHOLD)
+  if (v.bbs <= BBS_FALL_RISK_THRESHOLD) {
     actions.push({
       type: 'info',
-      text: `<strong>Balance deficit (BBS ${v.bbs}/56):</strong> Patient has fall risk (BBS ≤ 40).
+      text: `<strong>Balance deficit (BBS ${v.bbs}/56):</strong> Patient has fall risk (BBS ≤ ${BBS_FALL_RISK_THRESHOLD}).
              Include balance retraining in every therapy session.  Consider
              task-oriented balance training and dual-task practice (Holbein-Jenny et al. 2007).`
     });
   }
 
-  // 4. Motor if FM-LE low
-  if (v.fm_le <= 12) {
+  // 4. Motor if FM-LE low (severe: ≤ FM_LE_SEVERE_THRESHOLD; moderate: ≤ FM_LE_MODERATE_THRESHOLD)
+  if (v.fm_le <= FM_LE_SEVERE_THRESHOLD) {
     actions.push({
       type: 'info',
       text: `<strong>Severe lower-limb motor impairment (FM-LE ${v.fm_le}/34):</strong>
@@ -621,7 +637,7 @@ function renderActionPanel(predicted6MWT, probPct, v, contribs) {
              robotic exoskeleton) as adjunct to conventional therapy (Mehrholz et al. 2020,
              Cochrane; Grade IIb).`
     });
-  } else if (v.fm_le <= 20) {
+  } else if (v.fm_le <= FM_LE_MODERATE_THRESHOLD) {
     actions.push({
       type: 'info',
       text: `<strong>Moderate lower-limb motor impairment (FM-LE ${v.fm_le}/34):</strong>
@@ -631,8 +647,8 @@ function renderActionPanel(predicted6MWT, probPct, v, contribs) {
     });
   }
 
-  // 5. Cognition
-  if (v.mmse <= 23) {
+  // 5. Cognition (threshold: MMSE ≤ MMSE_IMPAIRMENT_THRESHOLD)
+  if (v.mmse <= MMSE_IMPAIRMENT_THRESHOLD) {
     actions.push({
       type: 'warn',
       text: `<strong>Cognitive impairment (MMSE ${v.mmse}/30):</strong>
@@ -642,8 +658,8 @@ function renderActionPanel(predicted6MWT, probPct, v, contribs) {
     });
   }
 
-  // 6. NIHSS-based caution
-  if (v.nihss >= 16) {
+  // 6. NIHSS-based caution (threshold: NIHSS ≥ NIHSS_SEVERE_THRESHOLD)
+  if (v.nihss >= NIHSS_SEVERE_THRESHOLD) {
     actions.push({
       type: 'warn',
       text: `<strong>Severe stroke (NIHSS ${v.nihss}):</strong>
