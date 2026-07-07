@@ -477,3 +477,133 @@ table.report-table tr:hover td { background: #f8f9fc; }
   .exam-type-grid { grid-template-columns: repeat(2, 1fr); }
   #navbar { gap: .7rem; }
 }
+
+/* ============================================================
+   Stroke Rehab Predictor — stroke-rehab-predictor.js styles
+   ============================================================ */
+
+/* Multi-column form rows */
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: .8rem;
+  margin-bottom: .4rem;
+}
+
+/* Validation error panel */
+.srp-error-panel {
+  background: #fdf0ee;
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius);
+  padding: .7rem 1rem;
+  margin: .6rem 0;
+  font-size: .87rem;
+  color: var(--color-danger);
+  line-height: 1.7;
+}
+
+/* Threshold bar */
+.srp-threshold-bar-label {
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: .4rem;
+}
+.srp-threshold-bar {
+  display: flex;
+  height: 38px;
+  border-radius: var(--radius);
+  overflow: visible;
+  position: relative;
+  border: 1px solid var(--color-border);
+}
+.srp-threshold-seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: .68rem;
+  font-weight: 600;
+  color: #fff;
+  padding: 0 2px;
+  overflow: hidden;
+  line-height: 1.2;
+}
+.srp-threshold-marker {
+  position: absolute;
+  bottom: -6px;
+  transform: translateX(-50%);
+  font-size: 1.1rem;
+  font-weight: 900;
+  transition: left .5s ease, color .5s ease;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.3));
+}
+
+/* Feature contribution rows */
+.srp-contrib-row {
+  display: grid;
+  grid-template-columns: 160px 1fr 70px;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: .35rem;
+}
+.srp-contrib-label {
+  font-size: .82rem;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.srp-contrib-bar-wrap {
+  background: var(--color-border);
+  border-radius: 4px;
+  height: 14px;
+  overflow: hidden;
+}
+.srp-contrib-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width .4s ease;
+}
+.srp-contrib-val {
+  font-size: .8rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+/* Clinical action cards */
+.srp-action {
+  padding: .65rem .9rem;
+  border-radius: var(--radius);
+  margin-bottom: .6rem;
+  font-size: .87rem;
+  line-height: 1.6;
+  border-left: 4px solid transparent;
+}
+.srp-action-success {
+  background: #eafaf1;
+  border-color: var(--color-accent);
+  color: #1a5c33;
+}
+.srp-action-warn {
+  background: #fef9ec;
+  border-color: var(--color-warn);
+  color: #7d4b0a;
+}
+.srp-action-danger {
+  background: #fdf0ee;
+  border-color: var(--color-danger);
+  color: #7b1c10;
+}
+.srp-action-info {
+  background: #eaf4fb;
+  border-color: var(--color-primary);
+  color: #0d3c5e;
+}
+
+@media (max-width: 640px) {
+  .form-row { grid-template-columns: 1fr; }
+  .srp-contrib-row { grid-template-columns: 120px 1fr 60px; }
+  .srp-threshold-seg span { display: none; }
+}
