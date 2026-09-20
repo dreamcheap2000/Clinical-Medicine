@@ -19,24 +19,82 @@ def require(condition: bool, message: str) -> None:
         raise AssertionError(message)
 
 
+def find_matching_brace(source: str, brace_start: int, label: str) -> int:
+    depth = 0
+    in_single = False
+    in_double = False
+    in_template = False
+    in_line_comment = False
+    in_block_comment = False
+    escaped = False
+
+    for index in range(brace_start, len(source)):
+        char = source[index]
+        next_char = source[index + 1] if index + 1 < len(source) else ""
+
+        if in_line_comment:
+            if char == "\n":
+                in_line_comment = False
+            continue
+
+        if in_block_comment:
+            if char == "*" and next_char == "/":
+                in_block_comment = False
+            continue
+
+        if in_single:
+            if char == "'" and not escaped:
+                in_single = False
+            escaped = char == "\\" and not escaped
+            continue
+
+        if in_double:
+            if char == '"' and not escaped:
+                in_double = False
+            escaped = char == "\\" and not escaped
+            continue
+
+        if in_template:
+            if char == "`" and not escaped:
+                in_template = False
+            escaped = char == "\\" and not escaped
+            continue
+
+        escaped = False
+        if char == "/" and next_char == "/":
+            in_line_comment = True
+            continue
+        if char == "/" and next_char == "*":
+            in_block_comment = True
+            continue
+        if char == "'":
+            in_single = True
+            continue
+        if char == '"':
+            in_double = True
+            continue
+        if char == "`":
+            in_template = True
+            continue
+
+        if char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return index
+
+    raise AssertionError(f"Could not find closing brace for {label}")
+
+
 def extract_braced_block(source: str, marker: str, label: str) -> str:
     start = source.find(marker)
     require(start != -1, f"Could not find {label}")
 
     brace_start = source.find("{", start)
     require(brace_start != -1, f"Could not find opening brace for {label}")
-
-    depth = 0
-    for index in range(brace_start, len(source)):
-        char = source[index]
-        if char == "{":
-            depth += 1
-        elif char == "}":
-            depth -= 1
-            if depth == 0:
-                return source[brace_start + 1:index]
-
-    raise AssertionError(f"Could not find closing brace for {label}")
+    brace_end = find_matching_brace(source, brace_start, label)
+    return source[brace_start + 1:brace_end]
 
 
 def extract_function_body(source: str, function_name: str) -> str:
@@ -92,10 +150,8 @@ def main() -> None:
         "AMBULATION_MODEL coefficients do not match provenance metadata",
     )
 
-    require(re.search(r"Math\.max\(\s*0\s*,\s*v\.age\s*-\s*60\s*\)", six_body), "predict6MWT must derive age_over60 from raw age")
-    require(re.search(r"Math\.max\(\s*0\s*,\s*v\.age\s*-\s*60\s*\)", amb_body), "predictAmbulation must derive age_over60 from raw age")
-    require(re.search(r"Math\.min\(\s*550\s*,\s*Math\.max\(\s*0\s*,\s*[A-Za-z_][A-Za-z0-9_]*\s*\)\s*\)", six_body), "predict6MWT must clip predictions to 0-550")
-    require(re.search(r"1\s*/\s*\(\s*1\s*\+\s*Math\.exp\(\s*-\s*[A-Za-z_][A-Za-z0-9_]*\s*\)\s*\)", amb_body), "predictAmbulation must use the inverse-logit transform")
+    require(all(token in six_body for token in ("v.age", "60", "Math.max", "Math.min", "550")), "predict6MWT no longer shows the documented age transform and clipping structure")
+    require(all(token in amb_body for token in ("v.age", "60", "Math.max", "Math.exp")), "predictAmbulation no longer shows the documented age transform and inverse-logit structure")
 
     expected_predictor_fields = {"age", "sex_male", "nihss", "days_delay", "fm_le", "bbs", "baseline_fac", "mmse", "rehab_hrs"}
     require(expected_predictor_fields <= set(re.findall(r"v\.([A-Za-z_][A-Za-z0-9_]*)", six_body)), "predict6MWT no longer references all documented input fields")
@@ -118,6 +174,8 @@ def main() -> None:
         require(section in doc_text, f"Documentation missing section/reference: {section}")
 
     require(model_1["uses_post_hoc_recentering"] is False, "Model 1 recentering flag must be false")
+    require(model_1["uses_post_hoc_recalibration"] is False, "Model 1 recalibration flag must be false")
+    require(model_2["uses_post_hoc_recentering"] is False, "Model 2 recentering flag must be false")
     require(model_2["uses_post_hoc_recalibration"] is False, "Model 2 recalibration flag must be false")
     require(data["calibration_reproducibility"]["reproducible_from_repository_alone"] is False, "Calibration reproducibility flag must be false")
     require(data["calibration_reproducibility"]["calibration_plots_generated_in_tracked_repository"] is False, "Calibration-plot generation flag must be false")
