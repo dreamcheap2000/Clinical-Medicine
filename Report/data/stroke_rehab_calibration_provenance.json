@@ -5,6 +5,19 @@
       "id": "model_1",
       "name": "6MWT4 linear prediction equation",
       "source_file": "Report/modules/stroke-rehab-predictor.js",
+      "coefficients": {
+        "intercept": 52,
+        "fm_le": 5.2,
+        "bbs": 3.1,
+        "mmse": 2.8,
+        "baseline_fac": 18.0,
+        "nihss": -8.5,
+        "age_over60": -1.5,
+        "days_delay": -0.9,
+        "rehab_hrs": 22.0,
+        "sex_male": 15.0,
+        "residual_sd": 65
+      },
       "prediction_inputs": [
         "age",
         "sex_male",
@@ -36,6 +49,18 @@
       "id": "model_2",
       "name": "Discharge independent-ambulation logistic equation",
       "source_file": "Report/modules/stroke-rehab-predictor.js",
+      "coefficients": {
+        "intercept": -4.5,
+        "fm_le": 0.14,
+        "bbs": 0.08,
+        "mmse": 0.09,
+        "baseline_fac": 0.55,
+        "nihss": -0.18,
+        "age_over60": -0.04,
+        "days_delay": -0.025,
+        "rehab_hrs": 0.45,
+        "sex_male": 0.20
+      },
       "prediction_inputs": [
         "age",
         "sex_male",

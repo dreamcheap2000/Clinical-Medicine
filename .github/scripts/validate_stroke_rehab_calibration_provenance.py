@@ -40,6 +40,22 @@ def extract_function_body(source: str, function_name: str) -> str:
     raise AssertionError(f"Could not find closing brace for {function_name}")
 
 
+def extract_model_coefficients(source: str, model_name: str) -> dict[str, float]:
+    match = re.search(rf"const {re.escape(model_name)} = \{{(.*?)\n\}};", source, re.S)
+    require(match is not None, f"Could not find model definition for {model_name}")
+
+    coefficients: dict[str, float] = {}
+    for key, value in re.findall(r"([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(-?\d+(?:\.\d+)?)", match.group(1)):
+        coefficients[key] = float(value)
+
+    require(coefficients, f"No coefficients parsed for {model_name}")
+    return coefficients
+
+
+def normalized_number_dict(values: dict[str, float]) -> dict[str, float]:
+    return {key: float(value) for key, value in values.items()}
+
+
 def main() -> None:
     predictor_text = PREDICTOR.read_text(encoding="utf-8")
     doc_text = DOC.read_text(encoding="utf-8")
@@ -55,43 +71,41 @@ def main() -> None:
     six_body = extract_function_body(predictor_text, "predict6MWT")
     amb_body = extract_function_body(predictor_text, "predictAmbulation")
 
-    required_six_patterns = (
-        "const age_over60 = Math.max(0, v.age - 60);",
-        "SIX_MWT_MODEL.intercept +",
-        "SIX_MWT_MODEL.fm_le        * v.fm_le +",
-        "SIX_MWT_MODEL.bbs          * v.bbs +",
-        "SIX_MWT_MODEL.mmse         * v.mmse +",
-        "SIX_MWT_MODEL.baseline_fac * v.baseline_fac +",
-        "SIX_MWT_MODEL.nihss        * v.nihss +",
-        "SIX_MWT_MODEL.age_over60   * age_over60 +",
-        "SIX_MWT_MODEL.days_delay   * v.days_delay +",
-        "SIX_MWT_MODEL.rehab_hrs    * v.rehab_hrs +",
-        "SIX_MWT_MODEL.sex_male     * v.sex_male;",
-        "Math.min(550, Math.max(0, raw))",
+    six_coefficients = extract_model_coefficients(predictor_text, "SIX_MWT_MODEL")
+    amb_coefficients = extract_model_coefficients(predictor_text, "AMBULATION_MODEL")
+    require(
+        six_coefficients == normalized_number_dict(data["implemented_models"][0]["coefficients"]),
+        "SIX_MWT_MODEL coefficients do not match provenance metadata",
     )
-    for pattern in required_six_patterns:
-        require(pattern in six_body, f"Missing expected 6MWT scoring pattern: {pattern}")
-
-    required_amb_patterns = (
-        "const age_over60 = Math.max(0, v.age - 60);",
-        "AMBULATION_MODEL.intercept +",
-        "AMBULATION_MODEL.fm_le        * v.fm_le +",
-        "AMBULATION_MODEL.bbs          * v.bbs +",
-        "AMBULATION_MODEL.mmse         * v.mmse +",
-        "AMBULATION_MODEL.baseline_fac * v.baseline_fac +",
-        "AMBULATION_MODEL.nihss        * v.nihss +",
-        "AMBULATION_MODEL.age_over60   * age_over60 +",
-        "AMBULATION_MODEL.days_delay   * v.days_delay +",
-        "AMBULATION_MODEL.rehab_hrs    * v.rehab_hrs +",
-        "AMBULATION_MODEL.sex_male     * v.sex_male;",
-        "1 / (1 + Math.exp(-logOdds))",
+    require(
+        amb_coefficients == normalized_number_dict(data["implemented_models"][1]["coefficients"]),
+        "AMBULATION_MODEL coefficients do not match provenance metadata",
     )
-    for pattern in required_amb_patterns:
-        require(pattern in amb_body, f"Missing expected ambulation scoring pattern: {pattern}")
 
-    for disallowed in ("POP_MEANS", "observed_outcome", "weight_normalization", "recalibration", "offset_adjustment"):
-        require(disallowed not in six_body, f"Unexpected prediction-adjustment token in predict6MWT: {disallowed}")
-        require(disallowed not in amb_body, f"Unexpected prediction-adjustment token in predictAmbulation: {disallowed}")
+    require("Math.max(0, v.age - 60)" in six_body, "predict6MWT must derive age_over60 from raw age")
+    require("Math.max(0, v.age - 60)" in amb_body, "predictAmbulation must derive age_over60 from raw age")
+    require("Math.min(550, Math.max(0, raw))" in six_body, "predict6MWT must clip predictions to 0-550")
+    require("1 / (1 + Math.exp(-logOdds))" in amb_body, "predictAmbulation must use the inverse-logit transform")
+
+    expected_predictor_fields = {"age", "sex_male", "nihss", "days_delay", "fm_le", "bbs", "baseline_fac", "mmse", "rehab_hrs"}
+    require(set(re.findall(r"v\.([A-Za-z_][A-Za-z0-9_]*)", six_body)) == expected_predictor_fields, "predict6MWT field references changed")
+    require(set(re.findall(r"v\.([A-Za-z_][A-Za-z0-9_]*)", amb_body)) == expected_predictor_fields, "predictAmbulation field references changed")
+
+    require(
+        set(re.findall(r"SIX_MWT_MODEL\.([A-Za-z_][A-Za-z0-9_]*)", six_body)) == set(six_coefficients),
+        "predict6MWT model-term references changed",
+    )
+    require(
+        set(re.findall(r"AMBULATION_MODEL\.([A-Za-z_][A-Za-z0-9_]*)", amb_body)) == set(amb_coefficients),
+        "predictAmbulation model-term references changed",
+    )
+
+    allowed_six_calls = {"Math.max", "Math.round", "Math.min"}
+    allowed_amb_calls = {"Math.max", "Math.exp"}
+    require(set(re.findall(r"\b([A-Za-z_][A-Za-z0-9_.]*)\s*\(", six_body)) <= allowed_six_calls, "predict6MWT introduces unexpected function calls")
+    require(set(re.findall(r"\b([A-Za-z_][A-Za-z0-9_.]*)\s*\(", amb_body)) <= allowed_amb_calls, "predictAmbulation introduces unexpected function calls")
+    require("POP_MEANS" not in six_body, "predict6MWT should not depend on POP_MEANS centering")
+    require("POP_MEANS" not in amb_body, "predictAmbulation should not depend on POP_MEANS centering")
 
     required_doc_phrases = (
         "no weighting, no outcome-driven offset adjustment, no recentering, and no post-hoc recalibration step",
