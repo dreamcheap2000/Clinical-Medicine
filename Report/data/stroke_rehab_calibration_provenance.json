@@ -1,0 +1,117 @@
+{
+  "report_reference": "20260920_models_1353.docx",
+  "implemented_models": [
+    {
+      "id": "model_1",
+      "name": "6MWT4 linear prediction equation",
+      "source_file": "Report/modules/stroke-rehab-predictor.js",
+      "prediction_inputs": [
+        "age",
+        "sex_male",
+        "nihss",
+        "days_delay",
+        "fm_le",
+        "bbs",
+        "baseline_fac",
+        "mmse",
+        "rehab_hrs"
+      ],
+      "transformations": [
+        "age_over60 = max(age - 60, 0)"
+      ],
+      "visualization_only_centering": [
+        "compute6MWTContributions(v) subtracts POP_MEANS for the waterfall display only"
+      ],
+      "clipping": {
+        "applied": true,
+        "lower": 0,
+        "upper": 550
+      },
+      "uses_observed_outcome_at_prediction_time": false,
+      "uses_weights_at_prediction_time": false,
+      "uses_post_hoc_recentering": false,
+      "uses_post_hoc_recalibration": false
+    },
+    {
+      "id": "model_2",
+      "name": "Discharge independent-ambulation logistic equation",
+      "source_file": "Report/modules/stroke-rehab-predictor.js",
+      "prediction_inputs": [
+        "age",
+        "sex_male",
+        "nihss",
+        "days_delay",
+        "fm_le",
+        "bbs",
+        "baseline_fac",
+        "mmse",
+        "rehab_hrs"
+      ],
+      "transformations": [
+        "age_over60 = max(age - 60, 0)",
+        "probability = 1 / (1 + exp(-logit))"
+      ],
+      "visualization_only_centering": [
+        "compute6MWTContributions(v) subtracts POP_MEANS for the waterfall display only"
+      ],
+      "clipping": {
+        "applied": false
+      },
+      "uses_observed_outcome_at_prediction_time": false,
+      "uses_weights_at_prediction_time": false,
+      "uses_post_hoc_recentering": false,
+      "uses_post_hoc_recalibration": false
+    }
+  ],
+  "derived_report_entries": [
+    {
+      "id": "entry_3",
+      "name": "Observed-label complete-case discrimination analysis",
+      "is_separate_fitted_model": false
+    },
+    {
+      "id": "entry_4",
+      "name": "Best-case missing-6MWT4 sensitivity bound",
+      "is_separate_fitted_model": false
+    },
+    {
+      "id": "entry_5",
+      "name": "Worst-case missing-6MWT4 sensitivity bound",
+      "is_separate_fitted_model": false
+    }
+  ],
+  "calibration_reproducibility": {
+    "patient_level_prediction_vectors_checked_in": false,
+    "patient_level_observed_outcomes_checked_in": false,
+    "patient_level_weights_checked_in": false,
+    "plot_binning_code_checked_in": false,
+    "plot_smoother_code_checked_in": false,
+    "calibration_plots_generated_in_tracked_repository": false,
+    "calibration_intercept_or_slope_code_checked_in": false,
+    "out_of_sample_predictions_available": false,
+    "reproducible_from_repository_alone": false,
+    "reason": "The tracked repository does not contain the patient-level calibration inputs or the original plot-construction code for the previously discussed five-entry calibration output."
+  },
+  "mean_equality_and_zero_intercept": {
+    "tracked_repository_confirms_exact_zero_intercepts": false,
+    "tracked_repository_confirms_weighted_mean_equality": false,
+    "general_identity_if_same_weighted_fitting_sample": "For an apparent in-sample weighted fit with an intercept, the weighted residual mean is zero and the weighted observed mean equals the weighted fitted mean before any later clipping or relabeling."
+  },
+  "plot_construction": {
+    "prediction_vector": null,
+    "observed_outcome_vector": null,
+    "weights": null,
+    "weight_normalization": null,
+    "missing_value_handling": null,
+    "binning_algorithm": null,
+    "number_of_bins": null,
+    "bin_boundary_tie_handling": null,
+    "per_bin_weighted_summaries": null,
+    "smoother_or_regression_line": null,
+    "identity_reference_line": null,
+    "confidence_interval_method": null,
+    "axis_limits_or_transformations": null,
+    "plotting_data_differ_from_summary_data": null,
+    "status": "Unavailable in the tracked repository"
+  }
+}
