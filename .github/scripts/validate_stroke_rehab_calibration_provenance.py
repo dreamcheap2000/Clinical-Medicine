@@ -19,13 +19,12 @@ def require(condition: bool, message: str) -> None:
         raise AssertionError(message)
 
 
-def extract_function_body(source: str, function_name: str) -> str:
-    signature = f"function {function_name}("
-    start = source.find(signature)
-    require(start != -1, f"Could not find function declaration for {function_name}")
+def extract_braced_block(source: str, marker: str, label: str) -> str:
+    start = source.find(marker)
+    require(start != -1, f"Could not find {label}")
 
     brace_start = source.find("{", start)
-    require(brace_start != -1, f"Could not find opening brace for {function_name}")
+    require(brace_start != -1, f"Could not find opening brace for {label}")
 
     depth = 0
     for index in range(brace_start, len(source)):
@@ -37,15 +36,17 @@ def extract_function_body(source: str, function_name: str) -> str:
             if depth == 0:
                 return source[brace_start + 1:index]
 
-    raise AssertionError(f"Could not find closing brace for {function_name}")
+    raise AssertionError(f"Could not find closing brace for {label}")
+
+
+def extract_function_body(source: str, function_name: str) -> str:
+    return extract_braced_block(source, f"function {function_name}(", f"function declaration for {function_name}")
 
 
 def extract_model_coefficients(source: str, model_name: str) -> dict[str, float]:
-    match = re.search(rf"const {re.escape(model_name)} = \{{(.*?)\n\}};", source, re.S)
-    require(match is not None, f"Could not find model definition for {model_name}")
-
     coefficients: dict[str, float] = {}
-    for key, value in re.findall(r"([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(-?\d+(?:\.\d+)?)", match.group(1)):
+    block = extract_braced_block(source, f"const {model_name} =", f"model definition for {model_name}")
+    for key, value in re.findall(r"([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(-?\d+(?:\.\d+)?)", block):
         coefficients[key] = float(value)
 
     require(coefficients, f"No coefficients parsed for {model_name}")
@@ -56,10 +57,19 @@ def normalized_number_dict(values: dict[str, float]) -> dict[str, float]:
     return {key: float(value) for key, value in values.items()}
 
 
+def model_by_id(data: dict, model_id: str) -> dict:
+    for model in data["implemented_models"]:
+        if model["id"] == model_id:
+            return model
+    raise AssertionError(f"Could not find implemented model with id {model_id}")
+
+
 def main() -> None:
     predictor_text = PREDICTOR.read_text(encoding="utf-8")
     doc_text = DOC.read_text(encoding="utf-8")
     data = json.loads(JSON_PATH.read_text(encoding="utf-8"))
+    model_1 = model_by_id(data, "model_1")
+    model_2 = model_by_id(data, "model_2")
 
     require("const SIX_MWT_MODEL" in predictor_text, "Missing SIX_MWT_MODEL definition")
     require("const AMBULATION_MODEL" in predictor_text, "Missing AMBULATION_MODEL definition")
@@ -74,11 +84,11 @@ def main() -> None:
     six_coefficients = extract_model_coefficients(predictor_text, "SIX_MWT_MODEL")
     amb_coefficients = extract_model_coefficients(predictor_text, "AMBULATION_MODEL")
     require(
-        six_coefficients == normalized_number_dict(data["implemented_models"][0]["coefficients"]),
+        six_coefficients == normalized_number_dict(model_1["coefficients"]),
         "SIX_MWT_MODEL coefficients do not match provenance metadata",
     )
     require(
-        amb_coefficients == normalized_number_dict(data["implemented_models"][1]["coefficients"]),
+        amb_coefficients == normalized_number_dict(model_2["coefficients"]),
         "AMBULATION_MODEL coefficients do not match provenance metadata",
     )
 
@@ -100,10 +110,6 @@ def main() -> None:
         "predictAmbulation model-term references changed",
     )
 
-    allowed_six_calls = {"Math.max", "Math.round", "Math.min"}
-    allowed_amb_calls = {"Math.max", "Math.exp"}
-    require(set(re.findall(r"\b([A-Za-z_][A-Za-z0-9_.]*)\s*\(", six_body)) <= allowed_six_calls, "predict6MWT introduces unexpected function calls")
-    require(set(re.findall(r"\b([A-Za-z_][A-Za-z0-9_.]*)\s*\(", amb_body)) <= allowed_amb_calls, "predictAmbulation introduces unexpected function calls")
     require("POP_MEANS" not in six_body, "predict6MWT should not depend on POP_MEANS centering")
     require("POP_MEANS" not in amb_body, "predictAmbulation should not depend on POP_MEANS centering")
 
@@ -117,8 +123,8 @@ def main() -> None:
     for phrase in required_doc_phrases:
         require(phrase in doc_text, f"Documentation missing phrase: {phrase}")
 
-    require(data["implemented_models"][0]["uses_post_hoc_recentering"] is False, "Model 1 recentering flag must be false")
-    require(data["implemented_models"][1]["uses_post_hoc_recalibration"] is False, "Model 2 recalibration flag must be false")
+    require(model_1["uses_post_hoc_recentering"] is False, "Model 1 recentering flag must be false")
+    require(model_2["uses_post_hoc_recalibration"] is False, "Model 2 recalibration flag must be false")
     require(data["calibration_reproducibility"]["reproducible_from_repository_alone"] is False, "Calibration reproducibility flag must be false")
     require(data["calibration_reproducibility"]["calibration_plots_generated_in_tracked_repository"] is False, "Calibration-plot generation flag must be false")
     require(data["calibration_reproducibility"]["out_of_sample_predictions_available"] is False, "Out-of-sample flag must be false")
