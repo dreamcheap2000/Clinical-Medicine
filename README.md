@@ -166,3 +166,12 @@ Clinical-Medicine/
 │       └── deploy-pages.yml         ← deploys PHCEP/ to GitHub Pages
 └── Report/                 ← reports
 ```
+
+## Stroke rehab calibration note
+
+The stroke rehab report now includes a tracked calibration-provenance disclosure:
+
+- `Report/stroke_rehab_calibration_provenance.md`
+- `Report/data/stroke_rehab_calibration_provenance.json`
+
+Those files document the exact checked-in prediction path, clarify that only two stroke-rehab equations are implemented in source, and explicitly disclose that the repository does not currently contain the patient-level calibration plot inputs needed to reproduce previously discussed five-entry calibration intercepts or weighted observed-versus-predicted mean comparisons.

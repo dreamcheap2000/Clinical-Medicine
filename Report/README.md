@@ -161,3 +161,23 @@ Works in all modern browsers (Chrome ≥ 90, Firefox ≥ 90, Safari ≥ 14, Edge
 ## Privacy
 
 All data is stored **locally in your browser**. Nothing is transmitted to any server. Use the Export function to back up data and share between devices.
+
+---
+
+## Stroke rehab calibration provenance
+
+The stroke rehab predictor in `modules/stroke-rehab-predictor.js` is a **browser-side fixed-equation calculator**. The repository now documents its prediction provenance separately in:
+
+- `Report/stroke_rehab_calibration_provenance.md`
+- `Report/data/stroke_rehab_calibration_provenance.json`
+
+These files make two points explicit:
+
+1. the checked-in source contains **two implemented prediction equations** plus three **derived report entries** (not three additional fitted models); and
+2. the repository does **not** currently contain the patient-level calibration vectors, weights, or plot-construction code needed to reproduce previously discussed five-entry calibration intercepts or weighted observed-versus-predicted mean comparisons.
+
+Use the companion validation script below to confirm that the documentation still matches the checked-in predictor source:
+
+```bash
+python .github/scripts/validate_stroke_rehab_calibration_provenance.py
+```
