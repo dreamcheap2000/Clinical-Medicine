@@ -20,9 +20,24 @@ def require(condition: bool, message: str) -> None:
 
 
 def extract_function_body(source: str, function_name: str) -> str:
-    match = re.search(rf"function {re.escape(function_name)}\([^)]*\) \{{(.*?)\n\}}", source, re.S)
-    require(match is not None, f"Could not find function body for {function_name}")
-    return match.group(1)
+    signature = f"function {function_name}("
+    start = source.find(signature)
+    require(start != -1, f"Could not find function declaration for {function_name}")
+
+    brace_start = source.find("{", start)
+    require(brace_start != -1, f"Could not find opening brace for {function_name}")
+
+    depth = 0
+    for index in range(brace_start, len(source)):
+        char = source[index]
+        if char == "{":
+            depth += 1
+        elif char == "}":
+            depth -= 1
+            if depth == 0:
+                return source[brace_start + 1:index]
+
+    raise AssertionError(f"Could not find closing brace for {function_name}")
 
 
 def main() -> None:
@@ -40,10 +55,43 @@ def main() -> None:
     six_body = extract_function_body(predictor_text, "predict6MWT")
     amb_body = extract_function_body(predictor_text, "predictAmbulation")
 
-    forbidden_tokens = ("weight", "observ", "outcome", "recenter", "recalib", "offset")
-    for token in forbidden_tokens:
-        require(token not in six_body.lower(), f"Unexpected token {token!r} in predict6MWT")
-        require(token not in amb_body.lower(), f"Unexpected token {token!r} in predictAmbulation")
+    required_six_patterns = (
+        "const age_over60 = Math.max(0, v.age - 60);",
+        "SIX_MWT_MODEL.intercept +",
+        "SIX_MWT_MODEL.fm_le        * v.fm_le +",
+        "SIX_MWT_MODEL.bbs          * v.bbs +",
+        "SIX_MWT_MODEL.mmse         * v.mmse +",
+        "SIX_MWT_MODEL.baseline_fac * v.baseline_fac +",
+        "SIX_MWT_MODEL.nihss        * v.nihss +",
+        "SIX_MWT_MODEL.age_over60   * age_over60 +",
+        "SIX_MWT_MODEL.days_delay   * v.days_delay +",
+        "SIX_MWT_MODEL.rehab_hrs    * v.rehab_hrs +",
+        "SIX_MWT_MODEL.sex_male     * v.sex_male;",
+        "Math.min(550, Math.max(0, raw))",
+    )
+    for pattern in required_six_patterns:
+        require(pattern in six_body, f"Missing expected 6MWT scoring pattern: {pattern}")
+
+    required_amb_patterns = (
+        "const age_over60 = Math.max(0, v.age - 60);",
+        "AMBULATION_MODEL.intercept +",
+        "AMBULATION_MODEL.fm_le        * v.fm_le +",
+        "AMBULATION_MODEL.bbs          * v.bbs +",
+        "AMBULATION_MODEL.mmse         * v.mmse +",
+        "AMBULATION_MODEL.baseline_fac * v.baseline_fac +",
+        "AMBULATION_MODEL.nihss        * v.nihss +",
+        "AMBULATION_MODEL.age_over60   * age_over60 +",
+        "AMBULATION_MODEL.days_delay   * v.days_delay +",
+        "AMBULATION_MODEL.rehab_hrs    * v.rehab_hrs +",
+        "AMBULATION_MODEL.sex_male     * v.sex_male;",
+        "1 / (1 + Math.exp(-logOdds))",
+    )
+    for pattern in required_amb_patterns:
+        require(pattern in amb_body, f"Missing expected ambulation scoring pattern: {pattern}")
+
+    for disallowed in ("POP_MEANS", "observed_outcome", "weight_normalization", "recalibration", "offset_adjustment"):
+        require(disallowed not in six_body, f"Unexpected prediction-adjustment token in predict6MWT: {disallowed}")
+        require(disallowed not in amb_body, f"Unexpected prediction-adjustment token in predictAmbulation: {disallowed}")
 
     required_doc_phrases = (
         "no weighting, no outcome-driven offset adjustment, no recentering, and no post-hoc recalibration step",
