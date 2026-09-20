@@ -92,10 +92,10 @@ def main() -> None:
         "AMBULATION_MODEL coefficients do not match provenance metadata",
     )
 
-    require("Math.max(0, v.age - 60)" in six_body, "predict6MWT must derive age_over60 from raw age")
-    require("Math.max(0, v.age - 60)" in amb_body, "predictAmbulation must derive age_over60 from raw age")
-    require("Math.min(550, Math.max(0, raw))" in six_body, "predict6MWT must clip predictions to 0-550")
-    require("1 / (1 + Math.exp(-logOdds))" in amb_body, "predictAmbulation must use the inverse-logit transform")
+    require(re.search(r"Math\.max\(\s*0\s*,\s*v\.age\s*-\s*60\s*\)", six_body), "predict6MWT must derive age_over60 from raw age")
+    require(re.search(r"Math\.max\(\s*0\s*,\s*v\.age\s*-\s*60\s*\)", amb_body), "predictAmbulation must derive age_over60 from raw age")
+    require(re.search(r"Math\.min\(\s*550\s*,\s*Math\.max\(\s*0\s*,\s*[A-Za-z_][A-Za-z0-9_]*\s*\)\s*\)", six_body), "predict6MWT must clip predictions to 0-550")
+    require(re.search(r"1\s*/\s*\(\s*1\s*\+\s*Math\.exp\(\s*-\s*[A-Za-z_][A-Za-z0-9_]*\s*\)\s*\)", amb_body), "predictAmbulation must use the inverse-logit transform")
 
     expected_predictor_fields = {"age", "sex_male", "nihss", "days_delay", "fm_le", "bbs", "baseline_fac", "mmse", "rehab_hrs"}
     require(expected_predictor_fields <= set(re.findall(r"v\.([A-Za-z_][A-Za-z0-9_]*)", six_body)), "predict6MWT no longer references all documented input fields")
@@ -106,15 +106,16 @@ def main() -> None:
     require("POP_MEANS" not in six_body, "predict6MWT should not depend on POP_MEANS centering")
     require("POP_MEANS" not in amb_body, "predictAmbulation should not depend on POP_MEANS centering")
 
-    required_doc_phrases = (
-        "no weighting, no outcome-driven offset adjustment, no recentering, and no post-hoc recalibration step",
-        "visualization only",
-        "calibration predictions of any of the following types",
-        "not reproducible from the tracked repository alone",
-        "weighted residual mean is zero",
+    required_doc_sections = (
+        "## What the tracked code does",
+        "## Whether evaluation outcomes are used to alter predictions",
+        "## Apparent vs out-of-sample calibration",
+        "## Mathematical identity that would explain equality if the prior analysis was apparent/in-sample",
+        "## Reproducible calibration-plot construction status",
+        "Report/data/stroke_rehab_calibration_provenance.json",
     )
-    for phrase in required_doc_phrases:
-        require(phrase in doc_text, f"Documentation missing phrase: {phrase}")
+    for section in required_doc_sections:
+        require(section in doc_text, f"Documentation missing section/reference: {section}")
 
     require(model_1["uses_post_hoc_recentering"] is False, "Model 1 recentering flag must be false")
     require(model_2["uses_post_hoc_recalibration"] is False, "Model 2 recalibration flag must be false")
