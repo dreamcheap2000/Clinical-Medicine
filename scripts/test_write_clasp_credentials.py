@@ -89,6 +89,21 @@ class WriteClaspCredentialsTests(unittest.TestCase):
             },
         )
 
+    def test_write_clasprc_json_preserves_legacy_local_payload(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / ".clasprc.json"
+            payload = {
+                "token": {"refresh_token": "refresh-token"},
+                "oauth2ClientSettings": {
+                    "clientId": "client-id",
+                    "clientSecret": "client-secret",
+                },
+                "isLocalCreds": True,
+            }
+            writer.write_clasprc_json(path, json.dumps(payload))
+
+            self.assertEqual(json.loads(path.read_text(encoding="utf-8")), payload)
+
     def test_write_clasprc_json_writes_normalized_payload(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / ".clasprc.json"
