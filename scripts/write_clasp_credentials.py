@@ -93,10 +93,7 @@ def normalize_clasprc_payload(parsed):
                 }
             }
 
-        return {
-            **{key: value for key, value in parsed.items() if key != "token"},
-            **normalize_legacy_global_token(token),
-        }
+        return normalize_legacy_global_token(token)
 
     if has_usable_token(parsed):
         return parsed

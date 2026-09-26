@@ -104,6 +104,24 @@ class WriteClaspCredentialsTests(unittest.TestCase):
 
             self.assertEqual(json.loads(path.read_text(encoding="utf-8")), payload)
 
+    def test_write_clasprc_json_discards_unsupported_token_sibling_fields(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / ".clasprc.json"
+            writer.write_clasprc_json(
+                path,
+                json.dumps(
+                    {
+                        "token": {"refresh_token": "refresh-token"},
+                        "unsupported": "metadata",
+                    }
+                ),
+            )
+
+            self.assertEqual(
+                json.loads(path.read_text(encoding="utf-8")),
+                {"refresh_token": "refresh-token"},
+            )
+
     def test_write_clasprc_json_writes_normalized_payload(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / ".clasprc.json"
