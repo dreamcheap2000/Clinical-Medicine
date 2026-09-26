@@ -101,7 +101,7 @@ def normalize_clasprc_payload(parsed):
         return normalize_token_wrapped_payload(token)
 
     if has_usable_token(parsed):
-        return parsed
+        return normalize_token_wrapped_payload(parsed)
 
     raise ValueError(
         "CLASPRC_JSON must be in one of clasp's supported formats: "

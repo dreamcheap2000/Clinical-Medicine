@@ -65,6 +65,28 @@ class WriteClaspCredentialsTests(unittest.TestCase):
             },
         )
 
+    def test_normalize_clasprc_payload_rewrites_top_level_legacy_tokens_for_clasp(self):
+        normalized = writer.normalize_clasprc_payload(
+            {
+                "refresh_token": "refresh-token",
+                "token_type": "Bearer",
+            }
+        )
+
+        self.assertEqual(
+            normalized,
+            {
+                "token": {
+                    "refresh_token": "refresh-token",
+                    "token_type": "Bearer",
+                },
+                "oauth2ClientSettings": {
+                    "clientId": writer.DEFAULT_CLASP_OAUTH_CLIENT_ID,
+                    "clientSecret": writer.DEFAULT_CLASP_OAUTH_CLIENT_SECRET,
+                },
+            },
+        )
+
     def test_normalize_clasprc_payload_rejects_incomplete_modern_tokens_default_format(self):
         with self.assertRaisesRegex(ValueError, "tokens.default"):
             writer.normalize_clasprc_payload({"tokens": {}})
