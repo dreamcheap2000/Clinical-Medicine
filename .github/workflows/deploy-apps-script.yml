@@ -44,16 +44,34 @@ jobs:
           } catch (error) {
             throw new Error(`CLASPRC_JSON is not valid JSON: ${error.message}`);
           }
+          if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+            throw new Error('CLASPRC_JSON must be a JSON object');
+          }
+
+          const hasUsableToken = (token) =>
+            token &&
+            typeof token === 'object' &&
+            !Array.isArray(token) &&
+            (typeof token.access_token === 'string' || typeof token.refresh_token === 'string');
 
           let normalized = parsed;
 
           // Support both current and legacy ~/.clasprc.json formats.
           if (!parsed.token) {
+            if (!hasUsableToken(parsed)) {
+              throw new Error(
+                'CLASPRC_JSON legacy format must include access_token or refresh_token at the top level'
+              );
+            }
             const { oauth2ClientSettings = {}, isLocalCreds, ...token } = parsed;
             normalized = { token, oauth2ClientSettings };
             if (typeof isLocalCreds !== 'undefined') {
               normalized.isLocalCreds = isLocalCreds;
             }
+          } else if (!hasUsableToken(parsed.token)) {
+            throw new Error(
+              'CLASPRC_JSON token format must include token.access_token or token.refresh_token'
+            );
           }
 
           fs.writeFileSync(`${process.env.HOME}/.clasprc.json`, JSON.stringify(normalized));
