@@ -52,7 +52,8 @@ jobs:
             token &&
             typeof token === 'object' &&
             !Array.isArray(token) &&
-            (typeof token.access_token === 'string' || typeof token.refresh_token === 'string');
+            (hasNonEmptyString(token.access_token) || hasNonEmptyString(token.refresh_token));
+          const hasNonEmptyString = (value) => typeof value === 'string' && value.trim().length > 0;
 
           let normalized = parsed;
 
@@ -72,9 +73,9 @@ jobs:
             !hasUsableToken(parsed.token) &&
             !(
               parsed.oauth2ClientSettings &&
-              typeof parsed.oauth2ClientSettings.clientId === 'string' &&
-              typeof parsed.oauth2ClientSettings.clientSecret === 'string' &&
-              typeof parsed.oauth2ClientSettings.redirectUri === 'string'
+              hasNonEmptyString(parsed.oauth2ClientSettings.clientId) &&
+              hasNonEmptyString(parsed.oauth2ClientSettings.clientSecret) &&
+              hasNonEmptyString(parsed.oauth2ClientSettings.redirectUri)
             )
           ) {
             throw new Error(
