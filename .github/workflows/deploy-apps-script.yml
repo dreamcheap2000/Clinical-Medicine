@@ -30,7 +30,24 @@ jobs:
         env:
           CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
         run: |
-          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          node <<'NODE'
+          const fs = require('fs');
+
+          const raw = process.env.CLASPRC_JSON || '';
+          const parsed = JSON.parse(raw);
+          let normalized = parsed;
+
+          // Support both current and legacy ~/.clasprc.json formats.
+          if (!parsed.token) {
+            const { oauth2ClientSettings = {}, isLocalCreds, ...token } = parsed;
+            normalized = { token, oauth2ClientSettings };
+            if (typeof isLocalCreds !== 'undefined') {
+              normalized.isLocalCreds = isLocalCreds;
+            }
+          }
+
+          fs.writeFileSync(`${process.env.HOME}/.clasprc.json`, JSON.stringify(normalized));
+          NODE
 
       - name: Write .clasp.json
         env:
