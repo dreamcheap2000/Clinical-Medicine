@@ -39,6 +39,9 @@ jobs:
           CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
         run: |
           echo "$CLASPRC_JSON" > ~/.clasprc.json
+      - name: Verify JSON format
+        run: |
+          grep '"token"' ~/.clasprc.json || (echo "Wrong format: missing token block" && exit 1)
 
       - name: Write .clasp.json
         env:
