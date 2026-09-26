@@ -69,17 +69,9 @@ jobs:
             if (typeof isLocalCreds !== 'undefined') {
               normalized.isLocalCreds = isLocalCreds;
             }
-          } else if (
-            !hasUsableToken(parsed.token) &&
-            !(
-              parsed.oauth2ClientSettings &&
-              hasNonEmptyString(parsed.oauth2ClientSettings.clientId) &&
-              hasNonEmptyString(parsed.oauth2ClientSettings.clientSecret) &&
-              hasNonEmptyString(parsed.oauth2ClientSettings.redirectUri)
-            )
-          ) {
+          } else if (!hasUsableToken(parsed.token)) {
             throw new Error(
-              'CLASPRC_JSON token format must include token credentials or complete oauth2ClientSettings'
+              'CLASPRC_JSON token format must include non-empty token.access_token or token.refresh_token'
             );
           }
 
