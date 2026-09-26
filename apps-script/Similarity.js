@@ -39,9 +39,6 @@
         tokens = tokens.concat(charBigrams(token));
       }
     });
-    if (baseTokens.length === 1 && baseTokens[0].length > 1 && tokens.length === 1) {
-      tokens = tokens.concat(charBigrams(baseTokens[0]));
-    }
     return tokens;
   }
 

@@ -8,7 +8,7 @@ from sentence_transformers import SentenceTransformer
 def load_pairs(path: Path):
     data = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(data, list):
-        raise ValueError("qa_pairs.json must contain a JSON array")
+        raise ValueError(f"{path} must contain a JSON array")
     return data
 
 

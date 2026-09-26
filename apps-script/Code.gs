@@ -8,6 +8,7 @@ const QA_CACHE_KEY = 'qa-index-v3';
 const QA_CACHE_SECONDS = 600;
 const QA_HEADERS = ['Question', 'Answer', 'Keywords', 'Enabled', 'Q_VEC', 'A_VEC', 'Updated At'];
 const UNMATCHED_HEADERS = ['Timestamp', 'User ID', 'User Name', 'Message', 'Best Score', 'Best Question'];
+const PROCESSED_HEADERS = ['Message ID', 'Processed At'];
 
 // Fetch LINE user display name
 function getLineUserName(userId, channelAccessToken) {
@@ -96,7 +97,7 @@ function getUserProfile(userId) {
  * 2. InstallOnEdit Trigger: Shift content rightward & lock pointer in Col F
  * -------------------------------------------------------------
  */
-function installonEdit(e) {
+function installOnEdit(e) {
   if (!e || !e.range) return;
 
   const range = e.range;
@@ -132,6 +133,10 @@ function installonEdit(e) {
   }
 }
 
+function installonEdit(e) {
+  installOnEdit(e);
+}
+
 /**
  * -------------------------------------------------------------
  * 3. QA Sync, Similarity Matching, and Admin Helpers
@@ -151,7 +156,13 @@ function getMainSheet_(ss) {
 
 function ensureSheetHeaders_(sheet, headers) {
   if (!sheet) return;
-  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  const existing = sheet.getRange(1, 1, 1, headers.length).getValues()[0];
+  const needsUpdate = headers.some(function(header, index) {
+    return existing[index] !== header;
+  });
+  if (needsUpdate) {
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  }
 }
 
 function getOrCreateQASheet(ss) {
@@ -169,6 +180,15 @@ function getOrCreateUnmatchedSheet_(ss) {
     sheet = ss.insertSheet('UNMATCHED_QA');
   }
   ensureSheetHeaders_(sheet, UNMATCHED_HEADERS);
+  return sheet;
+}
+
+function getOrCreateProcessedSheet_(ss) {
+  let sheet = ss.getSheetByName('PROCESSED_WEBHOOKS');
+  if (!sheet) {
+    sheet = ss.insertSheet('PROCESSED_WEBHOOKS');
+  }
+  ensureSheetHeaders_(sheet, PROCESSED_HEADERS);
   return sheet;
 }
 
@@ -341,6 +361,26 @@ function logUnmatchedQuestion_(ss, userId, userName, message, bestScore, bestQue
   sheet.appendRow([new Date(), userId || '', userName || '', message || '', bestScore || 0, bestQuestion || '']);
 }
 
+function loadProcessedMessageIds_(ss) {
+  const sheet = getOrCreateProcessedSheet_(ss);
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) return {};
+  const rows = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
+  const ids = {};
+  rows.forEach(function(row) {
+    if (row[0]) {
+      ids[String(row[0]).trim()] = true;
+    }
+  });
+  return ids;
+}
+
+function markProcessedMessage_(ss, messageId) {
+  if (!messageId) return;
+  const sheet = getOrCreateProcessedSheet_(ss);
+  sheet.appendRow([messageId, new Date()]);
+}
+
 function handleQaAdminAction_(action, payload, ss) {
   if (action === 'health') {
     return jsonResponse_({
@@ -362,7 +402,7 @@ function handleQaAdminAction_(action, payload, ss) {
         : payload.question
           ? [payload]
           : [];
-    const result = upsertQaPairs_(items, ss, { overwrite: action === 'sync_qa' || payload.overwrite === true });
+    const result = upsertQaPairs_(items, ss, { overwrite: action === 'sync_qa' });
     return jsonResponse_(Object.assign({ status: 'success' }, result));
   }
 
@@ -425,7 +465,7 @@ function doGet(e) {
     }
     return handleQaAdminAction_(action, payload, ss);
   }
-  return jsonResponse_({ status: 'ok' });
+  return jsonResponse_({ status: 'error', message: 'Unsupported action' });
 }
 
 function doPost(e) {
@@ -438,10 +478,11 @@ function doPost(e) {
 
   const ss = getActiveSpreadsheet_();
   const mainSheet = getMainSheet_(ss);
+  let action = '';
 
   try {
     const payload = parseRequestBody_(e);
-    const action = getAction_(e, payload);
+    action = getAction_(e, payload);
 
     if (action === 'health' || action === 'sync_qa' || action === 'upsert_qa' || action === 'list_qa') {
       if (!isAuthorized_(payload, e)) {
@@ -458,15 +499,8 @@ function doPost(e) {
 
     const channelAccessToken = getScriptProperty_('LINE_CHANNEL_ACCESS_TOKEN', '');
     const cache = CacheService.getScriptCache();
-    const existingIdSet = {};
-    const lastRow = mainSheet.getLastRow();
-
-    if (lastRow > 1) {
-      const rawIds = mainSheet.getRange(2, 1, lastRow - 1, 1).getValues();
-      rawIds.forEach(function(row) {
-        if (row[0]) existingIdSet[String(row[0]).trim()] = true;
-      });
-    }
+    const existingIdSet = loadProcessedMessageIds_(ss);
+    action = 'line_webhook';
 
     events.forEach(function(event) {
       if (event.type !== 'message' || !event.message || event.message.type !== 'text') {
@@ -481,6 +515,7 @@ function doPost(e) {
         }
         cache.put(messageId, '1', 21600);
         existingIdSet[messageId] = true;
+        markProcessedMessage_(ss, messageId);
       }
 
       const userId = event.source && event.source.userId ? event.source.userId : '';
@@ -513,7 +548,7 @@ function doPost(e) {
     return jsonResponse_({ status: 'success' });
   } catch (error) {
     try {
-      mainSheet.appendRow(['ERROR', error.name, new Date(), 'Script Error', error.message, '']);
+      mainSheet.appendRow(['ERROR', action || 'unknown', new Date(), 'Script Error', error.message, '']);
     } catch (_) {}
 
     return jsonResponse_({ status: 'error', message: error.message });

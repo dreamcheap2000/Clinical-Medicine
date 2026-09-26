@@ -38,11 +38,12 @@ jobs:
         run: |
           python - <<'PY' > /tmp/qa_sync_payload.json
           import json
+          import os
           with open('qa_pairs_with_embeddings.json', encoding='utf-8') as f:
               items = json.load(f)
           payload = {
               'action': 'sync_qa',
-              'secret': '${{ secrets.GS_WEBAPP_SECRET }}',
+              'secret': os.environ['GS_WEBAPP_SECRET'],
               'overwrite': True,
               'items': items,
           }
