@@ -2,8 +2,6 @@ import argparse
 import json
 from pathlib import Path
 
-from sentence_transformers import SentenceTransformer
-
 
 def load_pairs(path: Path):
     data = json.loads(path.read_text(encoding="utf-8"))
@@ -23,6 +21,8 @@ def main():
     output_path = Path(args.output)
 
     pairs = load_pairs(input_path)
+    from sentence_transformers import SentenceTransformer
+
     model = SentenceTransformer(args.model)
     questions = [item.get("question", "") for item in pairs]
     answers = [item.get("answer", "") for item in pairs]

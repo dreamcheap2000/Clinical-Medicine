@@ -137,6 +137,10 @@ function installonEdit(e) {
   installOnEdit(e);
 }
 
+function onEdit(e) {
+  installOnEdit(e);
+}
+
 /**
  * -------------------------------------------------------------
  * 3. QA Sync, Similarity Matching, and Admin Helpers
@@ -151,7 +155,11 @@ function getActiveSpreadsheet_() {
 }
 
 function getMainSheet_(ss) {
-  return ss.getSheetByName('工作表1') || ss.getSheets()[0];
+  let sheet = ss.getSheetByName('工作表1');
+  if (!sheet) {
+    sheet = ss.insertSheet('工作表1');
+  }
+  return sheet;
 }
 
 function ensureSheetHeaders_(sheet, headers) {
@@ -513,9 +521,6 @@ function doPost(e) {
           cache.put(messageId, '1', 21600);
           return;
         }
-        cache.put(messageId, '1', 21600);
-        existingIdSet[messageId] = true;
-        markProcessedMessage_(ss, messageId);
       }
 
       const userId = event.source && event.source.userId ? event.source.userId : '';
@@ -542,6 +547,12 @@ function doPost(e) {
 
       if (!matchedText) {
         logUnmatchedQuestion_(ss, userId, userName, message, qaResult.score, qaResult.bestQuestion);
+      }
+
+      if (messageId) {
+        cache.put(messageId, '1', 21600);
+        existingIdSet[messageId] = true;
+        markProcessedMessage_(ss, messageId);
       }
     });
 
