@@ -33,10 +33,12 @@ jobs:
       - name: Install clasp
         run: npm install -g @google/clasp
 
-      - name: Write clasp credentials
+      # ✅ Only keep ONE credentials step
+      - name: Setup Clasp credentials
         env:
           CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
-        run: python scripts/write_clasp_credentials.py --output "$HOME/.clasprc.json"
+        run: |
+          echo "$CLASPRC_JSON" > ~/.clasprc.json
 
       - name: Write .clasp.json
         env:
@@ -53,15 +55,13 @@ jobs:
         working-directory: apps-script
         run: npm test
 
-      - name: Push Apps Script files
-        working-directory: apps-script
-        run: clasp push -f
-
-      - name: Deploy existing web app
+      - name: Deploy Apps Script
         working-directory: apps-script
         env:
           CLASP_DEPLOYMENT_ID: ${{ secrets.CLASP_DEPLOYMENT_ID }}
-        run: clasp deploy --deploymentId "$CLASP_DEPLOYMENT_ID" --description "GitHub Actions ${GITHUB_SHA}"
+        run: |
+          clasp push -f
+          clasp deploy -i $CLASP_DEPLOYMENT_ID
 
       - name: Smoke test deployed web app
         env:
