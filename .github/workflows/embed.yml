@@ -37,7 +37,9 @@ jobs:
           GS_WEBAPP_SECRET: ${{ secrets.GS_WEBAPP_SECRET }}
           GS_WEBAPP_URL: ${{ secrets.GS_WEBAPP_URL }}
         run: |
-          python - <<'PY' > /tmp/qa_sync_payload.json
+          umask 077
+          payload_file=$(mktemp)
+          python - <<'PY' > "$payload_file"
           import json
           import os
           with open('qa_pairs_with_embeddings.json', encoding='utf-8') as f:
@@ -54,7 +56,7 @@ jobs:
           curl --silent --show-error --fail \
             -X POST \
             -H "Content-Type: application/json" \
-            --data @/tmp/qa_sync_payload.json \
+            --data @"$payload_file" \
             "$GS_WEBAPP_URL" > "$response_file"
           python scripts/validate_apps_script_response.py \
             --input "$response_file" \

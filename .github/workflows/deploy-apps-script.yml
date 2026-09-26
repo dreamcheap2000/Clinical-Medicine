@@ -110,6 +110,7 @@ jobs:
           GS_WEBAPP_SECRET: ${{ secrets.GS_WEBAPP_SECRET }}
           GS_WEBAPP_URL: ${{ secrets.GS_WEBAPP_URL }}
         run: |
+          umask 077
           response_file=$(mktemp)
           curl --silent --show-error --fail --get \
             --data-urlencode "action=health" \
