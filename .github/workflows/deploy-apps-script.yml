@@ -48,12 +48,12 @@ jobs:
             throw new Error('CLASPRC_JSON must be a JSON object');
           }
 
+          const hasNonEmptyString = (value) => typeof value === 'string' && value.trim().length > 0;
           const hasUsableToken = (token) =>
             token &&
             typeof token === 'object' &&
             !Array.isArray(token) &&
             (hasNonEmptyString(token.access_token) || hasNonEmptyString(token.refresh_token));
-          const hasNonEmptyString = (value) => typeof value === 'string' && value.trim().length > 0;
 
           let normalized = parsed;
 
