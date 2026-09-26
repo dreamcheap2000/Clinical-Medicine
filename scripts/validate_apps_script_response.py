@@ -18,6 +18,16 @@ def parse_response(text: str):
     return payload
 
 
+def has_meaningful_error_value(value):
+    if isinstance(value, str):
+        return True
+    if value is None or value is False or value == 0:
+        return False
+    if isinstance(value, (list, dict, tuple, set)) and not value:
+        return False
+    return True
+
+
 def validate_response(payload, expected_status, required_keys=None):
     status = payload.get("status")
     if status != expected_status:
@@ -25,7 +35,10 @@ def validate_response(payload, expected_status, required_keys=None):
             f"Apps Script response status must be {expected_status!r}, got {status!r}"
         )
 
-    has_error_metadata = "error" in payload or "errors" in payload
+    has_error_metadata = any(
+        key in payload and has_meaningful_error_value(payload[key])
+        for key in ("error", "errors")
+    )
     has_invalid_success = "success" in payload and payload["success"] is not True
     if has_error_metadata or has_invalid_success:
         raise ValueError("Apps Script response indicates an error despite matching status")

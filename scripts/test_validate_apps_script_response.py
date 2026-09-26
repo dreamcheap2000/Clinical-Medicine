@@ -47,6 +47,13 @@ class ValidateAppsScriptResponseTests(unittest.TestCase):
                 expected_status="success",
             )
 
+    def test_validate_response_allows_empty_errors_collection(self):
+        payload = {"status": "success", "errors": []}
+        self.assertEqual(
+            validator.validate_response(payload, expected_status="success"),
+            payload,
+        )
+
     def test_load_and_validate_accepts_expected_response(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "response.json"
