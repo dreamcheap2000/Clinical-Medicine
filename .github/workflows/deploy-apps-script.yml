@@ -31,48 +31,7 @@ jobs:
       - name: Write clasp credentials
         env:
           CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
-        run: |
-          node <<'NODE'
-          const fs = require('fs');
-
-          const raw = process.env.CLASPRC_JSON || '';
-          if (!raw.trim()) {
-            throw new Error('CLASPRC_JSON is empty or not set');
-          }
-
-          let parsed;
-          try {
-            parsed = JSON.parse(raw);
-          } catch (error) {
-            throw new Error(`CLASPRC_JSON is not valid JSON: ${error.message}`);
-          }
-          if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-            throw new Error('CLASPRC_JSON must be a JSON object');
-          }
-
-          const hasNonEmptyString = (value) => typeof value === 'string' && value.trim().length > 0;
-          const hasUsableToken = (token) =>
-            token &&
-            typeof token === 'object' &&
-            !Array.isArray(token) &&
-            (hasNonEmptyString(token.access_token) || hasNonEmptyString(token.refresh_token));
-
-          // Accept both token-wrapped and legacy top-level token formats, but preserve
-          // the original structure so clasp receives the same format produced by clasp login.
-          if (!parsed.token) {
-            if (!hasUsableToken(parsed)) {
-              throw new Error(
-                'CLASPRC_JSON legacy format must include access_token or refresh_token at the top level'
-              );
-            }
-          } else if (!hasUsableToken(parsed.token)) {
-            throw new Error(
-              'CLASPRC_JSON token format must include non-empty token.access_token or token.refresh_token'
-            );
-          }
-
-          fs.writeFileSync(`${process.env.HOME}/.clasprc.json`, JSON.stringify(parsed));
-          NODE
+        run: python scripts/write_clasp_credentials.py --output "$HOME/.clasprc.json"
 
       - name: Write .clasp.json
         env:
