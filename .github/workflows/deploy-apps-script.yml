@@ -7,6 +7,7 @@ on:
     paths:
       - apps-script/**
       - .github/workflows/deploy-apps-script.yml
+      - scripts/validate_apps_script_response.py
   workflow_dispatch:
 
 permissions:
