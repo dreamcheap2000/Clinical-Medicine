@@ -1,0 +1,7 @@
+tests/**
+qa/**
+README.md
+package.json
+package-lock.json
+.clasp.json
+.clasp.json.template
