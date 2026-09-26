@@ -4,6 +4,11 @@ import os
 import sys
 from pathlib import Path
 
+DEFAULT_CLASP_OAUTH_CLIENT_ID = (
+    "1072944905499-vm2v2i5dvn0a0d2o4ca36i1vge8cvbn0.apps.googleusercontent.com"
+)
+DEFAULT_CLASP_OAUTH_CLIENT_SECRET = "v6V3fKV_zWU7iw1DrpO1rknX"
+
 
 def has_non_empty_string(value):
     return isinstance(value, str) and bool(value.strip())
@@ -28,18 +33,18 @@ def parse_clasprc_json(raw):
     return parsed
 
 
-def normalize_legacy_global_token(token):
-    normalized = {}
-    for key in ("access_token", "refresh_token", "scope", "token_type", "id_token"):
-        if key in token:
-            normalized[key] = token[key]
+def normalize_token_wrapped_payload(token):
+    normalized_token = dict(token)
+    if "exprity_date" not in normalized_token and "expiry_date" in normalized_token:
+        normalized_token["exprity_date"] = normalized_token["expiry_date"]
 
-    if "expiry_date" in token or "exprity_date" in token:
-        expiry_date = token.get("expiry_date", token.get("exprity_date"))
-        normalized["expiry_date"] = expiry_date
-        normalized["exprity_date"] = expiry_date
-
-    return normalized
+    return {
+        "token": normalized_token,
+        "oauth2ClientSettings": {
+            "clientId": DEFAULT_CLASP_OAUTH_CLIENT_ID,
+            "clientSecret": DEFAULT_CLASP_OAUTH_CLIENT_SECRET,
+        },
+    }
 
 
 def normalize_clasprc_payload(parsed):
@@ -93,7 +98,7 @@ def normalize_clasprc_payload(parsed):
                 }
             }
 
-        return normalize_legacy_global_token(token)
+        return normalize_token_wrapped_payload(token)
 
     if has_usable_token(parsed):
         return parsed

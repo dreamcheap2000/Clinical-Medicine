@@ -51,11 +51,17 @@ class WriteClaspCredentialsTests(unittest.TestCase):
         self.assertEqual(
             normalized,
             {
-                "access_token": "access-token",
-                "refresh_token": "refresh-token",
-                "expiry_date": 12345,
-                "exprity_date": 12345,
-                "token_type": "Bearer",
+                "token": {
+                    "access_token": "access-token",
+                    "refresh_token": "refresh-token",
+                    "expiry_date": 12345,
+                    "exprity_date": 12345,
+                    "token_type": "Bearer",
+                },
+                "oauth2ClientSettings": {
+                    "clientId": writer.DEFAULT_CLASP_OAUTH_CLIENT_ID,
+                    "clientSecret": writer.DEFAULT_CLASP_OAUTH_CLIENT_SECRET,
+                },
             },
         )
 
@@ -119,7 +125,15 @@ class WriteClaspCredentialsTests(unittest.TestCase):
 
             self.assertEqual(
                 json.loads(path.read_text(encoding="utf-8")),
-                {"refresh_token": "refresh-token"},
+                {
+                    "token": {
+                        "refresh_token": "refresh-token",
+                    },
+                    "oauth2ClientSettings": {
+                        "clientId": writer.DEFAULT_CLASP_OAUTH_CLIENT_ID,
+                        "clientSecret": writer.DEFAULT_CLASP_OAUTH_CLIENT_SECRET,
+                    },
+                },
             )
 
     def test_write_clasprc_json_writes_normalized_payload(self):
@@ -132,7 +146,15 @@ class WriteClaspCredentialsTests(unittest.TestCase):
 
             self.assertEqual(
                 json.loads(path.read_text(encoding="utf-8")),
-                {"refresh_token": "refresh-token"},
+                {
+                    "token": {
+                        "refresh_token": "refresh-token",
+                    },
+                    "oauth2ClientSettings": {
+                        "clientId": writer.DEFAULT_CLASP_OAUTH_CLIENT_ID,
+                        "clientSecret": writer.DEFAULT_CLASP_OAUTH_CLIENT_SECRET,
+                    },
+                },
             )
             self.assertEqual(path.stat().st_mode & 0o777, 0o600)
 
