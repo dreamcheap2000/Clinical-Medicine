@@ -10,6 +10,9 @@ on:
       - .github/workflows/embed.yml
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   embed:
     runs-on: ubuntu-latest
@@ -23,7 +26,7 @@ jobs:
           python-version: '3.10'
 
       - name: Install embedding dependencies
-        run: pip install sentence-transformers pandas
+        run: pip install sentence-transformers
 
       - name: Generate embeddings
         run: python scripts/embed.py --input qa_pairs.json --output qa_pairs_with_embeddings.json
@@ -48,6 +51,5 @@ jobs:
           curl --silent --show-error --fail \
             -X POST \
             -H "Content-Type: application/json" \
-            -H "X-Auth-Token: ${GS_WEBAPP_SECRET}" \
             --data @/tmp/qa_sync_payload.json \
             "$GS_WEBAPP_URL"

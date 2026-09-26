@@ -27,13 +27,14 @@ This directory contains the LINE Official Account Apps Script backend, now track
    - `DEFAULT_FALLBACK_REPLY` (optional; leave empty to preserve the old “log only” fallback)
 
 ## QA data management
-- Edit repository QA pairs in `/home/runner/work/Clinical-Medicine/Clinical-Medicine/qa_pairs.json`
+- Edit repository QA pairs in `qa_pairs.json`
 - The `embed.yml` workflow can generate `q_vec` / `a_vec` fields and sync them to the script
 - The Apps Script accepts the following authenticated actions:
   - `GET ?action=health&secret=...`
   - `GET ?action=list_qa&secret=...`
   - `POST {"action":"sync_qa","secret":"...","overwrite":true,"items":[...]}`
   - `POST {"action":"upsert_qa","secret":"...","items":[...]}`
+- Google Apps Script web apps do not reliably expose custom HTTP headers, so the sync secret is sent in the JSON body/query string instead of relying on `X-Auth-Token`
 - QA rows are stored in the `QA` sheet (or legacy `QA_BASE` sheet if it already exists)
 - Unmatched LINE messages are logged to `UNMATCHED_QA`
 
@@ -47,6 +48,6 @@ This directory contains the LINE Official Account Apps Script backend, now track
 Run the shared similarity tests:
 
 ```bash
-cd /home/runner/work/Clinical-Medicine/Clinical-Medicine/apps-script
+cd apps-script
 npm test
 ```

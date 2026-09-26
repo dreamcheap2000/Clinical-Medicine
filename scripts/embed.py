@@ -24,19 +24,23 @@ def main():
 
     pairs = load_pairs(input_path)
     model = SentenceTransformer(args.model)
+    questions = [item.get("question", "") for item in pairs]
+    answers = [item.get("answer", "") for item in pairs]
+    question_vectors = model.encode(questions).tolist() if questions else []
+    answer_vectors = model.encode(answers).tolist() if answers else []
 
     output = []
-    for item in pairs:
-        question = item.get("question", "")
-        answer = item.get("answer", "")
+    for index, item in enumerate(pairs):
+        question = questions[index]
+        answer = answers[index]
         output.append(
             {
                 "question": question,
                 "answer": answer,
                 "keywords": item.get("keywords", ""),
                 "enabled": item.get("enabled", True),
-                "q_vec": model.encode(question).tolist() if question else [],
-                "a_vec": model.encode(answer).tolist() if answer else [],
+                "q_vec": question_vectors[index] if question else [],
+                "a_vec": answer_vectors[index] if answer else [],
             }
         )
 

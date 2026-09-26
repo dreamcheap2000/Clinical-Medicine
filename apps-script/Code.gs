@@ -274,26 +274,29 @@ function upsertQaPairs_(items, ss, options) {
 
   let inserted = 0;
   let updated = 0;
-  const appendRows = [];
+  const nextRows = existingRows.slice();
 
   normalizedItems.forEach(function(item) {
     const rowValues = [item.question, item.answer, item.keywords, item.enabled, item.q_vec, item.a_vec, item.updatedAt];
     const existingRow = existingMap[item.question];
     if (existingRow) {
-      qaSheet.getRange(existingRow, 1, 1, QA_HEADERS.length).setValues([rowValues]);
+      nextRows[existingRow - 2] = rowValues;
       updated += 1;
     } else {
-      appendRows.push(rowValues);
+      nextRows.push(rowValues);
       inserted += 1;
     }
   });
 
-  if (appendRows.length > 0) {
-    qaSheet.getRange(qaSheet.getLastRow() + 1, 1, appendRows.length, QA_HEADERS.length).setValues(appendRows);
+  if (existingLastRow > 1) {
+    qaSheet.getRange(2, 1, existingLastRow - 1, QA_HEADERS.length).clearContent();
+  }
+  if (nextRows.length > 0) {
+    qaSheet.getRange(2, 1, nextRows.length, QA_HEADERS.length).setValues(nextRows);
   }
 
   clearQaCache_();
-  return { inserted: inserted, updated: updated, total: qaSheet.getLastRow() - 1 };
+  return { inserted: inserted, updated: updated, total: nextRows.length };
 }
 
 function loadQaIndex_(ss) {
@@ -513,7 +516,7 @@ function doPost(e) {
       mainSheet.appendRow(['ERROR', error.name, new Date(), 'Script Error', error.message, '']);
     } catch (_) {}
 
-    return jsonResponse_({ status: 'error', error: error.message });
+    return jsonResponse_({ status: 'error', message: error.message });
   } finally {
     lock.releaseLock();
   }
