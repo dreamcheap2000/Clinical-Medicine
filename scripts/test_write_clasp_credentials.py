@@ -55,7 +55,6 @@ class WriteClaspCredentialsTests(unittest.TestCase):
                     "access_token": "access-token",
                     "refresh_token": "refresh-token",
                     "expiry_date": 12345,
-                    "exprity_date": 12345,
                     "token_type": "Bearer",
                 },
                 "oauth2ClientSettings": {

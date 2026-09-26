@@ -34,12 +34,8 @@ def parse_clasprc_json(raw):
 
 
 def normalize_token_wrapped_payload(token):
-    normalized_token = dict(token)
-    if "exprity_date" not in normalized_token and "expiry_date" in normalized_token:
-        normalized_token["exprity_date"] = normalized_token["expiry_date"]
-
     return {
-        "token": normalized_token,
+        "token": dict(token),
         "oauth2ClientSettings": {
             "clientId": DEFAULT_CLASP_OAUTH_CLIENT_ID,
             "clientSecret": DEFAULT_CLASP_OAUTH_CLIENT_SECRET,
