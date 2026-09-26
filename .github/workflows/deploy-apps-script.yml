@@ -57,19 +57,13 @@ jobs:
             !Array.isArray(token) &&
             (hasNonEmptyString(token.access_token) || hasNonEmptyString(token.refresh_token));
 
-          let normalized = parsed;
-
-          // Support both current and legacy ~/.clasprc.json formats.
+          // Accept both token-wrapped and legacy top-level token formats, but preserve
+          // the original structure so clasp receives the same format produced by clasp login.
           if (!parsed.token) {
             if (!hasUsableToken(parsed)) {
               throw new Error(
                 'CLASPRC_JSON legacy format must include access_token or refresh_token at the top level'
               );
-            }
-            const { oauth2ClientSettings = {}, isLocalCreds, ...token } = parsed;
-            normalized = { token, oauth2ClientSettings };
-            if (typeof isLocalCreds !== 'undefined') {
-              normalized.isLocalCreds = isLocalCreds;
             }
           } else if (!hasUsableToken(parsed.token)) {
             throw new Error(
@@ -77,7 +71,7 @@ jobs:
             );
           }
 
-          fs.writeFileSync(`${process.env.HOME}/.clasprc.json`, JSON.stringify(normalized));
+          fs.writeFileSync(`${process.env.HOME}/.clasprc.json`, JSON.stringify(parsed));
           NODE
 
       - name: Write .clasp.json
