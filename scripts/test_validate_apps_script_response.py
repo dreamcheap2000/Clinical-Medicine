@@ -33,6 +33,13 @@ class ValidateAppsScriptResponseTests(unittest.TestCase):
                 expected_status="success",
             )
 
+    def test_validate_response_rejects_falsey_error_metadata(self):
+        with self.assertRaisesRegex(ValueError, "indicates an error despite matching status"):
+            validator.validate_response(
+                {"status": "success", "error": ""},
+                expected_status="success",
+            )
+
     def test_validate_response_rejects_non_true_success_flag(self):
         with self.assertRaisesRegex(ValueError, "indicates an error despite matching status"):
             validator.validate_response(
