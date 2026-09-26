@@ -6,6 +6,8 @@ on:
       - main
     paths:
       - apps-script/**
+      - .github/workflows/deploy-apps-script.yml
+      - scripts/validate_apps_script_response.py
   workflow_dispatch:
 
 permissions:
@@ -108,9 +110,14 @@ jobs:
           GS_WEBAPP_SECRET: ${{ secrets.GS_WEBAPP_SECRET }}
           GS_WEBAPP_URL: ${{ secrets.GS_WEBAPP_URL }}
         run: |
-          response=$(curl --silent --show-error --fail --get \
+          umask 077
+          response_file=$(mktemp)
+          curl --silent --show-error --fail --get \
             --data-urlencode "action=health" \
             --data-urlencode "secret=${GS_WEBAPP_SECRET}" \
-            "$GS_WEBAPP_URL")
-          echo "$response"
-          echo "$response" | grep '"status":"ok"'
+            "$GS_WEBAPP_URL" > "$response_file"
+          python scripts/validate_apps_script_response.py \
+            --input "$response_file" \
+            --expected-status ok \
+            --require-key qaCount \
+            --require-key threshold

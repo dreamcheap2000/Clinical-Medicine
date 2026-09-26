@@ -7,6 +7,7 @@ on:
     paths:
       - qa_pairs.json
       - scripts/embed.py
+      - scripts/validate_apps_script_response.py
       - .github/workflows/embed.yml
   workflow_dispatch:
 
@@ -36,7 +37,9 @@ jobs:
           GS_WEBAPP_SECRET: ${{ secrets.GS_WEBAPP_SECRET }}
           GS_WEBAPP_URL: ${{ secrets.GS_WEBAPP_URL }}
         run: |
-          python - <<'PY' > /tmp/qa_sync_payload.json
+          umask 077
+          payload_file=$(mktemp)
+          python - <<'PY' > "$payload_file"
           import json
           import os
           with open('qa_pairs_with_embeddings.json', encoding='utf-8') as f:
@@ -49,8 +52,12 @@ jobs:
           }
           print(json.dumps(payload, ensure_ascii=False))
           PY
+          response_file=$(mktemp)
           curl --silent --show-error --fail \
             -X POST \
             -H "Content-Type: application/json" \
-            --data @/tmp/qa_sync_payload.json \
-            "$GS_WEBAPP_URL"
+            --data @"$payload_file" \
+            "$GS_WEBAPP_URL" > "$response_file"
+          python scripts/validate_apps_script_response.py \
+            --input "$response_file" \
+            --expected-status success
