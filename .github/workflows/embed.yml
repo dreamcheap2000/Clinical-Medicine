@@ -49,8 +49,12 @@ jobs:
           }
           print(json.dumps(payload, ensure_ascii=False))
           PY
+          response_file=$(mktemp)
           curl --silent --show-error --fail \
             -X POST \
             -H "Content-Type: application/json" \
             --data @/tmp/qa_sync_payload.json \
-            "$GS_WEBAPP_URL"
+            "$GS_WEBAPP_URL" > "$response_file"
+          python scripts/validate_apps_script_response.py \
+            --input "$response_file" \
+            --expected-status success
