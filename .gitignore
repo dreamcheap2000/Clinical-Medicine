@@ -22,3 +22,6 @@ rad.json
 TestResults.xml.DS_Store
 .DS_Store
 __pycache__/
+.clasprc.json
+apps-script/.clasp.json
+qa_pairs_with_embeddings.json

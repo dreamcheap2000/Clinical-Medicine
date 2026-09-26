@@ -1,0 +1,70 @@
+name: Deploy Apps Script
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - apps-script/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install clasp
+        run: npm install -g @google/clasp
+
+      - name: Write clasp credentials
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+
+      - name: Write .clasp.json
+        env:
+          CLASP_SCRIPT_ID: ${{ secrets.CLASP_SCRIPT_ID }}
+        run: |
+          cat > apps-script/.clasp.json <<JSON
+          {
+            "scriptId": "${CLASP_SCRIPT_ID}",
+            "rootDir": "."
+          }
+          JSON
+
+      - name: Run similarity tests
+        working-directory: apps-script
+        run: npm test
+
+      - name: Push Apps Script files
+        working-directory: apps-script
+        run: clasp push -f
+
+      - name: Deploy existing web app
+        working-directory: apps-script
+        env:
+          CLASP_DEPLOYMENT_ID: ${{ secrets.CLASP_DEPLOYMENT_ID }}
+        run: clasp deploy --deploymentId "$CLASP_DEPLOYMENT_ID" --description "GitHub Actions ${GITHUB_SHA}"
+
+      - name: Smoke test deployed web app
+        env:
+          GS_WEBAPP_SECRET: ${{ secrets.GS_WEBAPP_SECRET }}
+          GS_WEBAPP_URL: ${{ secrets.GS_WEBAPP_URL }}
+        run: |
+          response=$(curl --silent --show-error --fail --get \
+            --data-urlencode "action=health" \
+            --data-urlencode "secret=${GS_WEBAPP_SECRET}" \
+            "$GS_WEBAPP_URL")
+          echo "$response"
+          echo "$response" | grep '"status":"ok"'
