@@ -30,7 +30,53 @@ jobs:
         env:
           CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
         run: |
-          printf '%s' "$CLASPRC_JSON" > "$HOME/.clasprc.json"
+          node <<'NODE'
+          const fs = require('fs');
+
+          const raw = process.env.CLASPRC_JSON || '';
+          if (!raw.trim()) {
+            throw new Error('CLASPRC_JSON is empty or not set');
+          }
+
+          let parsed;
+          try {
+            parsed = JSON.parse(raw);
+          } catch (error) {
+            throw new Error(`CLASPRC_JSON is not valid JSON: ${error.message}`);
+          }
+          if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+            throw new Error('CLASPRC_JSON must be a JSON object');
+          }
+
+          const hasNonEmptyString = (value) => typeof value === 'string' && value.trim().length > 0;
+          const hasUsableToken = (token) =>
+            token &&
+            typeof token === 'object' &&
+            !Array.isArray(token) &&
+            (hasNonEmptyString(token.access_token) || hasNonEmptyString(token.refresh_token));
+
+          let normalized = parsed;
+
+          // Support both current and legacy ~/.clasprc.json formats.
+          if (!parsed.token) {
+            if (!hasUsableToken(parsed)) {
+              throw new Error(
+                'CLASPRC_JSON legacy format must include access_token or refresh_token at the top level'
+              );
+            }
+            const { oauth2ClientSettings = {}, isLocalCreds, ...token } = parsed;
+            normalized = { token, oauth2ClientSettings };
+            if (typeof isLocalCreds !== 'undefined') {
+              normalized.isLocalCreds = isLocalCreds;
+            }
+          } else if (!hasUsableToken(parsed.token)) {
+            throw new Error(
+              'CLASPRC_JSON token format must include non-empty token.access_token or token.refresh_token'
+            );
+          }
+
+          fs.writeFileSync(`${process.env.HOME}/.clasprc.json`, JSON.stringify(normalized));
+          NODE
 
       - name: Write .clasp.json
         env:
