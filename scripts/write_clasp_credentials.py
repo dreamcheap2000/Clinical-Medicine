@@ -73,6 +73,18 @@ def normalize_clasprc_payload(parsed):
                 "CLASPRC_JSON token format must include non-empty token.access_token or token.refresh_token"
             )
 
+        if has_non_empty_string(token.get("client_id")) and has_non_empty_string(
+            token.get("client_secret")
+        ):
+            return {
+                "tokens": {
+                    "default": {
+                        **token,
+                        "type": token.get("type", "authorized_user"),
+                    }
+                }
+            }
+
         oauth_settings = parsed.get("oauth2ClientSettings")
         if oauth_settings is not None:
             if not (
@@ -85,18 +97,6 @@ def normalize_clasprc_payload(parsed):
                     "oauth2ClientSettings.clientId and oauth2ClientSettings.clientSecret"
                 )
             return parsed
-
-        if has_non_empty_string(token.get("client_id")) and has_non_empty_string(
-            token.get("client_secret")
-        ):
-            return {
-                "tokens": {
-                    "default": {
-                        **token,
-                        "type": token.get("type", "authorized_user"),
-                    }
-                }
-            }
 
         return normalize_token_wrapped_payload(token)
 

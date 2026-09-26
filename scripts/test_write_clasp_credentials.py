@@ -117,6 +117,36 @@ class WriteClaspCredentialsTests(unittest.TestCase):
             },
         )
 
+    def test_normalize_clasprc_payload_promotes_token_credentials_even_with_oauth2_settings(self):
+        normalized = writer.normalize_clasprc_payload(
+            {
+                "token": {
+                    "type": "authorized_user",
+                    "client_id": "client-id",
+                    "client_secret": "client-secret",
+                    "refresh_token": "refresh-token",
+                },
+                "oauth2ClientSettings": {
+                    "clientId": "legacy-client-id",
+                    "clientSecret": "legacy-client-secret",
+                },
+            }
+        )
+
+        self.assertEqual(
+            normalized,
+            {
+                "tokens": {
+                    "default": {
+                        "type": "authorized_user",
+                        "client_id": "client-id",
+                        "client_secret": "client-secret",
+                        "refresh_token": "refresh-token",
+                    }
+                }
+            },
+        )
+
     def test_write_clasprc_json_preserves_legacy_local_payload(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / ".clasprc.json"
