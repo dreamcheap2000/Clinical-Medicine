@@ -68,6 +68,18 @@ jobs:
             if (typeof isLocalCreds !== 'undefined') {
               normalized.isLocalCreds = isLocalCreds;
             }
+          } else if (
+            !hasUsableToken(parsed.token) &&
+            !(
+              parsed.oauth2ClientSettings &&
+              typeof parsed.oauth2ClientSettings.clientId === 'string' &&
+              typeof parsed.oauth2ClientSettings.clientSecret === 'string' &&
+              typeof parsed.oauth2ClientSettings.redirectUri === 'string'
+            )
+          ) {
+            throw new Error(
+              'CLASPRC_JSON token format must include token credentials or complete oauth2ClientSettings'
+            );
           }
 
           fs.writeFileSync(`${process.env.HOME}/.clasprc.json`, JSON.stringify(normalized));
