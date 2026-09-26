@@ -34,7 +34,17 @@ jobs:
           const fs = require('fs');
 
           const raw = process.env.CLASPRC_JSON || '';
-          const parsed = JSON.parse(raw);
+          if (!raw.trim()) {
+            throw new Error('CLASPRC_JSON is empty or not set');
+          }
+
+          let parsed;
+          try {
+            parsed = JSON.parse(raw);
+          } catch (error) {
+            throw new Error(`CLASPRC_JSON is not valid JSON: ${error.message}`);
+          }
+
           let normalized = parsed;
 
           // Support both current and legacy ~/.clasprc.json formats.
