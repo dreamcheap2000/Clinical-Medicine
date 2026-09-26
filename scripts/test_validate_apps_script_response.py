@@ -26,6 +26,13 @@ class ValidateAppsScriptResponseTests(unittest.TestCase):
                 required_keys=["qaCount"],
             )
 
+    def test_validate_response_rejects_error_metadata(self):
+        with self.assertRaisesRegex(ValueError, "indicates an error despite matching status"):
+            validator.validate_response(
+                {"status": "success", "error": "Unsupported action"},
+                expected_status="success",
+            )
+
     def test_load_and_validate_accepts_expected_response(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "response.json"

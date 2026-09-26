@@ -25,6 +25,9 @@ def validate_response(payload, expected_status, required_keys=None):
             f"Apps Script response status must be {expected_status!r}, got {status!r}"
         )
 
+    if payload.get("error") or payload.get("errors") or payload.get("success") is False:
+        raise ValueError("Apps Script response indicates an error despite matching status")
+
     missing_keys = [key for key in (required_keys or []) if key not in payload]
     if missing_keys:
         missing = ", ".join(missing_keys)
