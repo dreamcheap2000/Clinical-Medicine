@@ -1,0 +1,492 @@
+
+
+/**
+ * ============================================================================
+ * Production Webhook & Clinical Message Flow - UI & Utilities Module
+ * File: UIUtils.gs
+ * ============================================================================
+ */
+
+function onOpen() {
+  try {
+    SpreadsheetApp.getUi().createMenu('⚡ 臨床指令')
+      .addItem('🔄 建立/更新 QA 知識庫', 'buildQAEmbeddings')
+      .addItem('💡 重新整理選取列 QA 建議回覆選單', 'refreshSelectedRowSuggestions')
+      .addItem('📤 批次發送勾選的問卷並記錄統計', 'sendBatchQuestionnaireFromCheckboxes')
+      .addItem('📝 自動建立完整 CDR® 臨床評估表單', 'createDementiaScreeningForm')
+      .addItem('🛠️ 初始化標題與結構', 'updateSheetNamesAndHeaders')
+      .addToUi();
+  } catch (err) {}
+}
+
+function onEdit(e) {
+  handleCustomEdit(e);
+}
+
+function handleCustomEdit(e) {
+  if (!e || !e.range) return;
+  const sheetName = e.range.getSheet().getName();
+  if (sheetName === 'LINE對話' || sheetName === '工作表1') {
+    handleDoctorReplyEdit(e);
+  } else if (sheetName === 'QA知識庫') {
+    handleQARowEdit(e);
+  }
+}
+
+function updateSheetNamesAndHeaders() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) return;
+  const sheets = ss.getSheets();
+  let lineSheet = ss.getSheetByName("LINE對話") || ss.getSheetByName("工作表1") || sheets[0];
+  lineSheet.setName("LINE對話");
+  
+  const lineHeaders = [
+    "Message ID",           // A (Col 1)
+    "發送問卷 (勾選)",      // B (Col 2) - Checkbox trigger column for questionnaire push
+    "User ID",              // C (Col 3)
+    "DateTime",             // D (Col 4)
+    "User Name",            // E (Col 5)
+    "訊息 (病患問題)",       // F (Col 6)
+    "檔案/媒體連結",         // G (Col 7)
+    "建議回覆選單",         // H (Col 8)
+    "回覆草稿 (可編輯)",     // I (Col 9)
+    "回覆紀錄 (最新)"       // J (Col 10)
+  ];
+  lineSheet.getRange(1, 1, 1, lineHeaders.length).setValues([lineHeaders]);
+  
+  const checkboxRule = SpreadsheetApp.newDataValidation().requireCheckbox().build();
+  lineSheet.getRange(2, 2, 999, 1).setDataValidation(checkboxRule);
+  
+  let qaSheet = ss.getSheetByName("QA知識庫");
+  if (!qaSheet) {
+    for (let i = 0; i < sheets.length; i++) {
+      const sName = sheets[i].getName().trim();
+      if (sName !== "LINE對話" && (sName.includes("QA") || sName.includes("Embedding") || sName.includes("知識庫"))) {
+        qaSheet = sheets[i];
+        break;
+      }
+    }
+  }
+  if (qaSheet && qaSheet.getName() !== lineSheet.getName()) {
+    qaSheet.setName("QA知識庫");
+  } else if (!qaSheet) {
+    qaSheet = ss.insertSheet("QA知識庫");
+  }
+  
+  const qaHeaders = [
+    "ID",                       // Col A (1)
+    "重要性分級 (1-5)",         // Col B (2)
+    "訊息",                     // Col C (3)
+    "LINE Friend 訊息 1",     // Col D (4)
+    "LINE Friend 訊息 2",     // Col E (5)
+    "Line Friend 連結備註",   // Col F (6)
+    "回覆",                     // Col G (7)
+    "檔案/媒體連結",            // Col H (8)
+    "檔案/網址名稱",            // Col I (9)
+    "連結備註",                 // Col J (10)
+    "問題 Embedding",           // Col K (11)
+    "回覆 Embedding",           // Col L (12)
+    "備註 Embedding",           // Col M (13)
+    "行內使用次數",             // Col N (14)
+    "全域使用次數"              // Col O (15)
+  ];
+  
+  qaSheet.getRange(1, 1, 1, 15).setValues([qaHeaders]);
+  SpreadsheetApp.flush();
+  
+  try {
+    ss.toast("工作表名稱、標題與勾選框已成功初始化！", "設定完成", 4);
+  } catch (err) {}
+}
+
+function refreshSelectedRowSuggestions() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getActiveSheet();
+  if (!sheet || !['LINE對話', '工作表1'].includes(sheet.getName())) {
+    sheet = ss.getSheetByName('LINE對話') || ss.getSheetByName('工作表1');
+    if (!sheet) {
+      ss.toast("請先切換至「LINE對話」工作表！", "提示", 4);
+      return;
+    }
+  }
+  const row = sheet.getActiveCell().getRow();
+  if (row <= 1) {
+    ss.toast("請選取第 2 列以後的病患訊息列！", "提示", 4);
+    return;
+  }
+  const patientText = String(sheet.getRange(row, 6).getValue() || '').trim();
+  if (!patientText) {
+    ss.toast(`第 ${row} 列 F 欄無訊息內容。`, "提示", 3);
+    return;
+  }
+  suggestRepliesForUserMessage(patientText, row, 0.25);
+  ss.toast(`第 ${row} 列 QA 建議回覆選單已產生！`, '完成', 3);
+}
+
+function formatCellDisplayForReply(content) {
+  const text = String(content || '').trim();
+  if (!text) return { isFormula: false, value: '' };
+  const driveMatch = text.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || text.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (driveMatch && driveMatch[1]) {
+    const fileId = driveMatch[1];
+    try {
+      const file = DriveApp.getFileById(fileId);
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      const viewUrl = `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
+      return { isFormula: true, value: `=HYPERLINK("${viewUrl}", "${file.getName()}")` };
+    } catch (e) {}
+  }
+  const directImgMatch = text.match(/https?:\/\/[^\s]+?\.(png|jpe?g|gif|webp)(\?[^\s]*)?/i);
+  if (directImgMatch) {
+    return { isFormula: true, value: `=HYPERLINK("${directImgMatch[0]}", "檢視圖片")` };
+  }
+  if (text.startsWith('=')) {
+    return { isFormula: true, value: text };
+  }
+  return { isFormula: false, value: text };
+}
+
+function handleDoctorReplyEdit(e) {
+  if (!e || !e.range) return;
+  const range = e.range;
+  const sheet = range.getSheet();
+  const sheetName = sheet.getName();
+  if (sheetName !== 'LINE對話' && sheetName !== '工作表1') return;
+  const row = range.getRow();
+  if (row <= 1) return; 
+  const col = range.getColumn();
+  
+  if (col === 8) {
+    let selectedText = String(e.value || range.getValue() || '').trim();
+    if (!selectedText || selectedText.startsWith('───')) {
+      range.clearContent();
+      return;
+    }
+    const cache = CacheService.getScriptCache();
+    const cachedData = cache.get(`QA_REPLY_CACHE_${selectedText}`);
+    
+    let fullText = selectedText;
+    let qaRowIdx = null;
+    
+    try {
+      if (cachedData && cachedData.startsWith('{')) {
+        const parsed = JSON.parse(cachedData);
+        fullText = parsed.reply;
+        qaRowIdx = parsed.rowIdx;
+      } else if (cachedData) {
+        fullText = cachedData;
+      }
+    } catch (err) {}
+    
+    if (qaRowIdx) {
+      try {
+        const qaSheet = sheet.getParent().getSheetByName('QA知識庫');
+        if (qaSheet) {
+          const qaData = qaSheet.getRange(2, 1, qaSheet.getLastRow() - 1, 15).getValues();
+          const targetReply = String(qaData[qaRowIdx - 2][6] || '').trim();
+          const targetUrl = String(qaData[qaRowIdx - 2][7] || '').trim();
+          
+          const rowCountCell = qaSheet.getRange(qaRowIdx, 14);
+          rowCountCell.setValue((Number(rowCountCell.getValue()) || 0) + 1);
+          for (let i = 0; i < qaData.length; i++) {
+            const rowReply = String(qaData[i][6] || '').trim();
+            const rowUrl = String(qaData[i][7] || '').trim();
+            if ((targetReply && rowReply === targetReply) || (targetUrl && rowUrl === targetUrl)) {
+              const globalCountCell = qaSheet.getRange(i + 2, 15);
+              globalCountCell.setValue((Number(globalCountCell.getValue()) || 0) + 1);
+            }
+          }
+        }
+      } catch (err) {}
+    }
+    const targetCellI = sheet.getRange(row, 9);
+    targetCellI.setValue(fullText);
+    range.clearContent(); 
+    SpreadsheetApp.flush();
+    targetCellI.activate(); 
+    return;
+  }
+  
+  if (col === 9) {
+    let messageToSend = String(range.getValue() || '').trim();
+    if (!messageToSend) return;
+    const lock = LockService.getScriptLock();
+    if (!lock.tryLock(8000)) return;
+    const ss = sheet.getParent();
+    try {
+      const userId = String(sheet.getRange(row, 3).getValue() || '').trim();
+      if (!userId) return;
+      
+      pushMultipleMessagesToLineUser(userId, messageToSend);
+      ss.toast('訊息已成功發送給病患！', '發送成功', 3);
+      
+      const cellFormat = formatCellDisplayForReply(messageToSend);
+      
+      const maxCol = Math.max(sheet.getLastColumn(), 10);
+      const historyWidth = maxCol - 10 + 1;
+      if (historyWidth > 1) {
+        const currentVals = sheet.getRange(row, 10, 1, historyWidth - 1).getValues()[0];
+        const currentForms = sheet.getRange(row, 10, 1, historyWidth - 1).getFormulas()[0];
+        
+        for (let k = 0; k < currentVals.length; k++) {
+          const targetCell = sheet.getRange(row, 11 + k);
+          if (currentForms[k]) {
+            targetCell.setFormula(currentForms[k]);
+          } else if (currentVals[k] !== '' && currentVals[k] !== null) {
+            targetCell.setValue(currentVals[k]);
+          }
+        }
+      }
+      
+      const cellJ = sheet.getRange(row, 10);
+      if (cellFormat.isFormula) {
+        cellJ.setFormula(cellFormat.value);
+      } else {
+        cellJ.setValue(cellFormat.value);
+      }
+      
+      range.clearContent();
+      SpreadsheetApp.flush();
+      range.activate();
+    } catch (err) {
+      Logger.log('[handleDoctorReplyEdit Error] ' + err.toString());
+    } finally {
+      lock.releaseLock();
+    }
+  }
+}
+
+
+function suggestRepliesForUserMessage(userMessage, targetRow, threshold = 0.25) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const qaSheet = ss.getSheetByName('QA知識庫');
+  if (!qaSheet) return;
+
+  const qaData = qaSheet.getRange(2, 1, qaSheet.getLastRow() - 1, 15).getValues();
+  if (qaData.length === 0) return;
+
+  const apiKey = getGeminiApiKey();
+  const userVec = getGeminiEmbedding(userMessage, apiKey);
+  if (!userVec) return;
+
+  const suggestions = [];
+  const cache = CacheService.getScriptCache();
+
+  for (let i = 0; i < qaData.length; i++) {
+    const reply = String(qaData[i][6] || '').trim();
+    const replyVecCell = qaData[i][11];
+    const replyVec = loadVectorFromDriveCell(replyVecCell);
+
+    if (reply && replyVec) {
+      const sim = cosineSimilarity(userVec, replyVec);
+      if (sim >= threshold) {
+        suggestions.push(reply);
+        cache.put(`QA_REPLY_CACHE_${reply}`, JSON.stringify({ reply, rowIdx: i + 2 }), 3600);
+      }
+    }
+  }
+
+  const sheet = ss.getSheetByName('LINE對話');
+  if (sheet && targetRow > 1) {
+    const dropdownRange = sheet.getRange(targetRow, 8);
+    if (suggestions.length > 0) {
+      const rule = SpreadsheetApp.newDataValidation()
+        .requireValueInList(suggestions, true)
+        .setAllowInvalid(false)
+        .build();
+      dropdownRange.setDataValidation(rule);
+    } else {
+      dropdownRange.clearDataValidations();
+    }
+  }
+}
+
+function handleQARowEdit(e) {
+  if (!e || !e.range) return;
+  const sheet = e.range.getSheet();
+  if (sheet.getName() !== 'QA知識庫') return;
+
+  const row = e.range.getRow();
+  if (row <= 1) return;
+
+  const apiKey = getGeminiApiKey();
+  const qText = String(sheet.getRange(row, 4).getValue() || '').trim();
+  const replyText = String(sheet.getRange(row, 7).getValue() || '').trim();
+  const annotationText = String(sheet.getRange(row, 10).getValue() || '').trim();
+
+  try {
+    if (qText) {
+      const qVec = getGeminiEmbedding(qText, apiKey);
+      if (qVec) {
+        const fileObj = saveVectorToJsonDrive(`QA_${row}_Q`, { type: 'question', text: qText, embedding: qVec });
+        sheet.getRange(row, 11).setFormula(`=HYPERLINK("${fileObj.url}", "檢視問題向量JSON")`);
+      }
+    }
+    if (replyText) {
+      const rVec = getGeminiEmbedding(replyText, apiKey);
+      if (rVec) {
+        const fileObj = saveVectorToJsonDrive(`QA_${row}_R`, { type: 'reply', text: replyText, embedding: rVec });
+        sheet.getRange(row, 12).setFormula(`=HYPERLINK("${fileObj.url}", "檢視回覆向量JSON")`);
+      }
+    }
+    if (annotationText) {
+      const fVec = getGeminiEmbedding(annotationText, apiKey);
+      if (fVec) {
+        const fileObj = saveVectorToJsonDrive(`QA_${row}_A`, { type: 'annotation', text: annotationText, embedding: fVec });
+        sheet.getRange(row, 13).setFormula(`=HYPERLINK("${fileObj.url}", "檢視備註向量JSON")`);
+      }
+    }
+  } catch (err) {
+    Logger.log(`[handleQARowEdit Error] ${err.message}`);
+  }
+}  // <-- this was missing
+
+function sendBatchQuestionnaireFromCheckboxes() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName('LINE對話');
+  if (!sheet) {
+    ss.toast("找不到 LINE對話 工作表！", "錯誤", 5);
+    return;
+  }
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow <= 1) {
+    ss.toast("沒有可處理的病患訊息列。", "提示", 4);
+    return;
+  }
+
+  let sentCount = 0;
+  let failCount = 0;
+
+  for (let row = 2; row <= lastRow; row++) {
+    const checkboxVal = sheet.getRange(row, 2).getValue(); // Column B
+    const userId = String(sheet.getRange(row, 3).getValue() || '').trim(); // Column C
+
+    if (checkboxVal === true || checkboxVal === 'TRUE') {
+      if (!userId) {
+        sheet.getRange(row, 10).setValue('⚠ 無 User ID，無法發送');
+        sheet.getRange(row, 2).setValue(false);
+        failCount++;
+        continue;
+      }
+
+      try {
+        const success = sendDementiaScreeningFlexMessage(userId, 'Central');
+        if (success) {
+          sheet.getRange(row, 10).setValue('✅ 已批次發送問卷: ' + new Date().toLocaleTimeString());
+          sentCount++;
+        } else {
+          sheet.getRange(row, 10).setValue('❌ 發送失敗');
+          failCount++;
+        }
+      } catch (err) {
+        sheet.getRange(row, 10).setValue('❌ 錯誤: ' + err.message);
+        failCount++;
+      } finally {
+        // reset checkbox after processing
+        sheet.getRange(row, 2).setValue(false);
+      }
+    }
+  }
+
+  ss.toast(`批次發送完成：成功 ${sentCount} 筆，失敗 ${failCount} 筆。`, "完成", 5);
+}
+
+
+/**
+ * ============================================================================
+ * Clinical Vitals & Symptom Tracker Form Generator
+ * File: CreateVitalSignsForm.gs (建立病患日常血壓、血糖與症狀回報表單)
+ * ============================================================================
+ */
+
+function createPatientVitalsTrackerForm() {
+  var form = FormApp.create('病患每日血壓、血糖與健康狀況回報表單');
+  form.setDescription('請依實際測量結果填寫您的每日生理數據與身體狀況。系統將自動記錄您的識別編號。');
+  form.setIsQuiz(false);
+  
+  // ==========================================
+  // 1. 基本識別與時間設定
+  // ==========================================
+  form.addSectionHeaderItem()
+    .setTitle('基本資料與記錄時間')
+    .setHelpText('請確認記錄時間與您的身分識別。');
+  
+  // 自動帶入且鎖定（對 LINE 用戶唯讀或隱含帶入）之 LINE ID 欄位
+  var lineIdItem = form.addTextItem();
+  lineIdItem.setTitle('LINE ID 編號')
+            .setHelpText('系統自動帶入之唯一識別碼，請勿修改。')
+            .setRequired(true);
+
+  // 預設為當前開啟時間，但也允許手動調整
+  var recordTimeItem = form.addDateTimeItem();
+  recordTimeItem.setTitle('測量記錄時間')
+                .setHelpText('預設為您開啟表單當下的時間，若為補登可手動修改。')
+                .setRequired(true);
+
+  // ==========================================
+  // 2. 生理數值區段 (血壓與血糖)
+  // ==========================================
+  form.addPageBreakItem().setTitle('生理數值記錄 (血壓與血糖)');
+  
+  form.addTextItem()
+      .setTitle('收縮壓 (Systolic, mmHg)')
+      .setHelpText('例如：120');
+      
+  form.addTextItem()
+      .setTitle('舒張壓 (Diastolic, mmHg)')
+      .setHelpText('例如：80');
+      
+  form.addTextItem()
+      .setTitle('血糖數值 (Blood Sugar, mg/dL)')
+      .setHelpText('例如：100 (若無測量可留空)');
+
+  form.addMultipleChoiceItem()
+      .setTitle('測量血糖的時間點：')
+      .setChoiceValues([
+        '空腹 (Fasting)',
+        '飯後 2 小時 (Postprandial)',
+        '隨機 / 不確定 (Random)',
+        '未測量血糖 (N/A)'
+      ]);
+
+  // ==========================================
+  // 3. 神經與身體症狀自我評估區段
+  // ==========================================
+  form.addPageBreakItem().setTitle('神經與身體症狀自我評估');
+  
+  var symptomGrid = form.addGridItem();
+  symptomGrid.setTitle('今日是否有以下身體不適或神經學症狀？')
+    .setRows([
+      '1. 頭暈 / 暈眩 (Dizziness)',
+      '2. 頭痛 (Headache)',
+      '3. 手腳麻木 / 感覺異常 (Numbness)',
+      '4. 步態不穩 / 容易跌倒 (Unsteadiness)',
+      '5. 胸悶 / 心悸 (Chest tightness / Palpitations)',
+      '6. 虛弱無力 (Weakness)'
+    ])
+    .setColumns(['無 (None)', '輕微 (Mild)', '明顯/嚴重 (Significant)']);
+
+  form.addParagraphTextItem()
+      .setTitle('其他症狀補充說明或用藥反應紀錄 (Optional)')
+      .setHelpText('請簡單描述任何其他身體不適、服藥後的感受或想回報醫師的事項。');
+
+  // ==========================================
+  // 4. 綁定 Google 試算表
+  // ==========================================
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  form.setDestination(FormApp.DestinationType.SPREADSHEET, ss.getId());
+
+  const formUrl = form.getPublishedUrl();
+  const vitalsFormUrl = `${scriptProps.getProperty('VITALS_FORM_URL')}?usp=pp_url&entry.855082269=${encodeURIComponent(cleanUserId)}`;
+  
+  // 將此表單網址記錄至指令碼屬性，以便後續 LINE 推播使用
+  PropertiesService.getScriptProperties().setProperty('VITALS_FORM_URL', formUrl);
+
+  Logger.log('✅ 病患健康回報表單建立完成！');
+  Logger.log('編輯網址： ' + form.getEditUrl());
+  Logger.log('發佈/填寫網址： ' + formUrl);
+  
+  ss.toast('病患健康回報表單已建立成功，並已綁定至本試算表！', '建立完成', 5);
+  return formUrl;
+}

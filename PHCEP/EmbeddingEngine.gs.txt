@@ -1,0 +1,397 @@
+/**
+ * ============================================================================
+ * Production Webhook & Clinical Message Flow - Embedding Engine Module
+ * File: EmbeddingEngine.gs
+ * ============================================================================
+ */
+
+function getGeminiApiKey() {
+  const props = PropertiesService.getScriptProperties();
+  const key = props.getProperty('GEMINI_API_KEY');
+  if (key) return key.trim();
+  throw new Error('未設定 GEMINI_API_KEY，請在「專案設定 > 指令碼屬性」中新增！');
+}
+
+function getGeminiEmbedding(text, apiKey) {
+  const key = apiKey || getGeminiApiKey();
+  const cleanInput = String(text || '').trim();
+  if (!cleanInput) return null;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${encodeURIComponent(key)}`;
+  const payload = {
+    model: "models/gemini-embedding-001",
+    content: { parts: [{ text: cleanInput }] }
+  };
+  try {
+    const res = UrlFetchApp.fetch(url, {
+      method: 'post',
+      contentType: 'application/json',
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    });
+    const status = res.getResponseCode();
+    const body = res.getContentText();
+    if (status === 200) {
+      const json = JSON.parse(body);
+      if (json.embedding && json.embedding.values) {
+        return json.embedding.values;
+      }
+    }
+  } catch (e) {
+    Logger.log(`[Embedding API Network Error]: ${e.message}`);
+  }
+  return null;
+}
+
+function saveVectorToJsonDrive(filePrefix, payloadData) {
+  const folderName = "LINE_JSON";
+  const folders = DriveApp.getFoldersByName(folderName);
+  let folder;
+  if (folders.hasNext()) {
+    folder = folders.next();
+  } else {
+    folder = DriveApp.createFolder(folderName);
+  }
+  
+  const fileName = `VECTOR_${filePrefix}_${Date.now()}.json`;
+  const jsonString = JSON.stringify(payloadData);
+  const blob = Utilities.newBlob(jsonString, 'application/json', fileName);
+  const file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  
+  return {
+    fileId: file.getId(),
+    url: `https://drive.google.com/file/d/${file.getId()}/view?usp=sharing`
+  };
+}
+
+function loadVectorFromDriveCell(cellValue) {
+  if (!cellValue) return null;
+  if (Array.isArray(cellValue)) return cellValue;
+  if (typeof cellValue === 'string' && cellValue.startsWith('[')) {
+    try { return JSON.parse(cellValue); } catch(e) {}
+  }
+  
+  const match = String(cellValue).match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || String(cellValue).match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (match && match[1]) {
+    try {
+      const file = DriveApp.getFileById(match[1]);
+      const content = file.getBlob().getDataAsString();
+      const parsed = JSON.parse(content);
+      return Array.isArray(parsed) ? parsed : (parsed.embedding || null);
+    } catch (e) {
+      Logger.log('[loadVectorFromDriveCell Error]: ' + e.message);
+    }
+  }
+  return null;
+}
+
+function cosineSimilarity(vecA, vecB) {
+  if (!Array.isArray(vecA) || !Array.isArray(vecB) || vecA.length !== vecB.length) return 0;
+  let dotProduct = 0.0, normA = 0.0, normB = 0.0;
+  for (let i = 0; i < vecA.length; i++) {
+    dotProduct += vecA[i] * vecB[i];
+    normA += vecA[i] * vecA[i];
+    normB += vecB[i] * vecB[i];
+  }
+  if (normA === 0 || normB === 0) return 0;
+  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
+function buildQAEmbeddings() {
+  buildQAEmbeddingsSheet();
+}
+
+function buildQAEmbeddingsSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sourceSheet = ss.getSheetByName("LINE對話") || ss.getSheetByName("工作表1");
+  if (!sourceSheet) {
+    const sheets = ss.getSheets();
+    for (let s of sheets) {
+      const name = s.getName().trim();
+      if (name.includes("LINE") || name.includes("對話")) {
+        sourceSheet = s;
+        break;
+      }
+    }
+  }
+  if (!sourceSheet) sourceSheet = ss.getActiveSheet();
+  
+  let qaSheet = ss.getSheetByName('QA知識庫') || ss.insertSheet('QA知識庫');
+  
+  const existingMap = new Map();
+  const qaLastRow = qaSheet.getLastRow();
+  if (qaLastRow > 1) {
+    const oldData = qaSheet.getRange(2, 1, qaLastRow - 1, 15).getValues();
+    for (let i = 0; i < oldData.length; i++) {
+      const importance = oldData[i][1];
+      const q1 = String(oldData[i][3] || '').trim();
+      const q2 = String(oldData[i][4] || '').trim();
+      const lineAnnotation = String(oldData[i][5] || '').trim();
+      const a = String(oldData[i][6] || '').trim();
+      const url = String(oldData[i][7] || '').trim();
+      const annotation = String(oldData[i][9] || '').trim();
+      const qVec = oldData[i][10];
+      const rVec = oldData[i][11];
+      const fVec = oldData[i][12];
+      const rowCount = Number(oldData[i][13]) || 0;
+      const globalCount = Number(oldData[i][14]) || 0;
+      
+      const qCombined = `${q1} ${q2}`.trim();
+      if (qCombined || a || url) {
+        const key = `${qCombined}:::${url}`;
+        existingMap.set(key, { importance, q1, q2, lineAnnotation, standardReply: a, url, annotation, qVec, rVec, fVec, rowCount, globalCount });
+      }
+    }
+  }
+  
+  qaSheet.getRange(1, 1, 1, 15).setValues([[
+    "ID", "重要性分級 (1-5)", "訊息", "LINE Friend 訊息 1", "LINE Friend 訊息 2", 
+    "Line Friend 連結備註", "回覆", "檔案/媒體連結", "檔案/網址名稱", "連結備註", 
+    "問題 Embedding", "回覆 Embedding", "備註 Embedding", "行內使用次數", "全域使用次數"
+  ]]);
+  
+  const lastRow = sourceSheet.getLastRow();
+  const scanMaxCol = Math.max(sourceSheet.getLastColumn(), sourceSheet.getMaxColumns(), 26);
+  if (lastRow <= 1) {
+    ss.toast("未找到對話紀錄", "提示", 4);
+    return;
+  }
+  
+  const fullRange = sourceSheet.getRange(1, 1, lastRow, scanMaxCol);
+  const displayValues = fullRange.getDisplayValues();
+  const rawValues = fullRange.getValues();
+  const formulas = fullRange.getFormulas();
+  const richTexts = fullRange.getRichTextValues();
+  
+  function extractAnyContentWithUrlAndLabel(r, c) {
+    let foundUrl = '';
+    let foundLabel = '';
+    if (richTexts[r] && richTexts[r][c]) {
+      const rt = richTexts[r][c];
+      const link = rt.getLinkUrl();
+      const txt = rt.getText().trim();
+      if (link) { foundUrl = link; foundLabel = txt; }
+    }
+    const formula = String(formulas[r][c] || '').trim();
+    if (formula && !foundUrl) {
+      const urlMatch = formula.match(/https?:\/\/[^\s",\)]+/i);
+      if (urlMatch) foundUrl = urlMatch[0];
+      const labelMatch = formula.match(/,\s*"([^"]+)"\s*\)/);
+      if (labelMatch) foundLabel = labelMatch[1];
+    }
+    const disp = String(displayValues[r][c] || '').trim();
+    if (disp && !foundLabel) foundLabel = disp;
+    return { url: foundUrl, label: foundLabel };
+  }
+  
+  function isInvalidNoiseText(text) {
+    if (!text) return true;
+    const lower = text.toLowerCase();
+    if (lower === 'true' || lower === 'false' || text.startsWith('───')) return true;
+    if (text.includes('[sticker') || text.includes('貼圖') || text.includes('[病患傳送') || text.includes('[IMAGE]') || text.includes('[VIDEO]')) {
+      return true;
+    }
+    return false;
+  }
+  
+  const extractedPairs = [];
+  const seenPairs = new Set();
+  
+  for (let r = 1; r < lastRow; r++) {
+    let questionCategory = String(displayValues[r][5] || rawValues[r][5] || '').trim();
+    if (isInvalidNoiseText(questionCategory)) {
+      questionCategory = '';
+    }
+    
+    const colGData = extractAnyContentWithUrlAndLabel(r, 6);
+    let q2Url = colGData.url;
+    let q2Label = colGData.label;
+    
+    for (let c = 6; c < scanMaxCol; c++) {
+      let reply = "";
+      if (c === 6) {
+        reply = displayValues[r][c];
+      } else if (c >= 9) {
+        reply = displayValues[r][c];
+      } else {
+        continue;
+      }
+      if (isInvalidNoiseText(reply)) continue;
+      
+      let extractedUrl = '';
+      const urlMatch = String(reply).match(/https?:\/\/[^\s]+/i);
+      if (urlMatch) {
+        extractedUrl = urlMatch[0];
+        reply = String(reply).replace(extractedUrl, '').trim();
+      }
+      const pairKey = `${questionCategory}:::${q2Url}:::${extractedUrl || reply}`;
+      if (!seenPairs.has(pairKey)) {
+        seenPairs.add(pairKey);
+        extractedPairs.push({
+          questionCategory: questionCategory,
+          q2Url: q2Url,
+          q2Label: q2Label,
+          reply: reply,
+          url: extractedUrl
+        });
+      }
+    }
+  }
+  
+  if (extractedPairs.length === 0) {
+    ss.toast("未找到任何有效且乾淨的問答與連結。", "提示", 4);
+    return;
+  }
+  
+  const apiKey = getGeminiApiKey();
+  const outputRows = [];
+  let newEmbeddingsCount = 0;
+  
+  for (let i = 0; i < extractedPairs.length; i++) {
+    const item = extractedPairs[i];
+    const existingKey = `${item.questionCategory} ${item.q2Url}:::${item.url}`;
+    const existing = existingMap.get(existingKey) || existingMap.get(`${item.questionCategory}:::${item.url}`);
+    
+    let importance = existing ? existing.importance : "";
+    let q1 = existing ? existing.q1 : item.questionCategory;
+    let q2Url = existing ? existing.q2Url : item.q2Url;
+    let lineAnnotation = existing ? existing.lineAnnotation : "";
+    let savedReply = existing ? existing.standardReply : item.reply;
+    let savedUrl = existing ? existing.url : item.url;
+    let savedAnnotation = existing ? existing.annotation : "";
+    let qVectorCell = existing ? existing.qVec : "";
+    let rVectorCell = existing ? existing.rVec : "";
+    let fVectorCell = existing ? existing.fVec : "";
+    let savedRowCount = existing ? existing.rowCount : 0;
+    let savedGlobalCount = existing ? existing.globalCount : 0;
+    
+    let colEValue = q2Url;
+    if (q2Url) {
+      const driveIdMatch = q2Url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || q2Url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if (driveIdMatch && driveIdMatch[1]) {
+        try {
+          const file = DriveApp.getFileById(driveIdMatch[1]);
+          const displayName = lineAnnotation ? lineAnnotation : (file.getName() || item.q2Label || '檢視檔案');
+          colEValue = `=HYPERLINK("${q2Url}", "${displayName}")`;
+        } catch (e) {
+          colEValue = `=HYPERLINK("${q2Url}", "${lineAnnotation || item.q2Label || '檢視檔案'}")`;
+        }
+      } else {
+        const webpageName = lineAnnotation ? lineAnnotation : (item.q2Label || '開啟網頁連結');
+        colEValue = `=HYPERLINK("${q2Url}", "${webpageName}")`;
+      }
+    }
+    
+    let colIValue = savedUrl;
+    if (savedUrl) {
+      const driveIdMatch = savedUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || savedUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if (driveIdMatch && driveIdMatch[1]) {
+        try {
+          const file = DriveApp.getFileById(driveIdMatch[1]);
+          const displayName = savedAnnotation ? savedAnnotation : file.getName();
+          colIValue = `=HYPERLINK("${savedUrl}", "${displayName}")`;
+        } catch (e) {
+          colIValue = `=HYPERLINK("${savedUrl}", "${savedAnnotation || '檢視檔案'}")`;
+        }
+      } else {
+        const webpageName = savedAnnotation ? savedAnnotation : '開啟網頁連結';
+        colIValue = `=HYPERLINK("${savedUrl}", "${webpageName}")`;
+      }
+    }
+    
+    try {
+      const combinedQ = `${q1} ${q2Url}`.trim();
+      if (!qVectorCell && combinedQ) {
+        const qVec = getGeminiEmbedding(combinedQ, apiKey);
+        if (qVec && Array.isArray(qVec)) {
+          const fileObj = saveVectorToJsonDrive(`QA_${i+1}_Q`, { type: 'question', text: combinedQ, embedding: qVec });
+          qVectorCell = `=HYPERLINK("${fileObj.url}", "檢視問題問題向量JSON")`;
+          newEmbeddingsCount++;
+        }
+        Utilities.sleep(100);
+      }
+      if (!rVectorCell && savedReply && !savedReply.startsWith('http')) {
+        const rVec = getGeminiEmbedding(savedReply, apiKey);
+        if (rVec && Array.isArray(rVec)) {
+          const fileObj = saveVectorToJsonDrive(`QA_${i+1}_R`, { type: 'reply', text: savedReply, embedding: rVec });
+          rVectorCell = `=HYPERLINK("${fileObj.url}", "檢視回覆向量JSON")`;
+          newEmbeddingsCount++;
+        }
+        Utilities.sleep(100);
+      }
+      if (savedAnnotation && !fVectorCell) {
+        const fVec = getGeminiEmbedding(savedAnnotation, apiKey);
+        if (fVec && Array.isArray(fVec)) {
+          const fileObj = saveVectorToJsonDrive(`QA_${i+1}_A`, { type: 'annotation', text: savedAnnotation, embedding: fVec });
+          fVectorCell = `=HYPERLINK("${fileObj.url}", "檢視備註向量JSON")`;
+          newEmbeddingsCount++;
+        }
+        Utilities.sleep(100);
+      }
+    } catch (err) {}
+    
+    outputRows.push([
+      `QA-${i + 1}`,
+      importance,
+      "",
+      q1,
+      colEValue,
+      lineAnnotation,
+      savedReply,
+      savedUrl,
+      colIValue,
+      savedAnnotation,
+      qVectorCell,
+      rVectorCell,
+      fVectorCell,
+      savedRowCount,
+      savedGlobalCount
+    ]);
+  }
+  
+  const currentQARows = qaSheet.getLastRow();
+  if (currentQARows > 1) {
+    qaSheet.getRange(2, 1, currentQARows - 1, 15).clearContent();
+    qaSheet.getRange(2, 1, currentQARows - 1, 15).clearFormat();
+  }
+  
+  qaSheet.getRange(2, 1, outputRows.length, 15).setValues(outputRows);
+  SpreadsheetApp.flush();
+  ss.toast(`成功更新 ${outputRows.length} 筆問答（本次新生成 ${newEmbeddingsCount} 筆向量 JSON 檔）！`, '完成', 5);
+}
+
+function findBestReplyForMessage(userMessage, threshold = 0.25) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const qaSheet = ss.getSheetByName('QA知識庫');
+  if (!qaSheet) return null;
+
+  const qaData = qaSheet.getRange(2, 1, qaSheet.getLastRow() - 1, 15).getValues();
+  if (qaData.length === 0) return null;
+
+  const apiKey = getGeminiApiKey();
+  const userVec = getGeminiEmbedding(userMessage, apiKey);
+  if (!userVec) return null;
+
+  let bestReply = null;
+  let bestScore = 0.0;
+
+  for (let i = 0; i < qaData.length; i++) {
+    const reply = String(qaData[i][6] || '').trim();
+    const replyVecCell = qaData[i][11];
+    const replyVec = loadVectorFromDriveCell(replyVecCell);
+
+    if (reply && replyVec) {
+      const sim = cosineSimilarity(userVec, replyVec);
+      if (sim > bestScore && sim >= threshold) {
+        bestScore = sim;
+        bestReply = {
+          reply: reply,
+          score: sim,
+          rowIdx: i + 2
+        };
+      }
+    }
+  }
+
+  return bestReply;
+}

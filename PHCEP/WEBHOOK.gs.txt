@@ -1,0 +1,309 @@
+/**
+ * ============================================================================
+ * Production Webhook & Clinical Message Flow - Webhook Module
+ * File: Webhook.gs
+ * ============================================================================
+ */
+
+function doGet(e) {
+  return ContentService.createTextOutput("LINE Webhook Server is running successfully.");
+}
+
+function getLineAccessToken() {
+  const scriptProps = PropertiesService.getScriptProperties();
+  const token = scriptProps.getProperty('LINE_CHANNEL_ACCESS_TOKEN') || 
+                scriptProps.getProperty('CHANNEL_ACCESS_TOKEN');
+  if (!token || !token.trim()) {
+    throw new Error('未在指令碼屬性中設定 CHANNEL_ACCESS_TOKEN 或 LINE_CHANNEL_ACCESS_TOKEN！');
+  }
+  return token.trim();
+}
+
+function getLineUserName(userId, channelAccessToken) {
+  if (!userId || !channelAccessToken) return '';
+  try {
+    const url = 'https://api.line.me/v2/bot/profile/' + encodeURIComponent(userId);
+    const response = UrlFetchApp.fetch(url, {
+      method: 'get',
+      headers: { 'Authorization': 'Bearer ' + channelAccessToken },
+      muteHttpExceptions: true
+    });
+    if (response.getResponseCode() === 200) {
+      const data = JSON.parse(response.getContentText());
+      return data.displayName || '';
+    }
+  } catch (err) {
+    console.error('Failed to get user name:', err);
+  }
+  return '';
+}
+
+function pushMultipleMessagesToLineUser(userId, rawContent) {
+  const channelAccessToken = getLineAccessToken();
+  const cleanUserId = String(userId).trim();
+  if (!cleanUserId) throw new Error('User ID 為空值！');
+  const segments = String(rawContent).split(/\r?\n/).map(s => s.trim()).filter(s => s.length > 0);
+  if (segments.length === 0) throw new Error('發送內容為空！');
+  const url = 'https://api.line.me/v2/bot/message/push';
+  
+  for (let segment of segments) {
+    const messages = buildOutboundLineMessages(segment);
+    const payload = { to: cleanUserId, messages: messages };
+    
+    const response = UrlFetchApp.fetch(url, {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { 'Authorization': 'Bearer ' + channelAccessToken },
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    });
+    
+    const code = response.getResponseCode();
+    const body = response.getContentText();
+    if (code !== 200) {
+      throw new Error(`LINE API 錯誤 [${code}]: ${body}`);
+    }
+    Utilities.sleep(200);
+  }
+}
+
+function buildOutboundLineMessages(rawText) {
+  const driveIdMatch = rawText.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) ||
+                       rawText.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  if (driveIdMatch && driveIdMatch[1]) {
+    try {
+      const fileId = driveIdMatch[1];
+      const file = DriveApp.getFileById(fileId);
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      const fileName = file.getName();
+      const mimeType = file.getMimeType();
+      const webViewLink = `https://drive.google.com/file/d/${fileId}/view?usp=sharing`;
+      const accompanyingText = rawText.replace(/(?:參考連結：)?https?:\/\/[^\s]+/g, '').trim();
+      const messages = [];
+      if (accompanyingText) {
+        messages.push({ type: 'text', text: accompanyingText });
+      }
+      const fileSizeKb = Math.round(file.getSize() / 1024);
+      const sizeText = fileSizeKb > 1024 ? `${(fileSizeKb / 1024).toFixed(1)} MB` : `${fileSizeKb} KB`;
+      messages.push(buildDocumentFlexCard(fileName, sizeText, webViewLink, mimeType));
+      return messages;
+    } catch (e) {
+      Logger.log('[buildOutboundLineMessages] Drive lookup error: ' + e.message);
+    }
+  }
+  
+  const pubUrlMatch = rawText.match(/https?:\/\/docs\.google\.com\/document\/d\/e\/[^\s]+/i);
+  if (pubUrlMatch) {
+    const targetUrl = pubUrlMatch[0];
+    const accompanyingText = rawText.replace(targetUrl, '').replace(/參考連結：/g, '').trim();
+    const messages = [];
+    if (accompanyingText) {
+      messages.push({ type: 'text', text: accompanyingText });
+    }
+    messages.push(buildDocumentFlexCard('📄 雲端發布文件 / 臨床公佈欄', '點擊線上閱覽', targetUrl, 'application/vnd.google-apps.document'));
+    return messages;
+  }
+  
+  const genericUrlMatch = rawText.match(/https?:\/\/[^\s]+/i);
+  if (genericUrlMatch) {
+    const targetUrl = genericUrlMatch[0];
+    const accompanyingText = rawText.replace(targetUrl, '').replace(/參考連結：/g, '').trim();
+    const messages = [];
+    if (accompanyingText) {
+      messages.push({ type: 'text', text: accompanyingText });
+    }
+    messages.push(buildDocumentFlexCard('相關衛教 / 參考資源', '點擊開啟', targetUrl, 'image/'));
+    return messages;
+  }
+  return [{ type: 'text', text: rawText }];
+}
+
+function buildDocumentFlexCard(fileName, sizeText, targetUrl, mimeType = '') {
+  let categoryLabel = '📄 臨床指引 / 衛教文件';
+  let buttonLabel = '開啟連結';
+  if (mimeType.startsWith('image/')) {
+    categoryLabel = '🖼 臨床衛教圖片';
+    buttonLabel = '點擊檢視圖片';
+  } else if (mimeType.startsWith('video/')) {
+    categoryLabel = '🎥 臨床衛教影片';
+    buttonLabel = '點擊觀看影片';
+  } else if (mimeType === 'application/vnd.google-apps.document' || targetUrl.includes('/pub')) {
+    categoryLabel = '📄 雲端發布文件';
+    buttonLabel = '線上檢視文件';
+  }
+  return {
+    type: 'flex',
+    altText: `${categoryLabel}：${fileName}`,
+    contents: {
+      type: 'bubble',
+      size: 'kilo',
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'sm',
+        contents: [
+          { type: 'text', text: categoryLabel, weight: 'bold', size: 'xs', color: '#1DB446' },
+          { type: 'text', text: fileName, weight: 'bold', size: 'md', wrap: true, color: '#111111' },
+          { type: 'text', text: sizeText, size: 'xs', color: '#888888' }
+        ]
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'sm',
+        contents: [
+          {
+            type: 'button',
+            style: 'primary',
+            color: '#06C755',
+            height: 'sm',
+            action: { type: 'uri', label: buttonLabel, uri: targetUrl }
+          }
+        ]
+      }
+    }
+  };
+}
+
+function saveLineMediaToDrive(messageId, originalFileName, messageType, channelAccessToken, folderId) {
+  if (!folderId) return '[未設定雲端資料夾 ID]';
+  try {
+    const url = `https://api-data.line.me/v2/bot/message/${messageId}/content`;
+    const response = UrlFetchApp.fetch(url, {
+      method: 'get',
+      headers: { 'Authorization': 'Bearer ' + channelAccessToken },
+      muteHttpExceptions: true
+    });
+    if (response.getResponseCode() !== 200) return '[媒體下載失敗或過期]';
+    const blob = response.getBlob();
+    if (messageType === 'file' && originalFileName) {
+      blob.setName(originalFileName);
+    } else {
+      const extMap = { image: 'jpg', video: 'mp4', audio: 'm4a' };
+      const ext = extMap[messageType] || 'dat';
+      blob.setName(`LINE_${messageType.toUpperCase()}_${messageId}_${Date.now()}.${ext}`);
+    }
+    const folder = DriveApp.getFolderById(folderId);
+    const file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    return file.getUrl();
+  } catch (err) {
+    return '[雲端儲存失敗: ' + err.message + ']';
+  }
+}
+
+function doPost(e) {
+  const lock = LockService.getScriptLock();
+  const hasLock = lock.tryLock(10000);
+  try {
+    if (!e || !e.postData || !e.postData.contents) {
+      Logger.log("[doPost Warning] Received empty event or missing postData.");
+      return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'empty payload' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    Logger.log("[doPost Payload]: " + e.postData.contents);
+    const payload = JSON.parse(e.postData.contents);
+    const events = payload.events;
+    if (!events || events.length === 0) {
+      return ContentService.createTextOutput(JSON.stringify({ status: 'success', message: 'no events' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let mainSheet = ss.getSheetByName('LINE對話');
+    if (!mainSheet) {
+      mainSheet = ss.getSheetByName('工作表1') || ss.getSheets()[0];
+      mainSheet.setName('LINE對話'); 
+    }
+    const scriptProps = PropertiesService.getScriptProperties();
+    const channelAccessToken = getLineAccessToken();
+    const folderId = scriptProps.getProperty('IMAGE_FOLDER_ID') || scriptProps.getProperty('DRIVE_FOLDER_ID');
+    const cache = CacheService.getScriptCache();
+    
+    const lastRow = mainSheet.getLastRow();
+    const existingIds = new Set();
+    if (lastRow > 1) {
+      const ids = mainSheet.getRange(2, 1, lastRow - 1, 1).getValues();
+      for (let r = 0; r < ids.length; r++) {
+        if (ids[r][0]) existingIds.add(String(ids[r][0]).trim());
+      }
+    }
+    events.forEach(event => {
+      if (event.type !== 'message') return;
+      const messageId = String(event.message.id || '').trim();
+      if (!messageId) return;
+      if (cache.get(messageId) || existingIds.has(messageId)) {
+        return;
+      }
+      cache.put(messageId, '1', 1200);
+      existingIds.add(messageId);
+      const userId = event.source?.userId || '';
+      const time = new Date(event.timestamp || Date.now());
+      const msgType = event.message.type;
+      let cleanText = '';
+      let mediaLinkFormula = '';
+      if (msgType === 'text') {
+        const rawText = (event.message.text || '').trim();
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const matches = rawText.match(urlRegex);
+        if (matches && matches.length > 0) {
+          mediaLinkFormula = `=HYPERLINK("${matches[0]}", "開啟連結")`;
+          cleanText = rawText.replace(matches[0], '').trim();
+        } else {
+          cleanText = rawText;
+        }
+      } else if (['image', 'file', 'video', 'audio'].includes(msgType)) {
+        const originalFileName = event.message.fileName || '';
+        const driveUrl = saveLineMediaToDrive(messageId, originalFileName, msgType, channelAccessToken, folderId);
+        if (driveUrl.startsWith('http')) {
+          const fileIdMatch = driveUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || driveUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+          const viewUrl = (fileIdMatch && fileIdMatch[1])
+            ? `https://drive.google.com/file/d/${fileIdMatch[1]}/view?usp=sharing`
+            : driveUrl;
+            
+          const label = msgType === 'image' ? '檢視圖片' : (originalFileName ? originalFileName : '檢視檔案');
+          mediaLinkFormula = `=HYPERLINK("${viewUrl}", "${label}")`;
+        } else {
+          mediaLinkFormula = driveUrl;
+        }
+        const typeMap = { image: '圖片', audio: '音訊', video: '影片', file: '檔案' };
+        cleanText = typeMap[msgType] || '檔案';
+      } else {
+        cleanText = '其他訊息';
+      }
+      const userName = getLineUserName(userId, channelAccessToken);
+      
+      mainSheet.insertRowAfter(1);
+      mainSheet.getRange(2, 1, 1, 10).setValues([[
+        messageId,
+        false, 
+        userId,
+        time,
+        userName,
+        cleanText,
+        mediaLinkFormula,
+        "",
+        "",
+        ""
+      ]]);
+      
+      mainSheet.getRange(2, 2).setDataValidation(SpreadsheetApp.newDataValidation().requireCheckbox().build());
+      
+      if (cleanText && !['圖片', '音訊', '影片', '檔案'].includes(cleanText)) {
+        try {
+          suggestRepliesForUserMessage(cleanText, 2, 0.25);
+        } catch (e) {
+          Logger.log(`[doPost] Dropdown error: ${e.message}`);
+        }
+      }
+    });
+    return ContentService.createTextOutput(JSON.stringify({ status: 'success' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    Logger.log('[doPost Fatal Error] ' + error.stack);
+    return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: error.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    if (hasLock) lock.releaseLock();
+  }
+}

@@ -1,0 +1,404 @@
+/**
+ * ============================================================================
+ * Production Webhook & Clinical Message Flow - Form Manager Module
+ * File: FormManager.gs
+ * ============================================================================
+ */
+
+function sendDementiaScreeningFlexMessage(userId, routeType = 'Central') {
+  const cleanUserId = String(userId || '').trim();
+  const scriptProps = PropertiesService.getScriptProperties();
+  const channelAccessToken = getLineAccessToken(); // Relies on Webhook.gs
+  
+  let baseUrl = scriptProps.getProperty('GOOGLE_FORM_BASE_URL') || scriptProps.getProperty('GOOGLE_FORM_URL');
+  if (!baseUrl || !baseUrl.startsWith('http')) {
+    baseUrl = 'https://docs.google.com/forms/d/e/1FAIpQLScsPwKUHzWEOwCZ65nlyMD5UBgFZWZ9BXNj6uM3vIM2FHI0Cw/viewform';
+  }
+  baseUrl = baseUrl.split('?')[0];
+
+  // Dynamically appends the LINE ID from Column C into the form's LINE ID entry field
+  // NOTE: Replace 172749060 with your verified form entry ID if necessary
+  const googleFormUrl = `${baseUrl}?usp=pp_url&entry.1626829425=${encodeURIComponent(cleanUserId)}`;
+  
+  const isCentral = (routeType === 'Central');
+  const altTitle = isCentral ? '【核心循證】臨床失智評估量表 (CDR®)' : '【快速點擊】每日認知健康打卡';
+  const headerColor = isCentral ? '#06C755' : '#FF8C00';
+  const btnLabel = isCentral ? '填寫 CDR® 臨床評估表單' : '立即快速打卡';
+  
+  const payload = {
+    to: cleanUserId,
+    messages: [
+      {
+        type: 'flex',
+        altText: altTitle,
+        contents: {
+          type: 'bubble',
+          size: 'kilo',
+          body: {
+            type: 'box',
+            layout: 'vertical',
+            spacing: 'sm',
+            contents: [
+              { type: 'text', text: isCentral ? '📄 Central Route (CDR EBM)' : '⭐ Peripheral Route (Quick Check)', weight: 'bold', size: 'xs', color: headerColor },
+              { type: 'text', text: altTitle, weight: 'bold', size: 'md', wrap: true, color: '#111111' },
+              { type: 'text', text: isCentral ? '點擊下方按鈕填寫臨床失智評估量表 (CDR®)。系統已自動帶入您的識別編號。' : '輕鬆點選狀態，完成健康打卡。', size: 'xs', color: '#666666', wrap: true }
+            ]
+          },
+          footer: {
+            type: 'box',
+            layout: 'vertical',
+            spacing: 'sm',
+            contents: [
+              {
+                type: 'button',
+                style: 'primary',
+                color: headerColor,
+                height: 'sm',
+                action: { type: 'uri', label: btnLabel, uri: googleFormUrl }
+              }
+            ]
+          }
+        }
+      }
+    ]
+  };
+  
+  const response = UrlFetchApp.fetch('https://api.line.me/v2/bot/message/push', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { 'Authorization': 'Bearer ' + channelAccessToken },
+    payload: JSON.stringify(payload),
+    muteHttpExceptions: true
+  });
+  
+  return response.getResponseCode() === 200;
+}
+
+function handleCheckboxPushTrigger(e) {
+  if (!e || !e.range) return;
+  const range = e.range;
+  const sheet = range.getSheet();
+  
+  if (sheet.getName() !== 'LINE對話' && sheet.getName() !== '工作表1') return;
+  
+  const row = range.getRow();
+  const col = range.getColumn();
+  const TRIGGER_COLUMN = 2; // Column B
+  
+  if (row > 1 && col === TRIGGER_COLUMN) {
+    const cellValue = range.getValue();
+    if (cellValue === true || cellValue === 'TRUE') {
+      const ss = sheet.getParent();
+      const userId = String(sheet.getRange(row, 3).getValue()).trim(); // Column C
+      
+      if (!userId) {
+        ss.toast('⚠ 此列找不到 User ID，無法發送！', '發送失敗', 4);
+        range.setValue(false);
+        return;
+      }
+      
+      try {
+        const success = sendDementiaScreeningFlexMessage(userId, 'Central');
+        if (success) {
+          ss.toast(`✅ 已成功發送 CDR® 臨床評估表單給使用者 (${userId})！`, '發送成功', 4);
+          sheet.getRange(row, 10).setValue('已發送問卷: ' + new Date().toLocaleTimeString());
+        } else {
+          ss.toast('❌ 發送失敗，請檢查 LINE API Token 或網址設定。', '錯誤', 5);
+        }
+      } catch (err) {
+        ss.toast('❌ 執行錯誤: ' + err.message, '錯誤', 5);
+      } finally {
+        range.setValue(false); 
+      }
+    }
+  }
+}
+
+function createDementiaScreeningForm() {
+  return createFullCDRFormTraditionalChinese();
+}
+
+function createFullCDRFormTraditionalChinese() {
+  var form = FormApp.create('臨床失智評估量表 (CDR®) 評估工作表');
+  form.setDescription('臨床失智評估量表 (Clinical Dementia Rating, CDR) 半結構化訪談與施測工作表');
+  form.setIsQuiz(false);
+  
+  // ==========================================
+  // 基本資料
+  // ==========================================
+  form.addSectionHeaderItem()
+    .setTitle('被評估者與觀察者基本資料')
+    .setHelpText('請填寫被評估者與主要照顧者/觀察者的基本資訊');
+  
+  form.addTextItem().setTitle('受試者姓名 / 編號').setRequired(true);
+  form.addTextItem().setTitle('受試者代號 / 簡稱');
+  
+  var lineIdItem = form.addTextItem();
+  lineIdItem.setTitle('LINE ID 編號')
+            .setHelpText('系統自動帶入之唯一識別碼，請勿修改。')
+            .setRequired(true);
+
+  form.addTextItem().setTitle('觀察者姓名及與被評估者之關係（如配偶、子女）').setRequired(true);
+  form.addDateItem().setTitle('評估日期').setRequired(true);
+
+  // ==========================================
+  // 第一部分：觀察者訪談問題
+  // ==========================================
+  form.addPageBreakItem().setTitle('觀察者訪談：記憶力 (Memory)');
+  form.addMultipleChoiceItem()
+    .setTitle('1. 他/她是否有記憶力或思考方面的問題？')
+    .setChoiceValues(['是', '否'])
+    .setRequired(true);
+  form.addMultipleChoiceItem()
+    .setTitle('1a. 若「是」，這是持續發生的問題（非偶爾或斷斷續續）嗎？')
+    .setChoiceValues(['是', '否', '不適用']);
+  form.addMultipleChoiceItem()
+    .setTitle('2. 他/她能記得最近發生的事情嗎？')
+    .setChoiceValues(['經常可以', '有時候', '很少/幾乎不能']);
+  form.addMultipleChoiceItem()
+    .setTitle('3. 他/她能記住簡短的清單（例如買菜清單）嗎？')
+    .setChoiceValues(['經常可以', '有時候', '很少/幾乎不能']);
+  form.addMultipleChoiceItem()
+    .setTitle('4. 過去一年中，其記憶力是否有減退現象？')
+    .setChoiceValues(['是', '否']);
+  form.addMultipleChoiceItem()
+    .setTitle('5. 記憶減退是否已達到會干擾幾年前日常生活的程度（或影響退休前的活動）？')
+    .setChoiceValues(['是', '否']);
+  form.addMultipleChoiceItem()
+    .setTitle('6. 他/她是否會在數週內完全忘記一件重大事件（例如旅行、喜宴、家庭聚會）？')
+    .setChoiceValues(['經常如此', '有時候', '很少/幾乎不會']);
+  form.addMultipleChoiceItem()
+    .setTitle('7. 他/她是否會遺忘該重大事件的重要相關細節？')
+    .setChoiceValues(['經常如此', '有時候', '很少/幾乎不會']);
+  form.addMultipleChoiceItem()
+    .setTitle('8. 他/她是否會完全忘記過去的重要資訊（如生日、結婚紀念日、工作地點）？')
+    .setChoiceValues(['經常如此', '有時候', '很少/幾乎不會']);
+  form.addParagraphTextItem()
+    .setTitle('9. 請描述他/她生活中的近事（作為後續核對被評估者回答的基準）：')
+    .setHelpText('請記錄：一週內事件（地點、時間、參與者、經過）以及一個月內事件。');
+  form.addParagraphTextItem()
+    .setTitle('10-15. 觀察者所知之被評估者個人歷史（出生年月日/地點、最高學歷、主要職業、退休時間與原因）');
+
+  // --- 2. 定向力 ---
+  form.addPageBreakItem().setTitle('觀察者訪談：定向力 (Orientation)');
+  var orientGrid = form.addGridItem();
+  orientGrid.setTitle('他/她有多常能準確知道：')
+    .setRows([
+      '1. 今天幾號（日期）',
+      '2. 目前月份',
+      '3. 目前年份',
+      '4. 星期幾',
+      '5. 事件發生的先後時間順序關係',
+      '6. 在熟悉的街道辨認方向/認路',
+      '7. 在住家社區以外的地方往返兩地',
+      '8. 在室內（如家中）認路及辨認方向'
+    ])
+    .setColumns(['經常可以', '有時候', '很少/幾乎不能', '不知道']);
+
+  // --- 3. 判斷與解決問題能力 ---
+  form.addPageBreakItem().setTitle('觀察者訪談：判斷與解決問題能力 (Judgment & Problem Solving)');
+  form.addMultipleChoiceItem()
+    .setTitle('1. 整體而言，評估他/她目前解決問題的能力：')
+    .setChoiceValues([
+      '跟以前一樣好',
+      '還不錯，但不如以往',
+      '普通 / 尚可',
+      '不佳 / 差',
+      '完全喪失能力'
+    ]);
+  form.addMultipleChoiceItem()
+    .setTitle('2. 處理小額金錢的能力（例如找零、計算秤重雜貨的費用）：')
+    .setChoiceValues(['無減退', '輕微減退', '嚴重減退']);
+  form.addMultipleChoiceItem()
+    .setTitle('3. 處理複雜財務或商業往來的能力（例如結算支票簿、繳納各項帳單）：')
+    .setChoiceValues(['無減退', '輕微減退', '嚴重減退']);
+  form.addMultipleChoiceItem()
+    .setTitle('4. 能否應對家庭緊急狀況（例如水管漏水、小火災）？')
+    .setChoiceValues([
+      '與以前一樣好',
+      '比以前差（因為思考/認知困難）',
+      '比以前差（其他原因）',
+      '未曾遇過緊急狀況'
+    ]);
+  form.addMultipleChoiceItem()
+    .setTitle('5. 他/她能否理解情況或他人的解釋說明？')
+    .setChoiceValues(['經常可以', '有時候', '很少/幾乎不能', '不知道']);
+  form.addMultipleChoiceItem()
+    .setTitle('6. 在社交場合與人際互動中，表現是否得體（符合其平時常態）？')
+    .setChoiceValues(['經常得體', '有時候', '很少/幾乎不得體', '不知道']);
+
+  // --- 4. 社區事務 ---
+  form.addPageBreakItem().setTitle('觀察者訪談：社區事務與參與 (Community Participation)');
+  form.addMultipleChoiceItem()
+    .setTitle('1. 被評估者目前是否仍在工作？')
+    .setChoiceValues(['是', '否', '不適用']);
+  form.addMultipleChoiceItem()
+    .setTitle('2. 記憶或思考問題是否促成退休的決定？')
+    .setChoiceValues(['是', '否', '不知道', '不適用']);
+  form.addMultipleChoiceItem()
+    .setTitle('3. 在工作上是否因為記憶或思考問題而面臨顯著困難？')
+    .setChoiceValues(['很少或從未', '有時候', '經常如此', '不知道', '不適用']);
+  form.addMultipleChoiceItem()
+    .setTitle('4. 駕駛/開車狀況：')
+    .setChoiceValues([
+      '目前仍可安全駕駛，無明顯問題',
+      '目前仍開車，但已出現風險或困難',
+      '因記憶/思考問題而已停止開車',
+      '因其他身體原因停止開車',
+      '從不開車'
+    ]);
+  form.addMultipleChoiceItem()
+    .setTitle('6. 能否獨立購物採買日常所需？')
+    .setChoiceValues([
+      '通常可以獨立完成',
+      '有時可以（僅能買有限物品、會重複購買或漏買）',
+      '很少或無法（每次購物均需有人陪同）'
+    ]);
+  form.addMultipleChoiceItem()
+    .setTitle('7. 能否獨立進行家外的各項活動？')
+    .setChoiceValues([
+      '通常可以（能有意義地參與社區活動，如自主去投票、參加團體）',
+      '有時可以（僅限例行性活動，如去教堂、上理髮店）',
+      '很少或無法（無他人協助時通常無法進行活動）',
+      '不知道'
+    ]);
+  form.addMultipleChoiceItem()
+    .setTitle('8. 他/她是否會被帶去參加家庭以外的社交活動？')
+    .setChoiceValues(['是', '否']);
+  form.addMultipleChoiceItem()
+    .setTitle('9. 一般旁人觀察其行為，是否會察覺其生病/不對勁？')
+    .setChoiceValues(['是（看得出來）', '否（看不出來）']);
+
+  // --- 5. 家事與嗜好 ---
+  form.addPageBreakItem().setTitle('觀察者訪談：家事與嗜好 (Housework and Hobbies)');
+  form.addParagraphTextItem().setTitle('處理家務能力的改變情況（目前仍能做好的家務為何）：');
+  form.addParagraphTextItem().setTitle('進行休閒嗜好能力的改變情況（目前仍能維持的嗜好為何）：');
+  form.addMultipleChoiceItem()
+    .setTitle('日常家務執行能力等級（評估者擇一評定）：')
+    .setChoiceValues([
+      '常態功能：各項日常家事功能正常維持',
+      '稍減退：仍能參與以往活動，但未達以往水準',
+      '部分獨立：僅能在部分項目獨立操作（如吸塵、準備簡單餐點）',
+      '功能受限：僅能在極少數項目維持（如在督導下洗碗、擺餐具）',
+      '無實質功能：無實質家務功能（僅能在大量監督下做簡單動作）'
+    ]);
+
+  // --- 6. 個人照料 ---
+  form.addPageBreakItem().setTitle('觀察者訪談：個人照料 (Personal Care - Blessed Scale)');
+  form.addMultipleChoiceItem()
+    .setTitle('A. 穿衣 (Dressing)')
+    .setChoiceValues([
+      '0 - 完全自理',
+      '1 - 偶爾扣錯鈕扣或順序微瑕',
+      '2 - 順序經常錯誤、常漏穿衣物',
+      '3 - 完全無法自行穿衣'
+    ]);
+  form.addMultipleChoiceItem()
+    .setTitle('B. 梳洗、個人衛生 (Washing, grooming)')
+    .setChoiceValues([
+      '0 - 完全自理',
+      '1 - 需要口頭提醒督促',
+      '2 - 有時需要人身協助',
+      '3 - 總是或幾乎總是需要他人協助'
+    ]);
+  form.addMultipleChoiceItem()
+    .setTitle('C. 進食習慣 (Eating habits)')
+    .setChoiceValues([
+      '0 - 自行乾淨進食，能正確使用餐具',
+      '1 - 動作凌亂；僅能使用湯匙',
+      '2 - 僅能吃簡單固體食物',
+      '3 - 完全需由他人餵食'
+    ]);
+  form.addMultipleChoiceItem()
+    .setTitle('D. 大小便控制 (Sphincter control)')
+    .setChoiceValues([
+      '0 - 完全控制正常',
+      '1 - 偶爾尿床/失禁',
+      '2 - 經常尿床/失禁',
+      '3 - 大小便完全失禁'
+    ]);
+
+  // ==========================================
+  // 第二部分：被評估者直接評估問題
+  // ==========================================
+  form.addPageBreakItem().setTitle('被評估者直接施測：記憶與定向');
+  form.addMultipleChoiceItem()
+    .setTitle('被評估者自述：你覺得自己的記憶或思考有困難嗎？')
+    .setChoiceValues(['是', '否']);
+  form.addMultipleChoiceItem()
+    .setTitle('請受試者回答近期生活事件（一週內）：')
+    .setChoiceValues(['1.0 - 大致正確', '0.5 - 部分正確', '0.0 - 大致錯誤 / 無法回答']);
+  form.addMultipleChoiceItem()
+    .setTitle('請受試者回答近期生活事件（一個月內）：')
+    .setChoiceValues(['1.0 - 大致正確', '0.5 - 部分正確', '0.0 - 大致錯誤 / 無法回答']);
+  form.addParagraphTextItem()
+    .setTitle('姓名與地址登錄記憶（施測詞：陳大華、台北市、中正區、中山路、100號）')
+    .setHelpText('記錄三次嘗試中，被評估者正確複誦之元素數量（滿分 5 分）');
+  var subjOrient = form.addGridItem();
+  subjOrient.setTitle('被評估者定向力回答（評分）：')
+    .setRows([
+      '1. 今天的日期（幾號）',
+      '2. 今天星期幾',
+      '3. 現在是幾月份',
+      '4. 今年是哪一年',
+      '5. 這裡是什麼地方（場所名稱）',
+      '6. 我們現在在什麼縣市/城鎮',
+      '7. 現在大約幾點（時間）',
+      '8. 能否正確認出陪同的親友身分'
+    ])
+    .setColumns(['正確', '錯誤']);
+
+  form.addPageBreakItem().setTitle('被評估者直接施測：判斷、類比與計算');
+  var subjCalc = form.addGridItem();
+  subjCalc.setTitle('相似處、差異處與計算評分：')
+    .setRows([
+      '相似處：紅蘿蔔／花椰菜 (0:蔬菜, 1:可食/植物, 2:不相關)',
+      '相似處：書桌／書櫃 (0:家具, 1:木製/有腳, 2:不相關)',
+      '差異處：謊言／錯誤 (0:故意與無心, 1:一好一壞, 2:其他)',
+      '差異處：河流／運河 (0:天然與人造, 2:其他)',
+      '計算：一塊錢裡面有幾個一角？（或100元有幾個10元）',
+      '計算：54元裡面有幾個2元？',
+      '計算：從20連續減3（連續減算）'
+    ])
+    .setColumns(['正確 (0分)', '部分正確 (1分)', '錯誤 (2分)']);
+  form.addTextItem().setTitle('延遲記憶測驗：請被評估者再次說出剛才記住的姓名與地址（正確元素數量 0-5）');
+  form.addMultipleChoiceItem()
+    .setTitle('被評估者病識感（對自身能力減退及為何受檢的理解）：')
+    .setChoiceValues(['良好病識感 (Good Insight)', '部分病識感 (Partial Insight)', '幾乎無病識感 (Little Insight)']);
+
+  // ==========================================
+  // 第三部分：CDR 核心範疇計分與整體評級 (醫療專業端專用，配置於試算表 BO-BU 欄位供醫師編輯)
+  // ==========================================
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  form.setDestination(FormApp.DestinationType.SPREADSHEET, ss.getId());
+
+  const formUrl = form.getPublishedUrl();
+  PropertiesService.getScriptProperties().setProperty('GOOGLE_FORM_URL', formUrl);
+  PropertiesService.getScriptProperties().setProperty('GOOGLE_FORM_BASE_URL', formUrl);
+
+  SpreadsheetApp.flush();
+  Utilities.sleep(1000);
+  
+  const sheets = ss.getSheets();
+  for (let s of sheets) {
+    if (s.getName().includes('表單回應') || s.getName().includes('Form Responses')) {
+      const clinicianHeaders = [
+        '專業評估: 記憶力 (Memory)',             // Col BO (67)
+        '專業評估: 定向力 (Orientation)',         // Col BP (68)
+        '專業評估: 判斷與解決問題 (Judgment)',    // Col BQ (69)
+        '專業評估: 社區事務 (Community)',         // Col BR (70)
+        '專業評估: 家事與嗜好 (Home & Hobbies)',  // Col BS (71)
+        '專業評估: 個人照料 (Personal Care)',     // Col BT (72)
+        '總體 CDR 級別 (Global CDR)'             // Col BU (73)
+      ];
+      s.getRange(1, 67, 1, clinicianHeaders.length).setValues([clinicianHeaders]);
+      break;
+    }
+  }
+
+  Logger.log('✅ CDR® 繁體中文完整表單建立完成（醫療專業評分欄位已配置於試算表 BO-BU）！');
+  Logger.log('發佈/填寫網址： ' + formUrl);
+  
+  ss.toast('CDR® 臨床評估表單已建立，專業評分欄位 (BO-BU) 已於試算表備妥！', '建立完成', 5);
+  return formUrl;
+}
