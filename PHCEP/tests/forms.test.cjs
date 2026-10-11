@@ -125,6 +125,7 @@ function environment(options = {}) {
     getPublishedUrl() { return `https://docs.google.com/forms/d/${this.id}/viewform`; }
     setDescription(description) { this.description = description; return this; }
     setIsQuiz(value) { this.quiz = value; return this; }
+    setAllowResponseEdits(value) { this.responseEdits = value; return this; }
     getItems() { return this.items; }
     getItemById(id) { return this.items.find(item => item.id === id) || null; }
     getDestinationId() { return this.destination || null; }
@@ -255,10 +256,11 @@ function setup(options) {
 function submission(env, type, token, responseId = 'response-1', otherAnswers = []) {
   const form = env.forms.get(env.properties.get(type + '_FORM_ID'));
   const tokenItem = form.getItemById(Number(env.properties.get(type + '_TOKEN_ITEM_ID')));
+  const timestamp = new Date();
   return {
     source: form,
     triggerUid: env.triggers.find(trigger => trigger.getTriggerSourceId() === form.id).getUniqueId(),
-    response: { getId: () => responseId, getTimestamp: () => new Date(),
+    response: { getId: () => responseId, getTimestamp: () => timestamp,
       getItemResponses: () => [tokenItem.createResponse(token), ...otherAnswers] }
   };
 }
@@ -277,6 +279,7 @@ test('fresh and repeat standalone/bound setup preserve data, grow capacity, prot
     line.appendRow(['m', false, USER]);
     const cdr = env.forms.get(env.properties.get('CDR_FORM_ID'));
     const count = cdr.items.length;
+    assert.equal(cdr.responseEdits, false);
     const responseSheets = book.getSheets().filter(sheet => sheet.formUrl);
     const raw = JSON.stringify(responseSheets.map(sheet => sheet.data));
     book.getSheetByName('PHCEP臨床評分').appendRow(['manual', 0.5, '', '', '', '', '', '人工值']);
@@ -286,6 +289,7 @@ test('fresh and repeat standalone/bound setup preserve data, grow capacity, prot
     assert.equal(line.getRange(2, 3).getValue(), USER);
     assert.equal(line.columns, 12);
     assert.equal(book.getSheetByName('QA知識庫').columns, 15);
+    assert.equal(book.getSheetByName('PHCEP寄件匣').getRange(1, 8).getValue(), 'Created At');
     assert.equal(book.getSheetByName('PHCEP臨床評分').getRange(2, 8).getValue(), '人工值');
     assert.equal(JSON.stringify(responseSheets.map(sheet => sheet.data)), raw);
     for (const sheet of book.getSheets()) {
@@ -308,9 +312,23 @@ test('every menu handler exists in canonical Apps Script including curated embed
   for (const handler of env.menuHandlers) assert.equal(typeof env.context[handler], 'function', handler);
 });
 
+test('authorized configuration validation exposes missing property names only and permits provisioning without LINE token', () => {
+  const env = environment();
+  const before = env.context.validatePHCEPConfiguration();
+  assert.deepEqual(Array.from(before.missing).sort(), ['IMAGE_FOLDER_ID', 'LINE_CHANNEL_ACCESS_TOKEN', 'SPREADSHEET_ID'].sort());
+  const result = env.context.setupPHCEP();
+  assert.deepEqual(Array.from(result.missingRuntimeProperties), ['LINE_CHANNEL_ACCESS_TOKEN']);
+  const serialized = JSON.stringify(env.context.validatePHCEPConfiguration());
+  assert.ok(!serialized.includes(env.properties.get('GATEWAY_SIGNING_SECRET')));
+  env.properties.set('GATEWAY_SIGNING_SECRET', 'short');
+  assert.ok(env.context.validatePHCEPConfiguration().missing.includes('GATEWAY_SIGNING_SECRET'));
+  assert.throws(() => env.context.setupPHCEP(), /Configure distinct/);
+});
+
 test('configured spreadsheet wins, legacy form URL is migrated and preserved', () => {
   const env = environment({ properties: { SPREADSHEET_ID: 'configured' } });
   const legacy = env.context.FormApp.create('existing form');
+  legacy.setAllowResponseEdits(true);
   legacy.addTextItem().setTitle('existing clinical question');
   env.properties.set('GOOGLE_FORM_URL', legacy.getPublishedUrl());
   env.context.setupPHCEP();
@@ -319,6 +337,7 @@ test('configured spreadsheet wins, legacy form URL is migrated and preserved', (
   assert.equal(env.properties.get('GOOGLE_FORM_URL'), legacy.getPublishedUrl());
   assert.equal(legacy.items[0].title, 'existing clinical question');
   assert.equal(legacy.items.length, 3);
+  assert.equal(legacy.responseEdits, true);
 });
 
 test('setup reuses private media folder, returns authorized URLs and initializes safe header styles', () => {
@@ -476,6 +495,40 @@ test('valid submissions persist private mapped identities and answers without de
   assert.equal(env.book().getSheets().find(sheet => sheet.formUrl).data.length, 1);
 });
 
+test('edited response quarantines once and preserves original answers and manual scores', () => {
+  const env = setup();
+  const invitation = invite(env);
+  const form = env.forms.get(env.properties.get('CDR_FORM_ID'));
+  const item = form.items.find(item => item.title === '受試者姓名 / 編號');
+  const original = submission(env, 'CDR', invitation.token, 'edited-response', [
+    item.createResponse('original private answer')
+  ]);
+  assert.equal(env.context.phcepHandleFormSubmit(original).status, 'linked');
+  const records = env.book().getSheetByName('PHCEP表單紀錄');
+  const clinician = env.book().getSheetByName('PHCEP臨床評分');
+  clinician.getRange(2, 2, 1, 7).setValues([[0.5, 1, 2, 0, 0.5, 1, 'manual assessment']]);
+  const originalRecords = JSON.stringify(records.data);
+  const originalScores = JSON.stringify(clinician.data);
+  assert.equal(env.context.phcepHandleFormSubmit(original).status, 'linked');
+  const edited = submission(env, 'CDR', invitation.token, 'edited-response', [
+    item.createResponse('changed private answer')
+  ]);
+  assert.equal(env.context.phcepHandleFormSubmit(edited).status, 'quarantined');
+  assert.equal(env.context.phcepHandleFormSubmit(edited).status, 'quarantined');
+  const quarantine = env.book().getSheetByName('PHCEP隔離');
+  assert.equal(quarantine.getLastRow(), 2);
+  assert.equal(quarantine.getRange(2, 1).getValue(), 'edited-response');
+  assert.equal(quarantine.getRange(2, 2).getValue(), form.id);
+  assert.equal(quarantine.getRange(2, 4).getValue(), 'edited-response-review-required');
+  for (const privateValue of [invitation.token, USER, 'original private answer', 'changed private answer']) {
+    assert.ok(!JSON.stringify(quarantine.data).includes(privateValue));
+  }
+  assert.equal(JSON.stringify(records.data), originalRecords);
+  assert.equal(JSON.stringify(clinician.data), originalScores);
+  assert.equal(env.context.phcepHandleFormSubmit(original).status, 'linked');
+  assert.equal(JSON.stringify(clinician.data), originalScores);
+});
+
 test('tampering, expiry, wrong form, and replay quarantine without patient data', () => {
   const env = setup();
   const invitation = invite(env);
@@ -515,7 +568,8 @@ test('operator reconciliation replays actual form response by ID after invitatio
   const token = payload + '.' + env.context.phcepInvitationSignature_(payload);
   env.book().getSheetByName('PHCEP邀請').appendRow([payload.split('.')[0], USER, 'CDR', form.id, Number(payload.split('.')[1]), '']);
   const event = submission(env, 'CDR', token, 'recoverable');
-  event.response.getTimestamp = () => new Date(Date.now() - 2000);
+  const actualSubmissionTime = new Date(Date.now() - 2000);
+  event.response.getTimestamp = () => actualSubmissionTime;
   form.getResponses = () => [event.response];
   assert.equal(env.context.reconcilePHCEPFormResponse('CDR', 'recoverable').status, 'linked');
   assert.equal(env.context.reconcilePHCEPFormResponse('CDR', 'recoverable').status, 'linked');

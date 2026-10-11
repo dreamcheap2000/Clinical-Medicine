@@ -12,6 +12,7 @@ function phcepEnsureForm_(ss, type) {
     // Persist immediately so a failed setup reuses the same form.
     props.setProperty(type + '_FORM_ID', form.getId());
     props.setProperty(type + '_PROVISION_STAGE', 'BUILDING');
+    form.setAllowResponseEdits(false);
   }
   if (props.getProperty(type + '_PROVISION_STAGE') === 'BUILDING') {
     const resumable = phcepResumableBuilder_(form, type);
@@ -199,17 +200,30 @@ function phcepHandleFormSubmit(e) {
     invitation.sheet.getRange(invitation.row, 6).setValue(phcepLiteral_(responseId));
     SpreadsheetApp.flush();
     const records = ss.getSheetByName('PHCEP表單紀錄');
-    const ids = records.getLastRow() > 1 ? records.getRange(2, 1, records.getLastRow() - 1, 1).getValues() : [];
-    if (!ids.some(function(row) { return String(row[0]) === responseId; })) {
-      const tokenId = props.getProperty(type + '_TOKEN_ITEM_ID');
-      const lineId = props.getProperty(type + '_LINE_ITEM_ID');
-      const answers = itemResponses.filter(function(answer) {
-        return [tokenId, lineId].indexOf(String(answer.getItem().getId())) === -1;
-      }).map(function(answer) {
-        return { itemId: String(answer.getItem().getId()), title: answer.getItem().getTitle(), answer: answer.getResponse() };
-      });
+    const tokenId = props.getProperty(type + '_TOKEN_ITEM_ID');
+    const lineId = props.getProperty(type + '_LINE_ITEM_ID');
+    const answers = itemResponses.filter(function(answer) {
+      return [tokenId, lineId].indexOf(String(answer.getItem().getId())) === -1;
+    }).map(function(answer) {
+      return { itemId: String(answer.getItem().getId()), title: answer.getItem().getTitle(), answer: answer.getResponse() };
+    });
+    const answersJson = phcepLiteral_(JSON.stringify(answers));
+    const rows = records.getLastRow() > 1 ? records.getRange(2, 1, records.getLastRow() - 1, 6).getValues() : [];
+    const existing = rows.find(function(row) { return String(row[0]) === responseId; });
+    if (existing && (String(existing[5]) !== answersJson ||
+        new Date(existing[3]).getTime() !== new Date(e.response.getTimestamp()).getTime())) {
+      const reason = 'edited-response-review-required';
+      const quarantine = ss.getSheetByName('PHCEP隔離');
+      const quarantined = quarantine.getLastRow() > 1 ? quarantine.getRange(2, 1, quarantine.getLastRow() - 1, 4).getValues() : [];
+      if (!quarantined.some(function(row) { return String(row[0]) === responseId && row[3] === reason; })) {
+        quarantine.appendRow([phcepLiteral_(responseId), phcepLiteral_(formId), new Date(), reason]);
+      }
+      ss.toast('表單回應曾修改：請醫師檢查 PHCEP隔離；原紀錄與人工評分未變更。', '需要人工審查', 8);
+      return { status: 'quarantined' };
+    }
+    if (!existing) {
       records.appendRow([phcepLiteral_(responseId), invitation.nonce, invitation.type, e.response.getTimestamp(),
-        phcepLiteral_(invitation.userId), phcepLiteral_(JSON.stringify(answers))]);
+        phcepLiteral_(invitation.userId), answersJson]);
     }
     if (type === 'CDR') {
       const clinician = ss.getSheetByName('PHCEP臨床評分');

@@ -11,6 +11,32 @@ const PHCEP_SCHEMAS_ = {
   'PHCEP臨床評分': ['Response ID', '記憶力', '定向感', '判斷與解決問題', '社區事務', '家庭與嗜好', '個人照料', 'CDR（人工）']
 };
 
+function phcepConfigurationNames_() {
+  const missing = [];
+  if (!phcepProperty_('SPREADSHEET_ID')) missing.push('SPREADSHEET_ID');
+  if (!phcepProperty_('LINE_CHANNEL_ACCESS_TOKEN', ['CHANNEL_ACCESS_TOKEN'])) missing.push('LINE_CHANNEL_ACCESS_TOKEN');
+  if (!phcepProperty_('LINE_CHANNEL_SECRET', ['CHANNEL_SECRET'])) missing.push('LINE_CHANNEL_SECRET');
+  const secret = phcepProperty_('GATEWAY_SIGNING_SECRET');
+  if (!secret || secret.length < 32 || secret === phcepProperty_('LINE_CHANNEL_SECRET', ['CHANNEL_SECRET'])) {
+    missing.push('GATEWAY_SIGNING_SECRET');
+  }
+  if (!phcepProperty_('IMAGE_FOLDER_ID', ['DRIVE_FOLDER_ID'])) missing.push('IMAGE_FOLDER_ID');
+  if (!phcepProperty_('TRUSTED_EDITOR_EMAILS')) missing.push('TRUSTED_EDITOR_EMAILS');
+  return missing;
+}
+
+function validatePHCEPConfiguration() {
+  const effective = Session.getEffectiveUser().getEmail().toLowerCase();
+  const spreadsheetId = phcepProperty_('SPREADSHEET_ID');
+  const trusted = phcepTrustedEditors_();
+  if (trusted.indexOf(effective) === -1) {
+    if (!spreadsheetId) throw new Error('Trusted clinician required.');
+    const owner = SpreadsheetApp.openById(spreadsheetId).getOwner();
+    if (!effective || !owner || owner.getEmail().toLowerCase() !== effective) throw new Error('Trusted clinician required.');
+  }
+  return { missing: phcepConfigurationNames_() };
+}
+
 function phcepEnsureSheet_(ss, name, headers) {
   const sheet = ss.getSheetByName(name) || ss.insertSheet(name);
   if (sheet.getMaxColumns() < headers.length) {
@@ -71,9 +97,8 @@ function phcepProtectSheet_(ss, sheet, trusted) {
 function setupPHCEP() {
   return phcepWithLock_(function() {
     const trusted = phcepTrustedEditors_();
-    const signingSecret = phcepProperty_('GATEWAY_SIGNING_SECRET');
-    const lineSecret = phcepProperty_('LINE_CHANNEL_SECRET', ['CHANNEL_SECRET']);
-    if (!signingSecret || signingSecret.length < 32 || !lineSecret || signingSecret === lineSecret) {
+    const missing = validatePHCEPConfiguration().missing;
+    if (missing.indexOf('GATEWAY_SIGNING_SECRET') !== -1 || missing.indexOf('LINE_CHANNEL_SECRET') !== -1) {
       throw new Error('Configure distinct LINE_CHANNEL_SECRET and GATEWAY_SIGNING_SECRET (at least 32 characters).');
     }
     const props = PropertiesService.getScriptProperties();
@@ -118,7 +143,8 @@ function setupPHCEP() {
     return { spreadsheetId: ss.getId(), spreadsheetUrl: ss.getUrl(),
       cdrFormId: cdr.getId(), cdrFormUrl: cdr.getPublishedUrl(),
       vitalsFormId: vitals.getId(), vitalsFormUrl: vitals.getPublishedUrl(),
-      mediaFolderId: folder.getId(), mediaFolderUrl: folder.getUrl() };
+      mediaFolderId: folder.getId(), mediaFolderUrl: folder.getUrl(),
+      missingRuntimeProperties: phcepConfigurationNames_() };
   });
 }
 

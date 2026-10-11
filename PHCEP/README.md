@@ -100,6 +100,11 @@ manager access separately from ordinary spreadsheet editing.
    source, and set the required properties. Use a dedicated account with only
    necessary Sheet/Form/Drive permissions. Rotate any credentials previously
    exposed elsewhere; no credential values are copied into this implementation.
+   Run `validatePHCEPConfiguration()` in the authorized editor: output lists
+   missing property names only, never secret values. Set required secret/editor
+   properties before setup; absent spreadsheet/media IDs are provisioned by setup.
+   Setup also returns `missingRuntimeProperties`; a missing LINE access token
+   does not block provisioning but must be supplied before media/push operations.
 2. Run `setupPHCEP()` in the Apps Script editor and grant the requested Sheets,
    Forms, Drive, outbound HTTP, and installable-trigger permissions. Setup is
    idempotent: it preserves existing data/configuration, reuses forms, expands
@@ -155,7 +160,8 @@ Message ID; 發送問卷 (勾選); User ID; DateTime; User Name;
 回覆紀錄 (最新). K stores Event Key and L stores durable operation status.
 Existing extra history must be moved by an authorized operator if it conflicts
 with these explicitly checked reserved columns. No clinician history is shifted
-into event/storage columns.
+into event/storage columns. Subsequent sent replies are retained idempotently in
+the separate protected `PHCEP回覆歷史` sheet; J continues to show the latest reply.
 
 H selects a manually curated QA reply and populates I; it does not send.
 Use the explicit clinician draft-send menu to confirm sending, or enable the
@@ -202,6 +208,7 @@ required; this code does not claim to authenticate a patient or prevent forwardi
 | `PHCEP表單紀錄` | Response ID, correlation nonce, source type (`CDR`/`VITALS`), submission timestamp, mapped LINE ID, structured answers JSON |
 | `PHCEP隔離` | Invalid response ID/form ID/time and safe reason, no duplicated answers |
 | `PHCEP臨床評分` | Protected manual clinician fields keyed by response ID, separate from raw Form response columns |
+| `PHCEP回覆歷史` | Protected operation ID, event key, send-record timestamp and clinician draft history |
 
 Google Forms still stores invalid submissions in its raw responses; quarantine
 excludes them from normalized clinical association, not from Google's storage.
@@ -324,6 +331,14 @@ Mock tests exercise setup reuse, schemas/protections, invitation tampering,
 trigger dispatch, lock failure, durable retries, signature errors, formula
 injection, private media, and optional AI. Java uses mocked configured storage
 transport; it does not create live Google resources.
+
+Implementation verification: gateway tests and local unsigned-request smoke test
+passed; Apps Script mock tests passed in the implementation agents; Java Maven
+verification and executable-JAR startup smoke test passed. The final combined
+automated review/CodeQL tool timed out and tripped its retry circuit breaker;
+that final combined validation is **not** claimed complete. Individual Java
+CodeQL runs reported no alerts. Live Google/LINE authorization, publishing,
+sharing and quota behavior remain untested here.
 
 **Operator must manually verify after authorized deployment (not performed here):**
 
