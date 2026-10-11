@@ -1,3 +1,4 @@
+// LEGACY REFERENCE ONLY — do not deploy. Canonical secure source: apps-script/*.gs.
 /**
  * ============================================================================
  * Production Webhook & Clinical Message Flow - Embedding Engine Module

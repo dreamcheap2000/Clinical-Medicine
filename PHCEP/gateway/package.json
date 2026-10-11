@@ -1,0 +1,14 @@
+{
+  "name": "phcep-line-gateway",
+  "version": "1.0.0",
+  "description": "Stateless signature-verifying PHCEP LINE ingress",
+  "main": "server.cjs",
+  "scripts": {
+    "test": "node --test test/*.test.cjs",
+    "start": "node server.cjs"
+  },
+  "keywords": [],
+  "author": "",
+  "private": true,
+  "engines": { "node": ">=22" }
+}
