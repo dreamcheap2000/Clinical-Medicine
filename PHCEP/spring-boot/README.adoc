@@ -1,0 +1,128 @@
+= PHCEP authenticated events adapter
+
+Java 17 and Maven are required. Spring Boot 4.1.1 is a supported stable, non-prerelease
+https://github.com/spring-projects/spring-boot/releases/tag/v4.1.1[upstream release]
+(published 2026-08-20),
+verified against its
+https://repo.maven.apache.org/maven2/org/springframework/boot/spring-boot-starter-parent/4.1.1/spring-boot-starter-parent-4.1.1.pom[published Maven Central parent POM].
+Support was verified for the task date, 2026-10-11, against the official
+https://github.com/spring-projects/spring-boot/wiki/Supported-Versions[Supported Versions policy]:
+minor releases receive at least 12 months of OSS support. The
+https://github.com/spring-projects/spring-boot/releases/tag/v4.1.0[4.1.0 GA release]
+was published 2026-06-10, so 4.1.x is within its guaranteed support window through
+at least 2027-06-10. The spring.io support table was unavailable from this environment;
+this conclusion uses the primary upstream policy and dated release, not an
+assumption that Maven availability implies support.
+
+The webmvc/test starters, parent, and Spring Boot Jackson 2 compatibility module
+were checked against the GitHub advisory database
+before addition, with no reported vulnerabilities. No milestone/snapshot dependencies are used.
+Boot's managed Jackson 2.21.5 core/databind failed their concrete dependency
+advisory check. `jackson-2-bom.version` is therefore overridden to published
+patched 2.21.7; core/databind 2.21.7 passed the follow-up advisory check.
+MVC's Jackson 3 BOM is also overridden to published 3.1.7, whose core/databind
+passed the advisory check, keeping both runtime JSON stacks patched.
+The compatibility module keeps strict Jackson 2 envelope parsing; upstream marks
+it deprecated for removal in Boot 4.3, not removed or unsupported in 4.1.
+
+== Build and run
+
+[source,shell]
+----
+mvn -f PHCEP/spring-boot/pom.xml verify
+: "${GATEWAY_SIGNING_SECRET:?Set through your secret manager}"
+: "${LINE_CHANNEL_SECRET:?Set through your secret manager}"
+: "${PHCEP_APPS_SCRIPT_URL:?Set to your deployed Apps Script exec URL}"
+export GATEWAY_SIGNING_SECRET LINE_CHANNEL_SECRET PHCEP_APPS_SCRIPT_URL
+java -jar PHCEP/spring-boot/target/events-adapter-1.0.0.jar
+----
+
+Set secrets in the deployment's secret manager/environment, never in tracked
+files or command-line Java properties. The gateway secret must be at least 32
+characters and 32 UTF-8 bytes and differ from the nonblank LINE channel secret.
+The LINE secret is required only to check
+separation: this adapter does not perform LINE signature validation.
+The existing LINE gateway remains the *only public LINE ingress*. It validates
+LINE's signature and signs the original request bytes for this adapter. Do not
+configure LINE directly against this endpoint.
+
+Deploy behind internal HTTPS/access controls; plain embedded HTTP listens on
+`PORT` (default 8080). Disable HTTP request/body/access logging in proxies and do
+not enable debug/trace HTTP logging. Configure gateway/proxy request timeouts
+above the downstream POST plus optional GET budget (20 seconds). Use a managed
+process/container supervisor for production.
+
+== Contract
+
+`POST /internal/events`, `Content-Type: application/json`:
+
+Exactly six fields: integer `version` equal to 1; string `action` equal to
+`events`; integer epoch-millisecond `timestamp`; UUID string `nonce`; standard
+padded base64 string `rawBody`; standard padded base64 HMAC-SHA256 `signature`.
+No other payload actions are accepted.
+
+HMAC key: UTF-8 `GATEWAY_SIGNING_SECRET`. Canonical message (UTF-8, no final newline):
+
+[source,text]
+----
+1\n{action}\n{timestamp}\n{nonce}\n{rawBody}
+----
+
+The six fields are required, duplicate/extra fields and trailing JSON are rejected.
+Version and epoch-millisecond timestamp must be JSON integers, never strings or
+floats. Timestamp skew is at most five minutes; nonce is a hyphenated UUID string
+with version 1–8 and RFC variant bits, case-insensitive.
+`rawBody` is standard canonical padded base64 of the original LINE request bytes,
+at most 1 MiB decoded (envelope capped at 1,400,000 bytes). Signatures use
+constant-time comparison. Authentication completes before payload handling or
+forwarding. After authentication, the adapter verifies a JSON object with an
+`events` array of at most 100 entries. It never rewrites LINE events, source IDs, message IDs,
+reply tokens, postbacks, or webhook event IDs; all event kinds reach the shared
+Apps Script event processor together.
+
+== Durable acceptance and replay
+
+Only a downstream HTTP 200 JSON response with boolean `ok: true` and no `error` field returns
+`200 {"ok":true}`. Apps Script must persist each event's acceptance atomically in
+its shared durable `webhookEventId` ledger. Application-level `ok:false` responses
+(including fixed error codes), HTTP errors, and transport exceptions fail closed.
+*The adapter makes one POST attempt and performs no local retries.*
+
+After ingress authentication, the *original signed envelope bytes* are forwarded
+unchanged, including the original nonce, timestamp, signature, and `rawBody`.
+Duplicate ingress envelopes are forwarded with that same nonce so Apps Script's
+shared durable nonce ledger rejects them *before any event side effect*.
+The adapter never turns an old nonce into a new one or bypasses replay rejection.
+The LINE gateway owns bounded transient retries and must create a new signed
+envelope/nonce for each retry. Its uncertain-success retries are safe only because
+Apps Script's shared durable `webhookEventId` ledger prevents repeated event effects.
+There is no JVM nonce/event cache and no sheet writes. Both shared ledgers must
+be deployed and retained; do not replace them with local process deduplication.
+
+Malformed/authentication requests return sanitized 401; oversized ingress returns
+413; any downstream rejection/failure returns sanitized 502 `UPSTREAM_FAILED`.
+No incoming body, upstream response body, exception details, or secrets are logged
+by application code.
+Default configuration also omits exception stack traces from the console, disables
+Tomcat access logs, and excludes exception/message/stack/binding details from
+HTTP error responses. Keep infrastructure request/body logging disabled as above.
+
+== Transport restrictions
+
+The configured URL must match exactly
+`https://script.google.com/macros/s/<letters-digits-underscore-hyphen>/exec`,
+without userinfo, ports, query, fragments, or extra path segments.
+Automatic redirects are disabled. One ContentService 302/303 redirect is fetched
+only using a *bodyless, headerless GET* to HTTPS
+`script.googleusercontent.com/macros/echo`; the signed envelope and credentials
+are never sent to the redirect target. Other redirect hosts/paths/ports, redirect
+chains, and 307/308 resubmissions are rejected. Connection timeout is five seconds;
+each POST/GET has a ten-second whole-response deadline and a 64 KiB response cap.
+
+== Tests
+
+`mvn -f PHCEP/spring-boot/pom.xml test` runs signature/tamper/type/size tests,
+real embedded HTTP ingress integration tests with mocked downstream transport,
+original-nonce replay/no-retry/response-contract tests, and redirect/SSRF/body-limit tests. It does not
+contact or provision a live Google deployment; durable shared ledger behavior
+must also be verified in the Apps Script deployment.
