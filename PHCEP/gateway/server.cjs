@@ -89,9 +89,9 @@ async function delivery(config, body, fetcher = fetch) {
   const text = await readBounded(response.body, MAX_RESPONSE_BYTES);
   let result;
   try { result = JSON.parse(text.toString('utf8')); }
-  catch (error) {
+  catch {
     console.log('backend_invalid_response', JSON.stringify({ status: response.status }));
-    throw error;
+    throw new Error('Backend invalid response');
   }
   if (!result || result.ok !== true || Object.hasOwn(result, 'error')) {
     // Log only the allowlist-shaped error code; never secrets or backend payloads.
