@@ -77,6 +77,28 @@ test('Google result redirect GET only; rejects other hosts without forwarding se
   await assert.rejects(delivery(config('APPS_SCRIPT'), {}, async () => new Response(null,
     { status: 302, headers: { location: 'https://script.googleusercontent.com/other-path' } })));
 });
+test('backend failures log only status and safe error code', async t => {
+  const log = t.mock.method(console, 'log', () => {});
+  await assert.rejects(delivery(config('APPS_SCRIPT'), envelope(raw, signingSecret),
+    async () => new Response('{"ok":false,"error":"EXPIRED","detail":"synthetic-private"}')));
+  await assert.rejects(delivery(config('SPRING_BOOT'), envelope(raw, signingSecret),
+    async () => new Response('{"ok":false,"error":"leak synthetic-private"}')));
+  await assert.rejects(delivery(config('SPRING_BOOT'), envelope(raw, signingSecret),
+    async () => new Response('{"ok":false,"error":"AUTHENTICATION"}', { status: 401 })));
+  await assert.rejects(delivery(config('SPRING_BOOT'), envelope(raw, signingSecret),
+    async () => new Response('<html>synthetic-private</html>', { status: 500 })));
+  await assert.rejects(delivery(config('SPRING_BOOT'), envelope(raw, signingSecret),
+    async () => new Response('<html>synthetic-private</html>')));
+  assert.deepEqual(log.mock.calls.map(call => call.arguments), [
+    ['backend_rejected', '{"status":200,"error":"EXPIRED"}'],
+    ['backend_rejected', '{"status":200,"error":"UNKNOWN"}'],
+    ['backend_http_error', '{"status":401,"error":"AUTHENTICATION"}'],
+    ['backend_http_error', '{"status":500,"error":null}'],
+    ['backend_invalid_response', '{"status":200}']]);
+  const output = JSON.stringify(log.mock.calls.map(call => call.arguments));
+  for (const secret of ['synthetic-private', signingSecret, raw.toString('base64')])
+    assert.equal(output.includes(secret), false);
+});
 test('HTTP endpoint accepts signed empty verification and rejects invalid before side effects', async t => {
   let calls = 0;
   const server = createServer(config('APPS_SCRIPT'), async () => { calls++; return new Response('{"ok":true}'); });
