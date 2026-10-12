@@ -59,6 +59,11 @@ async function readBounded(stream, maximum) {
   return Buffer.concat(chunks);
 }
 
+function backendErrorCode(result) {
+  const code = result && typeof result === 'object' ? result.error : undefined;
+  return typeof code === 'string' && /^[A-Z_]{1,40}$/.test(code) ? code : 'UNKNOWN';
+}
+
 async function delivery(config, body, fetcher = fetch) {
   const signal = AbortSignal.timeout(25000);
   let response = await fetcher(config.url, {
@@ -74,11 +79,25 @@ async function delivery(config, body, fetcher = fetch) {
       throw new Error('Untrusted redirect');
     response = await fetcher(location.href, { method: 'GET', redirect: 'error', signal });
   }
-  if (!response.ok) throw new Error('Backend delivery failed');
+  if (!response.ok) {
+    let error = null;
+    try { error = backendErrorCode(JSON.parse((await readBounded(response.body, MAX_RESPONSE_BYTES)).toString('utf8'))); }
+    catch { /* non-JSON or oversized error bodies are never logged */ }
+    console.log('backend_http_error', JSON.stringify({ status: response.status, error }));
+    throw new Error('Backend delivery failed');
+  }
   const text = await readBounded(response.body, MAX_RESPONSE_BYTES);
-  const result = JSON.parse(text.toString('utf8'));
-  if (!result || result.ok !== true || Object.hasOwn(result, 'error'))
+  let result;
+  try { result = JSON.parse(text.toString('utf8')); }
+  catch (error) {
+    console.log('backend_invalid_response', JSON.stringify({ status: response.status }));
+    throw error;
+  }
+  if (!result || result.ok !== true || Object.hasOwn(result, 'error')) {
+    // Log only the allowlist-shaped error code; never secrets or backend payloads.
+    console.log('backend_rejected', JSON.stringify({ status: response.status, error: backendErrorCode(result) }));
     throw new Error('Backend rejected delivery');
+  }
 }
 
 async function forward(raw, config, fetcher, pause = ms => new Promise(resolve => setTimeout(resolve, ms))) {
@@ -131,34 +150,3 @@ if (require.main === module) {
   }
 }
 module.exports = { configuration, configuredUrl, verifyLine, envelope, delivery, forward, createServer };
-
-async function delivery(config, body, fetcher = fetch) {
-  const signal = AbortSignal.timeout(25000);
-  let response = await fetcher(config.url, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body), redirect: 'manual', signal
-  });
-  // Apps Script ContentService redirects only the result; never re-post credentials.
-  if (config.mode === 'APPS_SCRIPT' && [302, 303].includes(response.status)) {
-    const location = new URL(response.headers.get('location'));
-    if (location.protocol !== 'https:' || location.hostname !== 'script.googleusercontent.com' ||
-        location.port || location.pathname !== '/macros/echo' ||
-        location.username || location.password || location.hash)
-      throw new Error('Untrusted redirect');
-    response = await fetcher(location.href, { method: 'GET', redirect: 'error', signal });
-  }
-  if (!response.ok) {
-    const text = await readBounded(response.body, MAX_RESPONSE_BYTES).catch(() => Buffer.from(''));
-    console.log('backend_http_error', {
-      status: response.status,
-      body: text.toString('utf8')
-    });
-    throw new Error('Backend delivery failed');
-  }
-  const text = await readBounded(response.body, MAX_RESPONSE_BYTES);
-  const result = JSON.parse(text.toString('utf8'));
-  if (!result || result.ok !== true || Object.hasOwn(result, 'error')) {
-    console.log('backend_rejected', result);
-    throw new Error('Backend rejected delivery');
-  }
-}
