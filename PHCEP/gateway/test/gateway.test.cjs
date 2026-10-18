@@ -121,6 +121,7 @@ test('HTTP endpoint accepts signed empty verification and rejects invalid before
   assert.equal((await fetch(url, { method: 'POST', body: 'x'.repeat(1048577) })).status, 413);
 });
 test('HTTP delivery error returns non-2xx after bounded same-backend retries', async t => {
+  const log = t.mock.method(console, 'log', () => {});
   let calls = 0;
   const server = createServer(config('APPS_SCRIPT'), async () => {
     calls++;
@@ -135,4 +136,68 @@ test('HTTP delivery error returns non-2xx after bounded same-backend retries', a
   assert.equal(response.status, 502);
   assert.equal(calls, 2);
   assert.equal((await response.text()).includes('ACCEPTANCE_FAILED'), false);
+  assert.deepEqual(log.mock.calls.at(-1).arguments,
+    ['gateway_response', '{"status":502,"reason":"backend_unavailable"}']);
+});
+
+test('HTTP outcomes log only fixed classification and status; health probes stay quiet', async t => {
+  const log = t.mock.method(console, 'log', () => {});
+  let calls = 0;
+  const server = createServer(config('APPS_SCRIPT'), async () => {
+    calls++;
+    return new Response('{"ok":true}');
+  });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  t.after(() => server.close());
+  const base = `http://127.0.0.1:${server.address().port}`;
+  const health = await fetch(`${base}/healthz`);
+  assert.equal(health.status, 200);
+  assert.deepEqual(await health.json(), { ok: true });
+  assert.equal(log.mock.calls.length, 0);
+  const cases = [
+    ['/webhook', 'GET', '', {}, 404, 'method_path_mismatch'],
+    ['/webhook/?synthetic-private', 'POST', '', {}, 404, 'method_path_mismatch'],
+    ['/webhook', 'POST', '', { 'content-encoding': 'gzip' }, 415, 'content_encoding_rejected'],
+    ['/webhook', 'POST', 'x'.repeat(1048577), {}, 413, 'payload_too_large'],
+    ['/webhook', 'POST', 'synthetic-private', { 'x-line-signature': 'bad' }, 401, 'signature_failed'],
+    ['/webhook', 'POST', '{', {}, 400, 'invalid_json'],
+    ...['null', '{}', '{"events":{}}', JSON.stringify({ events: Array(101).fill({}) })]
+      .map(body => ['/webhook', 'POST', body, {}, 400, 'invalid_events']),
+    ['/webhook', 'POST', raw.toString(), {}, 200, 'accepted']
+  ];
+  for (const [path, method, body, headers, status, reason] of cases) {
+    const options = method === 'GET' ? { method } : {
+      method, body, headers: { 'x-line-signature': signature(Buffer.from(body)),
+        'x-private': 'synthetic-private', ...headers }
+    };
+    const response = await fetch(`${base}${path}`, options);
+    assert.equal(response.status, status);
+    assert.deepEqual(await response.json(), { ok: status === 200 });
+    assert.deepEqual(log.mock.calls.at(-1).arguments,
+      ['gateway_response', JSON.stringify({ status, reason })]);
+  }
+  assert.equal(log.mock.calls.length, cases.length);
+  assert.equal(calls, 1);
+});
+
+test('transport, timeout, redirect and bounded response errors never log exception details', async t => {
+  const log = t.mock.method(console, 'log', () => {});
+  await assert.rejects(delivery(config('APPS_SCRIPT'), {}, async () => {
+    throw new Error(`synthetic-private ${signingSecret}`);
+  }));
+  await assert.rejects(delivery(config('APPS_SCRIPT'), {}, async () =>
+    new Response(null, { status: 302, headers: { location: 'https://synthetic-private.example' } })));
+  await assert.rejects(delivery(config('APPS_SCRIPT'), {}, async () =>
+    new Response('synthetic-private'.repeat(2000))));
+  t.mock.method(AbortSignal, 'timeout', () => AbortSignal.abort());
+  await assert.rejects(delivery(config('APPS_SCRIPT'), {}, async () => {
+    throw new Error('synthetic-private');
+  }));
+  assert.deepEqual(log.mock.calls.map(call => call.arguments), [
+    ['backend_network_error', '{}'],
+    ['backend_redirect_rejected', '{"status":302}'],
+    ['backend_response_read_error', '{"status":200}'],
+    ['backend_timeout', '{}']
+  ]);
 });

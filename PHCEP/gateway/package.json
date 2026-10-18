@@ -5,6 +5,7 @@
   "main": "server.cjs",
   "scripts": {
     "test": "node --test test/*.test.cjs",
+    "validate:config": "node scripts/validate-config.cjs --check",
     "start": "node server.cjs"
   },
   "keywords": [],

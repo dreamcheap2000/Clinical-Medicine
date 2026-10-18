@@ -66,18 +66,31 @@ function backendErrorCode(result) {
 
 async function delivery(config, body, fetcher = fetch) {
   const signal = AbortSignal.timeout(25000);
-  let response = await fetcher(config.url, {
+  const send = async (url, options) => {
+    try { return await fetcher(url, options); }
+    catch {
+      console.log(signal.aborted ? 'backend_timeout' : 'backend_network_error', '{}');
+      throw new Error('Backend unavailable');
+    }
+  };
+  let response = await send(config.url, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body), redirect: 'manual', signal
   });
   // Apps Script ContentService redirects only the result; never re-post credentials.
   if (config.mode === 'APPS_SCRIPT' && [302, 303].includes(response.status)) {
-    const location = new URL(response.headers.get('location'));
-    if (location.protocol !== 'https:' || location.hostname !== 'script.googleusercontent.com' ||
-        location.port || location.pathname !== '/macros/echo' ||
-        location.username || location.password || location.hash)
+    let location;
+    try {
+      location = new URL(response.headers.get('location'));
+      if (location.protocol !== 'https:' || location.hostname !== 'script.googleusercontent.com' ||
+          location.port || location.pathname !== '/macros/echo' ||
+          location.username || location.password || location.hash)
+        throw new Error('Untrusted redirect');
+    } catch {
+      console.log('backend_redirect_rejected', JSON.stringify({ status: response.status }));
       throw new Error('Untrusted redirect');
-    response = await fetcher(location.href, { method: 'GET', redirect: 'error', signal });
+    }
+    response = await send(location.href, { method: 'GET', redirect: 'error', signal });
   }
   if (!response.ok) {
     let error = null;
@@ -86,7 +99,13 @@ async function delivery(config, body, fetcher = fetch) {
     console.log('backend_http_error', JSON.stringify({ status: response.status, error }));
     throw new Error('Backend delivery failed');
   }
-  const text = await readBounded(response.body, MAX_RESPONSE_BYTES);
+  let text;
+  try { text = await readBounded(response.body, MAX_RESPONSE_BYTES); }
+  catch {
+    console.log(signal.aborted ? 'backend_timeout' : 'backend_response_read_error',
+      JSON.stringify({ status: response.status }));
+    throw new Error('Backend unreadable response');
+  }
   let result;
   try { result = JSON.parse(text.toString('utf8')); }
   catch {
@@ -115,25 +134,30 @@ async function forward(raw, config, fetcher, pause = ms => new Promise(resolve =
 
 function createServer(config, fetcher = fetch) {
   return http.createServer(async (request, response) => {
-    const reply = (status, ok) => {
+    const reply = (status, ok, reason) => {
+      if (reason) console.log('gateway_response', JSON.stringify({ status, reason }));
       response.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
       response.end(JSON.stringify(ok ? { ok: true } : { ok: false }));
     };
     if (request.method === 'GET' && request.url === '/healthz') return reply(200, true);
-    if (request.method !== 'POST' || request.url !== '/webhook') return reply(404, false);
+    if (request.method !== 'POST' || request.url !== '/webhook')
+      return reply(404, false, 'method_path_mismatch');
     if (request.headers['content-encoding'] && request.headers['content-encoding'] !== 'identity')
-      return reply(415, false);
+      return reply(415, false, 'content_encoding_rejected');
     let raw;
-    try { raw = await readBounded(request, MAX_BYTES); } catch { return reply(413, false); }
+    try { raw = await readBounded(request, MAX_BYTES); }
+    catch (error) {
+      return reply(413, false, error.message === 'Payload too large' ? 'payload_too_large' : 'payload_read_error');
+    }
     if (!verifyLine(raw, request.headers['x-line-signature'], config.lineSecret))
-      return reply(401, false);
+      return reply(401, false, 'signature_failed');
     try {
       const payload = JSON.parse(raw.toString('utf8'));
       if (!payload || !Array.isArray(payload.events) || payload.events.length > 100)
-        return reply(400, false);
-    } catch { return reply(400, false); }
-    try { await forward(raw, config, fetcher); reply(200, true); }
-    catch { reply(502, false); }
+        return reply(400, false, 'invalid_events');
+    } catch { return reply(400, false, 'invalid_json'); }
+    try { await forward(raw, config, fetcher); reply(200, true, 'accepted'); }
+    catch { reply(502, false, 'backend_unavailable'); }
   });
 }
 
