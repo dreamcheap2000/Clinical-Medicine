@@ -152,6 +152,100 @@ manager access separately from ordinary spreadsheet editing.
    button (signed `events: []` is supported). Disable unintended existing
    auto-replies elsewhere. Do not point LINE directly at Apps Script.
 
+## Deployment configuration check
+
+From `PHCEP/gateway`, run `npm run validate:config` (equivalent to
+`node scripts/validate-config.cjs --check`) with the intended runtime environment.
+With Node 22+, an optional local file can be loaded explicitly:
+`node --env-file=.env scripts/validate-config.cjs --check`.
+Never commit that file or paste its contents into logs/issues.
+
+The check is read-only, prints PASS/FAIL per variable with no values, and exits
+non-zero on failure; it is also suitable for CI with injected secret variables.
+It requires a non-blank `LINE_CHANNEL_SECRET`, a distinct `GATEWAY_SIGNING_SECRET`
+of at least 32 non-padding characters, an explicit `PHCEP_BACKEND_MODE`, and the
+selected mode's canonical HTTPS endpoint. Runtime still defaults an omitted mode
+to `APPS_SCRIPT`; this preflight deliberately requires an explicit deployment choice.
+No dependencies or automatic `.env` loading are added.
+
+This is a **local syntax/presence check**, not a connectivity or cross-service
+secret comparison. It cannot verify Google permissions, deployment identity,
+Script Properties, or that keys match across services. Run
+`validatePHCEPConfiguration()` separately in the authorized Apps Script editor
+and compare configuration privately through your secret manager.
+
+## Troubleshooting: no Render errors and no sheet rows
+
+1. **Check the deployed project and route.** Render Root Directory must be
+   `PHCEP/gateway`, Start Command `npm start`, and LINE's webhook URL exactly
+   `https://YOUR_GATEWAY/webhook` (no trailing slash or query). Use the deployed
+   `/exec` URL from canonical **`PHCEP/apps-script/`**, not the unrelated
+   top-level `apps-script/` project or its deployment workflow. Publish a new
+   Apps Script deployment version after source changes.
+2. **Separate verification from delivery.** LINE Developers → Verify sends
+   `events: []`: a 200 verifies the route/authentication/backend acknowledgement,
+   but should not create a message row. Then send a fresh nonclinical synthetic
+   text message to the OA with webhooks enabled. Do not use patient data for testing.
+3. **Inspect Render application logs at that time.** `gateway_response` records
+   only status and a fixed reason: 404 `method_path_mismatch`, 415
+   `content_encoding_rejected`, 413 `payload_too_large`/`payload_read_error`,
+   401 `signature_failed`, 400 `invalid_json`/`invalid_events`, 502
+   `backend_unavailable`, or 200 `accepted`. A normal GET `/healthz` is quiet.
+   No webhook outcome logs suggests checking LINE delivery settings, Render
+   service/deployed revision, and proxy routing first; a healthy probe alone
+   does not test backend delivery.
+4. **For 502, inspect the backend class.** `backend_network_error`,
+   `backend_timeout`, `backend_redirect_rejected`, and
+   `backend_response_read_error` distinguish transport/response failures.
+   Existing `backend_http_error`, `backend_invalid_response`, and
+   `backend_rejected` include only status and, where available, a safe-shaped error
+   code. Two attempts can produce two backend logs before the final 502; no
+   automatic backend switching occurs. In Spring mode check the adapter as well.
+5. **Check Apps Script → Executions at the test time.** An execution marked
+   completed does not prove acceptance: caught failures return
+   `{ "ok": false, "error": "CODE" }` with HTTP 200, which the gateway rejects.
+   Inspect safe codes in gateway logs/authorized diagnostic responses:
+   `CONFIGURATION` (properties/access), `AUTHENTICATION` (shared key),
+   `EXPIRED` (clock/window), `INVALID_ENVELOPE`/`INVALID_PAYLOAD` (wrong contract),
+   `REPLAY`, `BUSY`, `MEDIA_FAILED`, or `ACCEPTANCE_FAILED`.
+   Never log full responses or signed envelopes to investigate.
+6. **Confirm the storage target privately.** Check Script Property
+   `SPREADSHEET_ID` and the deployment owner's access to that exact spreadsheet.
+   A real accepted text message belongs in `LINE對話`; `PHCEP事件` tracks durable
+   event processing and `PHCEP請求` tracks transport replay protection.
+   Forms use `PHCEP表單紀錄` (invalid associations go to `PHCEP隔離`); outbound
+   sends use `PHCEP寄件匣`. Empty Verify/non-message events do not imply a missing
+   conversational row. Reuse existing Sheet/Form/Drive IDs and records.
+
+Gateway outcome diagnostics intentionally exclude request bodies, paths, methods,
+headers, signatures, tokens, user IDs, message text, exception messages, and full
+backend payloads. Keep proxy/platform/APM logs equally restrictive. Share only
+safe status/reason/error codes, never clinical rows, credentials, or raw requests.
+
+### Coordinated deployment and secret rotation
+
+1. Schedule a maintenance window and pause webhook traffic (disable LINE webhooks
+   and drain in-flight requests/retries). Plan for pending delivery/recovery;
+   do not assume all messages during the pause will be redelivered.
+2. In authorized secret stores update the shared `GATEWAY_SIGNING_SECRET` on
+   gateway, canonical Apps Script Script Properties, and Spring if used. Keep it
+   distinct from the channel's `LINE_CHANNEL_SECRET`; update that value everywhere
+   required if rotating the LINE key too. Preserve Sheet/Form/Drive resource IDs;
+   never store credentials in those resources.
+3. Run the local preflight and Apps Script configuration check. Restart/redeploy
+   services so they load the new environment; update the Apps Script versioned
+   deployment when changing code, and synchronize its `/exec` URL where needed.
+4. While normal traffic remains paused, use LINE Verify and a controlled,
+   authenticated synthetic message test (briefly enable delivery under the
+   maintenance window if necessary). Confirm 200 `accepted` and the expected
+   `LINE對話` row before resuming normal traffic. If unsuccessful, keep traffic
+   paused and restore a matching configuration on every affected service.
+
+These updates are coordinated, **not globally atomic**. Updating only one side
+temporarily breaks authentication; a local validator cannot make rotation atomic
+or prove that remote secrets match. Render credentials alone do not authorize
+Google Script Properties or Sheet/Form changes.
+
 ## Clinician workflow
 
 `LINE對話` columns A:J retain the uploaded layout:
