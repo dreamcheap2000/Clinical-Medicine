@@ -84,6 +84,7 @@ URLs/query strings, logs, fixtures, or version control.
 | `CDR_PROVISION_STAGE`, `VITALS_PROVISION_STAGE`, `CDR_PROVISION_STEP`, `VITALS_PROVISION_STEP` | Script Properties | Setup-managed progress for resuming newly created forms after interrupted provisioning |
 | `CLINICIAN_SEND_ON_EDIT` | Script Properties | Default off; `true` explicitly enables trusted single-cell I edits to send |
 | `AI_CURATED_QA_OPT_IN` | Script Properties | Default off; `true` permits manual curated QA embedding routine only |
+| `PHCEP_SUGGESTION_LIMIT` | Script Properties | Optional; integer 1-10 dropdown suggestions per row (default 5) |
 | `GEMINI_API_KEY` | Script Properties | Optional; missing key returns `MISSING_KEY`, no network call |
 | `PHCEP_BACKEND_MODE` | gateway env | `APPS_SCRIPT` (default) or `SPRING_BOOT`; never Central/Peripheral |
 | `PHCEP_APPS_SCRIPT_URL` | gateway and Spring env | Configured `https://script.google.com/macros/s/DEPLOYMENT_ID/exec` |
@@ -121,8 +122,9 @@ manager access separately from ordinary spreadsheet editing.
    that account, not unrelated triggers. Google hides other users' installed
    triggers: use one designated trigger owner and manually remove prior owners'
    duplicate triggers. No simple `onEdit` sends or performs authorized networking.
-   A standalone project needs the Apps Script editor or an operator-bound UI
-   project to expose spreadsheet menus; do not install a second sending project.
+   Menus are **optional**: every required workflow runs from sheet cells through
+   the installed edit trigger (see *No-menu workflow*), so a standalone project
+   does not need a bound copy. Do not install a second sending project.
 5. Review Google sharing explicitly: no public Sheets/media/vector files;
    only approved staff may read clinical records. Sheet protections constrain
    **editing, not viewing** and do not grant Sheet access. Share the spreadsheet
@@ -256,8 +258,12 @@ Existing extra history must be moved by an authorized operator if it conflicts
 with these explicitly checked reserved columns. No clinician history is shifted
 into event/storage columns. Subsequent sent replies are retained idempotently in
 the separate protected `PHCEP回覆歷史` sheet; J continues to show the latest reply.
+The previous latest reply is right-shifted only inside the dedicated history area
+`回覆紀錄 (前1…前5)` at the end of the operator block; K/L and the operator
+controls never move. Older entries drop off that visible area but stay in
+`PHCEP回覆歷史`.
 
-H selects a manually curated QA reply and populates I; it does not send.
+H selects a curated QA reply and populates I; it does not send.
 Use the explicit clinician draft-send menu to confirm sending, or enable the
 clearly labelled I send-on-edit menu after confirmation. Only approved identified
 single-cell edits can send; multi-cell paste does not. Google may omit editor
@@ -270,6 +276,101 @@ show pending/sent/retry states. Resolve failed pending payloads before changing
 recipient/content. Patient media remains private; LINE cannot render private
 Drive downloads, and the integration does not publish files to make them render.
 Clinician drafts are text; formula strings are not executed as outbound content.
+
+### No-menu workflow (edit-trigger cells)
+
+Run `setupPHCEP()` (or `migratePHCEPLayout()` for layout only) once after updating
+the code. Tab order becomes **`總覽`, `LINE對話`, `QA知識庫`**, then the rest.
+
+**`總覽`** (first tab) links to `LINE對話`, `QA知識庫`, `收錄集合` and every
+`PHCEP*` ledger, shows row counts and safe counters only (outbox pending/failed,
+outbox manual review, quarantine, collection pending/approved, unfinished events)
+plus the last refresh time. Tick **C1 重新整理** to refresh (or run
+`refreshPHCEPOverview()`); setup also refreshes it. No message text, recipients,
+answers or secrets are copied there.
+
+**Grouped operator block in `LINE對話`** is appended after the last used column
+(columns M:S on a fresh sheet, followed by the history area T:X):
+
+| Header | Use |
+| --- | --- |
+| 操作動作 | `發送草稿`, `發送 CDR 邀請`, `發送每日健康邀請`, `建立新 CDR 邀請`, `建立新每日健康邀請`, `重新整理建議`, `收錄` |
+| 確認執行 (勾選) | Second step for **sending** actions: select the action first, then tick this box |
+| 收錄來源 | `最新回覆` (default), `病患訊息`, `草稿 (未發送)`, `歷史回覆 前1…前5` |
+| 重要性 (1-5，選填) | Optional; blank = none. Only integers 1-5; anything else is cleared with a status |
+| 收錄 (勾選) | Collect this row into `收錄集合` immediately (non-sending) |
+| 媒體檔名 (修改即改名) | Type a new name to rename the private Drive media file linked in G |
+| 操作結果 | Status/result written by the script; never authoritative state (L is) |
+
+Sending is two-step: selecting a send action only arms it (status `⏸`), and
+nothing is sent until a verified trusted editor (`e.user` in
+`TRUSTED_EDITOR_EMAILS` or owner) ticks 確認執行. The confirm box resets after
+every attempt, the action clears, and the result appears in 操作結果 (detailed
+state stays in L). Multi-cell pastes never execute actions and reset pasted
+confirmations. Sends reuse the existing durable operation/outbox path, so retry
+keys, deduplication and `MANUAL_REVIEW` behave exactly as with the menus.
+`重新整理建議` and `收錄` run immediately because they never contact patients.
+
+**Local suggestion matcher (no network).** Text messages get an H dropdown during
+ingestion using only `QA知識庫` C/D/E questions and G replies: NFKC + lowercase,
+punctuation/space removal, leading 請問/您好 and trailing 謝謝 removal, exact
+match, guarded containment (≥2 characters and ≥25% of the longer text), bigram
+Dice similarity and bounded edit distance (≤64 characters). Relevance must reach
+0.45 first; only then may importance (+0.01 × level, max +0.05) and global usage
+count O (log-scaled, max +0.03) reorder candidates. Low relevance is never rescued;
+no confident match means no dropdown. Up to `PHCEP_SUGGESTION_LIMIT` (default 5)
+unique replies are offered. Matching is bounded (≤2000 QA rows, ≤500 characters)
+and any matcher failure is ignored so ingestion still completes. Suggestions never
+send: H only fills I. Selecting H increments the QA usage counts N/O.
+
+**Importance** is optional metadata (blank = none, 5 = highest ranking hint). It
+is **not** clinical urgency/triage and never escalates or alerts. Sheet validation
+(`LINE對話` 重要性, `收錄集合` G, `QA知識庫` B) and script checks accept only
+1, 2, 3, 4, 5; 0, 6, negatives, decimals and text are rejected/cleared with a
+status. Existing invalid QA B values are ignored by ranking, not deleted.
+
+**Collections (`收錄集合`).** Collecting copies the patient question F and the
+selected reply source with provenance (Event Key, Message ID, `LINE對話!row`,
+timestamp, collector email). The LINE user ID is never copied. Drafts are marked
+`未發送 (草稿)`. Rows are deduplicated by a SHA-256 key of the normalized
+question + reply. New rows start as `待審核` and are **not** used for suggestions.
+A trusted editor reviews/deidentifies the wording, then sets B to `核准`; the edit
+trigger publishes it once into `QA知識庫` (ID `COL-…`, importance in B) and marks
+it `已發布`. Missing question/reply or invalid importance returns it to `待審核`
+with a note. `publishApprovedCollections()` publishes any remaining `核准` rows.
+Approval is an operator attestation of deidentification, not automatic scrubbing.
+
+**Media preview and rename.** G keeps a rich-text link to the private Drive file
+(set `IMAGE_FOLDER_ID` to your private LINE media folder; it must stay private).
+Typing a name in 媒體檔名 renames the file only if it is inside that configured
+folder and still private, strips path/control characters (max 120), then updates
+the G link label. Other files, shared files and non-Drive links are refused. No
+sharing changes are made and no public links are created.
+
+### Migration notes
+
+- `setupPHCEP()` / `migratePHCEPLayout()` are idempotent: they add missing sheets
+  (`收錄集合`, `總覽`) and headers, append the operator block after existing
+  content (legacy right-shifted history beyond L is left in place), reorder tabs
+  and apply validations. A, B…L and existing rows/operation state are not moved.
+- They stop without writing if block headers are partial/moved, unlabelled data
+  sits where headers would go, or an existing `總覽` is not PHCEP-managed.
+- Until migration runs, the new code still works with the old layout: history
+  shifting and control cells are simply inactive.
+- Upload the new `Matcher.gs` and `Workflow.gs` with the other `.gs` files and
+  publish a new web-app version.
+
+### Operator verification checklist
+
+1. Run `setupPHCEP()`; confirm tab order and that `總覽` links open each sheet.
+2. Add a synthetic QA row, send a synthetic text: H offers the reply; Executions
+   show no extra network call besides the LINE profile lookup.
+3. Select H → I fills; choose `發送草稿`, then tick 確認執行 → 操作結果 shows ✅,
+   J updates, the previous reply moves to 前1, K/L unchanged.
+4. Enter `7` in 重要性 → cleared with status; enter `3` → accepted.
+5. Tick 收錄 → `收錄集合` row `待審核`; tick again → `已存在`; set `核准` → QA row.
+6. Send a synthetic image, type a new 媒體檔名 → Drive name and G label update;
+   file sharing remains private.
 
 `QA知識庫` preserves the uploaded 15 columns, with empty QA handled safely.
 Maintain only curated/deidentified education content there. Do not copy patient
@@ -303,6 +404,8 @@ required; this code does not claim to authenticate a patient or prevent forwardi
 | `PHCEP隔離` | Invalid response ID/form ID/time and safe reason, no duplicated answers |
 | `PHCEP臨床評分` | Protected manual clinician fields keyed by response ID, separate from raw Form response columns |
 | `PHCEP回覆歷史` | Protected operation ID, event key, send-record timestamp and clinician draft history |
+| `收錄集合` | Collection key, review status, question, reply, source, sent flag, optional importance, Event Key, Message ID, row reference, time, collector, review note, published QA ID |
+| `總覽` | PHCEP-managed index: sheet links, safe counters, last refresh time |
 
 Google Forms still stores invalid submissions in its raw responses; quarantine
 excludes them from normalized clinical association, not from Google's storage.

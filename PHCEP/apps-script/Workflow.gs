@@ -404,7 +404,7 @@ function phcepHandleLineControlEdit_(e, sheet, row, col, layout) {
     try {
       phcepSetLineStatus_(sheet, row, layout, phcepCollectRow_(ss, sheet, row, layout, phcepEditorEmail_(e)));
     } catch (error) {
-      phcepSetLineStatus_(sheet, row, layout, '❌ 未收錄：需可驗證的授權編輯者。');
+      phcepSetLineStatus_(sheet, row, layout, '❌ 未收錄：需可驗證的授權編輯者，或處理時發生錯誤。');
     } finally {
       range.setValue(false);
     }
@@ -428,7 +428,7 @@ function phcepHandleLineControlEdit_(e, sheet, row, col, layout) {
           phcepSetLineStatus_(sheet, row, layout, count ? '💡 已更新 ' + count + ' 筆建議（H 欄選單）。' : 'ℹ️ 無足夠相符的 QA 建議。');
         }
       } catch (error) {
-        phcepSetLineStatus_(sheet, row, layout, '❌ 未執行：需可驗證的授權編輯者。');
+        phcepSetLineStatus_(sheet, row, layout, '❌ 未執行：需可驗證的授權編輯者，或處理時發生錯誤。');
       } finally {
         range.clearContent();
       }
