@@ -296,7 +296,7 @@ answers or secrets are copied there.
 | --- | --- |
 | 操作動作 | `發送草稿`, `發送 CDR 邀請`, `發送每日健康邀請`, `建立新 CDR 邀請`, `建立新每日健康邀請`, `重新整理建議`, `收錄` |
 | 確認執行 (勾選) | Second step for **sending** actions: select the action first, then tick this box |
-| 收錄來源 | `最新回覆` (default), `病患訊息`, `草稿 (未發送)`, `歷史回覆 前1…前5` |
+| 收錄來源 | `最新回覆` (default), `病患訊息` (question only — fill 收錄集合 column D before approving), `草稿 (未發送)`, `歷史回覆 前1…前5` |
 | 重要性 (1-5，選填) | Optional; blank = none. Only integers 1-5; anything else is cleared with a status |
 | 收錄 (勾選) | Collect this row into `收錄集合` immediately (non-sending) |
 | 媒體檔名 (修改即改名) | Type a new name to rename the private Drive media file linked in G |
@@ -306,8 +306,8 @@ Sending is two-step: selecting a send action only arms it (status `⏸`), and
 nothing is sent until a verified trusted editor (`e.user` in
 `TRUSTED_EDITOR_EMAILS` or owner) ticks 確認執行. The confirm box resets after
 every attempt, the action clears, and the result appears in 操作結果 (detailed
-state stays in L). Multi-cell pastes never execute actions and reset pasted
-confirmations. Sends reuse the existing durable operation/outbox path, so retry
+state stays in L). Multi-cell pastes never execute or arm actions: pasted
+actions are cleared and pasted confirmations reset. Sends reuse the existing durable operation/outbox path, so retry
 keys, deduplication and `MANUAL_REVIEW` behave exactly as with the menus.
 `重新整理建議` and `收錄` run immediately because they never contact patients.
 

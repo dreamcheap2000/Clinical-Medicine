@@ -253,7 +253,8 @@ function phcepCollectRow_(ss, sheet, row, layout, collector) {
   collections.appendRow([key, '待審核', phcepLiteral_(question), phcepLiteral_(reply), source, sent,
     importance.value === null ? '' : importance.value, phcepLiteral_(values[10]), phcepLiteral_(values[0]),
     'LINE對話!' + row, new Date(), phcepLiteral_(collector || ''), '', '']);
-  return '✅ 已收錄至收錄集合第 ' + collections.getLastRow() + ' 列（待審核，尚未發布到 QA 建議）。';
+  return '✅ 已收錄至收錄集合第 ' + collections.getLastRow() + ' 列（待審核，尚未發布到 QA 建議）' +
+    (reply ? '。' : '；核准前請先於收錄集合 D 欄填寫回覆。');
 }
 
 /** Publish one approved collection row into QA知識庫 (idempotent by QA ID). */
@@ -460,7 +461,9 @@ function phcepHandleLineControlEdit_(e, sheet, row, col, layout) {
     try {
       currentRow = phcepLocateOperationRow_(sheet, identity);
     } catch (error) {
-      return;
+      // Fail closed: disarm the edited row and report that the row position changed.
+      currentRow = row;
+      status = '⚠️ 列位置已變動，請至 L 欄或 PHCEP寄件匣確認結果。' + status;
     }
     sheet.getRange(currentRow, layout.action).clearContent();
     phcepSetLineStatus_(sheet, currentRow, layout, status);

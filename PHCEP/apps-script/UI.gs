@@ -209,10 +209,11 @@ function phcepHandleEdit(e) {
           phcepWriteOperationState_(sheet, row, state);
         }
       }
-      // Multi-cell pastes never run operator actions; clear any pasted confirmations.
+      // Multi-cell pastes never run or arm operator actions; clear pasted actions and confirmations.
       const layout = phcepLineLayout_(sheet);
-      if (layout && start <= layout.collect && end >= layout.confirm) {
+      if (layout && start <= layout.collect && end >= layout.action) {
         for (let row = range.getRow(); row < range.getRow() + range.getNumRows(); row++) {
+          if (start <= layout.action && end >= layout.action) sheet.getRange(row, layout.action).clearContent();
           if (start <= layout.confirm && end >= layout.confirm) sheet.getRange(row, layout.confirm).setValue(false);
           if (start <= layout.collect && end >= layout.collect) sheet.getRange(row, layout.collect).setValue(false);
         }

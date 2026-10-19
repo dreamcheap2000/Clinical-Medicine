@@ -894,6 +894,12 @@ test('no-menu questionnaire actions reuse existing send semantics and multi-cell
   editAs(env, line.getRange(2, COL.action, 1, 2));
   assert.equal(env.pushes.length, 0);
   assert.equal(line.getRange(2, COL.confirm).getValue(), false);
+  assert.equal(line.getRange(2, COL.action).getValue(), '');
+  line.getRange(2, COL.confirm).setValue(true);
+  editAs(env, line.getRange(2, COL.confirm));
+  assert.equal(env.pushes.length, 0);
+  line.getRange(2, COL.action).setValue('發送每日健康邀請');
+  editAs(env, line.getRange(2, COL.action));
   line.getRange(2, COL.confirm).setValue(true);
   editAs(env, line.getRange(2, COL.confirm));
   assert.equal(env.pushes.length, 1);
