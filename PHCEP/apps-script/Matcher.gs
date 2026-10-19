@@ -84,7 +84,7 @@ function phcepEditDistance_(a, b) {
 }
 
 /** Relevance in [0, 1]; inputs must already be normalized. */
-function phcepRelevance_(query, candidate) {
+function phcepRelevance_(query, candidate, floor) {
   if (!query || !candidate) return 0;
   if (query === candidate) return 1;
   var q = Array.from(query);
@@ -99,7 +99,11 @@ function phcepRelevance_(query, candidate) {
     containment = 0.55 + 0.4 * (shortLength / longLength);
   }
   var lexical = phcepDice_(q, c);
-  if (longLength <= PHCEP_MATCH_DEFAULTS_.maxEditDistanceLength) {
+  // Skip the O(n*m) edit distance when even a perfect edit score cannot reach the floor.
+  var reachable = typeof floor !== 'number' || 0.75 * lexical + 0.25 >= floor;
+  if (!reachable) {
+    lexical = 0.75 * lexical;
+  } else if (longLength <= PHCEP_MATCH_DEFAULTS_.maxEditDistanceLength) {
     lexical = 0.75 * lexical + 0.25 * (1 - phcepEditDistance_(q, c) / longLength);
   }
   return Math.min(0.99, Math.max(containment, lexical));
@@ -120,7 +124,7 @@ function phcepRankSuggestions_(message, items, options) {
     if (!item || !item.reply) return;
     var relevance = 0;
     (item.questions || []).forEach(function(question) {
-      relevance = Math.max(relevance, phcepRelevance_(query, phcepNormalizeMatchText_(question)));
+      relevance = Math.max(relevance, phcepRelevance_(query, phcepNormalizeMatchText_(question), threshold));
     });
     if (relevance < threshold) return;
     var importance = phcepNormalizeImportance_(item.importance).value;

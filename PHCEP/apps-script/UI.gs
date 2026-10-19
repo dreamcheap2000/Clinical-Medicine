@@ -370,15 +370,18 @@ function phcepManualQA_() {
 function phcepRecordQAUsage_(match) {
   const sheet = phcepSpreadsheet_().getSheetByName('QA知識庫');
   if (!sheet || !match || !match.row) return;
-  const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 15).getValues();
-  const increment = function(row, column, current) {
-    if (current !== '' && typeof current !== 'number') return;
-    sheet.getRange(row, column).setValue((Number(current) || 0) + 1);
+  const count = sheet.getLastRow() - 1;
+  if (count < 1 || match.row - 2 >= count) return;
+  const replies = sheet.getRange(2, 7, count, 1).getValues();
+  const usage = sheet.getRange(2, 14, count, 2).getValues();
+  const bump = function(current) {
+    return current === '' || typeof current === 'number' ? (Number(current) || 0) + 1 : current;
   };
-  increment(match.row, 14, rows[match.row - 2][13]);
-  rows.forEach(function(values, i) {
-    if (String(values[6] || '').trim() === match.reply) increment(i + 2, 15, values[14]);
+  usage[match.row - 2][0] = bump(usage[match.row - 2][0]);
+  replies.forEach(function(values, i) {
+    if (String(values[0] || '').trim() === match.reply) usage[i][1] = bump(usage[i][1]);
   });
+  sheet.getRange(2, 14, count, 2).setValues(usage);
 }
 
 function suggestRepliesForUserMessage(userMessage, targetRow) {
