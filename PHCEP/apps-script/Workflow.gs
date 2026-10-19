@@ -276,7 +276,7 @@ function phcepPublishCollectionRow_(ss, sheet, row, editor) {
   var qa = ss.getSheetByName('QA知識庫');
   if (!qa) throw new Error('Run setupPHCEP to provision QA知識庫.');
   var key = String(values[0] || phcepCollectionKey_(question, reply));
-  var id = 'COL-' + key.slice(0, 12);
+  var id = 'COL-' + key.slice(0, 24);
   var ids = qa.getLastRow() > 1 ? qa.getRange(2, 1, qa.getLastRow() - 1, 1).getValues() : [];
   if (!ids.some(function(value) { return String(value[0]) === id; })) {
     qa.appendRow([id, importance.value === null ? '' : importance.value, phcepLiteral_(question), '', '', '',
@@ -498,11 +498,19 @@ function phcepHandleCollectionEdit_(e) {
       return;
     }
     if (col !== 2 || range.getValue() !== '核准') return;
+    var editor;
     try {
-      phcepPublishCollectionRow_(sheet.getParent(), sheet, row, phcepEditorEmail_(e));
+      editor = phcepEditorEmail_(e);
     } catch (error) {
       range.setValue('待審核');
       sheet.getRange(row, 13).setValue('未發布：需可驗證的授權編輯者。');
+      return;
+    }
+    try {
+      phcepPublishCollectionRow_(sheet.getParent(), sheet, row, editor);
+    } catch (error) {
+      range.setValue('待審核');
+      sheet.getRange(row, 13).setValue('未發布：發布時發生錯誤（請確認 QA知識庫 存在）。');
     }
   });
 }

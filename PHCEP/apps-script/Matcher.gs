@@ -12,7 +12,7 @@ var PHCEP_MATCH_DEFAULTS_ = {
 };
 
 var PHCEP_MATCH_LEADING_FILLERS_ = ['想請問', '請問', '想問', '您好', '你好', '哈囉'];
-var PHCEP_MATCH_TRAILING_FILLERS_ = ['謝謝', '感謝', '謝謝您', '謝謝你'];
+var PHCEP_MATCH_TRAILING_FILLERS_ = ['謝謝您', '謝謝你', '謝謝', '感謝'];
 
 /** Importance is optional metadata (blank = none); only integers 1-5 are valid. */
 function phcepNormalizeImportance_(value) {
