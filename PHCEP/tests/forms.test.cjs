@@ -55,7 +55,9 @@ function environment(options = {}) {
       return this;
     }
     setValue(value) { return this.setValues([[value]]); }
-    clearContent() { return this.setValue(''); }
+    clearContent() { return this.setValues(Array.from({ length: this.rows }, () => Array(this.cols).fill(''))); }
+    setRichTextValue(value) { return this.setValue(value); }
+    getRichTextValue() { const value = this.getValue(); return value && typeof value === 'object' ? value : null; }
     setDataValidation(rule) { this.sheet.rules.set(`${this.row}:${this.col}`, rule); return this; }
     clearDataValidations() { this.sheet.rules.delete(`${this.row}:${this.col}`); return this; }
     setFontWeight(value) { this.sheet.headerWeight = value; return this; }
@@ -89,6 +91,10 @@ function environment(options = {}) {
     setFrozenRows(count) { this.frozenRows = count; }
     insertRowsAfter(row, count) { this.rows += count; }
     getLastRow() { return this.data.length; }
+    getLastColumn() {
+      return this.data.reduce((max, row) => Math.max(max, (row || []).reduce((last, value, i) => value !== '' && value != null ? i + 1 : last, 0)), 0);
+    }
+    getIndex() { return this.book.sheets.indexOf(this) + 1; }
     getRange(...args) { return new Range(this, ...args); }
     appendRow(row) { assert.ok(row.length <= this.columns); this.data.push([...row]); return this; }
     getProtections() { return this.protections; }
@@ -104,6 +110,11 @@ function environment(options = {}) {
     insertSheet(name) { const sheet = new Sheet(this, name); this.sheets.push(sheet); return sheet; }
     getActiveSheet() { return this.activeRange?.getSheet() || this.sheets[0]; }
     getActiveRange() { return this.activeRange; }
+    setActiveSheet(sheet) { this.activeSheet = sheet; return sheet; }
+    moveActiveSheet(position) {
+      this.sheets.splice(this.sheets.indexOf(this.activeSheet), 1);
+      this.sheets.splice(position - 1, 0, this.activeSheet);
+    }
     toast() {}
   }
   class Item {
@@ -187,7 +198,12 @@ function environment(options = {}) {
       getActiveSpreadsheet: () => active,
       create: () => new Book('standalone-book'),
       openById: id => { assert.ok(books.has(id)); return books.get(id); },
-      newDataValidation: validation, flush() {}, ProtectionType: { SHEET: 'SHEET' }, getUi: () => ui
+      newDataValidation: validation, flush() {}, ProtectionType: { SHEET: 'SHEET' }, getUi: () => ui,
+      newRichTextValue: () => ({
+        setText(text) { this.text = text; return this; },
+        setLinkUrl(url) { this.url = url; return this; },
+        build() { const { text, url } = this; return { text, url, getText: () => text, getLinkUrl: () => url }; }
+      })
     },
     FormApp: {
       create: title => new Form(title),
@@ -226,6 +242,7 @@ function environment(options = {}) {
     },
     phcepWithLock_: fn => { assert.equal(locked, false, 'nested lock'); locked = true; try { return fn(); } finally { locked = false; } },
     phcepSpreadsheet_: () => books.get(properties.get('SPREADSHEET_ID')),
+    phcepDigest_: value => crypto.createHash('sha256').update(value).digest('hex'),
     phcepLiteral_: value => /^[=+\-@]/.test(String(value)) ? "'" + value : String(value),
     phcepProperty_: (key, aliases = []) => properties.get(key) || aliases.map(alias => properties.get(alias)).find(Boolean) || '',
     phcepPush_: (key, recipient, messages) => {
@@ -236,7 +253,7 @@ function environment(options = {}) {
       return pushResult;
     }
   });
-  for (const file of ['Setup.gs', 'Forms.gs', 'UI.gs']) {
+  for (const file of ['Setup.gs', 'Forms.gs', 'UI.gs', 'Matcher.gs', 'Workflow.gs']) {
     vm.runInContext(fs.readFileSync(path.join(root, 'apps-script', file), 'utf8'), context, { filename: file });
   }
   return { context, properties, forms, books, folders, active, triggers, pushes, menuHandlers, ui,
@@ -287,7 +304,8 @@ test('fresh and repeat standalone/bound setup preserve data, grow capacity, prot
     assert.equal(env.formCount(), 2);
     assert.equal(cdr.items.length, count);
     assert.equal(line.getRange(2, 3).getValue(), USER);
-    assert.equal(line.columns, 12);
+    assert.equal(line.columns, 24);
+    assert.deepEqual(book.getSheets().slice(0, 3).map(sheet => sheet.name), ['總覽', 'LINE對話', 'QA知識庫']);
     assert.equal(book.getSheetByName('QA知識庫').columns, 15);
     assert.equal(book.getSheetByName('PHCEP寄件匣').getRange(1, 8).getValue(), 'Created At');
     assert.equal(book.getSheetByName('PHCEP臨床評分').getRange(2, 8).getValue(), '人工值');
@@ -577,7 +595,7 @@ test('operator reconciliation replays actual form response by ID after invitatio
   assert.throws(() => env.context.reconcilePHCEPFormResponse('CDR', 'missing'), /not found/);
 });
 
-test('empty QA is safe, exact manual matches only, H fills safe draft and I defaults to no send', () => {
+test('empty QA is safe, local fuzzy matches rank relevant QA only, H fills safe draft and I defaults to no send', () => {
   const env = setup();
   const line = env.book().getSheetByName('LINE對話');
   line.appendRow(['message', false, USER, '', '', 'question']);
@@ -585,10 +603,14 @@ test('empty QA is safe, exact manual matches only, H fills safe draft and I defa
   const qa = env.book().getSheetByName('QA知識庫');
   qa.appendRow(['qa', '', 'question', '', '', '', '=safe draft']);
   assert.deepEqual(Array.from(env.context.suggestRepliesForUserMessage('question', 2)), ['=safe draft']);
-  assert.equal(env.context.suggestRepliesForUserMessage('similar question', 2).length, 0);
+  assert.deepEqual(Array.from(env.context.suggestRepliesForUserMessage('a similar question?', 2)), ['=safe draft']);
+  assert.equal(env.context.suggestRepliesForUserMessage('unrelated words', 2).length, 0);
+  env.context.suggestRepliesForUserMessage('question', 2);
   line.getRange(2, 8).setValue('=safe draft');
   env.context.phcepHandleEdit({ range: line.getRange(2, 8), triggerUid: env.triggers[0].getUniqueId() });
   assert.equal(line.getRange(2, 9).getValue(), "'=safe draft");
+  assert.equal(qa.getRange(2, 14).getValue(), 1);
+  assert.equal(qa.getRange(2, 15).getValue(), 1);
   env.context.phcepHandleEdit({ range: line.getRange(2, 9), triggerUid: env.triggers[0].getUniqueId(), user: { getEmail: () => OWNER } });
   assert.equal(env.pushes.length, 0);
   assert.equal(env.context.formatCellDisplayForReply('=HYPERLINK("bad")').isFormula, false);
@@ -750,4 +772,230 @@ test('complete supplied Traditional Chinese question builders retain titles choi
         gridRows: item.gridRows, gridColumns: item.gridColumns, required: item.required }))));
     assert.deepEqual(shape(actual.items), shape(captured.items));
   }
+});
+
+const COL = { action: 13, confirm: 14, source: 15, importance: 16, collect: 17, mediaName: 18, status: 19, history: 20 };
+const editAs = (env, range, email = OWNER) => env.context.phcepHandleEdit({
+  range, triggerUid: env.triggers.find(t => t.getHandlerFunction() === 'phcepHandleEdit').getUniqueId(),
+  user: email ? { getEmail: () => email } : undefined
+});
+
+test('layout migration is idempotent, appends grouped controls after existing data and preserves K/L', () => {
+  const env = environment({ columns: 14 });
+  const line = env.active.insertSheet('LINE對話');
+  const headers = ['Message ID', '發送問卷 (勾選)', 'User ID', 'DateTime', 'User Name', '訊息 (病患問題)',
+    '檔案/媒體連結', '建議回覆選單', '回覆草稿 (可編輯)', '回覆紀錄 (最新)', 'Event Key', '操作狀態'];
+  line.appendRow(headers);
+  const state = JSON.stringify({ reply: { key: 'clinician:x', status: 'SENT' } });
+  line.appendRow(['id', false, USER, '', '', 'question', '', '', '', 'latest', 'event-key', state, 'legacy shifted reply']);
+  env.context.setupPHCEP();
+  const book = env.book();
+  assert.deepEqual(book.getSheets().slice(0, 3).map(sheet => sheet.name), ['總覽', 'LINE對話', 'QA知識庫']);
+  assert.equal(line.getRange(2, 11).getValue(), 'event-key');
+  assert.equal(line.getRange(2, 12).getValue(), state);
+  assert.equal(line.getRange(2, 13).getValue(), 'legacy shifted reply');
+  assert.equal(line.getRange(1, 13).getValue(), '');
+  assert.equal(line.getRange(1, 14).getValue(), '操作動作');
+  const layout = env.context.phcepLineLayout_(line);
+  assert.equal(layout.start, 14);
+  const snapshot = JSON.stringify(line.data);
+  const columns = line.columns;
+  const result = env.context.setupPHCEP();
+  assert.equal(result.migration.lineColumnsAdded, 0);
+  assert.equal(JSON.stringify(line.data), snapshot);
+  assert.equal(line.columns, columns);
+  assert.equal(env.context.migratePHCEPLayout().lineColumnsAdded, 0);
+  assert.equal(JSON.stringify(line.data), snapshot);
+  assert.ok(book.getSheetByName('收錄集合'));
+  line.getRange(1, 15).setValue('');
+  line.getRange(1, 14).setValue('');
+  assert.throws(() => env.context.migratePHCEPLayout(), /incomplete or moved/);
+});
+
+test('unmanaged 總覽 sheet is never overwritten', () => {
+  const env = environment();
+  env.active.insertSheet('總覽').appendRow(['private operator notes']);
+  assert.throws(() => env.context.setupPHCEP(), /not PHCEP-managed/);
+  assert.equal(env.active.getSheetByName('總覽').getRange(1, 1).getValue(), 'private operator notes');
+});
+
+test('overview links key sheets and shows safe counters only', () => {
+  const env = setup();
+  const book = env.book();
+  book.getSheetByName('PHCEP寄件匣').appendRow(['k', 'r', 'FAILED', USER, '[{"text":"private"}]', '', '', '']);
+  book.getSheetByName('PHCEP隔離').appendRow(['resp', 'form', '', 'reason']);
+  book.getSheetByName('收錄集合').appendRow(['key', '待審核', 'private question']);
+  const overview = book.getSheetByName('總覽');
+  overview.getRange(1, 3).setValue(true);
+  editAs(env, overview.getRange(1, 3));
+  assert.equal(overview.getRange(1, 3).getValue(), false);
+  const serialized = JSON.stringify(overview.data);
+  for (const name of ['LINE對話', 'QA知識庫', '收錄集合', 'PHCEP事件', 'PHCEP請求', 'PHCEP寄件匣', 'PHCEP邀請',
+    'PHCEP表單紀錄', 'PHCEP隔離', 'PHCEP臨床評分', 'PHCEP回覆歷史']) {
+    const cell = overview.data.find(row => row[0] && row[0].text === name);
+    assert.ok(cell, name);
+    assert.match(cell[0].url, /^#gid=\d+$/);
+  }
+  const counter = label => overview.data.find(row => row[0] === label)[1];
+  assert.equal(counter('寄件匣待處理/失敗'), 1);
+  assert.equal(counter('表單隔離紀錄'), 1);
+  assert.equal(counter('收錄待審核'), 1);
+  assert.ok(overview.data[1][1] instanceof Date);
+  for (const secret of [USER, 'private', env.properties.get('GATEWAY_SIGNING_SECRET')]) assert.ok(!serialized.includes(secret));
+});
+
+test('no-menu send requires action selection then verified confirm; history shifts without moving K/L or controls', () => {
+  const env = setup();
+  const line = env.book().getSheetByName('LINE對話');
+  line.appendRow(['message', false, USER, '', '', 'question', '', '', 'first reply', 'legacy latest', 'event-1']);
+  const headers = JSON.stringify(line.data[0]);
+  line.getRange(2, COL.action).setValue('發送草稿');
+  editAs(env, line.getRange(2, COL.action));
+  assert.equal(env.pushes.length, 0);
+  assert.match(line.getRange(2, COL.status).getValue(), /確認執行/);
+  line.getRange(2, COL.confirm).setValue(true);
+  editAs(env, line.getRange(2, COL.confirm), null);
+  assert.equal(env.pushes.length, 0);
+  assert.equal(line.getRange(2, COL.confirm).getValue(), false);
+  line.getRange(2, COL.action).setValue('發送草稿');
+  line.getRange(2, COL.confirm).setValue(true);
+  editAs(env, line.getRange(2, COL.confirm), 'untrusted@example.org');
+  assert.equal(env.pushes.length, 0);
+  line.getRange(2, COL.action).setValue('發送草稿');
+  line.getRange(2, COL.confirm).setValue(true);
+  editAs(env, line.getRange(2, COL.confirm));
+  assert.equal(env.pushes.length, 1);
+  assert.equal(line.getRange(2, 10).getValue(), 'first reply');
+  assert.equal(line.getRange(2, 9).getValue(), '');
+  assert.equal(line.getRange(2, COL.action).getValue(), '');
+  assert.equal(line.getRange(2, COL.confirm).getValue(), false);
+  assert.match(line.getRange(2, COL.status).getValue(), /✅/);
+  assert.equal(line.getRange(2, COL.history).getValue(), 'legacy latest');
+  line.getRange(2, 9).setValue('second reply');
+  line.getRange(2, COL.action).setValue('發送草稿');
+  line.getRange(2, COL.confirm).setValue(true);
+  editAs(env, line.getRange(2, COL.confirm));
+  assert.equal(env.pushes.length, 2);
+  assert.equal(line.getRange(2, 10).getValue(), 'second reply');
+  assert.deepEqual(line.getRange(2, COL.history, 1, 3).getValues()[0], ['first reply', 'legacy latest', '']);
+  assert.equal(line.getRange(2, 11).getValue(), 'event-1');
+  assert.equal(JSON.parse(line.getRange(2, 12).getValue()).reply.status, 'SENT');
+  assert.equal(JSON.stringify(line.data[0]), headers);
+  assert.equal(env.book().getSheetByName('PHCEP回覆歷史').getLastRow(), 3);
+});
+
+test('no-menu questionnaire actions reuse existing send semantics and multi-cell pastes never execute', () => {
+  const env = setup();
+  const line = env.book().getSheetByName('LINE對話');
+  line.appendRow(['message', false, USER, '', '', '', '', '', '', '', 'event-1']);
+  line.getRange(2, COL.action).setValue('發送每日健康邀請');
+  editAs(env, line.getRange(2, COL.action));
+  line.getRange(2, COL.confirm).setValue(true);
+  editAs(env, line.getRange(2, COL.action, 1, 2));
+  assert.equal(env.pushes.length, 0);
+  assert.equal(line.getRange(2, COL.confirm).getValue(), false);
+  line.getRange(2, COL.confirm).setValue(true);
+  editAs(env, line.getRange(2, COL.confirm));
+  assert.equal(env.pushes.length, 1);
+  assert.ok(JSON.parse(line.getRange(2, 12).getValue())['questionnaire:VITALS']);
+  line.getRange(2, COL.action).setValue('建立新每日健康邀請');
+  line.getRange(2, COL.confirm).setValue(true);
+  editAs(env, line.getRange(2, COL.confirm));
+  assert.equal(env.pushes.length, 2);
+  assert.notEqual(env.pushes[0].key, env.pushes[1].key);
+});
+
+test('collection workflow captures provenance, deduplicates, validates importance and publishes only after approval', () => {
+  const env = setup();
+  const book = env.book();
+  const line = book.getSheetByName('LINE對話');
+  const qa = book.getSheetByName('QA知識庫');
+  line.appendRow(['message-1', false, USER, '', '', '如何預約門診', '', '', 'unsent draft', '', 'event-1']);
+  line.getRange(2, COL.source).setValue('草稿 (未發送)');
+  line.getRange(2, COL.importance).setValue('7');
+  editAs(env, line.getRange(2, COL.importance));
+  assert.equal(line.getRange(2, COL.importance).getValue(), '');
+  assert.match(line.getRange(2, COL.status).getValue(), /1-5/);
+  line.getRange(2, COL.importance).setValue('4');
+  editAs(env, line.getRange(2, COL.importance));
+  assert.equal(line.getRange(2, COL.importance).getValue(), 4);
+  line.getRange(2, COL.collect).setValue(true);
+  editAs(env, line.getRange(2, COL.collect), null);
+  assert.equal(book.getSheetByName('收錄集合').getLastRow(), 1);
+  line.getRange(2, COL.collect).setValue(true);
+  editAs(env, line.getRange(2, COL.collect));
+  assert.equal(line.getRange(2, COL.collect).getValue(), false);
+  const collections = book.getSheetByName('收錄集合');
+  assert.equal(collections.getLastRow(), 2);
+  const record = collections.data[1];
+  assert.equal(record[1], '待審核');
+  assert.equal(record[2], '如何預約門診');
+  assert.equal(record[3], 'unsent draft');
+  assert.equal(record[5], '未發送 (草稿)');
+  assert.equal(record[6], 4);
+  assert.equal(record[7], 'event-1');
+  assert.equal(record[8], 'message-1');
+  assert.equal(record[9], 'LINE對話!2');
+  assert.equal(record[11], OWNER);
+  assert.ok(!JSON.stringify(collections.data).includes(USER));
+  assert.match(line.getRange(2, COL.status).getValue(), /待審核/);
+  line.getRange(2, COL.action).setValue('收錄');
+  editAs(env, line.getRange(2, COL.action));
+  assert.equal(collections.getLastRow(), 2);
+  assert.match(line.getRange(2, COL.status).getValue(), /已存在/);
+  assert.equal(line.getRange(2, COL.action).getValue(), '');
+  assert.equal(qa.getLastRow(), 1);
+  assert.equal(env.pushes.length, 0);
+  collections.getRange(2, 2).setValue('核准');
+  editAs(env, collections.getRange(2, 2), 'untrusted@example.org');
+  assert.equal(collections.getRange(2, 2).getValue(), '待審核');
+  assert.equal(qa.getLastRow(), 1);
+  collections.getRange(2, 2).setValue('核准');
+  editAs(env, collections.getRange(2, 2));
+  assert.equal(collections.getRange(2, 2).getValue(), '已發布');
+  assert.equal(qa.getLastRow(), 2);
+  assert.equal(qa.getRange(2, 2).getValue(), 4);
+  assert.equal(qa.getRange(2, 3).getValue(), '如何預約門診');
+  assert.equal(qa.getRange(2, 7).getValue(), 'unsent draft');
+  assert.equal(env.context.publishApprovedCollections().published, 0);
+  assert.equal(qa.getLastRow(), 2);
+  line.getRange(2, COL.action).setValue('重新整理建議');
+  editAs(env, line.getRange(2, COL.action));
+  assert.match(line.getRange(2, COL.status).getValue(), /1 筆建議/);
+  assert.equal(env.pushes.length, 0);
+});
+
+test('media rename updates only private managed Drive files and refreshes the link label', () => {
+  const env = setup();
+  const line = env.book().getSheetByName('LINE對話');
+  const folderId = env.properties.get('IMAGE_FOLDER_ID');
+  const files = new Map();
+  const makeFile = (id, parent, access = 'PRIVATE') => {
+    const file = { name: 'LINE_original', getParents: () => {
+      let done = false;
+      return { hasNext: () => !done, next: () => { done = true; return { getId: () => parent }; } };
+    }, getSharingAccess: () => access, setName(name) { this.name = name; return this; } };
+    files.set(id, file);
+    return file;
+  };
+  env.context.DriveApp.getFileById = id => { if (!files.has(id)) throw new Error('missing'); return files.get(id); };
+  const managed = makeFile('managedFile123', folderId);
+  const outside = makeFile('outsideFile123', 'other-folder');
+  const shared = makeFile('sharedFile1234', folderId, 'ANYONE_WITH_LINK');
+  const link = id => env.context.SpreadsheetApp.newRichTextValue().setText('檢視檔案')
+    .setLinkUrl('https://drive.google.com/file/d/' + id + '/view').build();
+  line.appendRow(['m1', false, USER, '', '', '圖片', link('managedFile123'), '', '', '', 'e1']);
+  line.appendRow(['m2', false, USER, '', '', '圖片', link('outsideFile123'), '', '', '', 'e2']);
+  line.appendRow(['m3', false, USER, '', '', '圖片', link('sharedFile1234'), '', '', '', 'e3']);
+  for (const row of [2, 3, 4]) {
+    line.getRange(row, COL.mediaName).setValue('復健/照片:1');
+    editAs(env, line.getRange(row, COL.mediaName));
+  }
+  assert.equal(managed.name, '復健照片1');
+  assert.equal(line.getRange(2, 7).getValue().text, '復健照片1');
+  assert.equal(line.getRange(2, 7).getValue().url, 'https://drive.google.com/file/d/managedFile123/view');
+  assert.equal(outside.name, 'LINE_original');
+  assert.equal(shared.name, 'LINE_original');
+  assert.match(line.getRange(3, COL.status).getValue(), /❌/);
+  assert.match(line.getRange(4, COL.status).getValue(), /私人/);
 });
