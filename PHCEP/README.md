@@ -609,7 +609,7 @@ reviewed change into `main` before attempting the manual workflow.
 ### Prerequisites and target verification
 
 An authorized owner must independently verify the Apps Script project and its
-association with the intended spreadsheet. The existing `PHCEP/.clasp.json`
+association with the intended spreadsheet. The existing `PHCEP/apps-script/.clasp.json`
 script ID is **unverified**; do not adopt it without verification. Root-project
 CLASP secrets/configuration do not establish the PHCEP target.
 
@@ -621,6 +621,7 @@ Configure these repository **variables**:
 | `PHCEP_EXPECTED_SCRIPT_ID` | The same script ID, independently verified as a second target pin. |
 | `PHCEP_SPREADSHEET_ID` | Exactly `12ksl5GvgM_YVc1NjrPE9LRe_YvUgqttLl0R41z5dazo`. |
 | `PHCEP_OAUTH_CLIENT_ID` | The verified custom user-OAuth client ID used by the credential. |
+| `PHCEP_PREFLIGHT_SOURCE_SHA256` | Optional only when the entire remote project matches the reviewed local project; otherwise required as the canonical SHA256 of an independently reviewed previous remote source revision. Never permits a differing safety entrypoint, file set or manifest. |
 
 Configure the repository **secret** `PHCEP_CLASPRC_JSON` with a refreshable
 **script-owner user OAuth** credential. Never paste credentials into source,
@@ -653,7 +654,7 @@ the workflow silently performs:
 1. Back up and inspect the verified project's current source, manifest and
    configuration securely. Manually install the exact reviewed PHCEP source
    **and manifest**, including `ManualMigration.gs` and its dependencies,
-   **without running setup or migration**. Source installation is not permission to invoke `phcepSetup`
+   **without running setup or migration**. Source installation is not permission to invoke `setupPHCEP()`
    or change existing Forms, triggers, folders, webhooks or ScriptProperties.
 2. Separately establish a pre-existing **API executable**, restricted to the
    owner (`executionApi.access: MYSELF`); a web app is not an API executable.
@@ -661,7 +662,8 @@ the workflow silently performs:
    `devMode: true`, so it executes the latest saved source, not an old deployment
    version. Keep concurrent editor/source changes out of the deployment window.
 3. Align the reviewed local and remote manifests before dispatch. The runner
-   requires **exact parsed manifest equality on apply**. The reviewed local
+   requires **exact parsed manifest equality before any remote execution, in
+   both dry-run and apply modes**. The reviewed local
    manifest includes `executionApi.access: MYSELF` and leaves `webapp` unchanged,
    so installing that exact manifest supports the owner-only API prerequisite.
    Adding an API setting only remotely, or any other manifest drift, would block
@@ -672,6 +674,30 @@ missing or differs. It fails closed with
 `PREVIEW_UNAVAILABLE_BOOTSTRAP_REQUIRED` until the reviewed safety entrypoint
 has been installed manually. Do not use apply as a bootstrap shortcut.
 
+Before any `scripts.run` call in either mode, the runner verifies the entire
+remote file set, parsed manifest equality, and exact `ManualMigration` source.
+It also checks the canonical SHA256 of the **whole project**, because other
+`.gs` files share globals and could override the preview's code. The remote
+project must match the local reviewed project, or match the independently
+reviewed previous revision pinned by `PHCEP_PREFLIGHT_SOURCE_SHA256`. That
+optional pin permits only reviewed non-wrapper source differences; it does
+not relax the safety-entrypoint, file-set or manifest checks.
+
+To obtain a previous revision's pin, use a trusted checkout of that reviewed
+revision, with the canonical-digest helper available, and run from its trusted
+repository root:
+
+```sh
+python3 -c 'from scripts.phcep_manual_deploy import content_digest, local_content; print(content_digest(local_content()))'
+```
+
+Independently confirm that revision is the intended previously installed
+project before setting the variable. **Never copy a hash of unknown live code
+and thereby bless unreviewed source.** If a trusted previous canonical hash
+is unavailable, manually review and bootstrap the exact latest source and
+manifest instead. Missing or incorrect pins for differing non-wrapper source
+fail closed with `SOURCE_INTEGRITY_PIN_REQUIRED`.
+
 ### Run dry first, then explicitly apply
 
 1. Merge first. In GitHub **Actions → PHCEP manual layout deployment**, choose
@@ -680,9 +706,9 @@ has been installed manually. Do not use apply as a bootstrap shortcut.
    for dry run; non-`main` dispatches are rejected before checkout/secrets.
 2. Review the sanitized job summary/report and resolve every blocker. A
    successful dry run performs read-only target, credential and layout
-   preflight; it does not upload code or migrate sheets. Apply additionally
-   checks the full remote file set and manifest, so dry-run success alone
-   does not promise apply can proceed.
+   preflight, including whole-project source integrity, file-set and manifest
+   checks before execution; it does not upload code or migrate sheets.
+   Dry-run success does not guarantee a later apply if remote state changes.
 3. Before apply, take an owner-verified backup in a secure,
    **clinical-approved location**, outside Actions logs/artifacts. Preserve
    sheet data, layout and protections, Forms and responses, resource IDs and
@@ -695,9 +721,10 @@ has been installed manually. Do not use apply as a bootstrap shortcut.
 The workflow runs local safety tests before accessing Google and serializes
 this target without cancelling an in-flight run. It uses the Apps Script REST
 API, **not the clasp CLI**. It reuses the existing credential-normalization
-helper in memory; it does not write a credential file or log secrets. Apply
-uses a fixed source-file allowlist and rejects unknown/missing remote files
-and manifest drift before whole-project source replacement, protecting
+helper in memory; it does not write a credential file or log secrets. Both
+modes use a fixed source-file allowlist and reject unknown/missing remote files,
+manifest drift and unpinned source drift before any remote execution. Apply
+then replaces whole-project source while preserving the checked manifest and
 existing web-app settings. It does not call version/deployment creation or
 update APIs, or update webhooks.
 
@@ -753,5 +780,6 @@ or clinical-data logging to investigate a failure.
 | `OAUTH_CLIENT_MISMATCH`, `OAUTH_SCOPES_REQUIRED` | Check custom Desktop client/audience and same Cloud project; reauthorize all manifest scopes plus `script.projects`. |
 | `PREVIEW_UNAVAILABLE_BOOTSTRAP_REQUIRED` | Manually install the exact reviewed source and manifest without executing setup/migration, separately establish the owner-only API executable, then repeat dry run. |
 | `REMOTE_FILE_SET_MISMATCH`, `MANIFEST_MISMATCH` | Review source drift and reconcile the exact allowlist/manifest, including owner-only `executionApi`, without deleting unknown files or weakening guards. |
+| `SOURCE_INTEGRITY_PIN_REQUIRED` | Use the canonical hash from an independently reviewed trusted previous checkout, or manually bootstrap exact latest reviewed source/manifest. Never pin unknown live code merely to pass preflight. |
 | Remote migration blocked / unsupported layout | Privately check ScriptProperties `SPREADSHEET_ID`, authorized owner/editor access, headers, response-sheet conflicts, overview ownership and operator block at M. Review unsupported layouts manually; no automatic relocation. |
 | API/execution failure | Check API enablement, owner user-access toggle, pre-existing API executable, owner identity, scopes and Cloud-project compatibility. If apply began, reconcile possible partial/unknown changes before any rerun. |

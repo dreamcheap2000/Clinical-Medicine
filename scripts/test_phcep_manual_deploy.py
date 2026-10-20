@@ -137,6 +137,41 @@ class ManualDeployTests(unittest.TestCase):
         self.assertIn("PREVIEW_UNAVAILABLE_BOOTSTRAP_REQUIRED", self.run_report()["blockers"])
         self.assertFalse(any(url.endswith(":run") for _, url, _ in self.google.calls))
 
+    def test_whole_project_integrity_before_any_execution_in_both_modes(self):
+        for mode in ("true", "false"):
+            self.env["PHCEP_DRY_RUN"] = mode
+            self.google = FakeGoogle()
+            self.google.files = copy.deepcopy(self.google.files)
+            self.google.files[0]["source"] += "\nfunction phcepManualLayoutMigration() { throw 'unsafe'; }\n"
+            report = self.run_report()
+            self.assertIn("SOURCE_INTEGRITY_PIN_REQUIRED", report["blockers"])
+            self.assertFalse(any(method == "PUT" or url.endswith(":run")
+                                 for method, url, _ in self.google.calls))
+
+    def test_independently_reviewed_old_source_pin_allows_updates(self):
+        self.env["PHCEP_DRY_RUN"] = False
+        self.google.files = copy.deepcopy(self.google.files)
+        self.google.files[0]["source"] += "\n// reviewed previous revision\n"
+        self.env["PHCEP_PREFLIGHT_SOURCE_SHA256"] = runner.content_digest(self.google.files)
+        self.assertEqual("applied", self.run_report()["status"])
+        uploaded = next(payload["files"] for method, _, payload in self.google.calls if method == "PUT")
+        self.assertEqual(runner.content_digest(runner.local_content()), runner.content_digest(uploaded))
+
+    def test_bad_or_stale_source_pin_never_executes(self):
+        self.google.files = copy.deepcopy(self.google.files)
+        self.google.files[0]["source"] += "\n// source drift\n"
+        for pin in ("fixture-secret", "a" * 64):
+            self.env["PHCEP_PREFLIGHT_SOURCE_SHA256"] = pin
+            self.assertIn("SOURCE_INTEGRITY_PIN_REQUIRED", self.run_report()["blockers"])
+        self.assertFalse(any(method == "PUT" or url.endswith(":run")
+                             for method, url, _ in self.google.calls))
+
+    def test_digest_ignores_api_file_metadata_order_and_manifest_formatting(self):
+        files = copy.deepcopy(self.google.files)
+        files[-1]["source"] = json.dumps(json.loads(files[-1]["source"]), sort_keys=True)
+        files[0]["lastModifyUser"] = {"displayName": "patient fixture-secret"}
+        self.assertEqual(runner.content_digest(files[::-1]), runner.content_digest(self.google.files))
+
     def test_string_and_boolean_false_upload_then_apply_fixed_function(self):
         for value in ("false", False):
             self.env["PHCEP_DRY_RUN"] = value
@@ -222,6 +257,7 @@ class ManualDeployTests(unittest.TestCase):
                 self.google.files.append({"name": "unknown", "type": "SERVER_JS", "source": "private"})
             self.assertEqual("failed", self.run_report()["status"])
             self.assertFalse(any(method == "PUT" for method, _, _ in self.google.calls))
+            self.assertFalse(any(url.endswith(":run") for _, url, _ in self.google.calls))
 
     def test_sanitization_excludes_all_arbitrary_remote_strings(self):
         secret = "patient-name fixture-secret https://private.example/answers"

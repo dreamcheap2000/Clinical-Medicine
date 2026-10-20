@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   manual-layout:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: Guard before checkout or secrets
@@ -41,7 +41,7 @@ jobs:
               blockers.append("INVALID_DRY_RUN")
           mode = "dry_run" if os.environ.get("DRY_RUN", "true") == "true" else "apply"
           report = {"mode": mode, "commit": os.environ["GITHUB_SHA"],
-                    "status": "failed", "stages": [],
+                    "status": "failed", "stages": [] if blockers else ["guards"],
                     "planned": None, "actual": None,
                     "before": None, "after": None,
                     "blockers": blockers or ["TESTS_OR_RUNNER_NOT_COMPLETED"]}
@@ -78,6 +78,7 @@ jobs:
           PHCEP_EXPECTED_SCRIPT_ID: ${{ vars.PHCEP_EXPECTED_SCRIPT_ID }}
           PHCEP_SPREADSHEET_ID: ${{ vars.PHCEP_SPREADSHEET_ID }}
           PHCEP_OAUTH_CLIENT_ID: ${{ vars.PHCEP_OAUTH_CLIENT_ID }}
+          PHCEP_PREFLIGHT_SOURCE_SHA256: ${{ vars.PHCEP_PREFLIGHT_SOURCE_SHA256 }}
           PHCEP_CLASPRC_JSON: ${{ secrets.PHCEP_CLASPRC_JSON }}
           PHCEP_REPORT_PATH: ${{ runner.temp }}/phcep-report.json
         run: python3 -m scripts.phcep_manual_deploy

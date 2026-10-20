@@ -1,5 +1,6 @@
 """Manual PHCEP deployment. All remote responses are private, never logged."""
 
+import hashlib
 import json
 import os
 import re
@@ -96,6 +97,23 @@ def local_content():
     files.append({"name": "appsscript", "type": "JSON",
                   "source": (SOURCE / "appsscript.json").read_text()})
     return files
+
+
+def content_digest(files):
+    """Hash the complete reviewed project, not API metadata or file order."""
+    canonical = []
+    for file in files:
+        if not isinstance(file, dict) or not all(
+            isinstance(file.get(key), str) for key in ("name", "type", "source")
+        ):
+            raise Blocked("SOURCE_PREFLIGHT_FAILED")
+        item = {key: file[key] for key in ("name", "type", "source")}
+        if item["name"] == "appsscript" and item["type"] == "JSON":
+            item["source"] = json.loads(item["source"])
+        canonical.append(item)
+    encoded = json.dumps(sorted(canonical, key=lambda f: (f["name"], f["type"])),
+                         sort_keys=True, ensure_ascii=True, separators=(",", ":")).encode()
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def count(value):
@@ -265,6 +283,20 @@ def run(env, api=http):
         matches = [f for f in remote["files"] if f.get("name") == safety["name"]]
         if len(matches) != 1 or any(matches[0].get(k) != safety[k] for k in safety):
             raise Blocked("PREVIEW_UNAVAILABLE_BOOTSTRAP_REQUIRED")
+        # Apps Script loads all files into one global namespace, even for preview.
+        # Trust the entire reviewed project before executing ANY of its functions.
+        names = {(f["name"], f["type"]) for f in files}
+        if {(f.get("name"), f.get("type")) for f in remote["files"]} != names or len(remote["files"]) != len(files):
+            raise Blocked("REMOTE_FILE_SET_MISMATCH")
+        remote_manifest = next(f["source"] for f in remote["files"] if f["name"] == "appsscript")
+        if json.loads(remote_manifest) != manifest:
+            raise Blocked("MANIFEST_MISMATCH")
+        actual_digest = content_digest(remote["files"])
+        trusted_digest = env.get("PHCEP_PREFLIGHT_SOURCE_SHA256", "")
+        if actual_digest != content_digest(files) and (
+            not re.fullmatch(r"[a-f0-9]{64}", trusted_digest) or actual_digest != trusted_digest
+        ):
+            raise Blocked("SOURCE_INTEGRITY_PIN_REQUIRED")
         before = execute(api, "https://script.googleapis.com/v1/scripts/" + script, token, False)
         report["before"] = before["before"]
         report["after"] = before["after"]
@@ -278,14 +310,6 @@ def run(env, api=http):
             report["status"] = "dry_run_noop"
             report["actual"] = observed_diff(report["before"], report["after"])
             return report
-        # Do not delete unknown remote files, libraries or advanced service config.
-        # A source push is whole-project replacement, so fail closed on drift.
-        names = {(f["name"], f["type"]) for f in files}
-        if {(f.get("name"), f.get("type")) for f in remote["files"]} != names or len(remote["files"]) != len(files):
-            raise Blocked("REMOTE_FILE_SET_MISMATCH")
-        remote_manifest = next(f["source"] for f in remote["files"] if f["name"] == "appsscript")
-        if json.loads(remote_manifest) != manifest:
-            raise Blocked("MANIFEST_MISMATCH")
         report["sourceUpload"] = "outcome_unknown"
         report["after"] = None
         uploaded = api("PUT", url + "/content", token, {"files": files})
