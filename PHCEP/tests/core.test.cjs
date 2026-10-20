@@ -30,7 +30,7 @@ function environment() {
     },
     locked: false, releases: 0, failLock: false, requests: [],
     files: [], folderAccess: 'PRIVATE', pushCode: 200, pushHeaders: {},
-    failProfile: false, flushes: 0, failWrite: null
+    failProfile: false, flushes: 0, failWrite: null, validations: {}
   };
   function sheet(name, columns) {
     const data = [Array.from({ length: columns }, (_, i) => `Header ${i}`)];
@@ -53,7 +53,9 @@ function environment() {
           getValue: () => data[row - 1]?.[column - 1] ?? '',
           setValues: write,
           setValue: value => write([[value]]),
-          setRichTextValue: value => write([[value]])
+          setRichTextValue: value => write([[value]]),
+          clearDataValidations() { delete state.validations[`${name}:${row}:${column}`]; return this; },
+          setDataValidation(rule) { state.validations[`${name}:${row}:${column}`] = rule; return this; }
         };
       }
     };
@@ -83,6 +85,14 @@ function environment() {
         return { getSheetByName: name => state.sheets[name] };
       },
       flush: () => { state.flushes++; },
+      newDataValidation: () => {
+        const rule = {};
+        return {
+          requireValueInList(values) { rule.values = [...values]; return this; },
+          setAllowInvalid(value) { rule.allowInvalid = value; return this; },
+          build: () => rule
+        };
+      },
       newRichTextValue: () => ({
         setText(text) { this.text = text; return this; },
         setLinkUrl(url) { this.url = url; return this; },
@@ -153,7 +163,7 @@ function environment() {
     console: { log() { throw new Error('No logging allowed'); }, error() { throw new Error('No logging allowed'); } },
     Logger: { log() { throw new Error('No logging allowed'); } }
   });
-  for (const name of ['Storage.gs', 'Core.gs'])
+  for (const name of ['Storage.gs', 'Matcher.gs', 'Core.gs'])
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../apps-script', name), 'utf8'), context);
   const sign = (events = [], changes = {}, raw) => {
     const envelope = {
@@ -486,4 +496,31 @@ test('push recipient must be a strict LINE user ID', () => {
     assert.equal(state.requests.length, 0);
     assert.equal(state.sheets['PHCEP寄件匣'].data.length, 1);
   }
+});
+
+test('text ingestion adds bounded local QA suggestions to H without network calls or sending', () => {
+  const { post, sign, state } = environment();
+  const qaRows = [Array.from({ length: 15 }, (_, i) => `QA Header ${i}`),
+    ['1', '', '如何預約門診', '', '', '', '預約說明', '', '', '', '', '', '', 0, 0],
+    ['2', '', '停車資訊', '', '', '', '停車說明', '', '', '', '', '', '', 0, 0]];
+  state.sheets['QA知識庫'] = {
+    getLastRow: () => qaRows.length,
+    getRange: (row, column, height, width) => ({
+      getValues: () => qaRows.slice(row - 1, row - 1 + height).map(values => values.slice(column - 1, column - 1 + width))
+    })
+  };
+  const message = event('qa-1', { message: { id: 'qa-1', type: 'text', text: '請問如何預約門診？' } });
+  assert.equal(post(sign([message])).ok, true);
+  assert.deepEqual(state.validations['LINE對話:2:8'].values, ['預約說明']);
+  assert.equal(state.sheets['LINE對話'].data[1][8], '');
+  assert.equal(state.requests.filter(request => !request.url.includes('/profile/')).length, 0);
+  assert.equal(state.sheets['PHCEP事件'].data[1][1], 'COMPLETE');
+});
+
+test('suggestion failures never block durable ingestion', () => {
+  const { post, sign, state } = environment();
+  state.sheets['QA知識庫'] = { getLastRow() { throw new Error('private QA failure'); } };
+  assert.equal(post(sign([event()])).ok, true);
+  assert.equal(state.sheets['LINE對話'].data[1][5], '中文 text');
+  assert.equal(state.sheets['PHCEP事件'].data[1][1], 'COMPLETE');
 });

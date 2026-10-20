@@ -11,6 +11,9 @@ function onOpen() {
     .addItem('📨 確認發送選取列草稿', 'sendSelectedDraft')
     .addItem('⚠️ 啟用 I 欄編輯即發送（需確認）', 'enableClinicianSendOnEdit')
     .addItem('🛑 停用 I 欄編輯即發送', 'disableClinicianSendOnEdit')
+    .addItem('🧭 遷移版面（總覽／操作欄／收錄集合）', 'migratePHCEPLayout')
+    .addItem('📊 重新整理總覽', 'refreshPHCEPOverview')
+    .addItem('📚 發布已核准的收錄項目', 'publishApprovedCollections')
     .addToUi();
 }
 
@@ -72,8 +75,26 @@ function phcepArchiveReply_(operation, eventKey) {
   }
 }
 
+// Right-shift the previous latest reply only inside the dedicated history area;
+// K/L and the operator block never move. Full history stays in PHCEP回覆歷史.
+function phcepShiftReplyHistory_(sheet, row, operation) {
+  const previous = sheet.getRange(row, 10).getValue();
+  const text = String(previous == null ? '' : previous);
+  if (!text || text === operation.draft || text === phcepLiteral_(operation.draft)) return false;
+  const layout = phcepLineLayout_(sheet);
+  if (!layout) return false;
+  const width = PHCEP_LINE_HISTORY_HEADERS_.length;
+  const history = sheet.getRange(row, layout.historyStart, 1, width).getValues()[0];
+  const shifted = [previous].concat(history.slice(0, width - 1)).map(function(value) {
+    return typeof value === 'string' ? phcepLiteral_(value) : value;
+  });
+  sheet.getRange(row, layout.historyStart, 1, width).setValues([shifted]);
+  return true;
+}
+
 function phcepCompleteReply_(sheet, row, operation, rawDraft, eventKey) {
   phcepArchiveReply_(operation, eventKey);
+  phcepShiftReplyHistory_(sheet, row, operation);
   sheet.getRange(row, 10).setValue(phcepLiteral_(operation.draft));
   if (String(sheet.getRange(row, 9).getValue() || '') === rawDraft) sheet.getRange(row, 9).clearContent();
 }
@@ -171,7 +192,10 @@ function phcepHandleEdit(e) {
   const range = e.range;
   const sheet = range.getSheet();
   if (!phcepInstalledEvent_(e, 'phcepHandleEdit', ScriptApp.EventType.ON_EDIT, sheet.getParent().getId())) return;
-  if (sheet.getName() !== 'LINE對話' || sheet.getParent().getId() !== phcepSpreadsheet_().getId()) return;
+  if (sheet.getParent().getId() !== phcepSpreadsheet_().getId()) return;
+  if (sheet.getName() === PHCEP_OVERVIEW_SHEET_) return phcepHandleOverviewEdit_(e);
+  if (sheet.getName() === PHCEP_COLLECTION_SHEET_) return phcepHandleCollectionEdit_(e);
+  if (sheet.getName() !== 'LINE對話') return;
   if (range.getRow() < 2) return;
   return phcepWithLock_(function() {
     if (range.getNumRows() !== 1 || range.getNumColumns() !== 1) {
@@ -185,6 +209,15 @@ function phcepHandleEdit(e) {
           phcepWriteOperationState_(sheet, row, state);
         }
       }
+      // Multi-cell pastes never run or arm operator actions; clear pasted actions and confirmations.
+      const layout = phcepLineLayout_(sheet);
+      if (layout && start <= layout.collect && end >= layout.action) {
+        for (let row = range.getRow(); row < range.getRow() + range.getNumRows(); row++) {
+          if (start <= layout.action && end >= layout.action) sheet.getRange(row, layout.action).clearContent();
+          if (start <= layout.confirm && end >= layout.confirm) sheet.getRange(row, layout.confirm).setValue(false);
+          if (start <= layout.collect && end >= layout.collect) sheet.getRange(row, layout.collect).setValue(false);
+        }
+      }
       return;
     }
     const row = range.getRow();
@@ -193,8 +226,18 @@ function phcepHandleEdit(e) {
       const selected = String(range.getValue() || '').trim();
       const qa = phcepManualQA_();
       const match = qa.find(function(item) { return item.reply === selected; });
-      if (match) sheet.getRange(row, 9).setValue(phcepLiteral_(match.reply));
+      if (match) {
+        sheet.getRange(row, 9).setValue(phcepLiteral_(match.reply));
+        phcepRecordQAUsage_(match);
+      }
       range.clearContent();
+      return;
+    }
+    if (col > 12) {
+      const layout = phcepLineLayout_(sheet);
+      if (layout && col >= layout.start && col < layout.historyStart) {
+        return phcepHandleLineControlEdit_(e, sheet, row, col, layout);
+      }
       return;
     }
     const autoReply = col === 9 && phcepProperty_('CLINICIAN_SEND_ON_EDIT') === 'true';
@@ -243,6 +286,23 @@ function sendSelectedVitalsQuestionnaire() {
   });
 }
 
+// Caller holds the lock and has obtained explicit confirmation (menu dialog or no-menu confirm checkbox).
+function phcepNewInvitationForRow_(sheet, row, type) {
+  const state = phcepReadOperationState_(sheet, row);
+  const key = 'questionnaire:' + type;
+  const prior = state[key] || (type === 'CDR' ? state.questionnaire : null);
+  if (prior && prior.status !== 'SENT') {
+    throw new Error('Reconcile pending or ambiguous invitation before creating a new invitation.');
+  }
+  if (prior) {
+    state.previousInvitations = (state.previousInvitations || []).concat([{ key: prior.key, type: type, status: prior.status }]).slice(-20);
+    delete state[key];
+    if (type === 'CDR') delete state.questionnaire;
+    phcepWriteOperationState_(sheet, row, state);
+  }
+  return phcepSendRow_(sheet, row, 'questionnaire', type);
+}
+
 function phcepNewSelectedInvitation_(type) {
   phcepAuthorizeClinician_();
   const ui = SpreadsheetApp.getUi();
@@ -250,19 +310,7 @@ function phcepNewSelectedInvitation_(type) {
       ui.ButtonSet.YES_NO) !== ui.Button.YES) return;
   return phcepWithLock_(function() {
     const selected = phcepSelectedRow_();
-    const state = phcepReadOperationState_(selected.sheet, selected.row);
-    const key = 'questionnaire:' + type;
-    const prior = state[key] || (type === 'CDR' ? state.questionnaire : null);
-    if (prior && prior.status !== 'SENT') {
-      throw new Error('Reconcile pending or ambiguous invitation before creating a new invitation.');
-    }
-    if (prior) {
-      state.previousInvitations = (state.previousInvitations || []).concat([{ key: prior.key, type: type, status: prior.status }]).slice(-20);
-      delete state[key];
-      if (type === 'CDR') delete state.questionnaire;
-      phcepWriteOperationState_(selected.sheet, selected.row, state);
-    }
-    return phcepSendRow_(selected.sheet, selected.row, 'questionnaire', type);
+    return phcepNewInvitationForRow_(selected.sheet, selected.row, type);
   });
 }
 
@@ -316,27 +364,32 @@ function sendBatchQuestionnaireFromCheckboxes() {
 }
 
 function phcepManualQA_() {
+  return phcepReadQA_(phcepSpreadsheet_());
+}
+
+// Usage counts (N per row, O for identical replies) are a small bounded ranking hint only.
+function phcepRecordQAUsage_(match) {
   const sheet = phcepSpreadsheet_().getSheetByName('QA知識庫');
-  if (!sheet || sheet.getLastRow() < 2) return [];
-  return sheet.getRange(2, 1, sheet.getLastRow() - 1, 15).getValues().map(function(row) {
-    return { questions: [row[2], row[3], row[4]].map(function(value) { return String(value || '').trim(); }),
-      reply: String(row[6] || '').trim() };
-  }).filter(function(item) { return item.reply && item.questions.some(Boolean); });
+  if (!sheet || !match || !match.row) return;
+  const count = sheet.getLastRow() - 1;
+  if (count < 1 || match.row - 2 >= count) return;
+  const replies = sheet.getRange(2, 7, count, 1).getValues();
+  const usage = sheet.getRange(2, 14, count, 2).getValues();
+  const bump = function(current) {
+    return current === '' || typeof current === 'number' ? (Number(current) || 0) + 1 : current;
+  };
+  usage[match.row - 2][0] = bump(usage[match.row - 2][0]);
+  replies.forEach(function(values, i) {
+    if (String(values[0] || '').trim() === match.reply) usage[i][1] = bump(usage[i][1]);
+  });
+  sheet.getRange(2, 14, count, 2).setValues(usage);
 }
 
 function suggestRepliesForUserMessage(userMessage, targetRow) {
-  const text = String(userMessage || '').trim().toLowerCase();
-  const sheet = phcepSpreadsheet_().getSheetByName('LINE對話');
+  const ss = phcepSpreadsheet_();
+  const sheet = ss.getSheetByName('LINE對話');
   if (!sheet || targetRow < 2) return [];
-  const suggestions = phcepManualQA_().filter(function(item) {
-    return text && item.questions.some(function(question) { return question && question.toLowerCase() === text; });
-  }).map(function(item) { return item.reply; }).filter(function(reply, i, all) { return all.indexOf(reply) === i; });
-  const cell = sheet.getRange(targetRow, 8);
-  cell.clearDataValidations();
-  if (suggestions.length) {
-    cell.setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(suggestions, true).setAllowInvalid(false).build());
-  }
-  return suggestions;
+  return phcepApplySuggestions_(ss, sheet, targetRow, userMessage);
 }
 
 function refreshSelectedRowSuggestions() {

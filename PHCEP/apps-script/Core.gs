@@ -194,6 +194,12 @@ function phcepAcceptEvent_(ss, event) {
     if (linkUrl) link.setRichTextValue(SpreadsheetApp.newRichTextValue()
       .setText(String(linkLabel)).setLinkUrl(linkUrl).build());
   }
+  if (message.type === 'text') {
+    // Bounded local lexical suggestions only (no network); never blocks ingestion or sends.
+    try {
+      phcepApplySuggestions_(ss, inbox, inboxRow, message.text);
+    } catch (ignored) {}
+  }
   journal.getRange(journalRow, 2, 1, 3).setValues([[
     'COMPLETE', phcepLiteral_(message.id), new Date()
   ]]);
