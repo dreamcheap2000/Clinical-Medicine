@@ -289,8 +289,22 @@ plus the last refresh time. Tick **C1 重新整理** to refresh (or run
 `refreshPHCEPOverview()`); setup also refreshes it. No message text, recipients,
 answers or secrets are copied there.
 
-**Grouped operator block in `LINE對話`** is appended after the last used column
-(columns M:S on a fresh sheet, followed by the history area T:X):
+**Grouped operator block in `LINE對話`** always sits directly after L, in
+columns M:S, followed by the history area T:X. When the block is first created,
+the system columns K (Event Key) and L (操作狀態) are hidden. Editors then see
+B (questionnaire checkbox), H (suggestion), I (draft), J (latest reply) and the
+controls M:S side by side. K/L are not moved or changed; unhide them at any time
+(click the arrows between J and M) when you need to diagnose a failure.
+
+| Column | Editable by editors? |
+| --- | --- |
+| A, C–G | No (message data) |
+| B, H, I | Yes |
+| J | No (latest sent reply) |
+| K, L | No (system; hidden) |
+| M–R | Yes (operator controls) |
+| S | No (操作結果 status) |
+| T–X | No (reply history 前1…前5) |
 
 | Header | Use |
 | --- | --- |
@@ -350,8 +364,9 @@ sharing changes are made and no public links are created.
 ### Migration notes
 
 - `setupPHCEP()` / `migratePHCEPLayout()` are idempotent: they add missing sheets
-  (`收錄集合`, `總覽`) and headers, append the operator block after existing
-  content (legacy right-shifted history beyond L is left in place), reorder tabs
+  (`收錄集合`, `總覽`) and headers, insert the operator block right after L
+  (any legacy right-shifted history beyond L is shifted further right by
+  inserting empty columns, never overwritten), hide K/L once, reorder tabs
   and apply validations. A, B…L and existing rows/operation state are not moved.
 - They stop without writing if block headers are partial/moved, unlabelled data
   sits where headers would go, or an existing `總覽` is not PHCEP-managed.
