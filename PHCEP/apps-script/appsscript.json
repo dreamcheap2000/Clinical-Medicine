@@ -2,6 +2,9 @@
   "timeZone": "Asia/Taipei",
   "exceptionLogging": "NONE",
   "runtimeVersion": "V8",
+  "executionApi": {
+    "access": "MYSELF"
+  },
   "oauthScopes": [
     "https://www.googleapis.com/auth/drive",
     "https://www.googleapis.com/auth/spreadsheets",

@@ -47,6 +47,10 @@ function environment(options = {}) {
         Array.from({ length: this.cols }, (_, c) => this.sheet.data[this.row + r - 1]?.[this.col + c - 1] ?? ''));
     }
     getValue() { return this.getValues()[0][0]; }
+    getFormulas() {
+      return Array.from({ length: this.rows }, (_, r) =>
+        Array.from({ length: this.cols }, (_, c) => this.sheet.formulas?.[this.row + r - 1]?.[this.col + c - 1] ?? ''));
+    }
     setValues(values) {
       values.forEach((row, r) => row.forEach((value, c) => {
         this.sheet.data[this.row + r - 1] ||= [];
@@ -91,6 +95,7 @@ function environment(options = {}) {
       this.columns += count;
     }
     hideColumns(col, count) { this.hidden = [...new Set([...(this.hidden || []), ...Array.from({ length: count }, (_, i) => col + i)])]; }
+    isColumnHiddenByUser(col) { return (this.hidden || []).includes(col); }
     getMaxRows() { return this.rows; }
     getFrozenRows() { return this.frozenRows || 0; }
     setFrozenRows(count) { this.frozenRows = count; }
@@ -258,7 +263,7 @@ function environment(options = {}) {
       return pushResult;
     }
   });
-  for (const file of ['Setup.gs', 'Forms.gs', 'UI.gs', 'Matcher.gs', 'Workflow.gs']) {
+  for (const file of ['Setup.gs', 'Forms.gs', 'UI.gs', 'Matcher.gs', 'Workflow.gs', 'ManualMigration.gs']) {
     vm.runInContext(fs.readFileSync(path.join(root, 'apps-script', file), 'utf8'), context, { filename: file });
   }
   return { context, properties, forms, books, folders, active, triggers, pushes, menuHandlers, ui,
@@ -1009,4 +1014,439 @@ test('media rename updates only private managed Drive files and refreshes the li
   assert.equal(shared.name, 'LINE_original');
   assert.match(line.getRange(3, COL.status).getValue(), /❌/);
   assert.match(line.getRange(4, COL.status).getValue(), /私人/);
+});
+
+const MANUAL_TARGET = '12ksl5GvgM_YVc1NjrPE9LRe_YvUgqttLl0R41z5dazo';
+const manualRequest = apply => ({ targetSpreadsheetId: MANUAL_TARGET, apply });
+const plain = value => JSON.parse(JSON.stringify(value));
+
+function manualEnvironment(existing = false) {
+  const options = { columns: 26, properties: { SPREADSHEET_ID: MANUAL_TARGET } };
+  const env = existing ? setup(options) : environment(options);
+  if (!existing) {
+    const headers = vm.runInContext('PHCEP_SCHEMAS_["LINE對話"]', env.context);
+    env.book().insertSheet('LINE對話').appendRow(headers);
+  }
+  return env;
+}
+
+// Tripwires cover all mutation methods on the actual mock prototypes, including
+// objects created during migration, rather than comparing only final values.
+function monitorManual(env, readonly = false) {
+  const calls = { writes: [], locks: 0, releases: 0, migrations: 0 };
+  let held = false;
+  const book = env.book();
+  const line = book.getSheetByName('LINE對話') || book.getSheetByName('工作表1');
+  const sampleRange = line.getRange(1, 1);
+  for (const object of [book, line, sampleRange, ...line.protections, ...env.forms.values()]) {
+    const prototype = Object.getPrototypeOf(object);
+    for (const name of Object.getOwnPropertyNames(prototype)) {
+      if (!/^(set|insert|hide|append|protect$|move|clear|add|remove)/.test(name)) continue;
+      const original = prototype[name];
+      prototype[name] = function(...args) {
+        calls.writes.push(name);
+        assert.equal(readonly, false, 'readonly mutation: ' + name);
+        assert.equal(held, true, 'migration write without script lock: ' + name);
+        return original.apply(this, args);
+      };
+    }
+  }
+  const properties = env.context.PropertiesService.getScriptProperties;
+  env.context.PropertiesService.getScriptProperties = () => ({
+    ...properties(),
+    setProperty() { assert.fail('manual entrypoint must not write properties'); }
+  });
+  for (const name of ['DriveApp', 'ScriptApp', 'UrlFetchApp']) {
+    env.context[name] = new Proxy({}, { get() { assert.fail('unexpected external service: ' + name); } });
+  }
+  const openForm = env.context.FormApp.openById;
+  env.context.FormApp = new Proxy({}, { get(target, name) {
+    if (name === 'openById') return openForm;
+    assert.fail('manual inventory permits only configured FormApp.openById reads');
+  } });
+  env.context.setupPHCEP = () => assert.fail('manual entrypoint must never run setup');
+  env.context.LockService = { getScriptLock() {
+    assert.equal(readonly, false, 'preview must not acquire a lock');
+    return {
+      tryLock(timeout) { assert.equal(timeout, 30000); calls.locks++; held = true; return true; },
+      releaseLock() { assert.equal(held, true); calls.releases++; held = false; }
+    };
+  } };
+  const migrate = env.context.phcepMigrateLayout_;
+  env.context.phcepMigrateLayout_ = (...args) => {
+    calls.migrations++;
+    assert.equal(held, true);
+    return migrate(...args);
+  };
+  return calls;
+}
+
+function assertManualProtocol(result) {
+  assert.deepEqual(Object.keys(result).sort(), ['after', 'before', 'blocker', 'changes', 'status']);
+  assert.ok(['ok', 'blocked', 'failed'].includes(result.status));
+  assert.ok([null, 'INVALID_REQUEST', 'TARGET_MISMATCH', 'CONFIGURATION_MISMATCH', 'UNAUTHORIZED',
+    'LOCK_UNAVAILABLE', 'READ_FAILED', 'MIGRATION_FAILED', 'SCHEMA_CONFLICT',
+    'UNMANAGED_OVERVIEW', 'UNSUPPORTED_LINE_LAYOUT'].includes(result.blocker));
+  const names = ['LINE對話', 'QA知識庫', 'PHCEP事件', 'PHCEP請求', 'PHCEP寄件匣', 'PHCEP邀請',
+    'PHCEP表單紀錄', 'PHCEP隔離', 'PHCEP回覆歷史', 'PHCEP臨床評分', '收錄集合', '總覽'];
+  for (const inventory of [result.before, result.after]) {
+    if (!inventory) continue;
+    assert.deepEqual(Object.keys(inventory).sort(),
+      ['forms', 'legacyLinePresent', 'line', 'otherSheets', 'sheets', 'totalSheets']);
+    assert.equal(typeof inventory.legacyLinePresent, 'boolean');
+    assert.deepEqual(inventory.sheets.map(sheet => sheet.name), names);
+    for (const sheet of inventory.sheets) {
+      assert.deepEqual(Object.keys(sheet).sort(),
+        ['columns', 'frozenRows', 'index', 'matchingHeaders', 'name', 'present', 'protectionCount', 'rows']);
+      assert.equal(typeof sheet.present, 'boolean');
+      for (const key of ['columns', 'frozenRows', 'index', 'matchingHeaders', 'protectionCount', 'rows']) {
+        assert.ok(sheet[key] === null || (Number.isSafeInteger(sheet[key]) && sheet[key] >= 0));
+      }
+    }
+    assert.deepEqual(Object.keys(inventory.forms).sort(), ['CDR', 'VITALS']);
+    for (const form of Object.values(inventory.forms)) {
+      assert.deepEqual(Object.keys(form), ['configured', 'observable', 'items']);
+      assert.equal(typeof form.configured, 'boolean');
+      assert.equal(typeof form.observable, 'boolean');
+      assert.ok(form.items === null || (Number.isSafeInteger(form.items) && form.items >= 0));
+      if (!form.observable) assert.equal(form.items, null);
+    }
+    assert.deepEqual(Object.keys(inventory.line).sort(),
+      ['controlStartColumn', 'hiddenK', 'hiddenL', 'historyStartColumn']);
+  }
+  if (result.changes) {
+    assert.deepEqual(Object.keys(result.changes).sort(),
+      ['contentChangedSheetCount', 'metadataChangedSheetCount', 'metadataChangedSheets', 'operations']);
+    assert.equal(result.changes.contentChangedSheetCount, null);
+    assert.deepEqual(Object.keys(result.changes.operations).sort(),
+      ['overviewRefreshed', 'schemaProtectionFormattingSheets', 'sheetOrderEnsured', 'state', 'validationSheets']);
+  }
+  assert.doesNotMatch(JSON.stringify(result), new RegExp([MANUAL_TARGET, USER, OWNER, 'https:', 'private-patient',
+    'form-1', 'private-error', 'private-response'].join('|')));
+}
+
+test('manual preview is strictly readonly and returns only allowlisted metadata', () => {
+  const env = manualEnvironment(true);
+  const book = env.book();
+  book.insertSheet('private-patient unrelated sheet').appendRow(['private-patient']);
+  const line = book.getSheetByName('LINE對話');
+  line.appendRow(['private-patient', false, USER, '', OWNER]);
+  const before = JSON.stringify(book.sheets.map(sheet => sheet.data));
+  const calls = monitorManual(env, true);
+  const result = plain(env.context.phcepManualLayoutMigration(manualRequest(false)));
+  assertManualProtocol(result);
+  assert.equal(result.status, 'ok');
+  assert.equal(result.blocker, null);
+  assert.deepEqual(result.before, result.after);
+  assert.equal(result.before.otherSheets, 3); // two existing response tabs + unrelated tab
+  assert.deepEqual(result.before.line, { controlStartColumn: 13, historyStartColumn: 20, hiddenK: true, hiddenL: true });
+  assert.equal(result.before.forms.CDR.configured, true);
+  assert.equal(result.before.forms.CDR.observable, true);
+  assert.equal(result.before.forms.CDR.items, env.forms.get(env.properties.get('CDR_FORM_ID')).items.length);
+  assert.deepEqual(result.changes.metadataChangedSheets, []);
+  assert.equal(result.changes.operations.state, 'not_started');
+  assert.deepEqual(calls, { writes: [], locks: 0, releases: 0, migrations: 0 });
+  assert.equal(JSON.stringify(book.sheets.map(sheet => sheet.data)), before);
+  const fresh = manualEnvironment();
+  const freshCalls = monitorManual(fresh, true);
+  const preview = plain(fresh.context.phcepManualLayoutMigration(manualRequest(false)));
+  assertManualProtocol(preview);
+  assert.equal(preview.status, 'ok');
+  assert.equal(preview.before.totalSheets, 1);
+  assert.equal(preview.before.line.controlStartColumn, null);
+  assert.equal(preview.before.forms.CDR.configured, false);
+  assert.equal(preview.before.forms.CDR.observable, false);
+  assert.equal(preview.before.forms.CDR.items, null);
+  assert.deepEqual(freshCalls, { writes: [], locks: 0, releases: 0, migrations: 0 });
+});
+
+test('manual request, exact target, configured target and authorization guards precede mutation', () => {
+  for (const request of [null, {}, [], { ...manualRequest(false), extra: true },
+    { ...manualRequest(false), apply: 'false' }, { ...manualRequest(false), targetSpreadsheetId: 123 }]) {
+    const env = manualEnvironment();
+    const calls = monitorManual(env, true);
+    const result = plain(env.context.phcepManualLayoutMigration(request));
+    assert.equal(result.blocker, 'INVALID_REQUEST');
+    assertManualProtocol(result);
+    assert.deepEqual(calls.writes, []);
+  }
+  for (const mode of ['target', 'configured', 'missing', 'unauthorized', 'blank-user', 'trusted', 'owner']) {
+    const env = manualEnvironment();
+    const request = manualRequest(false);
+    if (mode === 'target') request.targetSpreadsheetId += ' ';
+    if (mode === 'configured') env.properties.set('SPREADSHEET_ID', 'wrong-book');
+    if (mode === 'missing') env.properties.delete('SPREADSHEET_ID');
+    if (mode === 'owner') env.properties.set('TRUSTED_EDITOR_EMAILS', 'clinician@example.org');
+    if (['unauthorized', 'blank-user', 'trusted'].includes(mode)) {
+      const email = { unauthorized: 'stranger@example.org', 'blank-user': '', trusted: 'clinician@example.org' }[mode];
+      env.context.Session.getEffectiveUser = () => ({ getEmail: () => email });
+    }
+    // Keep monitoring the intended book even when its configured property is bad.
+    const configured = env.properties.get('SPREADSHEET_ID');
+    env.properties.set('SPREADSHEET_ID', MANUAL_TARGET);
+    const calls = monitorManual(env, true);
+    if (configured === undefined) env.properties.delete('SPREADSHEET_ID');
+    else env.properties.set('SPREADSHEET_ID', configured);
+    const result = plain(env.context.phcepManualLayoutMigration(request));
+    assertManualProtocol(result);
+    const expected = { target: 'TARGET_MISMATCH', configured: 'CONFIGURATION_MISMATCH', missing: 'CONFIGURATION_MISMATCH',
+      unauthorized: 'UNAUTHORIZED', 'blank-user': 'UNAUTHORIZED', trusted: null, owner: null }[mode];
+    assert.equal(result.blocker, expected);
+    assert.equal(result.status, expected ? 'blocked' : 'ok');
+    if (expected) assert.equal(result.before, null);
+    assert.deepEqual(calls.writes, []);
+    if (expected) {
+      request.apply = true;
+      const applyResult = plain(env.context.phcepManualLayoutMigration(request));
+      assert.equal(applyResult.blocker, expected);
+      assertManualProtocol(applyResult);
+      assert.equal(calls.locks, 0);
+      assert.equal(calls.migrations, 0);
+    }
+  }
+});
+
+test('manual whole-workbook preflight blocks unsafe schemas before any writes', () => {
+  const cases = [
+    ['partial-core', 'SCHEMA_CONFLICT'],
+    ['duplicate-core', 'SCHEMA_CONFLICT'],
+    ['duplicate-extra', 'SCHEMA_CONFLICT'],
+    ['formula-header', 'SCHEMA_CONFLICT'],
+    ['formula-overlap', 'SCHEMA_CONFLICT'],
+    ['late-conflict', 'SCHEMA_CONFLICT'],
+    ['unlabelled-core', 'SCHEMA_CONFLICT'],
+    ['unlabelled-extension', 'SCHEMA_CONFLICT'],
+    ['partial-block', 'UNSUPPORTED_LINE_LAYOUT'],
+    ['duplicate-block', 'UNSUPPORTED_LINE_LAYOUT'],
+    ['shifted-block', 'UNSUPPORTED_LINE_LAYOUT'],
+    ['unmanaged-overview', 'UNMANAGED_OVERVIEW'],
+    ['unlabelled-overview', 'UNMANAGED_OVERVIEW'],
+    ['response-as-schema', 'SCHEMA_CONFLICT']
+  ];
+  for (const [mode, blocker] of cases) {
+    const env = manualEnvironment();
+    const book = env.book();
+    const line = book.getSheetByName('LINE對話');
+    const block = plain(env.context.PHCEP_LINE_CONTROL_HEADERS_).concat(plain(env.context.PHCEP_LINE_HISTORY_HEADERS_));
+    if (mode === 'partial-core') line.getRange(1, 2).setValue('');
+    if (mode === 'duplicate-core') line.getRange(1, 26).setValue('Message ID');
+    if (mode === 'duplicate-extra') line.getRange(1, 25, 1, 2).setValues([['legacy duplicate', 'legacy duplicate']]);
+    if (mode === 'formula-header') line.formulas = [['="Message ID"']];
+    if (mode === 'formula-overlap') {
+      line.formulas = [[], [...Array(12).fill(''), '=""']];
+      line.getRange(2, 1).setValue('private-patient'); // populated row whose M formula displays blank
+    }
+    if (mode === 'late-conflict') book.insertSheet('收錄集合').appendRow(['private-patient wrong schema']);
+    if (mode === 'unlabelled-core') {
+      line.getRange(1, 12).setValue('');
+      line.getRange(2, 12).setValue('private-patient');
+    }
+    if (mode === 'unlabelled-extension') line.getRange(2, 13).setValue('private-patient');
+    if (mode === 'partial-block') line.getRange(1, 13).setValue(block[0]);
+    if (mode === 'duplicate-block') {
+      line.getRange(1, 13, 1, block.length).setValues([block]);
+      line.getRange(1, 26).setValue(block[0]);
+    }
+    if (mode === 'shifted-block') line.getRange(1, 14, 1, block.length).setValues([block]);
+    if (mode === 'unmanaged-overview') book.insertSheet('總覽').appendRow(['private-patient']);
+    if (mode === 'unlabelled-overview') book.insertSheet('總覽').getRange(2, 1).setValue('private-patient');
+    if (mode === 'response-as-schema') line.formUrl = 'https://private-response';
+    const calls = monitorManual(env);
+    const result = plain(env.context.phcepManualLayoutMigration(manualRequest(true)));
+    assertManualProtocol(result);
+    assert.equal(result.status, 'blocked', mode);
+    assert.equal(result.blocker, blocker, mode);
+    assert.deepEqual(result.before, result.after, mode);
+    assert.deepEqual(calls.writes, [], mode);
+    assert.equal(calls.migrations, 0, mode);
+    assert.equal(calls.locks, 1);
+    assert.equal(calls.releases, 1);
+  }
+});
+
+test('manual apply uses only locked layout migration; repeats preserve A:L, forms and response tabs', () => {
+  const env = manualEnvironment(true);
+  const line = env.book().getSheetByName('LINE對話');
+  line.appendRow(['private-patient', false, USER, 'timestamp', OWNER, 'question', 'media',
+    'suggestions', 'draft', 'reply', 'event-key', 'state']);
+  const legacy = JSON.stringify(line.data.map(row => row.slice(0, 12)));
+  const responses = env.book().sheets.filter(sheet => sheet.formUrl);
+  responses[0].appendRow(['private-response', 'private-patient']);
+  const raw = JSON.stringify(responses.map(sheet => sheet.data));
+  const forms = JSON.stringify([...env.forms.values()]);
+  const properties = JSON.stringify([...env.properties]);
+  const triggers = [...env.triggers];
+  const calls = monitorManual(env);
+  for (let i = 0; i < 2; i++) {
+    const result = plain(env.context.phcepManualLayoutMigration(manualRequest(true)));
+    assertManualProtocol(result);
+    assert.equal(result.status, 'ok');
+    assert.equal(result.changes.operations.state, 'completed');
+    assert.equal(result.changes.operations.overviewRefreshed, true);
+    assert.ok(result.changes.operations.schemaProtectionFormattingSheets.includes('總覽'));
+    assert.deepEqual(result.changes.operations.validationSheets, ['LINE對話', 'QA知識庫', '收錄集合']);
+    // The overview timestamp/content was rewritten, but a metadata-only snapshot
+    // cannot claim to know a content changed-sheet count.
+    assert.deepEqual(result.changes.metadataChangedSheets, []);
+    assert.equal(result.changes.contentChangedSheetCount, null);
+    assert.equal(JSON.stringify(line.data.map(row => row.slice(0, 12))), legacy);
+    assert.equal(JSON.stringify(responses.map(sheet => sheet.data)), raw);
+    assert.equal(JSON.stringify([...env.forms.values()]), forms);
+    assert.equal(JSON.stringify([...env.properties]), properties);
+    assert.deepEqual(env.triggers, triggers);
+  }
+  assert.equal(calls.migrations, 2);
+  assert.equal(calls.locks, 2);
+  assert.equal(calls.releases, 2);
+  assert.ok(calls.writes.includes('setDataValidation'));
+});
+
+test('manual apply creates missing layout and reports observed metadata separately', () => {
+  const env = manualEnvironment();
+  const line = env.book().getSheetByName('LINE對話');
+  line.getRange(1, 13).setValue('private-patient legacy header');
+  line.getRange(2, 13).setValue('private-patient legacy value');
+  const calls = monitorManual(env);
+  const result = plain(env.context.phcepManualLayoutMigration(manualRequest(true)));
+  assertManualProtocol(result);
+  assert.equal(result.status, 'ok');
+  assert.equal(result.after.line.controlStartColumn, 13);
+  assert.equal(result.after.line.historyStartColumn, 20);
+  assert.equal(result.after.line.hiddenK, true);
+  assert.equal(line.getRange(2, 25).getValue(), 'private-patient legacy value');
+  assert.equal(result.changes.metadataChangedSheetCount, 12);
+  assert.equal(calls.migrations, 1);
+});
+
+test('manual failures retain observable partial state, redact errors and always release lock', () => {
+  for (const unreadableAfter of [false, true]) {
+    const env = manualEnvironment();
+    const calls = monitorManual(env);
+    const migrate = env.context.phcepMigrateLayout_;
+    env.setProtectionFailure(true);
+    env.context.phcepMigrateLayout_ = (...args) => {
+      try { return migrate(...args); } catch {
+        if (unreadableAfter) env.book().getSheets = () => { throw new Error('private-error https://private-response'); };
+        throw new Error('private-error ' + OWNER + ' ' + MANUAL_TARGET);
+      }
+    };
+    const result = plain(env.context.phcepManualLayoutMigration(manualRequest(true)));
+    assertManualProtocol(result);
+    assert.equal(result.status, 'failed');
+    assert.equal(result.blocker, 'MIGRATION_FAILED');
+    assert.equal(result.changes.operations.state, 'partial');
+    assert.equal(result.changes.operations.schemaProtectionFormattingSheets, null);
+    assert.equal(result.changes.operations.overviewRefreshed, null);
+    assert.equal(result.changes.contentChangedSheetCount, null);
+    if (unreadableAfter) {
+      assert.equal(result.after, null);
+      assert.equal(result.changes.metadataChangedSheetCount, null);
+    } else {
+      assert.ok(result.after);
+      assert.ok(result.changes.metadataChangedSheets.includes('LINE對話'));
+      assert.equal(result.after.sheets[0].protectionCount, 1);
+    }
+    assert.equal(calls.releases, 1);
+  }
+});
+
+test('manual lock refusal and inventory errors fail closed without migration or raw errors', () => {
+  for (const mode of ['lock-refused', 'lock-error', 'read-error', 'after-error']) {
+    const env = manualEnvironment();
+    const calls = monitorManual(env);
+    if (mode === 'lock-refused') env.context.LockService.getScriptLock = () => ({ tryLock: () => false });
+    if (mode === 'lock-error') env.context.LockService.getScriptLock = () => { throw new Error('private-error'); };
+    if (mode === 'read-error') env.book().getSheets = () => { throw new Error('private-error'); };
+    if (mode === 'after-error') {
+      const migrate = env.context.phcepMigrateLayout_;
+      env.context.phcepMigrateLayout_ = (...args) => {
+        const result = migrate(...args);
+        env.book().getSheets = () => { throw new Error('private-error'); };
+        return result;
+      };
+    }
+    const result = plain(env.context.phcepManualLayoutMigration(manualRequest(true)));
+    assertManualProtocol(result);
+    assert.equal(result.status, mode.startsWith('lock') ? 'blocked' : 'failed');
+    assert.equal(result.blocker, mode.startsWith('lock') ? 'LOCK_UNAVAILABLE' : 'READ_FAILED');
+    if (mode === 'after-error') {
+      assert.equal(result.changes.operations.state, 'completed');
+      assert.equal(result.changes.operations.overviewRefreshed, true);
+      assert.equal(result.after, null);
+    } else {
+      assert.equal(calls.migrations, 0);
+      assert.deepEqual(calls.writes, []);
+    }
+  }
+});
+
+test('manual migration source is explicitly deployable through the clasp allowlist', () => {
+  const ignore = fs.readFileSync(path.join(root, 'apps-script', '.claspignore'), 'utf8').split(/\r?\n/);
+  assert.equal(ignore[0], '**/**');
+  assert.ok(ignore.includes('!ManualMigration.gs'));
+});
+
+test('manual preview runs with only its verified source and native read-only services', () => {
+  const env = manualEnvironment(true);
+  const schemas = plain(vm.runInContext('PHCEP_SCHEMAS_', env.context));
+  assert.deepEqual(plain(env.context.phcepManualSchemas_()), schemas);
+  assert.deepEqual(plain(env.context.phcepManualLineHeaders_()),
+    plain(env.context.PHCEP_LINE_CONTROL_HEADERS_).concat(plain(env.context.PHCEP_LINE_HISTORY_HEADERS_)));
+  const calls = monitorManual(env, true);
+  const isolated = vm.createContext({
+    PropertiesService: env.context.PropertiesService,
+    Session: env.context.Session,
+    SpreadsheetApp: env.context.SpreadsheetApp,
+    FormApp: env.context.FormApp,
+    LockService: env.context.LockService
+  });
+  vm.runInContext(fs.readFileSync(path.join(root, 'apps-script', 'ManualMigration.gs'), 'utf8'), isolated);
+  const result = plain(isolated.phcepManualLayoutMigration(manualRequest(false)));
+  assertManualProtocol(result);
+  assert.equal(result.status, 'ok');
+  assert.equal(result.before.line.controlStartColumn, 13);
+  assert.deepEqual(calls, { writes: [], locks: 0, releases: 0, migrations: 0 });
+});
+
+test('manual forms inventory reads only configured forms and reports inaccessible counts as unknown', () => {
+  const env = manualEnvironment();
+  const cdr = env.context.FormApp.create('private-patient form title');
+  env.properties.set('CDR_FORM_ID', cdr.getId());
+  env.properties.set('VITALS_FORM_ID', 'private-error inaccessible form ID');
+  cdr.items = [{ getTitle() { assert.fail('must not read item titles'); } },
+    { getResponses() { assert.fail('must not read form responses'); } }];
+  const opened = [];
+  const open = env.context.FormApp.openById;
+  env.context.FormApp.openById = id => { opened.push(id); return open(id); };
+  const calls = monitorManual(env, true);
+  const result = plain(env.context.phcepManualLayoutMigration(manualRequest(false)));
+  assertManualProtocol(result);
+  assert.equal(result.status, 'ok');
+  assert.deepEqual(result.before.forms, {
+    CDR: { configured: true, observable: true, items: 2 },
+    VITALS: { configured: true, observable: false, items: null }
+  });
+  assert.deepEqual(result.before.forms, result.after.forms);
+  assert.deepEqual(opened, [cdr.getId(), 'private-error inaccessible form ID',
+    cdr.getId(), 'private-error inaccessible form ID']);
+  assert.deepEqual(calls.writes, []);
+});
+
+test('manual inventory distinguishes legacy LINE rename from creation without exposing legacy data', () => {
+  const env = manualEnvironment();
+  const legacy = env.book().getSheetByName('LINE對話');
+  legacy.setName('工作表1');
+  legacy.appendRow(['private-patient', false, USER, '', OWNER, 'question', '', '', 'draft', 'reply', 'key', 'state']);
+  const values = JSON.stringify(legacy.data.map(row => row.slice(0, 12)));
+  const calls = monitorManual(env);
+  const result = plain(env.context.phcepManualLayoutMigration(manualRequest(true)));
+  assertManualProtocol(result);
+  assert.equal(result.status, 'ok');
+  assert.equal(result.before.legacyLinePresent, true);
+  assert.equal(result.before.sheets[0].present, false);
+  assert.equal(result.after.legacyLinePresent, false);
+  assert.equal(result.after.sheets[0].present, true);
+  assert.equal(env.book().getSheetByName('LINE對話'), legacy);
+  assert.equal(JSON.stringify(legacy.data.map(row => row.slice(0, 12))), values);
+  assert.equal(calls.migrations, 1);
 });

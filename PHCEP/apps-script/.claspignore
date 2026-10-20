@@ -7,4 +7,5 @@
 !UI.gs
 !Matcher.gs
 !Workflow.gs
+!ManualMigration.gs
 !appsscript.json

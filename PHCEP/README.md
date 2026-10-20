@@ -289,8 +289,11 @@ plus the last refresh time. Tick **C1 重新整理** to refresh (or run
 `refreshPHCEPOverview()`); setup also refreshes it. No message text, recipients,
 answers or secrets are copied there.
 
-**Grouped operator block in `LINE對話`** always sits directly after L, in
-columns M:S, followed by the history area T:X. When the block is first created,
+**Grouped operator block in `LINE對話`** is first created directly after L, in
+columns M:S, followed by the history area T:X. Generic setup/layout migration
+retains a complete existing block at a later offset; it does not relocate it.
+The guarded manual deployment below instead rejects blocks outside M.
+The column references below describe the M-start layout. When first created,
 the system columns K (Event Key) and L (操作狀態) are hidden. Editors then see
 B (questionnaire checkbox), H (suggestion), I (draft), J (latest reply) and the
 controls M:S side by side. K/L are not moved or changed; unhide them at any time
@@ -364,12 +367,18 @@ sharing changes are made and no public links are created.
 ### Migration notes
 
 - `setupPHCEP()` / `migratePHCEPLayout()` are idempotent: they add missing sheets
-  (`收錄集合`, `總覽`) and headers, insert the operator block right after L
-  (any legacy right-shifted history beyond L is shifted further right by
-  inserting empty columns, never overwritten), hide K/L once, reorder tabs
-  and apply validations. A, B…L and existing rows/operation state are not moved.
-- They stop without writing if block headers are partial/moved, unlabelled data
-  sits where headers would go, or an existing `總覽` is not PHCEP-managed.
+  (`收錄集合`, `總覽`) and headers. On first creation, they insert the operator
+  block right after L (legacy content beyond L is shifted right by inserting
+  empty columns, not overwritten) and hide K/L once. A complete existing block
+  at a later offset is retained, not relocated, and repeat migration does not
+  re-hide K/L. They also reorder tabs and apply validations. A:L and existing
+  rows/operation state are not moved.
+- Generic setup/migration rejects conflicting or incomplete block headers,
+  unlabelled data where headers would go, and an unmanaged existing `總覽`,
+  but may already have changed other sheets, protections or columns before
+  throwing. The guarded manual entrypoint below preflights expected conflicts
+  before migration writes and rejects existing blocks outside M; it still
+  provides no atomicity, automatic rollback or guarantee against partial writes.
 - Until migration runs, the new code still works with the old layout: history
   shifting and control cells are simply inactive.
 - Upload the new `Matcher.gs` and `Workflow.gs` with the other `.gs` files and
@@ -588,3 +597,189 @@ an approved retention policy; deleting them early allows duplicates.
 - [Sheet protection](https://developers.google.com/apps-script/reference/spreadsheet/protection)
 - [Gemini embeddings](https://ai.google.dev/gemini-api/docs/embeddings)
 - [Spring Boot system requirements](https://docs.spring.io/spring-boot/system-requirements.html)
+
+## Manual PHCEP layout deployment
+
+`.github/workflows/phcep-manual-layout.yml` runs
+`scripts/phcep_manual_deploy.py` only through **workflow_dispatch**. It has no
+push, pull-request, schedule or other automatic deployment trigger. This PR
+does not dispatch a live workflow or modify Google/LINE resources. Merge the
+reviewed change into `main` before attempting the manual workflow.
+
+### Prerequisites and target verification
+
+An authorized owner must independently verify the Apps Script project and its
+association with the intended spreadsheet. The existing `PHCEP/apps-script/.clasp.json`
+script ID is **unverified**; do not adopt it without verification. Root-project
+CLASP secrets/configuration do not establish the PHCEP target.
+
+Configure these repository **variables**:
+
+| Variable | Required value |
+| --- | --- |
+| `PHCEP_SCRIPT_ID` | The independently verified PHCEP Apps Script project ID. |
+| `PHCEP_EXPECTED_SCRIPT_ID` | The same script ID, independently verified as a second target pin. |
+| `PHCEP_SPREADSHEET_ID` | Exactly `12ksl5GvgM_YVc1NjrPE9LRe_YvUgqttLl0R41z5dazo`. |
+| `PHCEP_OAUTH_CLIENT_ID` | The verified custom user-OAuth client ID used by the credential. |
+| `PHCEP_PREFLIGHT_SOURCE_SHA256` | Optional only when the entire remote project matches the reviewed local project; otherwise required as the canonical SHA256 of an independently reviewed previous remote source revision. Never permits a differing safety entrypoint, file set or manifest. |
+
+Configure the repository **secret** `PHCEP_CLASPRC_JSON` with a refreshable
+**script-owner user OAuth** credential. Never paste credentials into source,
+issues, workflow inputs, logs or reports. Service accounts are unsupported.
+The script's existing ScriptProperties `SPREADSHEET_ID` must already match the
+exact spreadsheet above: the entrypoint checks it and **never overwrites it**.
+This workflow does not provision credentials or repair runtime configuration.
+No Gemini key is needed for this layout-only operation.
+
+Use a custom **Desktop OAuth client** in a standard Google Cloud project
+compatible with, and associated with the **same Cloud project as the script**;
+do not assume clasp's default client or an unrelated client can execute it.
+Enable the Apps Script API in the Cloud project and the Apps Script API
+user-access toggle in the owner's Apps Script settings, plus the Google APIs
+needed by the manifest's services. Authorize the owner with **every scope in
+`PHCEP/apps-script/appsscript.json` plus
+`https://www.googleapis.com/auth/script.projects`**. A refreshed token must have
+the expected client audience and all those scopes; an old partial grant is not
+sufficient. Follow the official OAuth/API-executable prerequisites rather than
+substituting a web-app deployment:
+
+- [Executing functions with the Apps Script API](https://developers.google.com/apps-script/api/how-tos/execute)
+- [google/clasp: running Apps Script functions](https://github.com/google/clasp/blob/master/docs/run.md)
+
+### One-time manual safety bootstrap
+
+This is an explicit, separately authorized **manual prerequisite**, not something
+the workflow silently performs:
+
+1. Back up and inspect the verified project's current source, manifest and
+   configuration securely. Manually install the exact reviewed PHCEP source
+   **and manifest**, including `ManualMigration.gs` and its dependencies,
+   **without running setup or migration**. Source installation is not permission to invoke `setupPHCEP()`
+   or change existing Forms, triggers, folders, webhooks or ScriptProperties.
+2. Separately establish a pre-existing **API executable**, restricted to the
+   owner (`executionApi.access: MYSELF`); a web app is not an API executable.
+   Preserve existing web-app configuration. The runner invokes the owner with
+   `devMode: true`, so it executes the latest saved source, not an old deployment
+   version. Keep concurrent editor/source changes out of the deployment window.
+3. Align the reviewed local and remote manifests before dispatch. The runner
+   requires **exact parsed manifest equality before any remote execution, in
+   both dry-run and apply modes**. The reviewed local
+   manifest includes `executionApi.access: MYSELF` and leaves `webapp` unchanged,
+   so installing that exact manifest supports the owner-only API prerequisite.
+   Adding an API setting only remotely, or any other manifest drift, would block
+   apply. Do not remove or bypass the equality check.
+
+A dry run **never uploads source**, including when the preview entrypoint is
+missing or differs. It fails closed with
+`PREVIEW_UNAVAILABLE_BOOTSTRAP_REQUIRED` until the reviewed safety entrypoint
+has been installed manually. Do not use apply as a bootstrap shortcut.
+
+Before any `scripts.run` call in either mode, the runner verifies the entire
+remote file set, parsed manifest equality, and exact `ManualMigration` source.
+It also checks the canonical SHA256 of the **whole project**, because other
+`.gs` files share globals and could override the preview's code. The remote
+project must match the local reviewed project, or match the independently
+reviewed previous revision pinned by `PHCEP_PREFLIGHT_SOURCE_SHA256`. That
+optional pin permits only reviewed non-wrapper source differences; it does
+not relax the safety-entrypoint, file-set or manifest checks.
+
+To obtain a previous revision's pin, use a trusted checkout of that reviewed
+revision, with the canonical-digest helper available, and run from its trusted
+repository root:
+
+```sh
+python3 -c 'from scripts.phcep_manual_deploy import content_digest, local_content; print(content_digest(local_content()))'
+```
+
+Independently confirm that revision is the intended previously installed
+project before setting the variable. **Never copy a hash of unknown live code
+and thereby bless unreviewed source.** If a trusted previous canonical hash
+is unavailable, manually review and bootstrap the exact latest source and
+manifest instead. Missing or incorrect pins for differing non-wrapper source
+fail closed with `SOURCE_INTEGRITY_PIN_REQUIRED`.
+
+### Run dry first, then explicitly apply
+
+1. Merge first. In GitHub **Actions → PHCEP manual layout deployment**, choose
+   **Run workflow**, branch **main**, enter the exact confirmation **APPLY**,
+   and leave **dry_run** checked (the default). Confirmation is required even
+   for dry run; non-`main` dispatches are rejected before checkout/secrets.
+2. Review the sanitized job summary/report and resolve every blocker. A
+   successful dry run performs read-only target, credential and layout
+   preflight, including whole-project source integrity, file-set and manifest
+   checks before execution; it does not upload code or migrate sheets.
+   Dry-run success does not guarantee a later apply if remote state changes.
+3. Before apply, take an owner-verified backup in a secure,
+   **clinical-approved location**, outside Actions logs/artifacts. Preserve
+   sheet data, layout and protections, Forms and responses, resource IDs and
+   runtime configuration. Coordinate with other operators and pause human
+   spreadsheet edits; ScriptLock does not lock human editing.
+4. Dispatch the same workflow again on **main**, enter **APPLY**, and explicitly
+   uncheck **dry_run**. Check the commit being applied and review the resulting
+   before/after report, including known partial changes and unknown outcomes.
+
+The workflow runs local safety tests before accessing Google and serializes
+this target without cancelling an in-flight run. It uses the Apps Script REST
+API, **not the clasp CLI**. It reuses the existing credential-normalization
+helper in memory; it does not write a credential file or log secrets. Both
+modes use a fixed source-file allowlist and reject unknown/missing remote files,
+manifest drift and unpinned source drift before any remote execution. Apply
+then replaces whole-project source while preserving the checked manifest and
+existing web-app settings. It does not call version/deployment creation or
+update APIs, or update webhooks.
+
+### Migration limits and report interpretation
+
+The entrypoint calls only the existing narrow `phcepMigrateLayout_`: it can
+create missing managed sheets and refresh managed schemas, validations,
+protections, sheet order and the overview. It does **not** run setup, create
+Forms, triggers or folders, or change runtime IDs. Existing operator/control
+blocks outside the supported **M-column** start are rejected, not relocated.
+Unsupported/conflicting headers and response-sheet layouts require separate
+human review, not a forced migration. K/L are hidden only when the operator
+block is first created; repeating migration does not re-hide them if an
+operator has subsequently unhidden them.
+
+Before/after reports contain allowlisted, sanitized **schema metadata**, not
+clinical cell contents, arbitrary remote error text, resource IDs or URLs.
+The fixed target is documented here; report metadata does not disclose those
+identifiers. Summaries and the `phcep-manual-layout-report` artifact have a
+short artifact retention of **3 days**; follow the repository's access and
+log-retention policy too. Unknown observations are `null`, not fabricated
+zeroes or guarantees. Forms inventory records whether each existing Form is
+configured and readable, and its item count when readable. It opens configured
+Forms read-only; it does not expose item titles, values, responses, URLs or IDs.
+Forms reporting is metadata-only: “unchanged” means unchanged observable
+metadata, and inaccessible/unobservable state is “unknown”; neither proves exact
+unchanged questions, responses, sharing or content. Likewise,
+unchanged sheet metadata does not prove unchanged cells, formatting,
+validations or protection contents.
+
+Apply is **not atomic**: source upload may succeed before migration fails,
+and migration can leave partial sheet changes. The runner does not
+automatically retry Google mutations or roll back; after a timeout the remote
+outcome can be unknown. Once source upload is attempted, the report clears
+`after` to `null` until a fresh migration result is available; an earlier preview
+must not be mistaken for proof of an unchanged post-timeout state.
+Inspect the reported completed stages and known
+before/after changes, then securely verify the live state before deciding
+whether any further operation is safe. **Do not blindly rerun an unknown
+result.** Rolling back Apps Script source does not reverse sheet changes;
+use the approved backup and an owner-reviewed recovery plan.
+
+### Blockers and safe diagnostics
+
+Diagnostics intentionally suppress raw Google responses. Never enable secret
+or clinical-data logging to investigate a failure.
+
+| Diagnostic / symptom | Operator action |
+| --- | --- |
+| `MAIN_ONLY`, `CONFIRMATION_REQUIRED` | Merge first, select `main`, and enter `APPLY` exactly, including for dry run. |
+| `SCRIPT_ID_PIN_REQUIRED`, `TARGET_MISMATCH` | Independently verify both script-ID variables and the exact spreadsheet variable; do not guess from existing clasp configuration. |
+| Invalid, non-user or non-refreshable OAuth credential | Complete the owner-user OAuth prerequisite and securely replace the PHCEP-specific secret; do not use a service account. |
+| `OAUTH_CLIENT_MISMATCH`, `OAUTH_SCOPES_REQUIRED` | Check custom Desktop client/audience and same Cloud project; reauthorize all manifest scopes plus `script.projects`. |
+| `PREVIEW_UNAVAILABLE_BOOTSTRAP_REQUIRED` | Manually install the exact reviewed source and manifest without executing setup/migration, separately establish the owner-only API executable, then repeat dry run. |
+| `REMOTE_FILE_SET_MISMATCH`, `MANIFEST_MISMATCH` | Review source drift and reconcile the exact allowlist/manifest, including owner-only `executionApi`, without deleting unknown files or weakening guards. |
+| `SOURCE_INTEGRITY_PIN_REQUIRED` | Use the canonical hash from an independently reviewed trusted previous checkout, or manually bootstrap exact latest reviewed source/manifest. Never pin unknown live code merely to pass preflight. |
+| Remote migration blocked / unsupported layout | Privately check ScriptProperties `SPREADSHEET_ID`, authorized owner/editor access, headers, response-sheet conflicts, overview ownership and operator block at M. Review unsupported layouts manually; no automatic relocation. |
+| API/execution failure | Check API enablement, owner user-access toggle, pre-existing API executable, owner identity, scopes and Cloud-project compatibility. If apply began, reconcile possible partial/unknown changes before any rerun. |
