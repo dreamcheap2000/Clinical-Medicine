@@ -49,16 +49,23 @@ function phcepLineLayout_(sheet) {
   return layout;
 }
 
-/** Append the operator block after existing content; never moves A:L or prior history. */
+/**
+ * Place the operator block directly after L (M onward) so editor columns stay
+ * next to H/I/J. Any legacy content beyond L is shifted right by inserting
+ * empty columns, never overwritten; A:L never move.
+ */
 function phcepEnsureLineExtension_(sheet) {
   var all = PHCEP_LINE_CONTROL_HEADERS_.concat(PHCEP_LINE_HISTORY_HEADERS_);
   var headers = sheet.getRange(1, 1, 1, sheet.getMaxColumns()).getValues()[0].map(function(value) { return String(value); });
   var start = headers.indexOf(all[0]) + 1;
+  var created = false;
   if (!start) {
     if (all.some(function(header) { return headers.indexOf(header) !== -1; })) {
       throw new Error('LINE對話 operator block headers are incomplete or moved; restore them before migration.');
     }
-    start = Math.max(12, sheet.getLastColumn()) + 1;
+    start = 13;
+    created = true;
+    if (sheet.getLastColumn() > 12 && sheet.getMaxColumns() > 12) sheet.insertColumnsAfter(12, all.length);
   }
   if (start < 13) throw new Error('LINE對話 operator block must follow Event Key (K) and 操作狀態 (L).');
   var needed = start + all.length - 1;
@@ -77,6 +84,9 @@ function phcepEnsureLineExtension_(sheet) {
     if (value === '') { sheet.getRange(1, start + i).setValue(all[i]); added++; }
   });
   sheet.getRange(1, start, 1, all.length).setFontWeight('bold').setBackground('#e8f0fe');
+  // System columns K (Event Key) and L (操作狀態) are hidden once so editor columns
+  // read H, I, J, M…; they stay intact and can be unhidden at any time.
+  if (created) sheet.hideColumns(11, 2);
   return { layout: phcepLineLayout_(sheet), added: added };
 }
 

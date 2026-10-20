@@ -85,7 +85,12 @@ function environment(options = {}) {
     getSheetId() { return this.id; }
     getFormUrl() { return this.formUrl; }
     getMaxColumns() { return this.columns; }
-    insertColumnsAfter(col, count) { assert.equal(col, this.columns); this.columns += count; }
+    insertColumnsAfter(col, count) {
+      assert.ok(col >= 1 && col <= this.columns);
+      this.data.forEach(row => { if (row && row.length > col) row.splice(col, 0, ...Array(count).fill('')); });
+      this.columns += count;
+    }
+    hideColumns(col, count) { this.hidden = [...new Set([...(this.hidden || []), ...Array.from({ length: count }, (_, i) => col + i)])]; }
     getMaxRows() { return this.rows; }
     getFrozenRows() { return this.frozenRows || 0; }
     setFrozenRows(count) { this.frozenRows = count; }
@@ -780,7 +785,7 @@ const editAs = (env, range, email = OWNER) => env.context.phcepHandleEdit({
   user: email ? { getEmail: () => email } : undefined
 });
 
-test('layout migration is idempotent, appends grouped controls after existing data and preserves K/L', () => {
+test('layout migration is idempotent, places grouped controls right after L, shifts legacy data and preserves K/L', () => {
   const env = environment({ columns: 14 });
   const line = env.active.insertSheet('LINE對話');
   const headers = ['Message ID', '發送問卷 (勾選)', 'User ID', 'DateTime', 'User Name', '訊息 (病患問題)',
@@ -793,11 +798,11 @@ test('layout migration is idempotent, appends grouped controls after existing da
   assert.deepEqual(book.getSheets().slice(0, 3).map(sheet => sheet.name), ['總覽', 'LINE對話', 'QA知識庫']);
   assert.equal(line.getRange(2, 11).getValue(), 'event-key');
   assert.equal(line.getRange(2, 12).getValue(), state);
-  assert.equal(line.getRange(2, 13).getValue(), 'legacy shifted reply');
-  assert.equal(line.getRange(1, 13).getValue(), '');
-  assert.equal(line.getRange(1, 14).getValue(), '操作動作');
+  assert.equal(line.getRange(1, 13).getValue(), '操作動作');
   const layout = env.context.phcepLineLayout_(line);
-  assert.equal(layout.start, 14);
+  assert.equal(layout.start, 13);
+  assert.equal(line.getRange(2, layout.end + 1).getValue(), 'legacy shifted reply');
+  assert.deepEqual(Array.from(line.hidden), [11, 12]);
   const snapshot = JSON.stringify(line.data);
   const columns = line.columns;
   const result = env.context.setupPHCEP();
@@ -807,8 +812,8 @@ test('layout migration is idempotent, appends grouped controls after existing da
   assert.equal(env.context.migratePHCEPLayout().lineColumnsAdded, 0);
   assert.equal(JSON.stringify(line.data), snapshot);
   assert.ok(book.getSheetByName('收錄集合'));
-  line.getRange(1, 15).setValue('');
   line.getRange(1, 14).setValue('');
+  line.getRange(1, 13).setValue('');
   assert.throws(() => env.context.migratePHCEPLayout(), /incomplete or moved/);
 });
 
