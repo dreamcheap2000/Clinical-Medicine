@@ -1,0 +1,72 @@
+name: PHCEP code-only deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type DEPLOY to update the existing web app without running setup or migration
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phcep-production-12ksl5GvgM_YVc1NjrPE9LRe_YvUgqttLl0R41z5dazo
+  cancel-in-progress: false
+
+jobs:
+  deploy-code:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Require main and explicit confirmation before reading secrets
+        env:
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: test "$GITHUB_REF" = refs/heads/main && test "$CONFIRMATION" = DEPLOY
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+
+      - name: Local regression tests
+        run: |
+          node --test PHCEP/tests/*.test.cjs
+          npm --prefix PHCEP/gateway test
+          python3 -m unittest scripts.test_write_clasp_credentials
+
+      - name: Install pinned clasp
+        run: npm install --global @google/clasp@3.4.1
+
+      - name: Prepare private OAuth credentials
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: python3 -m scripts.write_clasp_credentials --output "$RUNNER_TEMP/phcep-clasprc.json"
+
+      - name: Back up, upload, verify, and update existing deployment
+        env:
+          PHCEP_CONFIRMATION: ${{ inputs.confirmation }}
+          CLASP_SCRIPT_ID: ${{ secrets.CLASP_SCRIPT_ID }}
+          CLASP_DEPLOYMENT_ID: ${{ secrets.CLASP_DEPLOYMENT_ID }}
+          clasp_config_auth: ${{ runner.temp }}/phcep-clasprc.json
+          PHCEP_CODE_REPORT_PATH: ${{ runner.temp }}/phcep-code-report.json
+        run: node PHCEP/workflow/deploy-code.cjs
+
+      - name: Summarize outcome without source or credentials
+        if: always()
+        run: |
+          if test -f "$RUNNER_TEMP/phcep-code-report.json"; then
+            printf '## PHCEP code-only deployment\n\n```json\n' >> "$GITHUB_STEP_SUMMARY"
+            cat "$RUNNER_TEMP/phcep-code-report.json" >> "$GITHUB_STEP_SUMMARY"
+            printf '```\n' >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf 'PHCEP deployment did not reach the deployment step. See the failed prerequisite step.\n' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Remove ephemeral credentials and report
+        if: always()
+        run: rm -f -- "$RUNNER_TEMP/phcep-clasprc.json" "$RUNNER_TEMP/phcep-code-report.json"
