@@ -38,7 +38,7 @@ diagnosis, CDR scoring, reply, mirroring, or automatic backend failover.
 ## Canonical source and prerequisites
 
 Upload **only** the `.gs` files and `appsscript.json` inside `PHCEP/apps-script/`
-to one dedicated Apps Script project. Do not upload the four `.gs.txt` reference
+to the verified PHCEP Apps Script project. Do not upload the four `.gs.txt` reference
 files, `PHCEP/appsscript.json`, tests, gateway, or Java source. Do not combine this
 project with the unrelated top-level `apps-script/` project: its endpoints, triggers,
 workflow, and auto-reply behavior are not the PHCEP contract.
@@ -599,6 +599,42 @@ an approved retention policy; deleting them early allows duplicates.
 - [Spring Boot system requirements](https://docs.spring.io/spring-boot/system-requirements.html)
 
 ## Manual PHCEP layout deployment
+
+### Code-only deployment to the existing web app
+
+The operator has confirmed that the existing `CLASP_SCRIPT_ID` and
+`CLASP_DEPLOYMENT_ID` secrets identify the PHCEP project and its production web
+app. Use the manual **PHCEP code-only deployment** workflow
+(`.github/workflows/phcep-code-deploy.yml`), on `main`, with confirmation
+`DEPLOY`, to upload code and update that existing deployment without changing
+its URL. It reuses the existing `CLASPRC_JSON` user OAuth secret; neither a
+service account nor an API-executable deployment is required for this path.
+The script ID must match the independently inspected PHCEP project
+`1CpdImaCVfjNxJvBnD4xrxf5j2zAKI0mzQS-ZXeQ0H2w3aNMBaDLgCeVD`.
+
+This workflow backs up the current editor source as an immutable Apps Script
+version before uploading, preserves the exact reviewed remote `test.js`
+diagnostic helpers, verifies uploaded and immutable-version source, and confirms
+the existing deployment points to the new version. A smoke test sends only an
+unsigned empty JSON object and requires `INVALID_ENVELOPE`, before any event
+processing or spreadsheet write; it also surfaces missing runtime configuration.
+Unrecognized extra files,
+changed diagnostic helpers, a different web-app configuration, or a deployment
+that does not belong to the project block the operation. It never calls setup,
+migration, diagnostics, synthetic events, or any Apps Script Execution API function;
+it does not change Script Properties, Forms, triggers, LINE, or Render settings.
+Existing triggers use saved source, so an upload can affect them before the web
+app is redeployed. There is no automatic rollback; the summary records the
+previous deployed version and the editor-source backup version for recovery.
+
+Do not run **Deploy Apps Script** against this same project: that separate
+workflow uploads the incompatible top-level `apps-script/` backend. Do not merge
+those source trees. The layout workflow below is separate and retains its stricter
+user-OAuth/API-executable requirements. Its canonical file-set check will reject
+the preserved remote-only `test.js`; resolve that deliberately before attempting
+layout migration rather than bypassing the check.
+
+### Layout migration workflow
 
 `.github/workflows/phcep-manual-layout.yml` runs
 `scripts/phcep_manual_deploy.py` only through **workflow_dispatch**. It has no
