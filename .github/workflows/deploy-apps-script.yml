@@ -1,13 +1,8 @@
 name: Deploy Apps Script
 
+# Manual only: the shared CLASP_SCRIPT_ID secret now targets the PHCEP project,
+# and pushing this unrelated top-level backend there would overwrite PHCEP.
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - apps-script/**
-      - .github/workflows/deploy-apps-script.yml
-      - scripts/validate_apps_script_response.py
   workflow_dispatch:
 
 permissions:
@@ -17,6 +12,15 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Refuse to overwrite the PHCEP project
+        env:
+          CLASP_SCRIPT_ID: ${{ secrets.CLASP_SCRIPT_ID }}
+        run: |
+          if [ "$CLASP_SCRIPT_ID" = "1CpdImaCVfjNxJvBnD4xrxf5j2zAKI0mzQS-ZXeQ0H2w3aNMBaDLgCeVD" ]; then
+            echo "::error::CLASP_SCRIPT_ID is the PHCEP project. Use the 'PHCEP code-only deployment' workflow instead."
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
 

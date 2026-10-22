@@ -8,6 +8,11 @@ This directory contains the LINE Official Account Apps Script backend, now track
 - `appsscript.json`: Apps Script manifest.
 - `.clasp.json.template`: local template for `clasp`; CI writes the real `.clasp.json` from `CLASP_SCRIPT_ID`.
 
+> **Deployment is manual only.** The `Deploy Apps Script` workflow no longer runs on push,
+> and it refuses to run while `CLASP_SCRIPT_ID` points at the PHCEP project
+> (`1CpdImaCVfjNxJvBnD4xrxf5j2zAKI0mzQS-ZXeQ0H2w3aNMBaDLgCeVD`), because uploading this
+> backend there would overwrite PHCEP. Deploy PHCEP with the **PHCEP code-only deployment** workflow.
+
 ## One-time setup
 1. Install `clasp` locally: `npm i -g @google/clasp`
 2. Run `clasp login`
