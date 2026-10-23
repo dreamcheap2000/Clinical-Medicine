@@ -47,6 +47,9 @@ function environment(options = {}) {
         Array.from({ length: this.cols }, (_, c) => this.sheet.data[this.row + r - 1]?.[this.col + c - 1] ?? ''));
     }
     getValue() { return this.getValues()[0][0]; }
+    getRichTextValues() {
+      return this.getValues().map(row => row.map(value => value && typeof value.getText === 'function' ? value : null));
+    }
     getFormulas() {
       return Array.from({ length: this.rows }, (_, r) =>
         Array.from({ length: this.cols }, (_, c) => this.sheet.formulas?.[this.row + r - 1]?.[this.col + c - 1] ?? ''));
@@ -94,6 +97,27 @@ function environment(options = {}) {
       assert.ok(col >= 1 && col <= this.columns);
       this.data.forEach(row => { if (row && row.length > col) row.splice(col, 0, ...Array(count).fill('')); });
       this.columns += count;
+    }
+    deleteColumns(col, count) {
+      this.data.forEach(row => row.splice(col - 1, count));
+      (this.formulas || []).forEach(row => row.splice(col - 1, count));
+      for (const name of ['rules', 'notes']) {
+        const shifted = new Map();
+        for (const [key, value] of this[name] || []) {
+          const [row, column] = key.split(':').map(Number);
+          if (column < col) shifted.set(key, value);
+          else if (column >= col + count) shifted.set(`${row}:${column - count}`, value);
+        }
+        this[name] = shifted;
+      }
+      this.columns -= count;
+    }
+    copyTo(book) {
+      const copy = book.insertSheet('Copy of ' + this.name);
+      Object.assign(copy, { columns: this.columns, rows: this.rows, frozenRows: this.frozenRows,
+        data: this.data.map(row => [...row]), formulas: (this.formulas || []).map(row => [...row]),
+        notes: new Map(this.notes), rules: new Map(this.rules) });
+      return copy;
     }
     hideColumns(col, count) { this.hidden = [...new Set([...(this.hidden || []), ...Array.from({ length: count }, (_, i) => col + i)])]; }
     isColumnHiddenByUser(col) { return (this.hidden || []).includes(col); }
@@ -169,6 +193,10 @@ function environment(options = {}) {
     setRequireLogin(value) { this.login = value; this.loginUpdates = (this.loginUpdates || 0) + 1; return this; }
     getItems() { return this.items; }
     getItemById(id) { return this.items.find(item => item.id === id) || null; }
+    deleteItem(item) {
+      assert.ok(this.items.includes(item));
+      this.items.splice(this.items.indexOf(item), 1);
+    }
     getDestinationId() { return this.destination || null; }
     setDestination(type, id) {
       this.destination = id;
@@ -518,7 +546,7 @@ test('fresh and repeat standalone/bound setup preserve data, grow capacity, prot
     assert.equal(line.getRange(2, 3).getValue(), USER);
     assert.equal(line.columns, 24);
     assert.deepEqual(book.getSheets().slice(0, 3).map(sheet => sheet.name), ['總覽', 'LINE對話', 'QA知識庫']);
-    assert.equal(book.getSheetByName('QA知識庫').columns, 15);
+    assert.equal(book.getSheetByName('QA知識庫').columns, 11);
     assert.equal(book.getSheetByName('PHCEP寄件匣').getRange(1, 8).getValue(), 'Created At');
     assert.equal(book.getSheetByName('PHCEP臨床評分').getRange(2, 8).getValue(), '人工值');
     assert.equal(JSON.stringify(responseSheets.map(sheet => sheet.data)), raw);
@@ -566,7 +594,7 @@ test('configured spreadsheet wins, legacy form URL is migrated and preserved', (
   assert.equal(env.properties.get('CDR_FORM_ID'), legacy.id);
   assert.equal(env.properties.get('GOOGLE_FORM_URL'), legacy.getPublishedUrl());
   assert.equal(legacy.items[0].title, 'existing clinical question');
-  assert.equal(legacy.items.length, 3);
+  assert.equal(legacy.items.length, 2);
   assert.equal(legacy.responseEdits, true);
 });
 
@@ -673,7 +701,7 @@ test('handlers reject missing, wrong-source and unknown trigger UIDs', () => {
   assert.equal(env.book().getSheetByName('PHCEP表單紀錄').getLastRow(), 1);
 });
 
-test('prefill uses actual token item only, LINE ID optional and opaque token domain separated', () => {
+test('prefill contains only opaque invitation token and Forms have no editable LINE ID', () => {
   const env = setup();
   for (const type of ['CDR', 'VITALS']) {
     const invitation = invite(env, type);
@@ -681,7 +709,8 @@ test('prefill uses actual token item only, LINE ID optional and opaque token dom
     const url = new URL(invitation.url);
     assert.equal(url.searchParams.has('entry.' + env.properties.get(type + '_LINE_ITEM_ID')), false);
     const form = env.forms.get(env.properties.get(type + '_FORM_ID'));
-    assert.equal(form.getItemById(Number(env.properties.get(type + '_LINE_ITEM_ID'))).required, false);
+    assert.equal(form.items.some(item => item.title === 'LINE ID 編號'), false);
+    assert.equal(env.properties.get(type + '_LINE_ITEM_ID'), undefined);
     const [nonce, expiry, signature] = invitation.token.split('.');
     const expected = crypto.createHmac('sha256', env.properties.get('GATEWAY_SIGNING_SECRET'))
       .update('invitation\n' + nonce + '.' + expiry).digest('base64url');
@@ -689,6 +718,54 @@ test('prefill uses actual token item only, LINE ID optional and opaque token dom
     assert.equal(nonce, invitation.nonce);
     assert.ok(Number(expiry) > Date.now());
   }
+});
+
+test('identity migration removes only editable LINE items, preserves token IDs, raw responses and anonymous access', () => {
+  const env = setup();
+  const before = new Map();
+  const rawBefore = JSON.stringify(env.book().getSheets().filter(sheet => sheet.formUrl).map(sheet => sheet.data));
+  for (const type of ['CDR', 'VITALS']) {
+    const form = env.forms.get(env.properties.get(type + '_FORM_ID'));
+    const retired = form.addTextItem().setTitle('LINE ID 編號');
+    env.properties.set(type + '_LINE_ITEM_ID', String(retired.id));
+    form.emailCollection = false;
+    form.limitOne = false;
+    form.login = false;
+    before.set(type, { form, retired, ids: form.items.filter(item => item !== retired).map(item => item.id),
+      tokenId: env.properties.get(type + '_TOKEN_ITEM_ID') });
+  }
+  const invitation = invite(env);
+  const historical = before.get('CDR').retired.createResponse('forged LINE ID');
+  const report = env.context.migratePHCEPFormIdentity();
+  for (const type of ['CDR', 'VITALS']) {
+    const { form, retired, ids, tokenId } = before.get(type);
+    assert.equal(report[type].removed, 1);
+    assert.deepEqual(form.items.map(item => item.id), ids);
+    assert.equal(env.properties.get(type + '_TOKEN_ITEM_ID'), tokenId);
+    assert.equal(env.properties.get(type + '_LINE_ITEM_ID'), String(retired.id));
+    assert.equal(form.emailCollection, false);
+    assert.equal(form.limitOne, false);
+    assert.equal(form.login, false);
+    assert.equal(form.published, true);
+  }
+  assert.equal(env.context.phcepHandleFormSubmit(submission(env, 'CDR', invitation.token, 'historical', [historical])).status, 'linked');
+  const records = env.book().getSheetByName('PHCEP表單紀錄');
+  assert.equal(records.getRange(2, 5).getValue(), USER);
+  assert.deepEqual(JSON.parse(records.getRange(2, 6).getValue()), []);
+  env.context.setupPHCEP();
+  assert.equal(env.context.migratePHCEPFormIdentity().CDR.removed, 0);
+  assert.equal(JSON.stringify(env.book().getSheets().filter(sheet => sheet.formUrl).map(sheet => sheet.data)), rawBefore);
+  assert.equal(env.pushes.length, 0);
+});
+
+test('identity migration preflights both forms before deleting anything', () => {
+  const env = setup();
+  const cdr = env.forms.get(env.properties.get('CDR_FORM_ID'));
+  const item = cdr.addTextItem().setTitle('LINE ID 編號');
+  const vitals = env.forms.get(env.properties.get('VITALS_FORM_ID'));
+  vitals.destination = 'different-spreadsheet';
+  assert.throws(() => env.context.migratePHCEPFormIdentity(), /destination mismatch/);
+  assert.ok(cdr.items.includes(item));
 });
 
 test('invitation signing rejects short or reused LINE channel secrets', () => {
@@ -706,8 +783,10 @@ test('valid submissions persist private mapped identities and answers without de
   const env = setup();
   const invitation = invite(env);
   const form = env.forms.get(env.properties.get('CDR_FORM_ID'));
+  const retired = form.addTextItem().setTitle('LINE ID 編號');
+  env.properties.set('CDR_LINE_ITEM_ID', String(retired.id));
   const answers = [
-    form.getItemById(Number(env.properties.get('CDR_LINE_ITEM_ID'))).createResponse('spoofed user'),
+    retired.createResponse('spoofed user'),
     form.items.find(item => item.title === '受試者姓名 / 編號').createResponse('=private clinical text')
   ];
   const event = submission(env, 'CDR', invitation.token, 'response-valid', answers);
@@ -813,7 +892,7 @@ test('empty QA is safe, local fuzzy matches rank relevant QA only, H fills safe 
   line.appendRow(['message', false, USER, '', '', 'question']);
   assert.equal(env.context.suggestRepliesForUserMessage('question', 2).length, 0);
   const qa = env.book().getSheetByName('QA知識庫');
-  qa.appendRow(['qa', '', 'question', '', '', '', '=safe draft']);
+  qa.appendRow(['qa', '', 'question', '', '=safe draft']);
   assert.deepEqual(Array.from(env.context.suggestRepliesForUserMessage('question', 2)), ['=safe draft']);
   assert.deepEqual(Array.from(env.context.suggestRepliesForUserMessage('a similar question?', 2)), ['=safe draft']);
   assert.equal(env.context.suggestRepliesForUserMessage('unrelated words', 2).length, 0);
@@ -821,8 +900,8 @@ test('empty QA is safe, local fuzzy matches rank relevant QA only, H fills safe 
   line.getRange(2, 8).setValue('=safe draft');
   env.context.phcepHandleEdit({ range: line.getRange(2, 8), triggerUid: env.triggers[0].getUniqueId() });
   assert.equal(line.getRange(2, 9).getValue(), "'=safe draft");
-  assert.equal(qa.getRange(2, 14).getValue(), 1);
-  assert.equal(qa.getRange(2, 15).getValue(), 1);
+  assert.equal(qa.getRange(2, 10).getValue(), 1);
+  assert.equal(qa.getRange(2, 11).getValue(), 1);
   env.context.phcepHandleEdit({ range: line.getRange(2, 9), triggerUid: env.triggers[0].getUniqueId(), user: { getEmail: () => OWNER } });
   assert.equal(env.pushes.length, 0);
   assert.equal(env.context.formatCellDisplayForReply('=HYPERLINK("bad")').isFormula, false);
@@ -845,12 +924,91 @@ test('questionnaire retry persists one invitation and stable send ID, multicell 
   assert.equal(JSON.stringify(env.pushes[0].messages), JSON.stringify(env.pushes[1].messages));
   assert.equal(env.book().getSheetByName('PHCEP邀請').getLastRow(), 2);
   assert.equal(env.context.sendSelectedQuestionnaire(), true);
-  assert.equal(env.pushes.length, 2);
+  assert.equal(env.pushes.length, 3);
+  assert.notEqual(env.pushes[2].key, state['questionnaire:CDR'].key);
+  assert.equal(env.book().getSheetByName('PHCEP邀請').getLastRow(), 3);
+  const latestKey = JSON.parse(line.getRange(2, 12).getValue())['questionnaire:CDR'].key;
   line.getRange(2, 2).setValue(true);
   env.context.phcepHandleEdit({ range: line.getRange(2, 2, 1, 8), triggerUid: env.triggers[0].getUniqueId(), user: { getEmail: () => OWNER } });
-  assert.equal(env.pushes.length, 2);
+  assert.equal(env.pushes.length, 3);
   assert.equal(line.getRange(2, 2).getValue(), false);
-  assert.equal(JSON.parse(line.getRange(2, 12).getValue())['questionnaire:CDR'].key, state['questionnaire:CDR'].key);
+  assert.equal(JSON.parse(line.getRange(2, 12).getValue())['questionnaire:CDR'].key, latestKey);
+});
+
+test('B single-column batches, repeated sends and duplicate trigger delivery use fresh invitations only for new requests', () => {
+  const env = setup();
+  const line = env.book().getSheetByName('LINE對話');
+  const other = 'U' + 'b'.repeat(32);
+  line.appendRow(['m1', true, USER, '', '', '', '', '', '', '', 'e1']);
+  line.appendRow(['m2', true, other, '', '', '', '', '', '', '', 'e2']);
+  const range = line.getRange(2, 2, 2, 1);
+  editAs(env, range);
+  assert.equal(env.pushes.length, 2);
+  assert.deepEqual(env.pushes.map(push => push.recipient), [USER, other]);
+  const old = [2, 3].map(row => JSON.parse(line.getRange(row, 12).getValue())['questionnaire:CDR']);
+  assert.deepEqual(range.getValues(), [[false], [false]]);
+  editAs(env, range);
+  assert.equal(env.pushes.length, 2);
+  range.setValues([[true], [true]]);
+  editAs(env, range);
+  assert.equal(env.pushes.length, 4);
+  for (const [index, row] of [2, 3].entries()) {
+    const next = JSON.parse(line.getRange(row, 12).getValue())['questionnaire:CDR'];
+    assert.notEqual(next.nonce, old[index].nonce);
+    assert.notEqual(next.key, old[index].key);
+    assert.match(line.getRange(row, COL.status).getValue(), /✅/);
+  }
+  assert.equal(env.book().getSheetByName('PHCEP邀請').getLastRow(), 5);
+  line.getRange(2, 2).setValue(true);
+  editAs(env, line.getRange(2, 2));
+  assert.equal(env.pushes.length, 5);
+  editAs(env, line.getRange(2, 2));
+  assert.equal(env.pushes.length, 5);
+});
+
+test('B retry preserves exact token/payload/key while other rows send, and errors or busy locks reset B', () => {
+  const env = setup();
+  const line = env.book().getSheetByName('LINE對話');
+  line.appendRow(['m1', true, USER, '', '', '', '', '', '', '', 'e1']);
+  line.appendRow(['m2', true, 'invalid-recipient', '', '', '', '', '', '', '', 'e2']);
+  env.setPushFailure(true);
+  editAs(env, line.getRange(2, 2, 2, 1));
+  const first = env.pushes[0];
+  assert.deepEqual(line.getRange(2, 2, 2, 1).getValues(), [[false], [false]]);
+  assert.match(line.getRange(2, COL.status).getValue(), /未完成|未發送/);
+  assert.match(line.getRange(3, COL.status).getValue(), /未發送/);
+  env.setPushFailure(false);
+  line.getRange(2, 2).setValue(true);
+  editAs(env, line.getRange(2, 2));
+  assert.deepEqual(plain(env.pushes[1]), plain(first));
+  assert.equal(env.book().getSheetByName('PHCEP邀請').getLastRow(), 2);
+  line.getRange(2, 2).setValue(true);
+  env.context.phcepWithLock_ = () => { const error = new Error('BUSY'); error.phcepCode = 'BUSY'; throw error; };
+  editAs(env, line.getRange(2, 2));
+  assert.equal(line.getRange(2, 2).getValue(), false);
+  assert.match(line.getRange(2, COL.status).getValue(), /系統忙碌/);
+  assert.equal(env.pushes.length, 2);
+});
+
+test('questionnaire batch menu supports fresh resends, isolates invalid rows and preserves stable identities during row insertion', () => {
+  const env = setup();
+  const line = env.book().getSheetByName('LINE對話');
+  line.appendRow(['m1', true, USER, '', '', '', '', '', '', '', 'e1']);
+  line.appendRow(['m2', true, USER, '', '', '', '', '', '', '', 'e2']);
+  line.appendRow(['bad', true, 'invalid', '', '', '', '', '', '', '', 'bad-event']);
+  let inserted = false;
+  env.setPushHook(() => {
+    if (!inserted) {
+      inserted = true;
+      line.data.splice(1, 0, ['new', false, USER, '', '', '', '', '', '', '', 'new-event']);
+    }
+  });
+  assert.deepEqual(plain(env.context.sendBatchQuestionnaireFromCheckboxes()), { sent: 2, failed: 1 });
+  assert.equal(env.pushes.length, 2);
+  assert.deepEqual(line.getRange(2, 2, 4, 1).getValues(), [[false], [false], [false], [false]]);
+  line.getRange(3, 2, 2, 1).setValues([[true], [true]]);
+  assert.deepEqual(plain(env.context.sendBatchQuestionnaireFromCheckboxes()), { sent: 2, failed: 0 });
+  assert.equal(env.book().getSheetByName('PHCEP邀請').getLastRow(), 5);
 });
 
 test('explicit menu confirmation gates I send-on-edit and untrusted events cannot send', () => {
@@ -1324,7 +1482,7 @@ test('collection workflow captures provenance, deduplicates, validates importanc
   assert.equal(qa.getLastRow(), 2);
   assert.equal(qa.getRange(2, 2).getValue(), 4);
   assert.equal(qa.getRange(2, 3).getValue(), '如何預約門診');
-  assert.equal(qa.getRange(2, 7).getValue(), 'unsent draft');
+  assert.equal(qa.getRange(2, 5).getValue(), 'unsent draft');
   assert.equal(env.context.publishApprovedCollections().published, 0);
   assert.equal(qa.getLastRow(), 2);
   line.getRange(2, COL.action).setValue('重新整理建議');
@@ -1397,11 +1555,11 @@ test('collected conversation updates automatically and revises the same QA only 
   collections.getRange(2, 2).setValue('核准');
   editAs(env, collections.getRange(2, 2));
   const qaId = collections.getRange(2, 14).getValue();
-  assert.equal(qa.getRange(2, 7).getValue(), 'first reply');
+  assert.equal(qa.getRange(2, 5).getValue(), 'first reply');
   line.getRange(2, 9).setValue('second reply');
   editAs(env, line.getRange(2, 9));
   assert.equal(collections.getRange(2, 2).getValue(), '待審核');
-  assert.equal(qa.getRange(2, 7).getValue(), 'first reply');
+  assert.equal(qa.getRange(2, 5).getValue(), 'first reply');
   line.getRange(2, COL.confirm).setValue(true);
   editAs(env, line.getRange(2, COL.confirm));
   assert.equal(collections.getLastRow(), 2);
@@ -1409,12 +1567,12 @@ test('collected conversation updates automatically and revises the same QA only 
   assert.equal(collections.getRange(2, 14).getValue(), qaId);
   assert.match(collections.getRange(2, 4).getValue(), /最新回覆.*\nsecond reply/);
   assert.match(collections.getRange(2, 4).getValue(), /first reply/);
-  assert.equal(qa.getRange(2, 7).getValue(), 'first reply');
+  assert.equal(qa.getRange(2, 5).getValue(), 'first reply');
   collections.getRange(2, 2).setValue('核准');
   editAs(env, collections.getRange(2, 2));
   assert.equal(qa.getLastRow(), 2);
   assert.equal(qa.getRange(2, 1).getValue(), qaId);
-  assert.match(qa.getRange(2, 7).getValue(), /second reply/);
+  assert.match(qa.getRange(2, 5).getValue(), /second reply/);
   assert.equal(collections.getRange(2, 2).getValue(), '已發布');
 });
 
@@ -1441,7 +1599,7 @@ test('media collection links column C and includes draft, latest reply and archi
   for (const text of ['unsent', 'latest', 'previous', 'older than five replies']) assert.ok(reply.includes(text));
   collections.getRange(2, 2).setValue('核准');
   editAs(env, collections.getRange(2, 2));
-  assert.equal(book.getSheetByName('QA知識庫').getRange(2, 8).getValue(), url);
+  assert.ok(book.getSheetByName('QA知識庫').getRange(2, 5).getValue().includes(url));
 });
 
 test('migration refreshes legacy collection entries by message identity without replacing their key or QA ID', () => {
@@ -1522,6 +1680,75 @@ test('long batches stop safely before the runtime limit and report unsent rows',
   assert.match(line.getRange(3, COL.status).getValue(), /時間上限.*未執行/);
 });
 
+function legacyQA(env) {
+  const qa = env.book().getSheetByName('QA知識庫');
+  if (qa.getMaxColumns() < 15) qa.insertColumnsAfter(qa.getMaxColumns(), 15 - qa.getMaxColumns());
+  qa.getRange(1, 1, 1, 15).setValues([Array.from(env.context.phcepQALegacyHeaders_())]);
+  return qa;
+}
+
+test('QA migration backs up and protects the entire legacy sheet before merging aliases/links and deleting four columns', () => {
+  const env = setup();
+  const qa = legacyQA(env);
+  const url = 'https://drive.google.com/file/d/managedFile123/view';
+  const media = 'https://drive.google.com/file/d/secondFile1234/view';
+  const rich = env.context.SpreadsheetApp.newRichTextValue().setText('linked reply').setLinkUrl(url).build();
+  qa.appendRow(['qa-id', 4, '如何預約門診', '我要掛號', '門診掛號方式', 'friend note', rich, media, 'original.mp4',
+    'APPROVED_DEIDENTIFIED_QA', '[1]', '[2]', '[3]', 4, 9]);
+  env.context.setupPHCEP();
+  assert.equal(qa.getRange(1, 7).getValue(), '回覆');
+  assert.equal(env.context.phcepManualPreflight_(env.book()), null);
+  const match = env.context.phcepReadQA_(env.book())[0];
+  assert.ok(match.reply.includes(url));
+  assert.equal(env.context.phcepRankSuggestions_('我要掛號', [match]).length, 1);
+  env.context.phcepRecordQAUsage_(match);
+  const original = qa.data.map(row => [...row]);
+  const report = env.context.migratePHCEPQAColumns();
+  assert.equal(report.columnsRemoved, 4);
+  const backup = env.book().getSheetByName(report.backupSheet);
+  assert.ok(backup);
+  assert.deepEqual(backup.data, original);
+  assert.equal(backup.getRange(2, 7).getRichTextValue().getLinkUrl(), url);
+  assert.equal(backup.getRange(2, 9).getValue(), 'original.mp4');
+  assert.equal(backup.protections[0].warning, false);
+  assert.equal(backup.protections[0].domain, false);
+  assert.ok(!backup.protections[0].editors.includes('untrusted@example.org'));
+  assert.equal(qa.getMaxColumns(), 11);
+  assert.deepEqual(qa.data[0], ['ID', '重要性分級 (1-5)', '訊息', 'Line Friend 連結備註', '回覆', '連結備註',
+    '問題 Embedding', '回覆 Embedding', '備註 Embedding', '行內使用次數', '全域使用次數']);
+  assert.equal(qa.getRange(2, 3).getValue(), '如何預約門診\n我要掛號\n門診掛號方式');
+  assert.equal(qa.getRange(2, 5).getValue(), 'linked reply\n' + url + '\n' + media);
+  assert.deepEqual(qa.data[1].slice(6), ['[1]', '[2]', '[3]', 5, 10]);
+  const compactMatch = env.context.phcepReadQA_(env.book())[0];
+  assert.equal(env.context.phcepRankSuggestions_('門診掛號方式', [compactMatch]).length, 1);
+  env.context.phcepRecordQAUsage_(compactMatch);
+  assert.deepEqual(qa.data[1].slice(9), [6, 11]);
+  const sheetCount = env.book().getSheets().length;
+  assert.equal(env.context.migratePHCEPQAColumns().changed, false);
+  env.context.setupPHCEP();
+  assert.equal(qa.getMaxColumns(), 11);
+  assert.equal(env.book().getSheets().length, sheetCount);
+  assert.equal(env.context.phcepManualPreflight_(env.book()), null);
+  assert.equal(env.pushes.length, 0);
+});
+
+test('QA column migration refuses formulas and does not mutate source when backup protection fails', () => {
+  const env = setup();
+  const qa = legacyQA(env);
+  qa.appendRow(['qa', '', 'question', '', '', '', 'reply']);
+  const original = JSON.stringify(qa.data);
+  qa.formulas = [[], ['', '', '=A2']];
+  const sheets = env.book().getSheets().length;
+  assert.throws(() => env.context.migratePHCEPQAColumns(), /FORMULAS_REQUIRE_REVIEW/);
+  assert.equal(env.book().getSheets().length, sheets);
+  assert.equal(JSON.stringify(qa.data), original);
+  qa.formulas = [];
+  env.setProtectionFailure(true);
+  assert.throws(() => env.context.migratePHCEPQAColumns(), /Protection denied/);
+  assert.equal(JSON.stringify(qa.data), original);
+  assert.equal(qa.getMaxColumns(), 15);
+});
+
 test('media rename from LINE or QA updates only private managed Drive files and all linked labels', () => {
   const env = setup();
   const line = env.book().getSheetByName('LINE對話');
@@ -1556,12 +1783,12 @@ test('media rename from LINE or QA updates only private managed Drive files and 
   assert.match(line.getRange(3, COL.status).getValue(), /❌/);
   assert.match(line.getRange(4, COL.status).getValue(), /私人/);
   const qa = env.book().getSheetByName('QA知識庫');
-  qa.appendRow(['qa-id', '', 'question', '', '', '', '', 'https://drive.google.com/file/d/managedFile123/view']);
+  qa.appendRow(['qa-id', '', 'question', '', 'https://drive.google.com/file/d/managedFile123/view']);
   qa.getRange(2, 6).setValue('new file name');
   editAs(env, qa.getRange(2, 6));
   assert.equal(managed.name, 'new file name');
-  assert.equal(qa.getRange(2, 8).getRichTextValue().getText(), 'new file name');
-  assert.equal(qa.getRange(2, 9).getValue(), 'new file name');
+  assert.equal(qa.getRange(2, 5).getRichTextValue().getText(), 'new file name');
+  assert.equal(qa.getRange(2, 4).getValue(), 'new file name');
   assert.equal(line.getRange(2, 7).getRichTextValue().getText(), 'new file name');
   assert.equal(line.getRange(2, COL.mediaName).getValue(), 'new file name');
   assert.match(qa.notes.get('2:6'), /✅/);
@@ -1572,13 +1799,53 @@ test('media rename from LINE or QA updates only private managed Drive files and 
   line.getRange(2, COL.mediaName).setValue('renamed from line');
   editAs(env, line.getRange(2, COL.mediaName));
   assert.equal(managed.name, 'renamed from line');
-  assert.equal(qa.getRange(2, 6).getValue(), 'renamed from line');
-  assert.equal(qa.getRange(2, 8).getRichTextValue().getText(), 'renamed from line');
-  qa.getRange(2, 8).setValue('https://example.org/not-a-drive-file');
+  assert.equal(qa.getRange(2, 4).getValue(), 'renamed from line');
+  assert.equal(qa.getRange(2, 5).getRichTextValue().getText(), 'renamed from line');
+  qa.getRange(2, 5).setValue('https://example.org/not-a-drive-file');
   qa.getRange(2, 6).setValue('must not rename anything');
   editAs(env, qa.getRange(2, 6));
   assert.equal(managed.name, 'renamed from line');
   assert.match(qa.notes.get('2:6'), /沒有系統管理/);
+});
+
+test('QA reply-file rename preserves prose in both layouts, retains usable reply URLs and refuses ambiguous targets', () => {
+  for (const compact of [true, false]) {
+    const env = setup();
+    const qa = compact ? env.book().getSheetByName('QA知識庫') : legacyQA(env);
+    const layout = env.context.phcepQALayout_(qa);
+    const url = 'https://drive.google.com/file/d/managedFile123/view';
+    const otherUrl = 'https://drive.google.com/file/d/secondFile1234/view';
+    const folder = env.properties.get('IMAGE_FOLDER_ID');
+    const file = { name: 'original', getSharingAccess: () => 'PRIVATE',
+      getParents: () => {
+        let done = false;
+        return { hasNext: () => !done, next: () => { done = true; return { getId: () => folder }; } };
+      }, setName(name) { this.name = name; } };
+    env.context.DriveApp.getFileById = id => { assert.equal(id, 'managedFile123'); return file; };
+    qa.appendRow(Array(layout.width).fill(''));
+    qa.getRange(2, layout.question).setValue('如何運動');
+    const prose = '請依說明練習：\n' + url;
+    qa.getRange(2, layout.reply).setValue(prose);
+    qa.getRange(2, layout.notes).setValue('exercise guide');
+    editAs(env, qa.getRange(2, layout.notes));
+    assert.equal(file.name, 'exercise guide');
+    assert.equal(qa.getRange(2, layout.reply).getValue(), prose);
+    assert.equal(env.context.phcepReadQA_(env.book())[0].reply, prose);
+    qa.getRange(2, layout.reply).setValue(url);
+    qa.getRange(2, layout.friendNotes).setValue('renamed again');
+    editAs(env, qa.getRange(2, layout.friendNotes));
+    assert.equal(file.name, 'renamed again');
+    assert.equal(env.context.phcepReadQA_(env.book())[0].reply, 'renamed again\n' + url);
+    qa.getRange(2, layout.notes).setValue('APPROVED_DEIDENTIFIED_QA');
+    editAs(env, qa.getRange(2, layout.notes));
+    assert.equal(file.name, 'renamed again');
+    qa.getRange(2, layout.reply).setValue(url + '\n' + otherUrl);
+    qa.getRange(2, layout.notes).setValue('ambiguous');
+    editAs(env, qa.getRange(2, layout.notes));
+    assert.equal(file.name, 'renamed again');
+    assert.match(qa.notes.get('2:' + layout.notes), /多個 Drive/);
+    assert.equal(qa.getRange(2, layout.reply).getValue(), url + '\n' + otherUrl);
+  }
 });
 
 const MANUAL_TARGET = '12ksl5GvgM_YVc1NjrPE9LRe_YvUgqttLl0R41z5dazo';

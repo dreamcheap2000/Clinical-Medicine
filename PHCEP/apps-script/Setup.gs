@@ -1,6 +1,6 @@
 const PHCEP_SCHEMAS_ = {
   'LINE對話': ['Message ID', '發送問卷 (勾選)', 'User ID', 'DateTime', 'User Name', '訊息 (病患問題)', '檔案/媒體連結', '建議回覆選單', '回覆草稿 (可編輯)', '回覆紀錄 (最新)', 'Event Key', '操作狀態'],
-  'QA知識庫': ['ID', '重要性分級 (1-5)', '訊息', 'LINE Friend 訊息 1', 'LINE Friend 訊息 2', 'Line Friend 連結備註', '回覆', '檔案/媒體連結', '檔案/網址名稱', '連結備註', '問題 Embedding', '回覆 Embedding', '備註 Embedding', '行內使用次數', '全域使用次數'],
+  'QA知識庫': ['ID', '重要性分級 (1-5)', '訊息', 'Line Friend 連結備註', '回覆', '連結備註', '問題 Embedding', '回覆 Embedding', '備註 Embedding', '行內使用次數', '全域使用次數'],
   'PHCEP事件': ['Event Key', 'Status', 'Message ID', 'Updated At'],
   'PHCEP請求': ['Nonce Hash', 'Expires At'],
   'PHCEP寄件匣': ['Key', 'Retry Key', 'Status', 'Recipient', 'Messages JSON', 'Updated At', 'Error', 'Created At'],
@@ -38,8 +38,19 @@ function validatePHCEPConfiguration() {
   return { missing: phcepConfigurationNames_() };
 }
 
+function phcepQALegacyHeaders_() {
+  var compact = PHCEP_SCHEMAS_['QA知識庫'];
+  return compact.slice(0, 3).concat(['LINE Friend 訊息 1', 'LINE Friend 訊息 2'],
+    compact.slice(3, 5), ['檔案/媒體連結', '檔案/網址名稱'], compact.slice(5));
+}
+
 function phcepEnsureSheet_(ss, name, headers) {
   const sheet = ss.getSheetByName(name) || ss.insertSheet(name);
+  if (name === 'QA知識庫' && sheet.getMaxColumns() >= 15) {
+    const legacy = phcepQALegacyHeaders_();
+    const actual = sheet.getRange(1, 1, 1, legacy.length).getValues()[0];
+    if (legacy.every(function(header, i) { return actual[i] === header; })) headers = legacy;
+  }
   if (sheet.getMaxColumns() < headers.length) {
     sheet.insertColumnsAfter(sheet.getMaxColumns(), headers.length - sheet.getMaxColumns());
   }
@@ -62,6 +73,56 @@ function phcepEnsureSheet_(ss, name, headers) {
   sheet.setFrozenRows(Math.max(1, sheet.getFrozenRows()));
   sheet.getRange(1, 1, 1, headers.length).setFontWeight('bold').setBackground('#e8f0fe');
   return sheet;
+}
+
+function migratePHCEPQAColumns() {
+  phcepAuthorizeClinician_();
+  return phcepWithLock_(function() {
+    const ss = phcepSpreadsheet_();
+    const sheet = ss.getSheetByName('QA知識庫');
+    if (!sheet || sheet.getFormUrl()) throw new Error('Managed QA sheet required.');
+    const layout = phcepQALayout_(sheet);
+    const removed = [layout.alias1, layout.alias2, layout.media, layout.filename].filter(Boolean);
+    if (!removed.length) return { changed: false, columnsRemoved: 0 };
+    const count = sheet.getLastRow() - 1;
+    const values = count > 0 ? sheet.getRange(2, 1, count, layout.width).getValues() : [];
+    const formulas = sheet.getRange(1, 1, sheet.getLastRow(), layout.width).getFormulas();
+    if (formulas.some(function(row) { return row.some(Boolean); })) {
+      throw new Error('QA_MIGRATION_FORMULAS_REQUIRE_REVIEW: resolve formulas before deleting columns.');
+    }
+    const rich = count > 0 ? sheet.getRange(2, 1, count, layout.width).getRichTextValues() : [];
+    const staged = values.map(function(row, i) {
+      const questions = [];
+      [layout.question, layout.alias1, layout.alias2].filter(Boolean).forEach(function(column) {
+        phcepLinkedText_(row[column - 1], rich[i][column - 1]).split(/\r?\n/).forEach(function(value) {
+          value = value.trim();
+          if (value && questions.indexOf(value) === -1) questions.push(value);
+        });
+      });
+      let reply = phcepLinkedText_(row[layout.reply - 1], rich[i][layout.reply - 1]);
+      if (layout.media) {
+        phcepRichLinks_(row[layout.media - 1], rich[i][layout.media - 1]).forEach(function(url) {
+          if (reply.indexOf(url) === -1) reply += (reply ? '\n' : '') + url;
+        });
+      }
+      const question = questions.join('\n');
+      if (question.length > 49000 || reply.length > 49000) throw new Error('QA_MIGRATION_CELL_TOO_LARGE');
+      return { question: question, reply: reply };
+    });
+    const backup = sheet.copyTo(ss).setName('PHCEP_QA備份_' + Date.now() + '_' + Utilities.getUuid().slice(0, 8));
+    phcepProtectSheet_(ss, backup, phcepTrustedEditors_());
+    SpreadsheetApp.flush();
+    // The original sheet is untouched until the complete copy is protected.
+    if (count > 0) {
+      sheet.getRange(2, layout.question, count, 1).setValues(staged.map(function(row) { return [phcepLiteral_(row.question)]; }));
+      sheet.getRange(2, layout.reply, count, 1).setValues(staged.map(function(row) { return [phcepLiteral_(row.reply)]; }));
+    }
+    removed.sort(function(a, b) { return b - a; }).forEach(function(column) { sheet.deleteColumns(column, 1); });
+    phcepApplyQAValidations_(sheet);
+    const report = { changed: true, columnsRemoved: removed.length, backupSheet: backup.getName(), rows: count };
+    console.log(JSON.stringify(report));
+    return report;
+  });
 }
 
 function phcepTrustedEditors_() {

@@ -619,13 +619,16 @@ test('push recipient must be a strict LINE user ID', () => {
 
 test('text ingestion adds bounded local QA suggestions to H without network calls or sending', () => {
   const { post, sign, state } = environment();
-  const qaRows = [Array.from({ length: 15 }, (_, i) => `QA Header ${i}`),
+  const qaRows = [['ID', '重要性分級 (1-5)', '訊息', 'LINE Friend 訊息 1', 'LINE Friend 訊息 2', 'Line Friend 連結備註',
+    '回覆', '檔案/媒體連結', '檔案/網址名稱', '連結備註', '問題 Embedding', '回覆 Embedding', '備註 Embedding', '行內使用次數', '全域使用次數'],
     ['1', '', '如何預約門診', '', '', '', '預約說明', '', '', '', '', '', '', 0, 0],
     ['2', '', '停車資訊', '', '', '', '停車說明', '', '', '', '', '', '', 0, 0]];
   state.sheets['QA知識庫'] = {
     getLastRow: () => qaRows.length,
+    getLastColumn: () => 15,
     getRange: (row, column, height, width) => ({
-      getValues: () => qaRows.slice(row - 1, row - 1 + height).map(values => values.slice(column - 1, column - 1 + width))
+      getValues: () => qaRows.slice(row - 1, row - 1 + height).map(values => values.slice(column - 1, column - 1 + width)),
+      getRichTextValues: () => Array.from({ length: height }, () => Array(width).fill(null))
     })
   };
   const message = event('qa-1', { message: { id: 'qa-1', type: 'text', text: '請問如何預約門診？' } });

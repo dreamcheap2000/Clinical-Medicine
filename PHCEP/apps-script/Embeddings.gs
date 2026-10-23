@@ -10,17 +10,18 @@ function buildCuratedQAEmbeddings() {
   return phcepWithLock_(function () {
     var sheet = phcepSpreadsheet_().getSheetByName('QA知識庫');
     if (!sheet || sheet.getLastRow() < 2) return { status: 'EMPTY', count: 0 };
-    var rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, 15).getValues();
+    var layout = phcepQALayout_(sheet);
+    var rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, layout.width).getValues();
     var count = 0;
-    // Approval is a deliberate exact marker in the existing link-notes column J.
+    // Approval is a deliberate exact marker in 連結備註.
     rows.forEach(function (row, index) {
-      if (row[9] !== 'APPROVED_DEIDENTIFIED_QA' || !String(row[2] || '').trim()) return;
-      var vector = phcepCuratedEmbedding_(String(row[2]).slice(0, 8000), key);
+      if (row[layout.notes - 1] !== 'APPROVED_DEIDENTIFIED_QA' || !String(row[layout.question - 1] || '').trim()) return;
+      var vector = phcepCuratedEmbedding_(String(row[layout.question - 1]).slice(0, 8000), key);
       if (!vector) return;
       var json = JSON.stringify(vector);
       if (json.length > 49000) throw new Error('EMBEDDING_TOO_LARGE');
       // Keep question vectors separate from replies, private in the existing sheet.
-      sheet.getRange(index + 2, 11).setValue(json);
+      sheet.getRange(index + 2, layout.questionEmbedding).setValue(json);
       count++;
     });
     SpreadsheetApp.flush();

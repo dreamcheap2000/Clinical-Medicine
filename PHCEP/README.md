@@ -275,10 +275,15 @@ Tick N to send the draft; one-column multi-row checkbox edits support batch send
 Rectangular pastes spanning other columns do not send. The explicit draft-send
 menu and opt-in I send-on-edit menu remain available. Google may omit editor
 identity from trigger events: those sends are refused; use the authorized menu.
-B requests CDR; batch menu supports checked rows. Vitals and subsequent daily
-invitations use the dedicated **send selected vitals** and **new CDR/vitals
-invitation** menus, not an automatic timer. A retry uses the stored invitation;
-a confirmed new invitation deliberately creates a new operation. L and the outbox
+B requests CDR; filling TRUE down B alone or using the batch menu sends checked
+rows. After a successful send, a new explicit B/menu request creates a fresh
+invitation and operation key, even on the same row. Failed/pending sends retry
+the exact stored invitation, payload and key; ambiguous expired sends require
+manual review. B resets on completion, refusal, failure or busy-lock feedback.
+Duplicate trigger delivery does not resend a checkbox that has already reset.
+Vitals use **send selected vitals**, not an automatic timer. The separate
+**new CDR/vitals invitation** menus still refuse unresolved prior sends.
+L and the outbox
 show pending/sent/retry states. Resolve failed pending payloads before changing
 recipient/content. Patient media remains private; LINE cannot render private
 Drive downloads, and the integration does not publish files to make them render.
@@ -313,8 +318,8 @@ B and the existing CDR/vitals entrypoints send a Flex invitation with a
 Raw draft text, rather than card JSON, is retained in J and reply history.
 Pending operations retain their exact stored messages/retry keys across upgrades:
 an older pending text send is deliberately not reformatted into Flex.
-An already-sent questionnaire is not sent again just because its checkbox is
-checked; use the explicit new-invitation workflow or a fresh test message row.
+A new explicit check of B after successful delivery sends a new invitation.
+Retrying an unsuccessful request never silently replaces its invitation/key.
 
 Run `validatePHCEPMessageCards()` in the editor to validate synthetic website,
 image, video and questionnaire card shapes with LINE's non-delivering validation
@@ -448,16 +453,18 @@ key: pending sends retain their original key; expired ambiguous sends require
 manual reconciliation instead of a blind resend.
 
 **Local suggestion matcher (no network).** Text messages get an H dropdown during
-ingestion using only `QA知識庫` C/D/E questions and G replies: NFKC + lowercase,
+ingestion using `QA知識庫` 訊息 and 回覆 (looked up by header): NFKC + lowercase,
 punctuation/space removal, leading 請問/您好 and trailing 謝謝 removal, exact
 match, guarded containment (≥2 characters and ≥25% of the longer text), bigram
 Dice similarity and bounded edit distance (≤64 characters). Relevance must reach
 0.45 first; only then may importance (+0.01 × level, max +0.05) and global usage
-count O (log-scaled, max +0.03) reorder candidates. Low relevance is never rescued;
+全域使用次數 (log-scaled, max +0.03) reorder candidates. Low relevance is never rescued;
 no confident match means no dropdown. Up to `PHCEP_SUGGESTION_LIMIT` (default 5)
 unique replies are offered. Matching is bounded (≤2000 QA rows, ≤500 characters)
 and any matcher failure is ignored so ingestion still completes. Suggestions never
-send: H only fills I. Selecting H increments the QA usage counts N/O.
+send: H only fills I. Selecting H increments 行內使用次數 and 全域使用次數.
+Newline-separated alternatives in 訊息 are matched individually; legacy alternate
+question columns also remain usable until the explicit QA migration.
 
 **Importance** is optional metadata (blank = none, 5 = highest ranking hint). It
 is **not** clinical urgency/triage and never escalates or alerts. Sheet validation
@@ -479,13 +486,19 @@ Approval is an operator attestation of deidentification, not automatic scrubbing
 
 **Media preview and rename.** G keeps a rich-text link to the private Drive file
 (set `IMAGE_FOLDER_ID` to your private LINE media folder; it must stay private).
-Typing a name in LINE對話 媒體檔名 or QA知識庫 F (`Line Friend 連結備註`, linked
-to the file in H) renames the file only if it is inside that configured
-folder and still private, strips path/control characters (max 120), then updates
-all matching LINE G / QA H link labels, LINE filename controls, QA F and QA I.
-QA F displays a cell note and a toast with success/refusal details. QA D/E
-(`LINE Friend 訊息 1/2`) are alternate question phrasings for matching C; they
-do not send LINE messages. F is not a matcher question or reply.
+Typing a name in LINE對話 媒體檔名 or QA知識庫 `連結備註` renames the private
+managed Drive file linked in `回覆` (old G; compact E). `Line Friend 連結備註`
+also remains a compatible rename control; neither note column is a matcher
+question or reply. Legacy QA rows can fall back to 檔案/媒體連結 until migration.
+The file must be inside the configured folder and still private. Names lose
+path/control characters (max 120); matching single-file link labels, LINE
+filename controls and QA filename metadata are synchronized. Mixed prose and
+multi-link replies are not replaced with a filename, and suggestions preserve
+the underlying URLs even when a cell displays a rich-text label.
+Each QA edit displays a cell note and toast with success/refusal details.
+Multiple distinct Drive targets in a reply are refused rather than guessing
+which file to rename; split them into separate rows first. The exact
+`APPROVED_DEIDENTIFIED_QA` marker in 連結備註 is reserved for embeddings, not a filename.
 Images, videos, audio and uploaded files received through LINE are stored in the
 private media folder; ordinary web URLs remain links and are not downloaded.
 Other files, shared files and non-Drive links are refused. No
@@ -493,6 +506,32 @@ sharing changes are made and no public links are created.
 
 ### Migration notes
 
+- Existing production workbooks/forms need these **explicit editor runs** after
+  deployment; uploading code alone does not remove columns or Form questions:
+  1. `migratePHCEPFormIdentity()` removes only `LINE ID 編號` from both configured
+     forms, after checking both destinations and invitation items. Existing
+     invitation/clinical item IDs, anonymous-access settings, response sheets
+     and historical response data remain intact. Retired identity-item IDs stay
+     in Script Properties to filter historical submissions. Repeat setup never
+     recreates the question.
+  2. `migratePHCEPQAColumns()` copies the entire QA tab into a protected
+     `PHCEP_QA備份_…` tab **before modifying the source**. It merges old C/D/E into
+     newline-separated 訊息, retains rich/legacy media URLs in 回覆, then physically
+     deletes LINE Friend 訊息 1/2, 檔案/媒體連結 and 檔案/網址名稱. The old filename
+     values and original rich links remain in the backup. All three embeddings,
+     both note columns, IDs, importance and usage counts remain. It refuses
+     formulas/oversized merged cells before source changes; review such formulas
+     and any external references to removed columns before migrating. It is not
+     transactional: if a later write fails, keep the backup and rerun after
+     resolving the reported error; do not delete the original or backup tab.
+  3. `migratePHCEPLayout()` repairs the edit trigger and refreshes controls/notes.
+  These migrations send no patient messages. Repeat QA migration is a no-op.
+- Compact QA order is **A ID, B 重要性分級 (1-5), C 訊息,
+  D Line Friend 連結備註, E 回覆, F 連結備註, G 問題 Embedding,
+  H 回覆 Embedding, I 備註 Embedding, J 行內使用次數, K 全域使用次數**.
+  Readers, publishing/reapproval, rename controls, embeddings and usage updates
+  use header names; they support both old 15-column and compact layouts.
+  Normal setup preserves an existing legacy layout and never deletes its data.
 - `setupPHCEP()` / `migratePHCEPLayout()` are idempotent: they add missing sheets
   (`收錄集合`, `總覽`) and headers. On first creation, they insert the operator
   block right after L (legacy content beyond L is shifted right by inserting
@@ -525,25 +564,34 @@ sharing changes are made and no public links are created.
 5. Tick 收錄 → `收錄集合` row `待審核`; tick again → `已存在`; set `核准` → QA row.
 6. Send a synthetic image, collect it without replying → C contains its clickable
    media URL. Send a later draft → the same collection entry is updated.
-7. Type a new 媒體檔名 or linked QA F filename → Drive name and matching labels
+7. Type a new 媒體檔名 or linked QA 連結備註 filename → Drive name and matching labels
    update; file sharing remains private.
-8. Fill TRUE down N for draft sends or Q for collections, one checkbox column
+8. Fill TRUE down B for questionnaires, N for draft sends or Q for collections, one checkbox column
    per edit. Verify every selected row's 操作結果; rectangular pastes never send.
+9. Recheck B after successful delivery: a fresh invitation arrives. After a
+   failed send, recheck B: the same invitation/key is reused. Both forms should
+   open signed out with no editable LINE ID question; private records should
+   contain the original recipient's exact LINE `U…` identifier.
 
-`QA知識庫` preserves the uploaded 15 columns, with empty QA handled safely.
+`QA知識庫` supports the legacy and compact schemas, with empty QA handled safely.
 Maintain only curated/deidentified education content there. Do not copy patient
 messages or LINE IDs into it. `buildCuratedQAEmbeddings()` is optional, manual,
-and requires both explicit `AI_CURATED_QA_OPT_IN=true` and column J's exact approval
-marker `APPROVED_DEIDENTIFIED_QA` on each row. It embeds question C into K, not
+and requires both explicit `AI_CURATED_QA_OPT_IN=true` and 連結備註's exact approval
+marker `APPROVED_DEIDENTIFIED_QA` on each row. It embeds 訊息 into 問題 Embedding, not
 reply vectors against patient questions, and sends the API key in a header.
 Vectors stay private in the Sheet. The marker is an operator attestation, **not**
-automatic deidentification. No patient-derived AI workflow is enabled.
+automatic deidentification. No patient-derived AI workflow is enabled. The local
+matcher does not use embeddings; the reply/note vectors remain reserved and
+are retained by request. Both usage counters are active ranking metadata.
 
 ## Invitations, submissions, and schema
 
 Each invite contains a random opaque nonce, expiry and HMAC in the actual Forms
-invitation field; it contains **no LINE ID**. `LINE ID 編號` is editable/optional
-and ignored for identity association. Invites expire after 24 hours, are bound
+invitation field; it contains **no LINE ID**. New forms have no editable
+`LINE ID 編號` question; run `migratePHCEPFormIdentity()` for existing forms.
+The exact original recipient LINE ID is recorded server-side from the invitation
+ledger, never from an answer. Historical editable identity answers are ignored.
+Invites expire after 24 hours, are bound
 server-side to one form type and LINE recipient, and can link only one response
 ID. Token edits, timestamp edits, expiry, cross-form use and replay are quarantined.
 Possession of a link associates the response with an invitation, **not a verified

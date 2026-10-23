@@ -99,7 +99,7 @@ function phcepManualLayoutMigration(request) {
 function phcepManualSchemas_() {
   return {
     'LINE對話': ['Message ID', '發送問卷 (勾選)', 'User ID', 'DateTime', 'User Name', '訊息 (病患問題)', '檔案/媒體連結', '建議回覆選單', '回覆草稿 (可編輯)', '回覆紀錄 (最新)', 'Event Key', '操作狀態'],
-    'QA知識庫': ['ID', '重要性分級 (1-5)', '訊息', 'LINE Friend 訊息 1', 'LINE Friend 訊息 2', 'Line Friend 連結備註', '回覆', '檔案/媒體連結', '檔案/網址名稱', '連結備註', '問題 Embedding', '回覆 Embedding', '備註 Embedding', '行內使用次數', '全域使用次數'],
+    'QA知識庫': ['ID', '重要性分級 (1-5)', '訊息', 'Line Friend 連結備註', '回覆', '連結備註', '問題 Embedding', '回覆 Embedding', '備註 Embedding', '行內使用次數', '全域使用次數'],
     'PHCEP事件': ['Event Key', 'Status', 'Message ID', 'Updated At'],
     'PHCEP請求': ['Nonce Hash', 'Expires At'],
     'PHCEP寄件匣': ['Key', 'Retry Key', 'Status', 'Recipient', 'Messages JSON', 'Updated At', 'Error', 'Created At'],
@@ -116,6 +116,13 @@ function phcepManualLineHeaders_() {
   return ['操作動作', '確認執行 (勾選)', '收錄來源', '重要性 (1-5，選填)',
     '收錄 (勾選)', '媒體檔名 (修改即改名)', '操作結果',
     '回覆紀錄 (前1)', '回覆紀錄 (前2)', '回覆紀錄 (前3)', '回覆紀錄 (前4)', '回覆紀錄 (前5)'];
+}
+
+function phcepManualQAHeaders_(headers) {
+  var compact = phcepManualSchemas_()['QA知識庫'];
+  var legacy = compact.slice(0, 3).concat(['LINE Friend 訊息 1', 'LINE Friend 訊息 2'],
+    compact.slice(3, 5), ['檔案/媒體連結', '檔案/網址名稱'], compact.slice(5));
+  return legacy.every(function(header, i) { return headers[i] === header; }) ? legacy : compact;
 }
 
 function phcepManualProperty_(key) {
@@ -167,8 +174,9 @@ function phcepManualInventory_(ss) {
     if (!sheet) return { name: name, present: false, index: null, rows: null,
       columns: null, frozenRows: null, protectionCount: null, matchingHeaders: null };
     var expected = schemas[name] || ['PHCEP 總覽'];
-    var width = Math.min(sheet.getMaxColumns(), expected.length);
+    var width = sheet.getMaxColumns();
     var headers = sheet.getRange(1, 1, 1, width).getValues()[0];
+    if (name === 'QA知識庫') expected = phcepManualQAHeaders_(headers);
     return { name: name, present: true, index: sheet.getIndex(), rows: sheet.getLastRow(),
       columns: sheet.getMaxColumns(), frozenRows: sheet.getFrozenRows(),
       protectionCount: sheet.getProtections(SpreadsheetApp.ProtectionType.SHEET).length,
@@ -214,6 +222,7 @@ function phcepManualPreflight_(ss) {
     if (sheet.getFormUrl()) return 'SCHEMA_CONFLICT';
     var expected = schemas[name];
     var headers = sheet.getRange(1, 1, 1, sheet.getMaxColumns()).getValues()[0];
+    if (name === 'QA知識庫') expected = phcepManualQAHeaders_(headers);
     var headerFormulas = sheet.getRange(1, 1, 1, sheet.getMaxColumns()).getFormulas()[0];
     for (var h = 0; h < headers.length; h++) {
       if (headerFormulas[h] !== '') return 'SCHEMA_CONFLICT';

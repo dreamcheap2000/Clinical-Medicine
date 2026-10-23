@@ -140,17 +140,64 @@ function phcepRankSuggestions_(message, items, options) {
   }).slice(0, limit);
 }
 
-/** Read curated QA rows (C/D/E questions, G reply, B importance, O global usage). */
+function phcepQALayout_(sheet) {
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var names = { id: 'ID', importance: '重要性分級 (1-5)', question: '訊息',
+    alias1: 'LINE Friend 訊息 1', alias2: 'LINE Friend 訊息 2', friendNotes: 'Line Friend 連結備註',
+    reply: '回覆', media: '檔案/媒體連結', filename: '檔案/網址名稱', notes: '連結備註',
+    questionEmbedding: '問題 Embedding', replyEmbedding: '回覆 Embedding', notesEmbedding: '備註 Embedding',
+    rowUsage: '行內使用次數', globalUsage: '全域使用次數' };
+  var optional = ['alias1', 'alias2', 'media', 'filename'];
+  var layout = { width: headers.length };
+  Object.keys(names).forEach(function(key) {
+    var index = headers.indexOf(names[key]);
+    if ((index < 0 && optional.indexOf(key) === -1) ||
+        (index >= 0 && headers.indexOf(names[key], index + 1) !== -1)) {
+      throw new Error('Inconsistent QA header: ' + names[key]);
+    }
+    layout[key] = index + 1;
+  });
+  return layout;
+}
+
+function phcepRichLinks_(text, rich) {
+  if (rich) text = rich.getText();
+  var links = [];
+  var add = function(url) {
+    if (url && /^https?:\/\//i.test(url) && links.indexOf(url) === -1) links.push(url);
+  };
+  if (rich) {
+    add(rich.getLinkUrl());
+    if (typeof rich.getRuns === 'function') rich.getRuns().forEach(function(run) { add(run.getLinkUrl()); });
+  }
+  (String(text || '').match(/https?:\/\/[^\s<>"']+/gi) || []).forEach(add);
+  return links;
+}
+
+function phcepLinkedText_(text, rich) {
+  text = rich ? rich.getText() : String(text || '');
+  phcepRichLinks_(text, rich).forEach(function(url) {
+    if (text.indexOf(url) === -1) text += (text ? '\n' : '') + url;
+  });
+  return text;
+}
+
+/** Header-based access supports both the original and compact QA layouts. */
 function phcepReadQA_(ss) {
   var sheet = ss && ss.getSheetByName('QA知識庫');
   if (!sheet || sheet.getLastRow() < 2) return [];
   var count = Math.min(sheet.getLastRow() - 1, PHCEP_MATCH_DEFAULTS_.maxQaRows);
-  return sheet.getRange(2, 1, count, 15).getValues().map(function(row, i) {
+  var layout = phcepQALayout_(sheet);
+  var richReplies = sheet.getRange(2, layout.reply, count, 1).getRichTextValues();
+  return sheet.getRange(2, 1, count, layout.width).getValues().map(function(row, i) {
+    var questions = [layout.question, layout.alias1, layout.alias2].filter(Boolean).map(function(column) {
+      return String(row[column - 1] || '').trim();
+    }).join('\n').split(/\r?\n/).filter(Boolean);
     return { row: i + 2,
-      questions: [row[2], row[3], row[4]].map(function(value) { return String(value || '').trim(); }),
-      reply: String(row[6] || '').trim(),
-      importance: row[1],
-      frequency: Number(row[14]) || 0 };
+      questions: questions,
+      reply: phcepLinkedText_(row[layout.reply - 1], richReplies[i][0]).trim(),
+      importance: row[layout.importance - 1],
+      frequency: Number(row[layout.globalUsage - 1]) || 0 };
   }).filter(function(item) { return item.reply && item.questions.some(Boolean); });
 }
 

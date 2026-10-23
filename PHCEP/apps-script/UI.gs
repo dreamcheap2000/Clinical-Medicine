@@ -184,7 +184,7 @@ function phcepDraftMessages_(draft) {
 
 function phcepQuestionnaireMessage_(invitation, type) {
   return phcepFlexCard_(type === 'VITALS' ? '每日健康回報表單' : '臨床失智評估量表',
-    '請點選按鈕填寫問卷。邀請有效期限為 24 小時，請勿轉傳；LINE ID 欄位可留空。',
+    '請點選按鈕填寫問卷。邀請有效期限為 24 小時，請勿轉傳；系統依邀請記錄原收件者的 LINE ID，不需自行填寫。',
     phcepFlexUri_(invitation.url), '填寫問卷');
 }
 
@@ -295,6 +295,8 @@ function phcepSendRow_(sheet, row, kind, type) {
   } catch (error) {
     row = phcepLocateOperationRow_(sheet, identity);
     operation.status = 'RETRY';
+    operation.error = 'SEND_FAILED';
+    state.notice = '未發送：SEND_FAILED。原內容與重試金鑰已保留，請修正原因後重試。';
     phcepWriteOperationState_(sheet, row, state);
     return false;
   } finally {
@@ -319,7 +321,7 @@ function phcepHandleEdit(e) {
   return phcepWithLineEditLock_(e, function() {
     const layout = phcepLineLayout_(sheet);
     if (layout && range.getNumColumns() === 1 &&
-        (range.getColumn() === layout.confirm || range.getColumn() === layout.collect)) {
+        (range.getColumn() === 2 || range.getColumn() === layout.confirm || range.getColumn() === layout.collect)) {
       const selected = [];
       for (let row = range.getRow(); row < range.getRow() + range.getNumRows(); row++) {
         if (phcepIsChecked_(sheet.getRange(row, range.getColumn()).getValue())) {
@@ -407,7 +409,8 @@ function phcepHandleEdit(e) {
     try {
       if (!e.user) throw new Error('Verified editor identity required.');
       phcepAuthorizeClinician_(e.user);
-      phcepSendRow_(sheet, row, questionnaire ? 'questionnaire' : 'reply', 'CDR');
+      if (questionnaire) phcepRequestQuestionnaire_(sheet, row, 'CDR');
+      else phcepSendRow_(sheet, row, 'reply');
     } catch (error) {
       const currentRow = phcepLocateOperationRow_(sheet, {
         column: editEventKey ? 11 : 1, value: editEventKey || editMessageId, recipient: editRecipient
@@ -434,22 +437,55 @@ function phcepSelectedRow_() {
 function sendSelectedQuestionnaire() {
   return phcepWithLock_(function() {
     const selected = phcepSelectedRow_();
-    return phcepSendRow_(selected.sheet, selected.row, 'questionnaire', 'CDR');
+    return phcepRequestQuestionnaire_(selected.sheet, selected.row, 'CDR');
   });
 }
 
 function sendSelectedVitalsQuestionnaire() {
   return phcepWithLock_(function() {
     const selected = phcepSelectedRow_();
-    return phcepSendRow_(selected.sheet, selected.row, 'questionnaire', 'VITALS');
+    return phcepRequestQuestionnaire_(selected.sheet, selected.row, 'VITALS');
   });
+}
+
+// An explicit send creates a new invitation only after a confirmed successful send.
+function phcepRequestQuestionnaire_(sheet, row, type) {
+  phcepAuthorizeClinician_();
+  const identity = phcepRowIdentity_(sheet, row);
+  sheet.getRange(row, 2).setValue(false);
+  row = phcepLocateOperationRow_(sheet, identity);
+  const layout = phcepLineLayout_(sheet);
+  let status = '❌ 未發送：請確認收件者、授權或待處理狀態（見 L 欄）。';
+  try {
+    const state = phcepReadOperationState_(sheet, row);
+    const prior = state['questionnaire:' + type] || (type === 'CDR' ? state.questionnaire : null);
+    const ok = prior && prior.status === 'SENT' ? phcepNewInvitationForRow_(sheet, row, type) :
+      phcepSendRow_(sheet, row, 'questionnaire', type);
+    row = phcepLocateOperationRow_(sheet, identity);
+    status = ok ? '✅ ' + type + ' 問卷已發送；本次邀請有效 24 小時。' :
+      '⚠️ ' + (phcepReadOperationState_(sheet, row).notice || '未完成：請查看 L 欄；勿重設待處理邀請。');
+    return ok;
+  } finally {
+    row = phcepLocateOperationRow_(sheet, identity);
+    sheet.getRange(row, 2).setValue(false);
+    if (layout) phcepSetLineStatus_(sheet, row, layout, status);
+  }
 }
 
 // Caller holds the lock and has obtained explicit confirmation (menu dialog or no-menu confirm checkbox).
 function phcepNewInvitationForRow_(sheet, row, type) {
+  phcepAuthorizeClinician_();
+  const identity = phcepRowIdentity_(sheet, row);
+  if (row < 2 || !identity.value || !/^U[0-9a-f]{32}$/i.test(identity.recipient)) {
+    throw new Error('Valid LINE recipient and stable patient row identity required.');
+  }
+  row = phcepLocateOperationRow_(sheet, identity);
   const state = phcepReadOperationState_(sheet, row);
   const key = 'questionnaire:' + type;
   const prior = state[key] || (type === 'CDR' ? state.questionnaire : null);
+  if (prior && prior.recipient !== String(sheet.getRange(row, 3).getValue() || '').trim()) {
+    throw new Error('Recipient changed; clinician review required.');
+  }
   if (prior && prior.status !== 'SENT') {
     throw new Error('Reconcile pending or ambiguous invitation before creating a new invitation.');
   }
@@ -497,26 +533,31 @@ function sendBatchQuestionnaireFromCheckboxes() {
     const sheet = phcepSpreadsheet_().getSheetByName('LINE對話');
     let sent = 0;
     let failed = 0;
+    const selected = [];
     for (let row = 2; row <= sheet.getLastRow(); row++) {
-      const checked = sheet.getRange(row, 2).getValue();
-      if (checked !== true && checked !== 'TRUE') continue;
-      const identity = {
-        column: sheet.getRange(row, 11).getValue() ? 11 : 1,
-        value: String(sheet.getRange(row, 11).getValue() || sheet.getRange(row, 1).getValue() || ''),
-        recipient: String(sheet.getRange(row, 3).getValue() || '').trim()
-      };
+      if (phcepIsChecked_(sheet.getRange(row, 2).getValue())) {
+        selected.push({ identity: phcepRowIdentity_(sheet, row), originalRow: row });
+      }
+    }
+    const started = Date.now();
+    selected.forEach(function(item) {
+      let row = item.originalRow;
       try {
-        if (phcepSendRow_(sheet, row, 'questionnaire', 'CDR')) sent++;
+        row = phcepLocateOperationRow_(sheet, item.identity);
+        if (!phcepIsChecked_(sheet.getRange(row, 2).getValue())) return;
+        if (Date.now() - started >= 240000) throw new Error('Batch time limit; reselect remaining rows.');
+        if (phcepRequestQuestionnaire_(sheet, row, 'CDR')) sent++;
         else failed++;
       } catch (error) {
         failed++;
-        const currentRow = phcepLocateOperationRow_(sheet, identity);
-        const state = phcepReadOperationState_(sheet, currentRow);
-        state.notice = '未發送：請確認收件者及待處理狀態。';
-        phcepWriteOperationState_(sheet, currentRow, state);
-        sheet.getRange(currentRow, 2).setValue(false);
+        const current = phcepRowIdentity_(sheet, row);
+        if (current.value === item.identity.value && current.recipient === item.identity.recipient) {
+          sheet.getRange(row, 2).setValue(false);
+          const layout = phcepLineLayout_(sheet);
+          if (layout) phcepSetLineStatus_(sheet, row, layout, '⚠️ 本列未發送；請檢查身分、待處理狀態或分批重新勾選。');
+        }
       }
-    }
+    });
     phcepSpreadsheet_().toast('成功 ' + sent + ' 筆；未發送 ' + failed + ' 筆。', '批次問卷', 5);
     return { sent: sent, failed: failed };
   });
@@ -526,22 +567,26 @@ function phcepManualQA_() {
   return phcepReadQA_(phcepSpreadsheet_());
 }
 
-// Usage counts (N per row, O for identical replies) are a small bounded ranking hint only.
+// Usage counts are a small bounded ranking hint only.
 function phcepRecordQAUsage_(match) {
   const sheet = phcepSpreadsheet_().getSheetByName('QA知識庫');
   if (!sheet || !match || !match.row) return;
   const count = sheet.getLastRow() - 1;
   if (count < 1 || match.row - 2 >= count) return;
-  const replies = sheet.getRange(2, 7, count, 1).getValues();
-  const usage = sheet.getRange(2, 14, count, 2).getValues();
+  const layout = phcepQALayout_(sheet);
+  const replies = sheet.getRange(2, layout.reply, count, 1).getValues();
+  const richReplies = sheet.getRange(2, layout.reply, count, 1).getRichTextValues();
+  const rowUsage = sheet.getRange(2, layout.rowUsage, count, 1).getValues();
+  const globalUsage = sheet.getRange(2, layout.globalUsage, count, 1).getValues();
   const bump = function(current) {
     return current === '' || typeof current === 'number' ? (Number(current) || 0) + 1 : current;
   };
-  usage[match.row - 2][0] = bump(usage[match.row - 2][0]);
+  rowUsage[match.row - 2][0] = bump(rowUsage[match.row - 2][0]);
   replies.forEach(function(values, i) {
-    if (String(values[0] || '').trim() === match.reply) usage[i][1] = bump(usage[i][1]);
+    if (phcepLinkedText_(values[0], richReplies[i][0]).trim() === match.reply) globalUsage[i][0] = bump(globalUsage[i][0]);
   });
-  sheet.getRange(2, 14, count, 2).setValues(usage);
+  sheet.getRange(2, layout.rowUsage, count, 1).setValues(rowUsage);
+  sheet.getRange(2, layout.globalUsage, count, 1).setValues(globalUsage);
 }
 
 function suggestRepliesForUserMessage(userMessage, targetRow) {

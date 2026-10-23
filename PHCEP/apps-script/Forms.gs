@@ -22,8 +22,6 @@ function phcepEnsureForm_(ss, type) {
   }
   props.setProperty(type + '_FORM_ID', form.getId());
   if (!props.getProperty(type + '_FORM_URL')) props.setProperty(type + '_FORM_URL', form.getPublishedUrl());
-  const identity = phcepEnsureTextItem_(form, props, type + '_LINE_ITEM_ID', 'LINE ID 編號');
-  identity.setRequired(false).setHelpText('選填：可自行填寫；系統身分連結僅依有效邀請，不依此可編輯欄位。');
   phcepEnsureTextItem_(form, props, type + '_TOKEN_ITEM_ID', 'PHCEP 邀請碼')
     .setRequired(true).setHelpText('邀請碼由連結帶入；修改或過期的邀請將不會連結病患紀錄。');
   const destination = form.getDestinationId();
@@ -35,6 +33,40 @@ function phcepEnsureForm_(ss, type) {
   });
   if (responseSheet) props.setProperty(type + '_RESPONSE_SHEET_ID', String(responseSheet.getSheetId()));
   return form;
+}
+
+function migratePHCEPFormIdentity() {
+  phcepAuthorizeClinician_();
+  return phcepWithLock_(function() {
+    const ss = phcepSpreadsheet_();
+    const props = PropertiesService.getScriptProperties();
+    // Preflight both forms before removing any item. Keep retired IDs for historical responses.
+    const plans = ['CDR', 'VITALS'].map(function(type) {
+      const id = props.getProperty(type + '_FORM_ID');
+      if (!id) throw new Error('Missing configured form: ' + type);
+      const form = FormApp.openById(id);
+      if (form.getDestinationId() !== ss.getId()) throw new Error('Form destination mismatch: ' + type);
+      const token = form.getItemById(Number(props.getProperty(type + '_TOKEN_ITEM_ID')));
+      if (!token || token.getTitle() !== 'PHCEP 邀請碼') throw new Error('Invitation item mismatch: ' + type);
+      token.asTextItem();
+      const retiredId = props.getProperty(type + '_LINE_ITEM_ID');
+      const items = form.getItems().filter(function(item) {
+        if (retiredId === String(item.getId()) && item.getTitle() !== 'LINE ID 編號') {
+          throw new Error('Configured identity item mismatch: ' + type);
+        }
+        return item.getTitle() === 'LINE ID 編號';
+      });
+      items.forEach(function(item) { item.asTextItem(); });
+      return { type: type, form: form, items: items };
+    });
+    const report = {};
+    plans.forEach(function(plan) {
+      plan.items.forEach(function(item) { plan.form.deleteItem(item); });
+      report[plan.type] = { removed: plan.items.length, identity: 'invitation-recipient-server-only' };
+    });
+    console.log(JSON.stringify(report));
+    return report;
+  });
 }
 
 function phcepFormPermissions_(formId, method, query, permission) {
@@ -285,7 +317,8 @@ function phcepHandleFormSubmit(e) {
     const tokenId = props.getProperty(type + '_TOKEN_ITEM_ID');
     const lineId = props.getProperty(type + '_LINE_ITEM_ID');
     const answers = itemResponses.filter(function(answer) {
-      return [tokenId, lineId].indexOf(String(answer.getItem().getId())) === -1;
+      return [tokenId, lineId].indexOf(String(answer.getItem().getId())) === -1 &&
+        answer.getItem().getTitle() !== 'LINE ID 編號';
     }).map(function(answer) {
       return { itemId: String(answer.getItem().getId()), title: answer.getItem().getTitle(), answer: answer.getResponse() };
     });
@@ -338,7 +371,6 @@ function phcepBuildCDRQuestions_(form) {
   form.addSectionHeaderItem().setTitle('被評估者與觀察者基本資料').setHelpText('請填寫被評估者與主要照顧者/觀察者的基本資訊');
   form.addTextItem().setTitle('受試者姓名 / 編號').setRequired(true);
   form.addTextItem().setTitle('受試者代號 / 簡稱');
-  form.addTextItem().setTitle('LINE ID 編號').setRequired(false);
   form.addTextItem().setTitle('觀察者姓名及與被評估者之關係（如配偶、子女）').setRequired(true);
   form.addDateItem().setTitle('評估日期').setRequired(true);
   form.addPageBreakItem().setTitle('觀察者訪談：記憶力 (Memory)');
@@ -408,7 +440,6 @@ function phcepBuildVitalsQuestions_(form) {
   form.setDescription('請依實際測量結果填寫您的每日生理數據與身體狀況。身分連結僅依有效邀請碼。');
   form.setIsQuiz(false);
   form.addSectionHeaderItem().setTitle('基本資料與記錄時間').setHelpText('請確認記錄時間與您的身分識別。');
-  form.addTextItem().setTitle('LINE ID 編號').setRequired(false);
   form.addDateTimeItem().setTitle('測量記錄時間').setHelpText('請填寫實際測量時間，若為補登可手動調整。').setRequired(true);
   form.addPageBreakItem().setTitle('生理數值記錄 (血壓與血糖)');
   form.addTextItem().setTitle('收縮壓 (Systolic, mmHg)').setHelpText('例如：120');
