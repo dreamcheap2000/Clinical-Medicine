@@ -1954,6 +1954,11 @@ test('QA reply-file rename preserves prose in both layouts, retains usable reply
     assert.equal(file.name, 'renamed again');
     assert.match(qa.notes.get('2:' + layout.notes), /多個 Drive/);
     assert.equal(qa.getRange(2, layout.reply).getValue(), url + '\n' + otherUrl);
+    env.context.phcepApplyQAValidations_(qa);
+    const header = qa.notes.get('1:' + layout.notes);
+    assert.match(header, /公開或私人皆可/);
+    assert.match(header, /第一行貼上要改名的 Drive 連結/);
+    assert.doesNotMatch(header, /唯一一個私人|拒絕改名/);
   }
 });
 

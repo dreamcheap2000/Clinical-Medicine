@@ -220,7 +220,7 @@ function phcepApplyQAValidations_(qa) {
   phcepApplyColumnValidation_(qa, layout.importance, phcepListValidation_(PHCEP_IMPORTANCE_VALUES_));
   qa.getRange(1, layout.question).setNote('不同問法可分行填寫；逐一比對建議，不會自動發送訊息。');
   [layout.friendNotes, layout.notes].forEach(function(column) {
-    qa.getRange(1, column).setNote('修改檔名會同步改名「回覆」中唯一一個私人 PHCEP Drive 檔案；多檔連結會拒絕改名。連結備註的 APPROVED_DEIDENTIFIED_QA 是保留的 Embedding 核准標記，不會改名。');
+    qa.getRange(1, column).setNote('修改檔名會同步改名「回覆」中位於 PHCEP 媒體資料夾的 Drive 檔案（公開或私人皆可，不變更分享權限）。只有一個檔案時直接輸入新檔名；有多個 Drive 連結時，第一行貼上要改名的 Drive 連結，Alt+Enter 換行後輸入新檔名。連結備註的 APPROVED_DEIDENTIFIED_QA 是保留的 Embedding 核准標記，不會改名。');
   });
 }
 
