@@ -130,12 +130,13 @@ manager access separately from ordinary spreadsheet editing.
    **editing, not viewing** and do not grant Sheet access. Share the spreadsheet
    with approved staff in Google UI, remove public/domain/link viewers, and
    review inherited folder/shared-drive access. Protection failures stop setup.
-6. Review and publish both Forms in Google Forms UI. Configure responder access
-   according to your approved population and Workspace policy; test with a real
-   authorized respondent. `getPublishedUrl()`/prefill URL generation alone does
-   not guarantee that the form is published, accepting responses, or accessible
-   outside your domain. Preserve consent/access policy; do not silently open forms
-   to everyone. Rerun setup to resolve any asynchronously-created response sheet
+6. Review responder access according to your approved population and Workspace
+   policy. To explicitly enable questionnaires without Google sign-in, run
+   `configurePHCEPAnonymousForms()` as an authorized clinician with form-edit
+   permission, then test both forms in a signed-out/incognito browser (see below).
+   `getPublishedUrl()`/prefill URL generation alone does not guarantee access.
+   Ordinary setup never silently changes responder sharing.
+   Rerun setup to resolve any asynchronously-created response sheet
    association; submit handling uses form IDs, not a response-sheet guess.
 7. Deploy the Apps Script web app executing as its authorized owner and reachable
    by the gateway. The manifest permits anonymous **transport**, but every
@@ -270,9 +271,9 @@ dropdown validation rules; duplicate webhook retries do not insert another row.
 Existing messages are not sorted or otherwise reordered by deployment.
 
 H selects a curated QA reply and populates I; it does not send.
-Use the explicit clinician draft-send menu to confirm sending, or enable the
-clearly labelled I send-on-edit menu after confirmation. Only approved identified
-single-cell edits can send; multi-cell paste does not. Google may omit editor
+Tick N to send the draft; one-column multi-row checkbox edits support batch sends.
+Rectangular pastes spanning other columns do not send. The explicit draft-send
+menu and opt-in I send-on-edit menu remain available. Google may omit editor
 identity from trigger events: those sends are refused; use the authorized menu.
 B requests CDR; batch menu supports checked rows. Vitals and subsequent daily
 invitations use the dedicated **send selected vitals** and **new CDR/vitals
@@ -281,7 +282,74 @@ a confirmed new invitation deliberately creates a new operation. L and the outbo
 show pending/sent/retry states. Resolve failed pending payloads before changing
 recipient/content. Patient media remains private; LINE cannot render private
 Drive downloads, and the integration does not publish files to make them render.
-Clinician drafts are text; formula strings are not executed as outbound content.
+Drafts without HTTP(S) links remain text; link drafts and new questionnaire
+invitations use the Flex cards described below. Formula strings are never executed.
+
+### Outbound Flex cards
+
+Paste HTTP(S) links into I with optional explanatory text, then tick N:
+
+- Website links become Flex cards with an Open button, not raw-link text messages.
+  Cards do not fetch webpage titles, thumbnails or metadata.
+- Direct public HTTPS JPEG/PNG URLs get an image hero and an Open image button.
+  Files must actually be publicly readable and satisfy LINE's image requirements.
+  A filename extension does not prove that the server returns a supported image.
+- For direct public HTTPS MP4 video, put a public HTTPS JPEG/PNG poster URL next
+  in the draft. The pair becomes one standalone video bubble, including an image
+  fallback for older LINE versions. Use a matching 16:9 poster/video, with a poster
+  at most 1 MB and MP4 at most 200 MB. Without a poster, the card explicitly offers
+  a video button instead of pretending an inline preview is available.
+- Drive/Docs links remain buttons and retain existing access permissions.
+  Private media is never made public to render a preview. YouTube/watch pages,
+  GIF/WebP and other unsupported media links use buttons, not native video heroes.
+- All non-link draft text is retained in the first card. Duplicate URLs are
+  collapsed. Up to five cards fit one LINE push (a video/poster pair is one card).
+  Longer batches fail with `FLEX_TOO_MANY_LINKS`, without sending or discarding the
+  draft. Links are UTF-8 percent-encoded; LINE button URIs are limited to 1,000
+  encoded characters, and bubble JSON is checked against 30,000 UTF-8 bytes.
+
+B and the existing CDR/vitals entrypoints send a Flex invitation with a
+`填寫問卷` button containing the same signed, expiring prefilled URL.
+Raw draft text, rather than card JSON, is retained in J and reply history.
+Pending operations retain their exact stored messages/retry keys across upgrades:
+an older pending text send is deliberately not reformatted into Flex.
+An already-sent questionnaire is not sent again just because its checkbox is
+checked; use the explicit new-invitation workflow or a fresh test message row.
+
+Run `validatePHCEPMessageCards()` in the editor to validate synthetic website,
+image, video and questionnaire card shapes with LINE's non-delivering validation
+endpoint. It logs only a safe validation report and sends no patient message.
+Successful schema validation does not prove that external media URLs are reachable.
+See the [LINE Flex reference](https://developers.line.biz/en/reference/messaging-api/#flex-message)
+and [video requirements](https://developers.line.biz/en/reference/messaging-api/#f-video).
+
+### Questionnaires without Google sign-in
+
+Run `configurePHCEPAnonymousForms()` explicitly after code deployment:
+
+1. It uses only the existing configured CDR/VITALS form IDs, preflights their
+   spreadsheet destination and rejects file-upload questions (which require login).
+   It creates no new forms, questions, response tabs or triggers.
+2. It disables email collection and Google's one-response-per-user setting,
+   disables public response summaries, and enables accepting responses.
+3. For modern forms it grants `anyone` the **published responder** `reader`
+   permission through Drive API and publishes the form. It does not share the
+   underlying form-editor file, response spreadsheet, folders or media.
+   Legacy Workspace forms use the documented older domain-login setting instead.
+4. It verifies settings and logs metadata only. Workspace/Drive API policy failures
+   raise an explicit error; there is no fallback to broadly sharing the form file.
+   A failure can leave the earlier form configured; rerunning is idempotent.
+5. Open each responder URL in a signed-out/incognito browser and verify that the
+   questions are accessible without signing in. Optional Google save-progress
+   prompts are not the same as required login. Admin policies can still block access.
+
+If the Drive permission request reports HTTP 403, check the executing account's
+form-edit permission, Workspace sharing policy and whether Drive API is enabled
+in the Apps Script project's linked Google Cloud project. The manifest already
+requests Drive access; no service account or new Apps Script service is needed.
+Signed 24-hour invitation validation, per-invitation replay prevention and
+quarantine are unchanged. Anonymous response access is not patient authentication.
+See Google's [published responder permission guide](https://developers.google.com/workspace/forms/api/guides/publish-form).
 
 ### No-menu workflow (edit-trigger cells)
 

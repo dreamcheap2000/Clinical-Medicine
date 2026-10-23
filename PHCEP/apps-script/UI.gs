@@ -104,6 +104,110 @@ function phcepCompleteReply_(sheet, row, operation, rawDraft, eventKey) {
   }
 }
 
+function phcepFlexUri_(value) {
+  if (!/^https?:\/\/[^/?#\s@]+(?:[/?#]|$)/i.test(value)) phcepFail_('FLEX_INVALID_LINK');
+  let uri;
+  try {
+    uri = encodeURI(value).replace(/%25([0-9a-f]{2})/gi, '%$1');
+  } catch (error) {
+    phcepFail_('FLEX_INVALID_LINK');
+  }
+  if (uri.length > 1000) phcepFail_('FLEX_LINK_TOO_LONG');
+  return uri;
+}
+
+function phcepFlexCard_(title, text, uri, label, hero) {
+  const contents = {
+    type: 'bubble', size: 'mega',
+    body: { type: 'box', layout: 'vertical', spacing: 'md', contents: [
+      { type: 'text', text: title, weight: 'bold', size: 'lg', wrap: true },
+      { type: 'text', text: text || '請點選下方按鈕開啟。', size: 'sm', wrap: true }
+    ] },
+    footer: { type: 'box', layout: 'vertical', contents: [
+      { type: 'button', style: 'primary', action: { type: 'uri', label: label, uri: uri } }
+    ] }
+  };
+  if (hero) contents.hero = hero;
+  if (Utilities.newBlob(JSON.stringify(contents)).getBytes().length > 30000) phcepFail_('FLEX_CARD_TOO_LARGE');
+  return { type: 'flex', altText: Array.from(title + '：' + (text || label)).slice(0, 400).join(''), contents: contents };
+}
+
+function phcepPublicPreviewKind_(uri) {
+  const host = uri.match(/^https?:\/\/([^/?#]+)/i)[1].toLowerCase().replace(/:\d+$/, '');
+  if (!/^https:\/\//i.test(uri) || /^(drive|docs)\.google\.com$/.test(host)) return '';
+  const path = uri.split(/[?#]/)[0];
+  if (/\.(jpe?g|png)$/i.test(path)) return 'image';
+  return /\.mp4$/i.test(path) ? 'video' : '';
+}
+
+function phcepDraftMessages_(draft) {
+  const links = [];
+  const body = draft.replace(/https?:\/\/[^\s<>"']+/gi, function(match) {
+    let url = match.replace(/[.,;!，。；！、]+$/, '');
+    // Keep balanced parentheses in URLs, but exclude surrounding prose/Markdown delimiters.
+    [['(', ')'], ['[', ']'], ['（', '）']].forEach(function(pair) {
+      while (url.endsWith(pair[1]) && url.split(pair[1]).length > url.split(pair[0]).length) url = url.slice(0, -1);
+    });
+    const uri = phcepFlexUri_(url);
+    if (links.indexOf(uri) === -1) links.push(uri);
+    return match.slice(url.length);
+  }).trim();
+  if (!links.length) return [{ type: 'text', text: draft }];
+  const messages = [];
+  for (let index = 0; index < links.length; index++) {
+    const uri = links[index];
+    const host = uri.match(/^https?:\/\/([^/?#]+)/i)[1].toLowerCase().replace(/:\d+$/, '');
+    const privateDrive = /^(drive|docs)\.google\.com$/.test(host);
+    const kind = phcepPublicPreviewKind_(uri);
+    const image = kind === 'image';
+    const video = kind === 'video';
+    const title = privateDrive ? '檔案連結' : image ? '圖片' : video ? '影片' : '連結：' + host;
+    const label = privateDrive ? '開啟檔案' : image ? '檢視圖片' : video ? '觀看影片' : '開啟網頁';
+    let hero;
+    if (image) {
+      hero = { type: 'image', url: uri, size: 'full', aspectMode: 'fit',
+        action: { type: 'uri', label: label, uri: uri } };
+    } else if (video && links[index + 1] && phcepPublicPreviewKind_(links[index + 1]) === 'image') {
+      const poster = links[++index];
+      hero = { type: 'video', url: uri, previewUrl: poster, aspectRatio: '16:9',
+        altContent: { type: 'image', url: poster, size: 'full', aspectMode: 'cover',
+          action: { type: 'uri', label: label, uri: uri } } };
+    }
+    let description = messages.length === 0 ? body : '';
+    if (privateDrive) description += (description ? '\n\n' : '') + '保留原有檔案存取權限；若無法開啟，請聯絡照護人員。';
+    if (video && !hero) description += (description ? '\n\n' : '') + '請點選按鈕觀看；內嵌播放需在 MP4 連結後提供公開 JPG/PNG 預覽圖。';
+    messages.push(phcepFlexCard_(title, description, uri, label, hero));
+  }
+  if (messages.length > 5) phcepFail_('FLEX_TOO_MANY_LINKS');
+  return messages;
+}
+
+function phcepQuestionnaireMessage_(invitation, type) {
+  return phcepFlexCard_(type === 'VITALS' ? '每日健康回報表單' : '臨床失智評估量表',
+    '請點選按鈕填寫問卷。邀請有效期限為 24 小時，請勿轉傳；LINE ID 欄位可留空。',
+    phcepFlexUri_(invitation.url), '填寫問卷');
+}
+
+/** LINE schema validation only: uses synthetic content and never delivers a message. */
+function validatePHCEPMessageCards() {
+  phcepAuthorizeClinician_();
+  const token = phcepProperty_('LINE_CHANNEL_ACCESS_TOKEN', ['CHANNEL_ACCESS_TOKEN']);
+  if (!token) phcepFail_('LINE_TOKEN_MISSING');
+  const messages = phcepDraftMessages_('卡片格式測試 https://example.org/page ' +
+    'https://example.org/image.jpg https://example.org/video.mp4 https://example.org/poster.png');
+  messages.push(phcepQuestionnaireMessage_({ url: 'https://docs.google.com/forms/d/e/example/viewform' }, 'CDR'));
+  const response = UrlFetchApp.fetch('https://api.line.me/v2/bot/message/validate/push', {
+    method: 'post', contentType: 'application/json',
+    headers: { Authorization: 'Bearer ' + token }, payload: JSON.stringify({ messages: messages }),
+    muteHttpExceptions: true
+  });
+  const code = response.getResponseCode();
+  const report = { valid: code === 200, httpStatus: code };
+  if (code !== 200) report.error = phcepLineHttpError_(code, response.getContentText());
+  console.log(JSON.stringify(report));
+  return report;
+}
+
 // Stable persisted payload and key survive network failure and subsequent retries.
 function phcepSendRow_(sheet, row, kind, type) {
   phcepAuthorizeClinician_();
@@ -152,11 +256,10 @@ function phcepSendRow_(sheet, row, kind, type) {
       const invitation = phcepCreateInvitation_(userId, type || 'CDR');
       operation.nonce = invitation.nonce;
       operation.expiresAt = invitation.expiresAt;
-      operation.messages = [{ type: 'text', text: '請填寫' + ((type || 'CDR') === 'CDR' ? '臨床失智評估量表' : '每日健康回報表單') +
-        '。邀請有效期限為 24 小時，請勿轉傳；LINE ID 欄位可留空。\n' + invitation.url }];
+      operation.messages = [phcepQuestionnaireMessage_(invitation, type || 'CDR')];
     } else {
       operation.draft = draft;
-      operation.messages = [{ type: 'text', text: draft }];
+      operation.messages = phcepDraftMessages_(draft);
     }
     state[stateKey] = operation;
     phcepWriteOperationState_(sheet, row, state);
@@ -310,7 +413,8 @@ function phcepHandleEdit(e) {
         column: editEventKey ? 11 : 1, value: editEventKey || editMessageId, recipient: editRecipient
       });
       const state = phcepReadOperationState_(sheet, currentRow);
-      state.notice = '未發送：請確認身分、收件者或待處理狀態，使用選單重試。';
+      state.notice = error.phcepCode ? '未發送：' + error.phcepCode + '，請檢查草稿或問卷連結。' :
+        '未發送：請確認身分、收件者或待處理狀態，使用選單重試。';
       phcepWriteOperationState_(sheet, currentRow, state);
       if (questionnaire) sheet.getRange(currentRow, 2).setValue(false);
     }

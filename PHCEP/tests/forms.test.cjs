@@ -131,6 +131,7 @@ function environment(options = {}) {
   class Item {
     constructor(type) { this.type = type; this.id = ++itemCount; }
     getId() { return this.id; }
+    getType() { return this.type; }
     getTitle() { return this.title; }
     setTitle(title) { this.title = title; return this; }
     setHelpText(help) { this.help = help; return this; }
@@ -142,12 +143,30 @@ function environment(options = {}) {
     createResponse(response) { return { getItem: () => this, getResponse: () => response }; }
   }
   class Form {
-    constructor(title) { this.id = 'form-' + ++formCount; this.title = title; this.items = []; forms.set(this.id, this); }
+    constructor(title) {
+      this.id = 'form-' + ++formCount; this.title = title; this.items = [];
+      this.advanced = true; this.published = true; this.accepting = true;
+      this.emailCollection = false; this.limitOne = false; this.summaryPublic = false; this.login = false;
+      forms.set(this.id, this);
+    }
     getId() { return this.id; }
     getPublishedUrl() { return `https://docs.google.com/forms/d/${this.id}/viewform`; }
     setDescription(description) { this.description = description; return this; }
     setIsQuiz(value) { this.quiz = value; return this; }
     setAllowResponseEdits(value) { this.responseEdits = value; return this; }
+    supportsAdvancedResponderPermissions() { return this.advanced; }
+    setPublished(value) { this.published = value; return this; }
+    isPublished() { return this.published; }
+    setAcceptingResponses(value) { this.accepting = value; return this; }
+    isAcceptingResponses() { return this.accepting; }
+    setCollectEmail(value) { this.emailCollection = value; return this; }
+    collectsEmail() { return this.emailCollection; }
+    setLimitOneResponsePerUser(value) { this.limitOne = value; return this; }
+    hasLimitOneResponsePerUser() { return this.limitOne; }
+    setPublishingSummary(value) { this.summaryPublic = value; return this; }
+    isPublishingSummary() { return this.summaryPublic; }
+    requiresLogin() { return this.login; }
+    setRequireLogin(value) { this.login = value; this.loginUpdates = (this.loginUpdates || 0) + 1; return this; }
     getItems() { return this.items; }
     getItemById(id) { return this.items.find(item => item.id === id) || null; }
     getDestinationId() { return this.destination || null; }
@@ -227,11 +246,13 @@ function environment(options = {}) {
     },
     Utilities: {
       getUuid: () => crypto.randomUUID(),
+      newBlob: text => ({ getBytes: () => [...Buffer.from(text, 'utf8')] }),
       Charset: { UTF_8: 'UTF_8' },
       computeHmacSha256Signature: (payload, secret) => crypto.createHmac('sha256', secret).update(payload).digest(),
       base64EncodeWebSafe: bytes => Buffer.from(bytes).toString('base64url')
     },
     ScriptApp: {
+      getOAuthToken: () => 'synthetic-google-oauth-token',
       EventType: { ON_EDIT: 'ON_EDIT', ON_FORM_SUBMIT: 'ON_FORM_SUBMIT' },
       getProjectTriggers: () => [...triggers],
       deleteTrigger: trigger => { triggers.splice(triggers.indexOf(trigger), 1); },
@@ -254,6 +275,7 @@ function environment(options = {}) {
     phcepWithLock_: fn => { assert.equal(locked, false, 'nested lock'); locked = true; try { return fn(); } finally { locked = false; } },
     phcepSpreadsheet_: () => books.get(properties.get('SPREADSHEET_ID')),
     phcepDigest_: value => crypto.createHash('sha256').update(value).digest('hex'),
+    phcepFail_: code => { const error = new Error(code); error.phcepCode = code; throw error; },
     phcepLiteral_: value => /^[=+\-@]/.test(String(value)) ? "'" + value : String(value),
     phcepProperty_: (key, aliases = []) => properties.get(key) || aliases.map(alias => properties.get(alias)).find(Boolean) || '',
     phcepPush_: (key, recipient, messages) => {
@@ -298,6 +320,185 @@ function invite(env, type = 'CDR') {
   const url = new URL(invitation.url);
   return { ...invitation, token: url.searchParams.get('entry.' + env.properties.get(type + '_TOKEN_ITEM_ID')) };
 }
+
+function mockResponderPermissions(env, status = 200) {
+  const calls = [];
+  const permissions = new Map();
+  env.context.UrlFetchApp = { fetch(url, options) {
+    const parsed = new URL(url);
+    assert.equal(parsed.origin, 'https://www.googleapis.com');
+    const match = parsed.pathname.match(/^\/drive\/v3\/files\/([^/]+)\/permissions$/);
+    assert.ok(match);
+    const id = decodeURIComponent(match[1]);
+    assert.ok(env.forms.has(id), 'only configured forms may be shared');
+    calls.push({ id, options, query: parsed.searchParams });
+    let body;
+    if (options.method === 'post') {
+      const permission = JSON.parse(options.payload);
+      assert.deepEqual(permission, { type: 'anyone', role: 'reader', view: 'published', allowFileDiscovery: false });
+      if (status === 200) permissions.set(id, permission);
+      body = permission;
+    } else {
+      assert.equal(options.method, 'get');
+      assert.equal(parsed.searchParams.get('includePermissionsForView'), 'published');
+      body = { permissions: [{ type: 'user', role: 'owner' }, ...(permissions.has(id) ? [permissions.get(id)] : [])] };
+    }
+    return { getResponseCode: () => status, getContentText: () => JSON.stringify(body) };
+  } };
+  return { calls, permissions };
+}
+
+test('link drafts use bounded Flex buttons, preserve text, and never fetch website metadata', () => {
+  const env = environment();
+  env.context.UrlFetchApp = { fetch() { assert.fail('message formatting must not fetch URLs'); } };
+  const text = env.context.phcepDraftMessages_('plain reply');
+  assert.equal(text[0].type, 'text');
+  assert.equal(text[0].text, 'plain reply');
+  const messages = env.context.phcepDraftMessages_('照護說明 https://example.org/path%20name。\nhttps://example.org/other');
+  assert.equal(messages.length, 2);
+  assert.equal(messages[0].type, 'flex');
+  assert.ok(messages[0].contents.body.contents[1].text.includes('照護說明'));
+  assert.ok(!messages[0].contents.body.contents[1].text.includes('https://'));
+  assert.equal(messages[0].contents.footer.contents[0].action.uri, 'https://example.org/path%20name');
+  assert.equal(messages[1].contents.footer.contents[0].action.uri, 'https://example.org/other');
+  assert.equal(messages[0].contents.hero, undefined);
+  assert.equal(env.context.phcepDraftMessages_('https://example.org/a https://example.org/a').length, 1);
+  assert.equal(env.context.phcepDraftMessages_('(https://example.org/Foo_(bar))')[0].contents.footer.contents[0].action.uri,
+    'https://example.org/Foo_(bar)');
+});
+
+test('public media gets supported image/video heroes while private Drive and unsupported previews stay buttons', () => {
+  const env = environment();
+  const messages = env.context.phcepDraftMessages_(
+    'https://example.org/image.jpg https://example.org/video.mp4\nhttps://example.org/poster.png');
+  assert.equal(messages.length, 2);
+  assert.equal(messages[0].contents.hero.type, 'image');
+  const video = messages[1].contents.hero;
+  assert.equal(video.type, 'video');
+  assert.equal(video.previewUrl, 'https://example.org/poster.png');
+  assert.equal(video.altContent.type, 'image');
+  assert.equal(video.altContent.action.uri, video.url);
+  assert.equal(messages[1].contents.type, 'bubble', 'video cannot be inside a carousel');
+  for (const url of ['https://drive.google.com/file/d/private/view?name=image.jpg',
+    'https://docs.google.com/document/d/private/view', 'http://example.org/image.jpg', 'https://example.org/image.gif',
+    'https://example.org/page?file=image.jpg', 'https://example.org/watch?file=video.mp4']) {
+    const card = env.context.phcepDraftMessages_(url)[0];
+    assert.equal(card.type, 'flex');
+    assert.equal(card.contents.hero, undefined);
+    assert.equal(card.contents.footer.contents[0].action.uri, url);
+  }
+  const videoOnly = env.context.phcepDraftMessages_('https://example.org/video.mp4')[0];
+  assert.equal(videoOnly.contents.hero, undefined);
+  assert.match(videoOnly.contents.body.contents[1].text, /預覽圖/);
+  for (const poster of ['https://drive.google.com?name=poster.jpg', 'https://docs.google.com:443/poster.jpg']) {
+    const cards = env.context.phcepDraftMessages_('https://example.org/video.mp4\n' + poster);
+    assert.equal(cards.length, 2);
+    assert.equal(cards[0].contents.hero, undefined);
+    assert.equal(cards[1].contents.hero, undefined);
+  }
+});
+
+test('Flex limits reject invalid/long links and too many cards without truncating content', () => {
+  const env = environment();
+  const prefix = 'https://example.org/';
+  assert.equal(env.context.phcepFlexUri_(prefix + 'a'.repeat(1000 - prefix.length)).length, 1000);
+  assert.throws(() => env.context.phcepFlexUri_(prefix + 'a'.repeat(1001 - prefix.length)), /FLEX_LINK_TOO_LONG/);
+  assert.throws(() => env.context.phcepFlexUri_('https://user:secret@example.org/file'), /FLEX_INVALID_LINK/);
+  assert.throws(() => env.context.phcepFlexCard_('title', '字'.repeat(10500), prefix, '開啟'), /FLEX_CARD_TOO_LARGE/);
+  const five = Array.from({ length: 5 }, (_, i) => prefix + i).join('\n');
+  assert.equal(env.context.phcepDraftMessages_(five).length, 5);
+  assert.throws(() => env.context.phcepDraftMessages_(five + '\n' + prefix + '6'), /FLEX_TOO_MANY_LINKS/);
+  assert.ok(env.context.phcepFlexCard_('title', '😀'.repeat(2000), prefix, '開啟').altText.length <= 1500);
+  assert.equal(env.context.phcepFlexUri_('https://example.org/圖片?x=%20'), 'https://example.org/%E5%9C%96%E7%89%87?x=%20');
+});
+
+test('anonymous form configuration exposes only published responders and preserves response data', () => {
+  const env = setup();
+  for (const form of env.forms.values()) {
+    form.emailCollection = true; form.limitOne = true; form.summaryPublic = true; form.published = false;
+  }
+  const before = JSON.stringify(env.book().sheets.map(sheet => sheet.data));
+  const ids = [...env.forms.keys()];
+  const triggers = env.triggers.map(trigger => trigger.getUniqueId());
+  const mock = mockResponderPermissions(env);
+  const report = env.context.configurePHCEPAnonymousForms();
+  assert.equal(report.length, 2);
+  assert.deepEqual(Array.from(report, item => item.type), ['CDR', 'VITALS']);
+  for (const form of env.forms.values()) {
+    assert.equal(form.collectsEmail(), false);
+    assert.equal(form.hasLimitOneResponsePerUser(), false);
+    assert.equal(form.isPublishingSummary(), false);
+    assert.equal(form.isPublished(), true);
+    assert.equal(form.isAcceptingResponses(), true);
+    assert.equal(form.loginUpdates, undefined, 'modern forms must not use deprecated login API');
+    assert.equal(form.getDestinationId(), env.book().getId());
+  }
+  assert.equal(mock.calls.filter(call => call.options.method === 'post').length, 2);
+  env.context.configurePHCEPAnonymousForms();
+  assert.equal(mock.calls.filter(call => call.options.method === 'post').length, 2);
+  assert.deepEqual([...env.forms.keys()], ids);
+  assert.deepEqual(env.triggers.map(trigger => trigger.getUniqueId()), triggers);
+  assert.equal(JSON.stringify(env.book().sheets.map(sheet => sheet.data)), before);
+});
+
+test('anonymous form configuration preflights missing IDs, upload questions and wrong destinations', () => {
+  for (const mode of ['missing', 'upload', 'destination', 'unauthorized']) {
+    const env = setup();
+    const form = env.forms.get(env.properties.get('VITALS_FORM_ID'));
+    form.emailCollection = true;
+    if (mode === 'missing') env.properties.delete('VITALS_FORM_ID');
+    if (mode === 'upload') form.items.push({ getType: () => 'FILE_UPLOAD' });
+    if (mode === 'destination') form.destination = 'another-spreadsheet';
+    if (mode === 'unauthorized') env.context.Session.getEffectiveUser = () => ({ getEmail: () => 'stranger@example.org' });
+    env.context.UrlFetchApp = { fetch() { assert.fail('preflight must precede permission changes'); } };
+    assert.throws(() => env.context.configurePHCEPAnonymousForms(),
+      /FORM_NOT_CONFIGURED|FORM_FILE_UPLOAD_REQUIRES_LOGIN|FORM_DESTINATION_MISMATCH|Trusted clinician/);
+    assert.equal(form.emailCollection, true);
+  }
+});
+
+test('anonymous form configuration reports API/policy failure instead of sharing the underlying file', () => {
+  const env = setup();
+  const mock = mockResponderPermissions(env, 403);
+  assert.throws(() => env.context.configurePHCEPAnonymousForms(), /FORM_RESPONDER_PERMISSION_HTTP_403/);
+  assert.equal(mock.calls.filter(call => call.options.method === 'post').length, 0);
+});
+
+test('anonymous form configuration refuses success when a login-forcing preference does not change', () => {
+  const env = setup();
+  const form = env.forms.get(env.properties.get('CDR_FORM_ID'));
+  form.limitOne = true;
+  form.setLimitOneResponsePerUser = function() { return this; };
+  mockResponderPermissions(env);
+  assert.throws(() => env.context.configurePHCEPAnonymousForms(), /FORM_ANONYMOUS_SETTINGS_NOT_APPLIED/);
+  assert.equal(form.isPublishingSummary(), false);
+});
+
+test('legacy form configuration disables domain login only through the documented legacy setting', () => {
+  const env = setup();
+  for (const form of env.forms.values()) { form.advanced = false; form.login = true; }
+  env.context.UrlFetchApp = { fetch() { assert.fail('legacy forms do not use published reader permissions'); } };
+  const report = env.context.configurePHCEPAnonymousForms();
+  assert.ok(report.every(item => item.responderAccess === 'legacy_domain_login_disabled'));
+  for (const form of env.forms.values()) {
+    assert.equal(form.login, false);
+    assert.equal(form.loginUpdates, 1);
+  }
+});
+
+test('published responder permission lookup follows pagination and ignores ordinary file-reader sharing', () => {
+  const env = setup();
+  let requests = 0;
+  env.context.UrlFetchApp = { fetch(url) {
+    requests++;
+    const page = new URL(url).searchParams.get('pageToken');
+    const body = page ? { permissions: [{ type: 'anyone', view: 'published', role: 'reader' }] } :
+      { permissions: [{ type: 'anyone', role: 'reader' }], nextPageToken: 'next-page' };
+    return { getResponseCode: () => 200, getContentText: () => JSON.stringify(body) };
+  } };
+  assert.equal(env.context.phcepHasAnonymousResponder_(env.properties.get('CDR_FORM_ID')), true);
+  assert.equal(requests, 2);
+});
 
 test('fresh and repeat standalone/bound setup preserve data, grow capacity, protect private sheets', () => {
   for (const standalone of [true, false]) {
@@ -789,6 +990,90 @@ const COL = { action: 13, confirm: 14, source: 15, importance: 16, collect: 17, 
 const editAs = (env, range, email = OWNER) => env.context.phcepHandleEdit({
   range, triggerUid: env.triggers.find(t => t.getHandlerFunction() === 'phcepHandleEdit').getUniqueId(),
   user: email ? { getEmail: () => email } : undefined
+});
+
+test('Flex draft retries preserve their exact payload and archive the original text', () => {
+  const env = setup();
+  const line = env.book().getSheetByName('LINE對話');
+  const draft = '請參考 https://example.org/care';
+  line.appendRow(['m1', false, USER, '', '', 'question', '', '', draft, '', 'e1']);
+  env.setPushResult({ ok: false, error: 'LINE_HTTP_503' });
+  line.getRange(2, COL.confirm).setValue(true);
+  editAs(env, line.getRange(2, COL.confirm));
+  assert.equal(env.pushes[0].messages[0].type, 'flex');
+  const payload = JSON.stringify(env.pushes[0].messages);
+  assert.equal(line.getRange(2, 9).getValue(), draft);
+  env.context.phcepDraftMessages_ = () => { assert.fail('a pending retry must not rebuild its payload'); };
+  env.setPushResult({ ok: true });
+  line.getRange(2, COL.confirm).setValue(true);
+  editAs(env, line.getRange(2, COL.confirm));
+  assert.equal(env.pushes[0].key, env.pushes[1].key);
+  assert.equal(JSON.stringify(env.pushes[1].messages), payload);
+  assert.equal(line.getRange(2, 10).getValue(), draft);
+  assert.equal(line.getRange(2, 9).getValue(), '');
+});
+
+test('pre-existing text retries are not converted to Flex under an existing retry key', () => {
+  const env = setup();
+  const line = env.book().getSheetByName('LINE對話');
+  const draft = 'https://example.org/care';
+  const messages = [{ type: 'text', text: draft }];
+  const state = { reply: { key: 'existing-key', recipient: USER, draft, messages, status: 'RETRY' } };
+  line.appendRow(['m1', false, USER, '', '', 'question', '', '', draft, '', 'e1', JSON.stringify(state)]);
+  env.context.phcepDraftMessages_ = () => { assert.fail('legacy payload must remain unchanged'); };
+  line.getRange(2, COL.confirm).setValue(true);
+  editAs(env, line.getRange(2, COL.confirm));
+  assert.equal(env.pushes[0].key, 'existing-key');
+  assert.equal(JSON.stringify(env.pushes[0].messages), JSON.stringify(messages));
+});
+
+test('questionnaire checkbox sends a Flex invitation with the signed prefilled URL', () => {
+  const env = setup();
+  const line = env.book().getSheetByName('LINE對話');
+  line.appendRow(['m1', false, USER, '', '', 'question', '', '', '', '', 'e1']);
+  line.getRange(2, 2).setValue(true);
+  editAs(env, line.getRange(2, 2));
+  assert.equal(env.pushes.length, 1);
+  const message = env.pushes[0].messages[0];
+  assert.equal(message.type, 'flex');
+  assert.equal(message.contents.footer.contents[0].action.label, '填寫問卷');
+  const url = new URL(message.contents.footer.contents[0].action.uri);
+  assert.ok(url.searchParams.get('entry.' + env.properties.get('CDR_TOKEN_ITEM_ID')));
+  assert.ok(!url.href.includes(USER));
+  assert.ok(!message.altText.includes('entry.'));
+  assert.equal(line.getRange(2, 2).getValue(), false);
+});
+
+test('invalid Flex drafts show an actionable code without sending or clearing the draft', () => {
+  const env = setup();
+  const line = env.book().getSheetByName('LINE對話');
+  const draft = Array.from({ length: 6 }, (_, index) => 'https://example.org/' + index).join('\n');
+  line.appendRow(['m1', false, USER, '', '', 'question', '', '', draft, '', 'e1']);
+  line.getRange(2, COL.confirm).setValue(true);
+  editAs(env, line.getRange(2, COL.confirm));
+  assert.equal(env.pushes.length, 0);
+  assert.equal(line.getRange(2, 9).getValue(), draft);
+  assert.equal(line.getRange(2, COL.confirm).getValue(), false);
+  assert.match(line.getRange(2, COL.status).getValue(), /FLEX_TOO_MANY_LINKS/);
+});
+
+test('message-card validation uses only the non-delivering LINE validation endpoint', () => {
+  const env = setup();
+  env.properties.set('LINE_CHANNEL_ACCESS_TOKEN', 'synthetic-line-token');
+  let requests = 0;
+  env.context.UrlFetchApp = { fetch(url, options) {
+    requests++;
+    assert.equal(url, 'https://api.line.me/v2/bot/message/validate/push');
+    const payload = JSON.parse(options.payload);
+    assert.deepEqual(Object.keys(payload), ['messages']);
+    assert.equal(payload.messages.length, 4);
+    assert.ok(payload.messages.every(message => message.type === 'flex'));
+    assert.equal(payload.messages[2].contents.hero.type, 'video');
+    return { getResponseCode: () => 200 };
+  } };
+  assert.equal(env.context.validatePHCEPMessageCards().valid, true);
+  assert.equal(requests, 1);
+  assert.equal(env.pushes.length, 0);
 });
 
 test('layout migration is idempotent, places grouped controls right after L, shifts legacy data and preserves K/L', () => {

@@ -37,6 +37,88 @@ function phcepEnsureForm_(ss, type) {
   return form;
 }
 
+function phcepFormPermissions_(formId, method, query, permission) {
+  const options = {
+    method: method, headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() },
+    muteHttpExceptions: true
+  };
+  if (permission) {
+    options.contentType = 'application/json';
+    options.payload = JSON.stringify(permission);
+  }
+  const response = UrlFetchApp.fetch('https://www.googleapis.com/drive/v3/files/' +
+    encodeURIComponent(formId) + '/permissions?' + query, options);
+  const code = response.getResponseCode();
+  if (code < 200 || code >= 300) phcepFail_('FORM_RESPONDER_PERMISSION_HTTP_' + code);
+  try {
+    return JSON.parse(response.getContentText());
+  } catch (error) {
+    phcepFail_('FORM_RESPONDER_PERMISSION_INVALID_RESPONSE');
+  }
+}
+
+function phcepHasAnonymousResponder_(formId) {
+  let pageToken = '';
+  do {
+    const result = phcepFormPermissions_(formId, 'get',
+      'includePermissionsForView=published&pageSize=100&fields=nextPageToken,permissions(type,view,role)' +
+      (pageToken ? '&pageToken=' + encodeURIComponent(pageToken) : ''));
+    if (!Array.isArray(result.permissions)) phcepFail_('FORM_RESPONDER_PERMISSION_INVALID_RESPONSE');
+    if (result.permissions.some(function(permission) {
+      return permission.type === 'anyone' && permission.view === 'published' && permission.role === 'reader';
+    })) return true;
+    pageToken = result.nextPageToken || '';
+  } while (pageToken);
+  return false;
+}
+
+/** Changes only responder access for the two configured forms; never shares response data. */
+function configurePHCEPAnonymousForms() {
+  phcepAuthorizeClinician_();
+  return phcepWithLock_(function() {
+    const configured = ['CDR', 'VITALS'].map(function(type) {
+      const id = phcepProperty_(type + '_FORM_ID');
+      if (!id) phcepFail_('FORM_NOT_CONFIGURED');
+      const form = FormApp.openById(id);
+      if (form.getItems().some(function(item) { return String(item.getType()) === 'FILE_UPLOAD'; })) {
+        phcepFail_('FORM_FILE_UPLOAD_REQUIRES_LOGIN');
+      }
+      if (form.getDestinationId() !== phcepSpreadsheet_().getId()) phcepFail_('FORM_DESTINATION_MISMATCH');
+      return { type: type, form: form };
+    });
+    const report = [];
+    configured.forEach(function(item) {
+      const form = item.form;
+      form.setPublishingSummary(false);
+      form.setCollectEmail(false);
+      form.setLimitOneResponsePerUser(false);
+      const advanced = form.supportsAdvancedResponderPermissions();
+      if (advanced) {
+        if (!phcepHasAnonymousResponder_(form.getId())) {
+          phcepFormPermissions_(form.getId(), 'post', 'fields=type,view,role',
+            { type: 'anyone', role: 'reader', view: 'published', allowFileDiscovery: false });
+        }
+        if (!phcepHasAnonymousResponder_(form.getId())) phcepFail_('FORM_ANONYMOUS_PERMISSION_NOT_APPLIED');
+        form.setPublished(true);
+      } else {
+        // Legacy Workspace forms expose domain-login restrictions only through this older API.
+        if (form.requiresLogin()) form.setRequireLogin(false);
+        if (form.requiresLogin()) phcepFail_('FORM_STILL_REQUIRES_LOGIN');
+      }
+      form.setAcceptingResponses(true);
+      if (form.collectsEmail() || form.hasLimitOneResponsePerUser() || form.isPublishingSummary() ||
+          !form.isAcceptingResponses() || (advanced && !form.isPublished())) {
+        phcepFail_('FORM_ANONYMOUS_SETTINGS_NOT_APPLIED');
+      }
+      report.push({ type: item.type, responderAccess: advanced ? 'anyone_with_link' : 'legacy_domain_login_disabled',
+        emailCollection: false, oneResponsePerUser: false, responseSummaryPublic: false,
+        acceptingResponses: true, signedOutBrowserCheck: 'required' });
+    });
+    console.log(JSON.stringify(report));
+    return report;
+  }, 20000);
+}
+
 function phcepResumableBuilder_(form, sourceType) {
   let index = 0;
   let step = 0;

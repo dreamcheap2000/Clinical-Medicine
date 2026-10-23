@@ -620,7 +620,8 @@ function phcepHandleLineControlEdit_(e, sheet, row, col, layout) {
       phcepEditorEmail_(e);
       status = phcepRunSendAction_(sheet, row, PHCEP_ACTIONS_.SEND_DRAFT);
     } catch (error) {
-      status = '❌ 未發送：請確認身分、收件者或待處理狀態（見 L 欄）。';
+      status = error.phcepCode ? '❌ 未發送：' + error.phcepCode + '，請修正草稿連結後重試。' :
+        '❌ 未發送：請確認身分、收件者或待處理狀態（見 L 欄）。';
     }
     var currentRow = row;
     try {
