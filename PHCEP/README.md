@@ -346,6 +346,23 @@ actions are cleared and pasted confirmations reset. Sends reuse the existing dur
 keys, deduplication and `MANUAL_REVIEW` behave exactly as with the menus.
 `重新整理建議` and `收錄` run immediately because they never contact patients.
 
+**Troubleshooting a failed draft send.** `SEND_FAILED` in older outbox rows
+does not identify the cause. New attempts record a safe code in `PHCEP寄件匣`
+and show it in 操作結果: `LINE_TOKEN_MISSING`, `LINE_HTTP_401` (invalid/expired
+token), `LINE_HTTP_403` (access denied), `LINE_HTTP_400` (invalid request),
+`LINE_MONTHLY_QUOTA_EXCEEDED`, `LINE_HTTP_429` (rate/quota limit), or
+`LINE_FETCH_FAILED` (Apps Script could not complete the HTTP request).
+No raw LINE response, access token or patient text is included in these errors.
+Run `diagnosePHCEPLineSend` in the Apps Script editor as an authorized clinician
+to check token authentication and monthly quota without sending a message.
+Its execution log contains only safe HTTP codes and quota counts. The token must
+be in Apps Script Script Properties as `LINE_CHANNEL_ACCESS_TOKEN` (or legacy
+`CHANNEL_ACCESS_TOKEN`); GitHub Actions secrets alone are not runtime properties.
+After fixing the reported cause, select 發送草稿 and confirm again on the same
+unchanged draft. Do not clear L, delete the outbox row, or generate a new retry
+key: pending sends retain their original key; expired ambiguous sends require
+manual reconciliation instead of a blind resend.
+
 **Local suggestion matcher (no network).** Text messages get an H dropdown during
 ingestion using only `QA知識庫` C/D/E questions and G replies: NFKC + lowercase,
 punctuation/space removal, leading 請問/您好 and trailing 謝謝 removal, exact

@@ -894,6 +894,37 @@ test('no-menu send requires action selection then verified confirm; history shif
   assert.equal(env.book().getSheetByName('PHCEP回覆歷史').getLastRow(), 3);
 });
 
+test('draft confirmation shows safe LINE failure and retries the unchanged operation', () => {
+  const env = setup();
+  const line = env.book().getSheetByName('LINE對話');
+  line.appendRow(['message', false, USER, '', '', 'question', '', '', 'draft', 'previous reply', 'event-1']);
+  env.setPushResult({ ok: false, error: 'LINE_HTTP_401' });
+  const confirm = () => {
+    line.getRange(2, COL.action).setValue('發送草稿');
+    editAs(env, line.getRange(2, COL.action));
+    line.getRange(2, COL.confirm).setValue(true);
+    editAs(env, line.getRange(2, COL.confirm));
+  };
+  confirm();
+  assert.match(line.getRange(2, COL.status).getValue(), /LINE_HTTP_401/);
+  assert.equal(line.getRange(2, 9).getValue(), 'draft');
+  assert.equal(line.getRange(2, 10).getValue(), 'previous reply');
+  assert.equal(line.getRange(2, COL.confirm).getValue(), false);
+  assert.equal(line.getRange(2, COL.action).getValue(), '');
+  let operation = JSON.parse(line.getRange(2, 12).getValue()).reply;
+  assert.equal(operation.status, 'RETRY');
+  assert.equal(operation.error, 'LINE_HTTP_401');
+  env.setPushResult({ ok: true });
+  confirm();
+  assert.equal(env.pushes[0].key, env.pushes[1].key);
+  operation = JSON.parse(line.getRange(2, 12).getValue()).reply;
+  assert.equal(operation.status, 'SENT');
+  assert.equal(operation.error, undefined);
+  assert.equal(line.getRange(2, 9).getValue(), '');
+  assert.equal(line.getRange(2, 10).getValue(), 'draft');
+  assert.match(line.getRange(2, COL.status).getValue(), /✅/);
+});
+
 test('no-menu questionnaire actions reuse existing send semantics and multi-cell pastes never execute', () => {
   const env = setup();
   const line = env.book().getSheetByName('LINE對話');

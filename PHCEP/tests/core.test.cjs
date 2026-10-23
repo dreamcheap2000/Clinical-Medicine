@@ -30,7 +30,8 @@ function environment() {
     },
     locked: false, releases: 0, failLock: false, requests: [],
     files: [], folderAccess: 'PRIVATE', pushCode: 200, pushHeaders: {},
-    failProfile: false, flushes: 0, failWrite: null, validations: {}
+    failProfile: false, flushes: 0, failWrite: null, validations: {},
+    pushBody: '{}', failPush: false
   };
   function sheet(name, columns) {
     const data = [Array.from({ length: columns }, (_, i) => `Header ${i}`)];
@@ -141,7 +142,8 @@ function environment() {
         assert.ok(state.locked);
         if (url.endsWith('/push')) {
           assert.ok(state.flushes > 0);
-          return response(state.pushCode, '{}', state.pushHeaders);
+          if (state.failPush) throw new Error('private transport exception');
+          return response(state.pushCode, state.pushBody, state.pushHeaders);
         }
         return response(200);
       }
@@ -479,9 +481,79 @@ test('409 without accepted retry-key header remains failed; changed content conf
   const { context, state } = environment();
   state.pushCode = 409;
   const messages = [{ type: 'text', text: 'one' }];
-  assert.equal(context.phcepWithLock_(() => context.phcepPush_('send-1', recipient, messages)).error, 'SEND_FAILED');
+  assert.equal(context.phcepWithLock_(() => context.phcepPush_('send-1', recipient, messages)).error, 'LINE_HTTP_409');
   assert.equal(context.phcepWithLock_(() => context.phcepPush_('send-1', otherRecipient, messages)).error, 'OUTBOUND_CONFLICT');
   assert.equal(state.requests.length, 1);
+});
+
+test('LINE failures expose safe codes and retain the same outbox retry key', () => {
+  for (const [code, body, expected] of [
+    [400, '{"message":"private recipient"}', 'LINE_HTTP_400'],
+    [401, '{"message":"private token"}', 'LINE_HTTP_401'],
+    [403, '{}', 'LINE_HTTP_403'],
+    [429, '{"message":"You have reached your monthly limit."}', 'LINE_MONTHLY_QUOTA_EXCEEDED'],
+    [429, '{"message":"Too many requests"}', 'LINE_HTTP_429'],
+    [503, '{}', 'LINE_HTTP_503']
+  ]) {
+    const { context, state } = environment();
+    state.pushCode = code;
+    state.pushBody = body;
+    const send = () => context.phcepWithLock_(() =>
+      context.phcepPush_('send-1', recipient, [{ type: 'text', text: 'draft' }]));
+    assert.equal(send().error, expected);
+    const row = state.sheets['PHCEP寄件匣'].data[1];
+    const retryKey = row[1];
+    assert.equal(row[6], expected);
+    state.pushCode = 200;
+    assert.equal(send().ok, true);
+    assert.equal(row[1], retryKey);
+    assert.equal(row[6], '');
+  }
+});
+
+test('missing token and transport errors are distinct without leaking exception text', () => {
+  const { context, state } = environment();
+  delete state.properties.LINE_CHANNEL_ACCESS_TOKEN;
+  const send = () => context.phcepWithLock_(() =>
+    context.phcepPush_('send-1', recipient, [{ type: 'text', text: 'draft' }]));
+  assert.equal(send().error, 'LINE_TOKEN_MISSING');
+  assert.equal(state.requests.length, 0);
+  state.properties.CHANNEL_ACCESS_TOKEN = 'legacy-token';
+  state.failPush = true;
+  assert.equal(send().error, 'LINE_FETCH_FAILED');
+  assert.equal(state.sheets['PHCEP寄件匣'].data[1][6], 'LINE_FETCH_FAILED');
+  state.failPush = false;
+  assert.equal(send().ok, true);
+});
+
+test('send diagnostic is authorized, read-only and logs only safe authentication and quota results', () => {
+  const { context, state } = environment();
+  const logs = [];
+  let authorized = false;
+  context.phcepAuthorizeClinician_ = () => { authorized = true; };
+  context.console = { log: text => logs.push(text) };
+  context.UrlFetchApp.fetch = (url, options) => {
+    assert.equal(authorized, true);
+    assert.equal(options.payload, undefined);
+    assert.equal(options.method, undefined);
+    assert.ok(!url.endsWith('/push'));
+    state.requests.push({ url });
+    const body = url.endsWith('/consumption') ? { totalUsage: 200 } :
+      url.endsWith('/quota') ? { type: 'limited', value: 200 } : { userId: 'private bot identity' };
+    return { getResponseCode: () => 200, getContentText: () => JSON.stringify(body) };
+  };
+  const report = context.diagnosePHCEPLineSend();
+  assert.equal(report.authentication.httpStatus, 200);
+  assert.equal(report.monthlyQuotaReached, true);
+  assert.equal(state.requests.length, 3);
+  assert.equal(state.sheets['PHCEP寄件匣'].data.length, 1);
+  assert.ok(!logs[0].includes('private'));
+  assert.ok(!logs[0].includes(state.properties.LINE_CHANNEL_ACCESS_TOKEN));
+  delete state.properties.LINE_CHANNEL_ACCESS_TOKEN;
+  assert.equal(context.diagnosePHCEPLineSend().error, 'LINE_TOKEN_MISSING');
+  assert.equal(state.requests.length, 3);
+  context.phcepAuthorizeClinician_ = () => { throw new Error('Unauthorized'); };
+  assert.throws(() => context.diagnosePHCEPLineSend(), /Unauthorized/);
 });
 
 test('pending and failed sends older than 23h are quarantined without another send', () => {

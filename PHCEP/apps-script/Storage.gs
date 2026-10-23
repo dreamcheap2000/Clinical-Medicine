@@ -93,6 +93,59 @@ function phcepCleanupExpiredNonces() {
   });
 }
 
+function phcepLineHttpError_(code, body) {
+  if (code === 429 && /monthly limit/i.test(body || '')) return 'LINE_MONTHLY_QUOTA_EXCEEDED';
+  return 'LINE_HTTP_' + code;
+}
+
+/** Read-only LINE checks: no patient data, messages, tokens or response bodies are logged. */
+function diagnosePHCEPLineSend() {
+  phcepAuthorizeClinician_();
+  var token = phcepProperty_('LINE_CHANNEL_ACCESS_TOKEN', ['CHANNEL_ACCESS_TOKEN']);
+  var report = { tokenConfigured: !!token };
+  if (!token) {
+    report.error = 'LINE_TOKEN_MISSING';
+  } else {
+    ['info', 'message/quota', 'message/quota/consumption'].forEach(function(endpoint) {
+      var name = endpoint === 'info' ? 'authentication' :
+        endpoint === 'message/quota' ? 'quota' : 'consumption';
+      var response;
+      try {
+        response = UrlFetchApp.fetch('https://api.line.me/v2/bot/' + endpoint, {
+          headers: { Authorization: 'Bearer ' + token }, muteHttpExceptions: true
+        });
+      } catch (error) {
+        report[name] = { error: 'LINE_FETCH_FAILED' };
+        return;
+      }
+      var code = response.getResponseCode();
+      report[name] = { httpStatus: code };
+      if (code !== 200) {
+        report[name].error = phcepLineHttpError_(code, response.getContentText());
+      } else if (name !== 'authentication') {
+        try {
+          var data = JSON.parse(response.getContentText());
+          if (name === 'quota' && data.type === 'none') report[name].unlimited = true;
+          else {
+            var value = name === 'quota' ? data.value : data.totalUsage;
+            if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+              throw new Error('Invalid quota response');
+            }
+            report[name].messages = value;
+          }
+        } catch (error) {
+          report[name].error = 'LINE_INVALID_RESPONSE';
+        }
+      }
+    });
+    if (report.quota.messages !== undefined && report.consumption.messages !== undefined) {
+      report.monthlyQuotaReached = report.consumption.messages >= report.quota.messages;
+    }
+  }
+  console.log(JSON.stringify(report));
+  return report;
+}
+
 /** Caller must hold phcepWithLock_; persist the retry key before any HTTP send. */
 function phcepPush_(key, userId, messages) {
   if (!phcepLockDepth_) phcepFail_('LOCK_REQUIRED');
@@ -133,27 +186,31 @@ function phcepPush_(key, userId, messages) {
   }
   SpreadsheetApp.flush();
   var accepted = false;
+  var sendError = 'LINE_TOKEN_MISSING';
+  var token = phcepProperty_('LINE_CHANNEL_ACCESS_TOKEN', ['CHANNEL_ACCESS_TOKEN']);
   try {
-    var token = phcepProperty_('LINE_CHANNEL_ACCESS_TOKEN', ['CHANNEL_ACCESS_TOKEN']);
-    if (!token) phcepFail_('CONFIGURATION');
-    var response = UrlFetchApp.fetch('https://api.line.me/v2/bot/message/push', {
-      method: 'post',
-      contentType: 'application/json',
-      headers: { Authorization: 'Bearer ' + token, 'X-Line-Retry-Key': record[1] },
-      payload: JSON.stringify({ to: userId, messages: messages }),
-      muteHttpExceptions: true
-    });
-    var code = response.getResponseCode();
-    var headers = response.getAllHeaders();
-    var retryAccepted = Object.keys(headers).some(function (name) {
-      return name.toLowerCase() === 'x-line-accepted-request-id' && !!headers[name];
-    });
-    accepted = (code >= 200 && code < 300) || (code === 409 && retryAccepted);
+    if (token) {
+      sendError = 'LINE_FETCH_FAILED';
+      var response = UrlFetchApp.fetch('https://api.line.me/v2/bot/message/push', {
+        method: 'post',
+        contentType: 'application/json',
+        headers: { Authorization: 'Bearer ' + token, 'X-Line-Retry-Key': record[1] },
+        payload: JSON.stringify({ to: userId, messages: messages }),
+        muteHttpExceptions: true
+      });
+      var code = response.getResponseCode();
+      var headers = response.getAllHeaders();
+      var retryAccepted = Object.keys(headers).some(function (name) {
+        return name.toLowerCase() === 'x-line-accepted-request-id' && !!headers[name];
+      });
+      accepted = (code >= 200 && code < 300) || (code === 409 && retryAccepted);
+      if (!accepted) sendError = phcepLineHttpError_(code, response.getContentText());
+    }
   } catch (ignored) {
     accepted = false;
   }
   sheet.getRange(row, 3).setValue(accepted ? 'SENT' : 'FAILED');
-  sheet.getRange(row, 6, 1, 2).setValues([[new Date(), accepted ? '' : 'SEND_FAILED']]);
+  sheet.getRange(row, 6, 1, 2).setValues([[new Date(), accepted ? '' : sendError]]);
   SpreadsheetApp.flush();
-  return accepted ? { ok: true } : { ok: false, error: 'SEND_FAILED' };
+  return accepted ? { ok: true } : { ok: false, error: sendError };
 }

@@ -380,7 +380,8 @@ function phcepRowIdentity_(sheet, row) {
 function phcepRunSendAction_(sheet, row, action) {
   if (action === PHCEP_ACTIONS_.SEND_DRAFT) {
     if (!String(sheet.getRange(row, 9).getValue() || '').trim()) return '⚠️ I 欄草稿為空，未發送。';
-    return phcepSendRow_(sheet, row, 'reply') ? '✅ 草稿已發送。' : '⚠️ 未完成：請查看 L 欄操作狀態。';
+    if (phcepSendRow_(sheet, row, 'reply')) return '✅ 草稿已發送。';
+    return '⚠️ ' + (phcepReadOperationState_(sheet, row).notice || '未完成：請查看 L 欄操作狀態。');
   }
   var type = action === PHCEP_ACTIONS_.SEND_VITALS || action === PHCEP_ACTIONS_.NEW_VITALS ? 'VITALS' : 'CDR';
   var created = action === PHCEP_ACTIONS_.NEW_CDR || action === PHCEP_ACTIONS_.NEW_VITALS;

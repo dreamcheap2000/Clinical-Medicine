@@ -166,9 +166,19 @@ function phcepSendRow_(sheet, row, kind, type) {
       phcepWriteOperationState_(sheet, row, state);
       return false;
     }
-    if (result === false || (result && result.ok === false)) throw new Error('Push not accepted.');
+    if (result === false || (result && result.ok === false)) {
+      row = phcepLocateOperationRow_(sheet, identity);
+      operation.status = 'RETRY';
+      operation.error = result && /^(LINE_(TOKEN_MISSING|FETCH_FAILED|MONTHLY_QUOTA_EXCEEDED|HTTP_[0-9]{3})|OUTBOUND_CONFLICT|INVALID_OUTBOUND)$/.test(result.error) ?
+        result.error : 'SEND_FAILED';
+      state.notice = '未發送：' + operation.error + '。草稿與重試金鑰已保留；修正原因後再確認發送。';
+      phcepWriteOperationState_(sheet, row, state);
+      return false;
+    }
     row = phcepLocateOperationRow_(sheet, identity);
     operation.status = 'SENT';
+    delete operation.error;
+    delete state.notice;
     phcepWriteOperationState_(sheet, row, state);
     if (kind === 'reply') {
       phcepCompleteReply_(sheet, row, operation, rawDraft, eventKey || messageId);
