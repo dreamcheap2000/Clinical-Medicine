@@ -87,6 +87,8 @@ function phcepEnsureLineExtension_(sheet) {
   // System columns K (Event Key) and L (操作狀態) are hidden once so editor columns
   // read H, I, J, M…; they stay intact and can be unhidden at any time.
   if (created) sheet.hideColumns(11, 2);
+  sheet.hideColumns(start, 1);
+  sheet.hideColumns(start + 2, 1);
   return { layout: phcepLineLayout_(sheet), added: added };
 }
 
@@ -198,8 +200,12 @@ function phcepMigrateLayout_(ss, trusted) {
   report.lineColumnsAdded = extension.added;
   report.controlStartColumn = extension.layout.start;
   phcepApplyLineValidations_(line, extension.layout);
+  line.getRange(1, extension.layout.confirm).setNote('勾選即發送 I 欄草稿；批次請只在本欄多列填入 TRUE，不需選擇操作動作。');
+  line.getRange(1, extension.layout.collect).setNote('勾選即收錄全部內容（含媒體、草稿、最新及歷史回覆）；沒有回覆也能收錄，且不會發送訊息。');
   var qa = ss.getSheetByName('QA知識庫');
   phcepApplyColumnValidation_(qa, 2, phcepListValidation_(PHCEP_IMPORTANCE_VALUES_));
+  qa.getRange(1, 4, 1, 2).setNote('同一問題的不同問法，供人工 QA 建議比對使用；不會發送 LINE 訊息。');
+  qa.getRange(1, 6).setNote('修改此欄會同步改名 H 欄連結的私人 PHCEP Drive 檔案；一般網頁連結或資料夾外的檔案不會改名。');
   var collections = ss.getSheetByName(PHCEP_COLLECTION_SHEET_);
   phcepApplyColumnValidation_(collections, 2, phcepListValidation_(PHCEP_COLLECTION_STATUSES_));
   phcepApplyColumnValidation_(collections, 7, phcepListValidation_(PHCEP_IMPORTANCE_VALUES_));
@@ -218,6 +224,7 @@ function migratePHCEPLayout() {
     var report = phcepMigrateLayout_(ss, phcepTrustedEditors_());
     phcepEnsureEditTrigger_(ss);
     report.editTrigger = 'ready';
+    report.collections = phcepRefreshCollectedRows_(ss);
     return report;
   });
 }
@@ -238,48 +245,154 @@ function phcepSetLineStatus_(sheet, row, layout, text) {
   sheet.getRange(row, layout.status).setValue(phcepLiteral_(text));
 }
 
-function phcepCollectRow_(ss, sheet, row, layout, collector) {
+function phcepCellText_(cell) {
+  var rich = cell.getRichTextValue();
+  return rich ? rich.getText() : phcepPlainText_(cell.getValue());
+}
+
+function phcepCellLink_(cell) {
+  var rich = cell.getRichTextValue();
+  var url = rich && rich.getLinkUrl();
+  if (url) return url;
+  var match = phcepCellText_(cell).match(/https?:\/\/[^\s]+/i);
+  return match ? match[0] : '';
+}
+
+function phcepConversationSnapshot_(ss, sheet, row, layout) {
   var values = sheet.getRange(row, 1, 1, 12).getValues()[0];
   var question = phcepPlainText_(values[5]).trim();
-  var source = String(sheet.getRange(row, layout.source).getValue() || '').trim() || '最新回覆';
-  var reply;
-  var sent;
-  if (source === '最新回覆') { reply = values[9]; sent = '已發送'; }
-  else if (source === '病患訊息') { reply = ''; sent = '無回覆'; }
-  else if (source === '草稿 (未發送)') { reply = values[8]; sent = '未發送 (草稿)'; }
-  else {
-    var match = source.match(/^歷史回覆 前([1-5])$/);
-    if (!match) return '❌ 收錄來源無效。';
-    reply = sheet.getRange(row, layout.historyStart + Number(match[1]) - 1).getValue();
-    sent = '已發送 (歷史)';
+  var mediaUrl = phcepCellLink_(sheet.getRange(row, 7));
+  if (mediaUrl && question.indexOf(mediaUrl) === -1) question += (question ? '\n' : '') + mediaUrl;
+  var parts = [];
+  var seen = [];
+  var add = function(label, value) {
+    var text = phcepPlainText_(value).trim();
+    if (text && seen.indexOf(text) === -1) {
+      seen.push(text);
+      parts.push({ label: label, text: text });
+    }
+  };
+  add('最新回覆', values[9]);
+  add('草稿 (未發送)', values[8]);
+  sheet.getRange(row, layout.historyStart, 1, PHCEP_LINE_HISTORY_HEADERS_.length).getValues()[0]
+    .forEach(function(value, index) { add('歷史回覆 前' + (index + 1), value); });
+  var history = ss.getSheetByName('PHCEP回覆歷史');
+  var identity = String(values[10] || values[0] || '');
+  if (history && history.getLastRow() > 1) {
+    history.getRange(2, 1, history.getLastRow() - 1, 4).getValues().reverse().forEach(function(record) {
+      if (String(record[1]) === identity) add('歷史回覆', record[3]);
+    });
   }
-  reply = phcepPlainText_(reply).trim();
-  if (!question) return '⚠️ 此列沒有病患訊息，未收錄。';
-  if (source !== '病患訊息' && !reply) return '⚠️ 所選來源「' + source + '」沒有回覆內容，未收錄。';
   var importance = phcepNormalizeImportance_(sheet.getRange(row, layout.importance).getValue());
-  if (!importance.ok) return '❌ ' + importance.error + '未收錄。';
+  if (!importance.ok) throw new Error(importance.error);
+  return {
+    question: question, mediaUrl: mediaUrl,
+    reply: parts.length === 1 ? parts[0].text : parts.map(function(part) { return '【' + part.label + '】\n' + part.text; }).join('\n\n'),
+    sent: values[9] ? '已發送' : values[8] ? '未發送 (草稿)' : '無回覆',
+    importance: importance.value === null ? '' : importance.value,
+    eventKey: String(values[10] || ''), messageId: String(values[0] || ''),
+    key: phcepDigest_('LINE對話\n' + identity)
+  };
+}
+
+function phcepFindCollectionRow_(collections, eventKey, messageId) {
+  if (!eventKey && !messageId) throw new Error('Stable message identity required.');
+  var rows = collections.getLastRow() > 1 ? collections.getRange(2, 8, collections.getLastRow() - 1, 2).getValues() : [];
+  for (var i = 0; i < rows.length; i++) {
+    if ((eventKey && String(rows[i][0]) === eventKey) || (messageId && String(rows[i][1]) === messageId)) return i + 2;
+  }
+  return 0;
+}
+
+function phcepCollectRow_(ss, sheet, row, layout, collector, onlyExisting) {
   var collections = ss.getSheetByName(PHCEP_COLLECTION_SHEET_);
   if (!collections) return '❌ 請先執行 setupPHCEP 或 migratePHCEPLayout 建立收錄集合。';
-  var key = phcepCollectionKey_(question, reply);
-  var keys = collections.getLastRow() > 1 ? collections.getRange(2, 1, collections.getLastRow() - 1, 1).getValues() : [];
-  for (var i = 0; i < keys.length; i++) {
-    if (String(keys[i][0]) === key) return 'ℹ️ 已存在於收錄集合第 ' + (i + 2) + ' 列，未重複收錄。';
+  var eventKey = String(sheet.getRange(row, 11).getValue() || '');
+  var messageId = String(sheet.getRange(row, 1).getValue() || '');
+  var targetRow = phcepFindCollectionRow_(collections, eventKey, messageId);
+  if (onlyExisting && !targetRow) return '';
+  var snapshot = phcepConversationSnapshot_(ss, sheet, row, layout);
+  if (!snapshot.question) return '⚠️ 此列沒有病患訊息或媒體連結，未收錄。';
+  if (snapshot.question.length > 49000 || snapshot.reply.length > 49000) {
+    throw new Error('Conversation exceeds spreadsheet cell limit; split it before collecting.');
   }
-  collections.appendRow([key, '待審核', phcepLiteral_(question), phcepLiteral_(reply), source, sent,
-    importance.value === null ? '' : importance.value, phcepLiteral_(values[10]), phcepLiteral_(values[0]),
-    'LINE對話!' + row, new Date(), phcepLiteral_(collector || ''), '', '']);
-  return '✅ 已收錄至收錄集合第 ' + collections.getLastRow() + ' 列（待審核，尚未發布到 QA 建議）' +
-    (reply ? '。' : '；核准前請先於收錄集合 D 欄填寫回覆。');
+  var changed = false;
+  if (targetRow) {
+    var previous = collections.getRange(targetRow, 1, 1, 14).getValues()[0];
+    changed = phcepCellText_(collections.getRange(targetRow, 3)) !== snapshot.question ||
+      phcepPlainText_(previous[3]) !== snapshot.reply || previous[6] !== snapshot.importance;
+    if (changed) {
+      collections.getRange(targetRow, 2).setValue('待審核');
+      collections.getRange(targetRow, 13).setValue('來源內容已更新，需重新核准；既有 QA 在核准前保持不變。');
+    }
+  } else {
+    collections.appendRow([snapshot.key, '待審核', '', '', '', '', '', phcepLiteral_(snapshot.eventKey),
+      phcepLiteral_(snapshot.messageId), '', new Date(), phcepLiteral_(collector || ''), '', '']);
+    targetRow = collections.getLastRow();
+    changed = true;
+  }
+  collections.getRange(targetRow, 3, 1, 5).setValues([[phcepLiteral_(snapshot.question),
+    phcepLiteral_(snapshot.reply), '全部內容', snapshot.sent, snapshot.importance]]);
+  if (snapshot.mediaUrl) {
+    collections.getRange(targetRow, 3).setRichTextValue(SpreadsheetApp.newRichTextValue()
+      .setText(snapshot.question).setLinkUrl(snapshot.mediaUrl).build());
+  }
+  collections.getRange(targetRow, 10).setValue('LINE對話!' + row);
+  return '✅ ' + (changed ? '已收錄/更新' : '已存在，內容未變') + '：收錄集合第 ' + targetRow + ' 列' +
+    (changed ? '（待審核）。' : '。') + (snapshot.reply ? '' : '尚無回覆也已收錄。');
+}
+
+function phcepSyncCollectedRow_(sheet, row) {
+  var layout = phcepLineLayout_(sheet);
+  if (!layout) return true;
+  try {
+    var result = phcepCollectRow_(sheet.getParent(), sheet, row, layout, '', true);
+    if (/^[❌⚠️]/.test(result)) {
+      phcepSetLineStatus_(sheet, row, layout, result);
+      return false;
+    }
+    return true;
+  } catch (error) {
+    phcepSetLineStatus_(sheet, row, layout, '⚠️ 收錄同步失敗；原收錄已保留，請重新勾選收錄。');
+    return false;
+  }
+}
+
+function phcepRefreshCollectedRows_(ss) {
+  var line = ss.getSheetByName('LINE對話');
+  var report = { checked: 0, failed: 0 };
+  for (var row = 2; row <= line.getLastRow(); row++) {
+    report.checked++;
+    if (!phcepSyncCollectedRow_(line, row)) report.failed++;
+  }
+  return report;
+}
+
+function phcepWithLineEditLock_(e, fn) {
+  try {
+    return phcepWithLock_(fn, 20000);
+  } catch (error) {
+    if (error.phcepCode !== 'BUSY') throw error;
+    var range = e.range;
+    var sheet = range.getSheet();
+    var layout = phcepLineLayout_(sheet);
+    if (!layout) throw error;
+    for (var row = range.getRow(); row < range.getRow() + range.getNumRows(); row++) {
+      [layout.confirm, layout.collect].forEach(function(column) {
+        if (column >= range.getColumn() && column < range.getColumn() + range.getNumColumns()) {
+          sheet.getRange(row, column).setValue(false);
+        }
+      });
+      phcepSetLineStatus_(sheet, row, layout, '⚠️ 系統忙碌，本次未執行；請稍後重新勾選。');
+    }
+    sheet.getParent().toast('系統忙碌，本次未執行；請稍後重新勾選。', 'PHCEP', 8);
+  }
 }
 
 /** Publish one approved collection row into QA知識庫 (idempotent by QA ID). */
 function phcepPublishCollectionRow_(ss, sheet, row, editor) {
   var values = sheet.getRange(row, 1, 1, 14).getValues()[0];
-  if (values[13]) {
-    sheet.getRange(row, 2).setValue('已發布');
-    return true;
-  }
-  var question = phcepPlainText_(values[2]).trim();
+  var question = phcepCellText_(sheet.getRange(row, 3)).trim();
   var reply = phcepPlainText_(values[3]).trim();
   var importance = phcepNormalizeImportance_(values[6]);
   var problem = !question || !reply ? '需有問題與回覆才能發布。' : (!importance.ok ? importance.error : '');
@@ -291,12 +404,24 @@ function phcepPublishCollectionRow_(ss, sheet, row, editor) {
   var qa = ss.getSheetByName('QA知識庫');
   if (!qa) throw new Error('Run setupPHCEP to provision QA知識庫.');
   var key = String(values[0] || phcepCollectionKey_(question, reply));
-  var id = 'COL-' + key.slice(0, 24);
+  var id = String(values[13] || ('COL-' + key.slice(0, 24)));
   var ids = qa.getLastRow() > 1 ? qa.getRange(2, 1, qa.getLastRow() - 1, 1).getValues() : [];
-  if (!ids.some(function(value) { return String(value[0]) === id; })) {
+  var matches = [];
+  ids.forEach(function(value, index) { if (String(value[0]) === id) matches.push(index + 2); });
+  if (matches.length > 1) throw new Error('Duplicate QA ID; resolve before publishing.');
+  var qaRow = matches[0];
+  if (!qaRow) {
     qa.appendRow([id, importance.value === null ? '' : importance.value, phcepLiteral_(question), '', '', '',
       phcepLiteral_(reply), '', '', '', '', '', '', 0, 0]);
+    qaRow = qa.getLastRow();
+  } else {
+    qa.getRange(qaRow, 2).setValue(importance.value === null ? '' : importance.value);
+    qa.getRange(qaRow, 3).setValue(phcepLiteral_(question));
+    qa.getRange(qaRow, 7).setValue(phcepLiteral_(reply));
+    qa.getRange(qaRow, 11, 1, 3).clearContent();
   }
+  var mediaUrl = phcepCellLink_(sheet.getRange(row, 3));
+  qa.getRange(qaRow, 8).setValue(phcepLiteral_(mediaUrl));
   sheet.getRange(row, 14).setValue(id);
   sheet.getRange(row, 2).setValue('已發布');
   sheet.getRange(row, 13).setValue(phcepLiteral_('已由 ' + editor + ' 核准並發布至 QA知識庫'));
@@ -337,12 +462,10 @@ function phcepDriveFileId_(url) {
 }
 
 /** Rename only private files inside the configured media folder; links stay private. */
-function phcepRenameMediaForRow_(sheet, row, newName) {
+function phcepRenameManagedFile_(ss, cell, newName) {
   var name = phcepSanitizeFileName_(newName);
   if (!name) return '❌ 檔名無效或為空，未改名。';
-  var cell = sheet.getRange(row, 7);
-  var rich = cell.getRichTextValue();
-  var url = rich && rich.getLinkUrl ? rich.getLinkUrl() : '';
+  var url = phcepCellLink_(cell);
   var fileId = phcepDriveFileId_(url);
   if (!fileId) return '⚠️ 此列沒有系統管理的媒體檔案。';
   var folderId = phcepProperty_('IMAGE_FOLDER_ID', ['DRIVE_FOLDER_ID']);
@@ -360,9 +483,56 @@ function phcepRenameMediaForRow_(sheet, row, newName) {
   }
   if (!managed) return '❌ 僅能改名私人媒體資料夾中的系統檔案。';
   if (file.getSharingAccess() !== DriveApp.Access.PRIVATE) return '❌ 檔案不是私人檔案，拒絕改名；請先檢查分享設定。';
-  file.setName(name);
-  cell.setRichTextValue(SpreadsheetApp.newRichTextValue().setText(name).setLinkUrl(url).build());
+  if (DriveApp.getFolderById(folderId).getSharingAccess() !== DriveApp.Access.PRIVATE) {
+    return '❌ 媒體資料夾不是私人資料夾，未改名。';
+  }
+  try {
+    file.setName(name);
+  } catch (error) {
+    return '❌ Drive 改名失敗，請確認檔案編輯權限。';
+  }
+  ['LINE對話', 'QA知識庫'].forEach(function(sheetName) {
+    var sheet = ss.getSheetByName(sheetName);
+    if (!sheet) return;
+    var linkColumn = sheetName === 'LINE對話' ? 7 : 8;
+    var layout = sheetName === 'LINE對話' ? phcepLineLayout_(sheet) : null;
+    for (var row = 2; row <= sheet.getLastRow(); row++) {
+      var linkedCell = sheet.getRange(row, linkColumn);
+      if (phcepDriveFileId_(phcepCellLink_(linkedCell)) !== fileId) continue;
+      linkedCell.setRichTextValue(SpreadsheetApp.newRichTextValue().setText(name)
+        .setLinkUrl(phcepCellLink_(linkedCell)).build());
+      if (layout) sheet.getRange(row, layout.mediaName).setValue(phcepLiteral_(name));
+      if (sheetName === 'QA知識庫') {
+        sheet.getRange(row, 6).setValue(phcepLiteral_(name));
+        sheet.getRange(row, 9).setValue(phcepLiteral_(name));
+      }
+    }
+  });
   return '✅ 已同步 Drive 檔名並更新連結標籤。';
+}
+
+function phcepRenameMediaForRow_(sheet, row, newName) {
+  return phcepRenameManagedFile_(sheet.getParent(), sheet.getRange(row, 7), newName);
+}
+
+function phcepHandleQAEdit_(e) {
+  var range = e.range;
+  if (range.getColumn() !== 6 || range.getNumColumns() !== 1 || range.getRow() < 2) return;
+  return phcepWithLock_(function() {
+    for (var row = range.getRow(); row < range.getRow() + range.getNumRows(); row++) {
+      var cell = range.getSheet().getRange(row, 6);
+      if (!String(cell.getValue() || '').trim()) continue;
+      var result;
+      try {
+        phcepEditorEmail_(e);
+        result = phcepRenameManagedFile_(range.getSheet().getParent(), range.getSheet().getRange(row, 8), cell.getValue());
+      } catch (error) {
+        result = '❌ 改名未完成：請確認授權編輯者與 Drive 權限，並檢查連結標籤。';
+      }
+      cell.setNote(result);
+      range.getSheet().getParent().toast(result, 'Drive 檔名', 8);
+    }
+  }, 20000);
 }
 
 function phcepEditorEmail_(e) {
@@ -380,7 +550,12 @@ function phcepRowIdentity_(sheet, row) {
 function phcepRunSendAction_(sheet, row, action) {
   if (action === PHCEP_ACTIONS_.SEND_DRAFT) {
     if (!String(sheet.getRange(row, 9).getValue() || '').trim()) return '⚠️ I 欄草稿為空，未發送。';
-    if (phcepSendRow_(sheet, row, 'reply')) return '✅ 草稿已發送。';
+    var identity = phcepRowIdentity_(sheet, row);
+    var sent = phcepSendRow_(sheet, row, 'reply');
+    row = phcepLocateOperationRow_(sheet, identity);
+    if (sent) {
+      return '✅ 草稿已發送。' + (phcepReadOperationState_(sheet, row).notice || '');
+    }
     return '⚠️ ' + (phcepReadOperationState_(sheet, row).notice || '未完成：請查看 L 欄操作狀態。');
   }
   var type = action === PHCEP_ACTIONS_.SEND_VITALS || action === PHCEP_ACTIONS_.NEW_VITALS ? 'VITALS' : 'CDR';
@@ -389,20 +564,14 @@ function phcepRunSendAction_(sheet, row, action) {
   return ok ? '✅ 已發送「' + action + '」。' : '⚠️ 未完成：請查看 L 欄操作狀態。';
 }
 
-/** Caller holds the script lock. Sending requires action selection then a separate confirm check. */
+/** Caller holds the script lock; the send checkbox always sends the draft. */
 function phcepHandleLineControlEdit_(e, sheet, row, col, layout) {
   var field = PHCEP_LINE_CONTROL_FIELDS_[col - layout.start];
   var range = e.range;
   var value = range.getValue();
   var ss = sheet.getParent();
   if (field === 'source') {
-    if (value && PHCEP_COLLECTION_SOURCES_.indexOf(String(value)) === -1) {
-      range.clearContent();
-      phcepSetLineStatus_(sheet, row, layout, '❌ 收錄來源無效，已清除。');
-    } else {
-      phcepSetLineStatus_(sheet, row, layout, 'ℹ️ 收錄來源：' + (value || '最新回覆') +
-        '。可選填重要性，再勾選「收錄」；不會自動收錄或發送。');
-    }
+    phcepSetLineStatus_(sheet, row, layout, 'ℹ️ 收錄會包含全部內容；不需選擇來源，勾選「收錄」即可。');
     return;
   }
   if (field === 'importance') {
@@ -413,6 +582,7 @@ function phcepHandleLineControlEdit_(e, sheet, row, col, layout) {
     } else {
       if (importance.value !== null && value !== importance.value) range.setValue(importance.value);
       phcepSetLineStatus_(sheet, row, layout, importance.value === null ? 'ℹ️ 重要性：未設定。' : 'ℹ️ 重要性：' + importance.value + '。');
+      phcepSyncCollectedRow_(sheet, row);
     }
     return;
   }
@@ -422,7 +592,7 @@ function phcepHandleLineControlEdit_(e, sheet, row, col, layout) {
       phcepEditorEmail_(e);
       phcepSetLineStatus_(sheet, row, layout, phcepRenameMediaForRow_(sheet, row, value));
     } catch (error) {
-      phcepSetLineStatus_(sheet, row, layout, '❌ 未改名：需可驗證的授權編輯者。');
+      phcepSetLineStatus_(sheet, row, layout, '❌ 改名未完成：請確認授權與 Drive 權限；若檔名已變更，請重試同步。');
     }
     return;
   }
@@ -438,48 +608,17 @@ function phcepHandleLineControlEdit_(e, sheet, row, col, layout) {
     return;
   }
   if (field === 'action') {
-    var action = String(value || '').trim();
-    if (!action) return;
-    if (phcepActionValues_().indexOf(action) === -1) {
-      range.clearContent();
-      phcepSetLineStatus_(sheet, row, layout, '❌ 未知的操作動作。');
-      return;
-    }
-    if (action === PHCEP_ACTIONS_.REFRESH || action === PHCEP_ACTIONS_.COLLECT) {
-      try {
-        var editor = phcepEditorEmail_(e);
-        if (action === PHCEP_ACTIONS_.COLLECT) {
-          phcepSetLineStatus_(sheet, row, layout, phcepCollectRow_(ss, sheet, row, layout, editor));
-        } else {
-          var count = phcepApplySuggestions_(ss, sheet, row, phcepPlainText_(sheet.getRange(row, 6).getValue())).length;
-          phcepSetLineStatus_(sheet, row, layout, count ? '💡 已更新 ' + count + ' 筆建議（H 欄選單）。' : 'ℹ️ 無足夠相符的 QA 建議。');
-        }
-      } catch (error) {
-        phcepSetLineStatus_(sheet, row, layout, '❌ 未執行：需可驗證的授權編輯者，或處理時發生錯誤。');
-      } finally {
-        range.clearContent();
-      }
-      return;
-    }
-    sheet.getRange(row, layout.confirm).setValue(false);
-    phcepSetLineStatus_(sheet, row, layout, '⏸ 已選擇「' + action + '」：勾選「確認執行」後才會發送。');
+    phcepSetLineStatus_(sheet, row, layout, 'ℹ️ 不需選擇操作：勾選「確認執行」發送草稿，或勾選「收錄」收錄全部內容。');
     return;
   }
   if (field === 'confirm') {
     if (!phcepIsChecked_(value)) return;
     range.setValue(false);
-    var selected = String(sheet.getRange(row, layout.action).getValue() || '').trim();
-    var sending = [PHCEP_ACTIONS_.SEND_DRAFT, PHCEP_ACTIONS_.SEND_CDR, PHCEP_ACTIONS_.SEND_VITALS,
-      PHCEP_ACTIONS_.NEW_CDR, PHCEP_ACTIONS_.NEW_VITALS];
-    if (sending.indexOf(selected) === -1) {
-      phcepSetLineStatus_(sheet, row, layout, '⚠️ 請先在「操作動作」選擇發送類動作，再勾選確認。');
-      return;
-    }
     var identity = phcepRowIdentity_(sheet, row);
     var status;
     try {
       phcepEditorEmail_(e);
-      status = phcepRunSendAction_(sheet, row, selected);
+      status = phcepRunSendAction_(sheet, row, PHCEP_ACTIONS_.SEND_DRAFT);
     } catch (error) {
       status = '❌ 未發送：請確認身分、收件者或待處理狀態（見 L 欄）。';
     }
@@ -491,7 +630,6 @@ function phcepHandleLineControlEdit_(e, sheet, row, col, layout) {
       currentRow = row;
       status = '⚠️ 列位置已變動，請至 L 欄或 PHCEP寄件匣確認結果。' + status;
     }
-    sheet.getRange(currentRow, layout.action).clearContent();
     phcepSetLineStatus_(sheet, currentRow, layout, status);
   }
 }

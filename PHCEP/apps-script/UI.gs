@@ -97,6 +97,11 @@ function phcepCompleteReply_(sheet, row, operation, rawDraft, eventKey) {
   phcepShiftReplyHistory_(sheet, row, operation);
   sheet.getRange(row, 10).setValue(phcepLiteral_(operation.draft));
   if (String(sheet.getRange(row, 9).getValue() || '') === rawDraft) sheet.getRange(row, 9).clearContent();
+  if (!phcepSyncCollectedRow_(sheet, row)) {
+    const state = phcepReadOperationState_(sheet, row);
+    state.notice = '⚠️ 回覆已發送，但收錄同步失敗；請重新勾選收錄，勿重送訊息。';
+    phcepWriteOperationState_(sheet, row, state);
+  }
 }
 
 // Stable persisted payload and key survive network failure and subsequent retries.
@@ -205,9 +210,43 @@ function phcepHandleEdit(e) {
   if (sheet.getParent().getId() !== phcepSpreadsheet_().getId()) return;
   if (sheet.getName() === PHCEP_OVERVIEW_SHEET_) return phcepHandleOverviewEdit_(e);
   if (sheet.getName() === PHCEP_COLLECTION_SHEET_) return phcepHandleCollectionEdit_(e);
+  if (sheet.getName() === 'QA知識庫') return phcepHandleQAEdit_(e);
   if (sheet.getName() !== 'LINE對話') return;
   if (range.getRow() < 2) return;
-  return phcepWithLock_(function() {
+  return phcepWithLineEditLock_(e, function() {
+    const layout = phcepLineLayout_(sheet);
+    if (layout && range.getNumColumns() === 1 &&
+        (range.getColumn() === layout.confirm || range.getColumn() === layout.collect)) {
+      const selected = [];
+      for (let row = range.getRow(); row < range.getRow() + range.getNumRows(); row++) {
+        if (phcepIsChecked_(sheet.getRange(row, range.getColumn()).getValue())) {
+          selected.push({ identity: phcepRowIdentity_(sheet, row), originalRow: row });
+        }
+      }
+      const started = Date.now();
+      selected.forEach(function(item) {
+        let row;
+        try {
+          row = phcepLocateOperationRow_(sheet, item.identity);
+        } catch (error) {
+          const current = phcepRowIdentity_(sheet, item.originalRow);
+          if (current.value === item.identity.value && current.recipient === item.identity.recipient) {
+            sheet.getRange(item.originalRow, range.getColumn()).setValue(false);
+            phcepSetLineStatus_(sheet, item.originalRow, layout, '⚠️ 來源列識別缺漏或重複，本列未執行；請確認 Event Key/Message ID。');
+          }
+          sheet.getParent().toast('有來源列已變動或識別重複，本列未執行；請檢查操作結果。', 'PHCEP', 8);
+          return;
+        }
+        const cell = sheet.getRange(row, range.getColumn());
+        if (Date.now() - started >= 240000) {
+          cell.setValue(false);
+          phcepSetLineStatus_(sheet, row, layout, '⚠️ 批次執行接近時間上限，本列未執行；請分批重新勾選。');
+          return;
+        }
+        phcepHandleLineControlEdit_({ range: cell, user: e.user }, sheet, row, range.getColumn(), layout);
+      });
+      return;
+    }
     if (range.getNumRows() !== 1 || range.getNumColumns() !== 1) {
       const start = range.getColumn();
       const end = start + range.getNumColumns() - 1;
@@ -219,14 +258,16 @@ function phcepHandleEdit(e) {
           phcepWriteOperationState_(sheet, row, state);
         }
       }
-      // Multi-cell pastes never run or arm operator actions; clear pasted actions and confirmations.
-      const layout = phcepLineLayout_(sheet);
+      // Only a single checkbox column is an explicit batch send/collect gesture.
       if (layout && start <= layout.collect && end >= layout.action) {
         for (let row = range.getRow(); row < range.getRow() + range.getNumRows(); row++) {
-          if (start <= layout.action && end >= layout.action) sheet.getRange(row, layout.action).clearContent();
           if (start <= layout.confirm && end >= layout.confirm) sheet.getRange(row, layout.confirm).setValue(false);
           if (start <= layout.collect && end >= layout.collect) sheet.getRange(row, layout.collect).setValue(false);
+          phcepSetLineStatus_(sheet, row, layout, '⚠️ 未執行：批次操作請只勾選或貼上單一核取方塊欄。');
         }
+      }
+      if (start <= 9 && end >= 6) {
+        for (let row = range.getRow(); row < range.getRow() + range.getNumRows(); row++) phcepSyncCollectedRow_(sheet, row);
       }
       return;
     }
@@ -241,6 +282,7 @@ function phcepHandleEdit(e) {
         phcepRecordQAUsage_(match);
       }
       range.clearContent();
+      phcepSyncCollectedRow_(sheet, row);
       return;
     }
     if (col > 12) {
@@ -252,7 +294,10 @@ function phcepHandleEdit(e) {
     }
     const autoReply = col === 9 && phcepProperty_('CLINICIAN_SEND_ON_EDIT') === 'true';
     const questionnaire = col === 2 && (range.getValue() === true || range.getValue() === 'TRUE');
-    if (!autoReply && !questionnaire) return;
+    if (!autoReply && !questionnaire) {
+      if (col === 6 || col === 7 || col === 9 || col === 10) phcepSyncCollectedRow_(sheet, row);
+      return;
+    }
     const editMessageId = String(sheet.getRange(row, 1).getValue() || '');
     const editEventKey = String(sheet.getRange(row, 11).getValue() || '');
     const editRecipient = String(sheet.getRange(row, 3).getValue() || '').trim();

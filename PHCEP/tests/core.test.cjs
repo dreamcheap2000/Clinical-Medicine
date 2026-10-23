@@ -110,7 +110,8 @@ function environment() {
     },
     LockService: { getScriptLock: () => ({
       tryLock(wait) {
-        assert.equal(wait, 0);
+        assert.ok(wait === 0 || wait === 20000);
+        state.lockWait = wait;
         if (state.failLock) return false;
         state.locked = true;
         return true;
@@ -454,6 +455,15 @@ test('public media folders fail closed', () => {
   state.folderAccess = 'ANYONE_WITH_LINK';
   assert.equal(post(sign([event('media', { message: { id: 'media', type: 'image' } })])).error, 'CONFIGURATION');
   assert.equal(state.files.length, 0);
+});
+
+test('operator callers can wait for the script lock while webhook callers remain nonblocking', () => {
+  const { context, state } = environment();
+  assert.equal(context.phcepWithLock_(() => 'operator', 20000), 'operator');
+  assert.equal(state.lockWait, 20000);
+  assert.equal(context.phcepWithLock_(() => 'webhook'), 'webhook');
+  assert.equal(state.lockWait, 0);
+  assert.equal(state.releases, 2);
 });
 
 test('push requires a lock and persists stable retry key before sending', () => {

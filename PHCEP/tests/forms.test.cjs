@@ -66,6 +66,7 @@ function environment(options = {}) {
     clearDataValidations() { this.sheet.rules.delete(`${this.row}:${this.col}`); return this; }
     setFontWeight(value) { this.sheet.headerWeight = value; return this; }
     setBackground(value) { this.sheet.headerBackground = value; return this; }
+    setNote(value) { this.sheet.notes ||= new Map(); this.sheet.notes.set(`${this.row}:${this.col}`, value); return this; }
   }
   class Protection {
     constructor() { this.editors = [OWNER, 'untrusted@example.org']; this.domain = true; this.warning = true; }
@@ -807,7 +808,7 @@ test('layout migration is idempotent, places grouped controls right after L, shi
   const layout = env.context.phcepLineLayout_(line);
   assert.equal(layout.start, 13);
   assert.equal(line.getRange(2, layout.end + 1).getValue(), 'legacy shifted reply');
-  assert.deepEqual(Array.from(line.hidden), [11, 12]);
+  assert.deepEqual(Array.from(line.hidden), [11, 12, 13, 15]);
   const snapshot = JSON.stringify(line.data);
   const columns = line.columns;
   const result = env.context.setupPHCEP();
@@ -854,7 +855,7 @@ test('overview links key sheets and shows safe counters only', () => {
   for (const secret of [USER, 'private', env.properties.get('GATEWAY_SIGNING_SECRET')]) assert.ok(!serialized.includes(secret));
 });
 
-test('no-menu send requires action selection then verified confirm; history shifts without moving K/L or controls', () => {
+test('send checkbox always sends the draft with verified identity and preserves legacy controls', () => {
   const env = setup();
   const line = env.book().getSheetByName('LINE對話');
   line.appendRow(['message', false, USER, '', '', 'question', '', '', 'first reply', 'legacy latest', 'event-1']);
@@ -877,7 +878,7 @@ test('no-menu send requires action selection then verified confirm; history shif
   assert.equal(env.pushes.length, 1);
   assert.equal(line.getRange(2, 10).getValue(), 'first reply');
   assert.equal(line.getRange(2, 9).getValue(), '');
-  assert.equal(line.getRange(2, COL.action).getValue(), '');
+  assert.equal(line.getRange(2, COL.action).getValue(), '發送草稿');
   assert.equal(line.getRange(2, COL.confirm).getValue(), false);
   assert.match(line.getRange(2, COL.status).getValue(), /✅/);
   assert.equal(line.getRange(2, COL.history).getValue(), 'legacy latest');
@@ -910,7 +911,7 @@ test('draft confirmation shows safe LINE failure and retries the unchanged opera
   assert.equal(line.getRange(2, 9).getValue(), 'draft');
   assert.equal(line.getRange(2, 10).getValue(), 'previous reply');
   assert.equal(line.getRange(2, COL.confirm).getValue(), false);
-  assert.equal(line.getRange(2, COL.action).getValue(), '');
+  assert.equal(line.getRange(2, COL.action).getValue(), '發送草稿');
   let operation = JSON.parse(line.getRange(2, 12).getValue()).reply;
   assert.equal(operation.status, 'RETRY');
   assert.equal(operation.error, 'LINE_HTTP_401');
@@ -925,31 +926,27 @@ test('draft confirmation shows safe LINE failure and retries the unchanged opera
   assert.match(line.getRange(2, COL.status).getValue(), /✅/);
 });
 
-test('no-menu questionnaire actions reuse existing send semantics and multi-cell pastes never execute', () => {
+test('legacy actions are inert and rectangular pastes never send; confirm always means draft', () => {
   const env = setup();
   const line = env.book().getSheetByName('LINE對話');
-  line.appendRow(['message', false, USER, '', '', '', '', '', '', '', 'event-1']);
+  line.appendRow(['message', false, USER, '', '', '', '', '', 'draft', '', 'event-1']);
   line.getRange(2, COL.action).setValue('發送每日健康邀請');
   editAs(env, line.getRange(2, COL.action));
   line.getRange(2, COL.confirm).setValue(true);
   editAs(env, line.getRange(2, COL.action, 1, 2));
   assert.equal(env.pushes.length, 0);
   assert.equal(line.getRange(2, COL.confirm).getValue(), false);
-  assert.equal(line.getRange(2, COL.action).getValue(), '');
-  line.getRange(2, COL.confirm).setValue(true);
-  editAs(env, line.getRange(2, COL.confirm));
-  assert.equal(env.pushes.length, 0);
-  line.getRange(2, COL.action).setValue('發送每日健康邀請');
-  editAs(env, line.getRange(2, COL.action));
+  assert.equal(line.getRange(2, COL.action).getValue(), '發送每日健康邀請');
   line.getRange(2, COL.confirm).setValue(true);
   editAs(env, line.getRange(2, COL.confirm));
   assert.equal(env.pushes.length, 1);
-  assert.ok(JSON.parse(line.getRange(2, 12).getValue())['questionnaire:VITALS']);
+  assert.equal(env.pushes[0].messages[0].text, 'draft');
+  assert.equal(JSON.parse(line.getRange(2, 12).getValue())['questionnaire:VITALS'], undefined);
   line.getRange(2, COL.action).setValue('建立新每日健康邀請');
   line.getRange(2, COL.confirm).setValue(true);
   editAs(env, line.getRange(2, COL.confirm));
-  assert.equal(env.pushes.length, 2);
-  assert.notEqual(env.pushes[0].key, env.pushes[1].key);
+  assert.equal(env.pushes.length, 1);
+  assert.match(line.getRange(2, COL.status).getValue(), /草稿為空/);
 });
 
 test('layout migration repairs only the edit trigger and makes controls operational without setup', () => {
@@ -971,7 +968,7 @@ test('layout migration repairs only the edit trigger and makes controls operatio
   line.appendRow(['message', false, USER, '', '', 'question', '', '', 'draft', '', 'event-1']);
   line.getRange(2, COL.source).setValue('草稿 (未發送)');
   editAs(env, line.getRange(2, COL.source));
-  assert.match(line.getRange(2, COL.status).getValue(), /草稿.*勾選「收錄」/);
+  assert.match(line.getRange(2, COL.status).getValue(), /全部內容.*勾選「收錄」/);
   assert.equal(book.getSheetByName('收錄集合').getLastRow(), 1);
   line.getRange(2, COL.importance).setValue('5');
   editAs(env, line.getRange(2, COL.importance));
@@ -1024,9 +1021,12 @@ test('collection workflow captures provenance, deduplicates, validates importanc
   assert.match(line.getRange(2, COL.status).getValue(), /待審核/);
   line.getRange(2, COL.action).setValue('收錄');
   editAs(env, line.getRange(2, COL.action));
+  assert.equal(line.getRange(2, COL.action).getValue(), '收錄');
+  line.getRange(2, COL.collect).setValue(true);
+  editAs(env, line.getRange(2, COL.collect));
   assert.equal(collections.getLastRow(), 2);
   assert.match(line.getRange(2, COL.status).getValue(), /已存在/);
-  assert.equal(line.getRange(2, COL.action).getValue(), '');
+  assert.equal(line.getRange(2, COL.action).getValue(), '收錄');
   assert.equal(qa.getLastRow(), 1);
   assert.equal(env.pushes.length, 0);
   collections.getRange(2, 2).setValue('核准');
@@ -1044,11 +1044,200 @@ test('collection workflow captures provenance, deduplicates, validates importanc
   assert.equal(qa.getLastRow(), 2);
   line.getRange(2, COL.action).setValue('重新整理建議');
   editAs(env, line.getRange(2, COL.action));
-  assert.match(line.getRange(2, COL.status).getValue(), /1 筆建議/);
+  assert.equal(line.getRange(2, COL.action).getValue(), '重新整理建議');
+  assert.match(line.getRange(2, COL.status).getValue(), /不需選擇操作/);
   assert.equal(env.pushes.length, 0);
 });
 
-test('media rename updates only private managed Drive files and refreshes the link label', () => {
+test('multi-row checkbox edits send drafts or collect without selecting legacy actions', () => {
+  const env = setup();
+  const line = env.book().getSheetByName('LINE對話');
+  line.appendRow(['bad', false, 'invalid-recipient', '', '', 'question', '', '', 'bad draft', '', 'bad-event']);
+  line.appendRow(['m1', false, USER, '', '', 'same question', '', '', 'draft one', '', 'e1']);
+  line.appendRow(['m2', false, USER, '', '', 'same question', '', '', 'draft two', '', 'e2']);
+  line.getRange(2, COL.confirm, 3, 1).setValues([[true], [true], [true]]);
+  editAs(env, line.getRange(2, COL.confirm, 3, 1));
+  assert.equal(env.pushes.length, 2);
+  assert.match(line.getRange(2, COL.status).getValue(), /未發送/);
+  assert.equal(line.getRange(3, 10).getValue(), 'draft one');
+  assert.equal(line.getRange(4, 10).getValue(), 'draft two');
+  assert.deepEqual(line.getRange(2, COL.confirm, 3, 1).getValues(), [[false], [false], [false]]);
+  line.getRange(3, COL.confirm, 2, 1).setValues([[true], [true]]);
+  editAs(env, line.getRange(3, COL.confirm, 2, 1));
+  assert.equal(env.pushes.length, 2);
+  line.getRange(3, COL.collect, 2, 1).setValues([[true], [true]]);
+  editAs(env, line.getRange(3, COL.collect, 2, 1));
+  const collections = env.book().getSheetByName('收錄集合');
+  assert.equal(collections.getLastRow(), 3);
+  assert.notEqual(collections.getRange(2, 1).getValue(), collections.getRange(3, 1).getValue());
+  assert.equal(collections.getRange(2, 4).getValue(), 'draft one');
+  assert.equal(collections.getRange(3, 4).getValue(), 'draft two');
+  assert.equal(env.pushes.length, 2);
+});
+
+test('bulk collection works without any reply and unauthorized bulk sends never execute', () => {
+  const env = setup();
+  const line = env.book().getSheetByName('LINE對話');
+  line.appendRow(['m1', false, USER, '', '', 'question one', '', '', '', '', 'e1']);
+  line.appendRow(['m2', false, USER, '', '', 'question one', '', '', '', '', 'e2']);
+  line.getRange(2, COL.collect, 2, 1).setValues([[true], [true]]);
+  editAs(env, line.getRange(2, COL.collect, 2, 1));
+  const collections = env.book().getSheetByName('收錄集合');
+  assert.equal(collections.getLastRow(), 3);
+  assert.deepEqual(collections.getRange(2, 4, 2, 1).getValues(), [[''], ['']]);
+  assert.match(line.getRange(2, COL.status).getValue(), /尚無回覆也已收錄/);
+  line.getRange(2, 9, 2, 1).setValues([['draft one'], ['draft two']]);
+  line.getRange(2, COL.confirm, 2, 1).setValues([[true], [true]]);
+  editAs(env, line.getRange(2, COL.confirm, 2, 1), 'untrusted@example.org');
+  assert.equal(env.pushes.length, 0);
+  assert.deepEqual(line.getRange(2, COL.confirm, 2, 1).getValues(), [[false], [false]]);
+});
+
+test('collected conversation updates automatically and revises the same QA only after reapproval', () => {
+  const env = setup();
+  const book = env.book();
+  const line = book.getSheetByName('LINE對話');
+  const collections = book.getSheetByName('收錄集合');
+  const qa = book.getSheetByName('QA知識庫');
+  line.appendRow(['m1', false, USER, '', '', 'question', '', '', '', '', 'e1']);
+  line.getRange(2, COL.collect).setValue(true);
+  editAs(env, line.getRange(2, COL.collect));
+  const key = collections.getRange(2, 1).getValue();
+  line.getRange(2, 9).setValue('first reply');
+  editAs(env, line.getRange(2, 9));
+  assert.equal(collections.getRange(2, 4).getValue(), 'first reply');
+  line.getRange(2, COL.confirm).setValue(true);
+  editAs(env, line.getRange(2, COL.confirm));
+  assert.equal(collections.getRange(2, 6).getValue(), '已發送');
+  collections.getRange(2, 2).setValue('核准');
+  editAs(env, collections.getRange(2, 2));
+  const qaId = collections.getRange(2, 14).getValue();
+  assert.equal(qa.getRange(2, 7).getValue(), 'first reply');
+  line.getRange(2, 9).setValue('second reply');
+  editAs(env, line.getRange(2, 9));
+  assert.equal(collections.getRange(2, 2).getValue(), '待審核');
+  assert.equal(qa.getRange(2, 7).getValue(), 'first reply');
+  line.getRange(2, COL.confirm).setValue(true);
+  editAs(env, line.getRange(2, COL.confirm));
+  assert.equal(collections.getLastRow(), 2);
+  assert.equal(collections.getRange(2, 1).getValue(), key);
+  assert.equal(collections.getRange(2, 14).getValue(), qaId);
+  assert.match(collections.getRange(2, 4).getValue(), /最新回覆.*\nsecond reply/);
+  assert.match(collections.getRange(2, 4).getValue(), /first reply/);
+  assert.equal(qa.getRange(2, 7).getValue(), 'first reply');
+  collections.getRange(2, 2).setValue('核准');
+  editAs(env, collections.getRange(2, 2));
+  assert.equal(qa.getLastRow(), 2);
+  assert.equal(qa.getRange(2, 1).getValue(), qaId);
+  assert.match(qa.getRange(2, 7).getValue(), /second reply/);
+  assert.equal(collections.getRange(2, 2).getValue(), '已發布');
+});
+
+test('media collection links column C and includes draft, latest reply and archived history', () => {
+  const env = setup();
+  const book = env.book();
+  const line = book.getSheetByName('LINE對話');
+  const url = 'https://drive.google.com/file/d/managedFile123/view';
+  const link = env.context.SpreadsheetApp.newRichTextValue().setText('檢視檔案').setLinkUrl(url).build();
+  line.appendRow(['m1', false, USER, '', '', '圖片', link, '', '', '', 'e1']);
+  line.getRange(2, COL.collect).setValue(true);
+  editAs(env, line.getRange(2, COL.collect));
+  const collections = book.getSheetByName('收錄集合');
+  const question = collections.getRange(2, 3).getRichTextValue();
+  assert.equal(question.getLinkUrl(), url);
+  assert.equal(question.getText(), '圖片\n' + url);
+  assert.equal(collections.getRange(2, 4).getValue(), '');
+  line.getRange(2, 9).setValue('unsent');
+  line.getRange(2, 10).setValue('latest');
+  line.getRange(2, COL.history).setValue('previous');
+  book.getSheetByName('PHCEP回覆歷史').appendRow(['op', 'e1', new Date(), 'older than five replies']);
+  editAs(env, line.getRange(2, 9));
+  const reply = collections.getRange(2, 4).getValue();
+  for (const text of ['unsent', 'latest', 'previous', 'older than five replies']) assert.ok(reply.includes(text));
+  collections.getRange(2, 2).setValue('核准');
+  editAs(env, collections.getRange(2, 2));
+  assert.equal(book.getSheetByName('QA知識庫').getRange(2, 8).getValue(), url);
+});
+
+test('migration refreshes legacy collection entries by message identity without replacing their key or QA ID', () => {
+  const env = setup();
+  const line = env.book().getSheetByName('LINE對話');
+  const collections = env.book().getSheetByName('收錄集合');
+  line.appendRow(['m1', false, USER, '', '', 'new question', '', '', '', 'later reply', 'e1']);
+  collections.appendRow(['legacy-key', '已發布', 'old question', 'old reply', '最新回覆', '已發送', '', 'e1', 'm1',
+    'LINE對話!50', new Date(), OWNER, '', 'legacy-qa-id']);
+  const result = env.context.migratePHCEPLayout();
+  assert.equal(result.collections.failed, 0);
+  assert.equal(collections.getLastRow(), 2);
+  assert.equal(collections.getRange(2, 1).getValue(), 'legacy-key');
+  assert.equal(collections.getRange(2, 14).getValue(), 'legacy-qa-id');
+  assert.equal(collections.getRange(2, 4).getValue(), 'later reply');
+  assert.equal(collections.getRange(2, 2).getValue(), '待審核');
+  assert.equal(collections.getRange(2, 10).getValue(), 'LINE對話!2');
+});
+
+test('a collection sync failure after delivery never marks the sent reply for resend', () => {
+  const env = setup();
+  const line = env.book().getSheetByName('LINE對話');
+  line.appendRow(['m1', false, USER, '', '', 'question', '', '', 'draft', '', 'e1']);
+  env.book().getSheetByName('收錄集合').getLastRow = () => { throw new Error('private storage failure'); };
+  line.getRange(2, COL.confirm).setValue(true);
+  editAs(env, line.getRange(2, COL.confirm));
+  assert.equal(env.pushes.length, 1);
+  assert.equal(JSON.parse(line.getRange(2, 12).getValue()).reply.status, 'SENT');
+  assert.equal(line.getRange(2, 9).getValue(), '');
+  assert.equal(line.getRange(2, 10).getValue(), 'draft');
+  assert.match(line.getRange(2, COL.status).getValue(), /草稿已發送.*收錄同步失敗/);
+});
+
+test('edit handling waits for the lock and explicitly resets checkboxes if still busy', () => {
+  const env = setup();
+  const line = env.book().getSheetByName('LINE對話');
+  line.appendRow(['m1', false, USER, '', '', 'question', '', '', 'draft', '', 'e1']);
+  line.getRange(2, COL.confirm).setValue(true);
+  env.context.phcepWithLock_ = (fn, waitMs) => {
+    assert.equal(waitMs, 20000);
+    const error = new Error('BUSY');
+    error.phcepCode = 'BUSY';
+    throw error;
+  };
+  editAs(env, line.getRange(2, COL.confirm));
+  assert.equal(env.pushes.length, 0);
+  assert.equal(line.getRange(2, COL.confirm).getValue(), false);
+  assert.match(line.getRange(2, COL.status).getValue(), /系統忙碌.*重新勾選/);
+});
+
+test('duplicate source identities fail per row without blocking other batch sends', () => {
+  const env = setup();
+  const line = env.book().getSheetByName('LINE對話');
+  line.appendRow(['duplicate', false, USER, '', '', 'question', '', '', 'draft one', '', 'duplicate-event']);
+  line.appendRow(['duplicate', false, USER, '', '', 'question', '', '', 'draft two', '', 'duplicate-event']);
+  line.appendRow(['unique', false, USER, '', '', 'question', '', '', 'draft three', '', 'unique-event']);
+  line.getRange(2, COL.confirm, 3, 1).setValues([[true], [true], [true]]);
+  editAs(env, line.getRange(2, COL.confirm, 3, 1));
+  assert.equal(env.pushes.length, 1);
+  assert.equal(env.pushes[0].messages[0].text, 'draft three');
+  assert.deepEqual(line.getRange(2, COL.confirm, 3, 1).getValues(), [[false], [false], [false]]);
+  assert.match(line.getRange(2, COL.status).getValue(), /識別缺漏或重複/);
+});
+
+test('long batches stop safely before the runtime limit and report unsent rows', () => {
+  const env = setup();
+  const line = env.book().getSheetByName('LINE對話');
+  let now = Date.now();
+  env.context.Date = class extends Date { static now() { return now; } };
+  line.appendRow(['m1', false, USER, '', '', 'question', '', '', 'first draft', '', 'e1']);
+  line.appendRow(['m2', false, USER, '', '', 'question', '', '', 'later draft', '', 'e2']);
+  env.setPushHook(() => { now += 240001; });
+  line.getRange(2, COL.confirm, 2, 1).setValues([[true], [true]]);
+  editAs(env, line.getRange(2, COL.confirm, 2, 1));
+  assert.equal(env.pushes.length, 1);
+  assert.equal(line.getRange(3, 9).getValue(), 'later draft');
+  assert.equal(line.getRange(3, COL.confirm).getValue(), false);
+  assert.match(line.getRange(3, COL.status).getValue(), /時間上限.*未執行/);
+});
+
+test('media rename from LINE or QA updates only private managed Drive files and all linked labels', () => {
   const env = setup();
   const line = env.book().getSheetByName('LINE對話');
   const folderId = env.properties.get('IMAGE_FOLDER_ID');
@@ -1081,6 +1270,30 @@ test('media rename updates only private managed Drive files and refreshes the li
   assert.equal(shared.name, 'LINE_original');
   assert.match(line.getRange(3, COL.status).getValue(), /❌/);
   assert.match(line.getRange(4, COL.status).getValue(), /私人/);
+  const qa = env.book().getSheetByName('QA知識庫');
+  qa.appendRow(['qa-id', '', 'question', '', '', '', '', 'https://drive.google.com/file/d/managedFile123/view']);
+  qa.getRange(2, 6).setValue('new file name');
+  editAs(env, qa.getRange(2, 6));
+  assert.equal(managed.name, 'new file name');
+  assert.equal(qa.getRange(2, 8).getRichTextValue().getText(), 'new file name');
+  assert.equal(qa.getRange(2, 9).getValue(), 'new file name');
+  assert.equal(line.getRange(2, 7).getRichTextValue().getText(), 'new file name');
+  assert.equal(line.getRange(2, COL.mediaName).getValue(), 'new file name');
+  assert.match(qa.notes.get('2:6'), /✅/);
+  qa.getRange(2, 6).setValue('unauthorized name');
+  editAs(env, qa.getRange(2, 6), 'untrusted@example.org');
+  assert.equal(managed.name, 'new file name');
+  assert.match(qa.notes.get('2:6'), /❌/);
+  line.getRange(2, COL.mediaName).setValue('renamed from line');
+  editAs(env, line.getRange(2, COL.mediaName));
+  assert.equal(managed.name, 'renamed from line');
+  assert.equal(qa.getRange(2, 6).getValue(), 'renamed from line');
+  assert.equal(qa.getRange(2, 8).getRichTextValue().getText(), 'renamed from line');
+  qa.getRange(2, 8).setValue('https://example.org/not-a-drive-file');
+  qa.getRange(2, 6).setValue('must not rename anything');
+  editAs(env, qa.getRange(2, 6));
+  assert.equal(managed.name, 'renamed from line');
+  assert.match(qa.notes.get('2:6'), /沒有系統管理/);
 });
 
 const MANUAL_TARGET = '12ksl5GvgM_YVc1NjrPE9LRe_YvUgqttLl0R41z5dazo';

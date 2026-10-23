@@ -286,7 +286,8 @@ Clinician drafts are text; formula strings are not executed as outbound content.
 ### No-menu workflow (edit-trigger cells)
 
 Run `migratePHCEPLayout()` once after updating the code to repair the layout,
-validations and the spreadsheet edit trigger without creating Forms or changing
+hide obsolete action/source columns, refresh existing collected conversations,
+and repair validations and the spreadsheet edit trigger without creating Forms or changing
 form-submit triggers. Run it as the designated trigger owner: Google only exposes
 that account's triggers, so old triggers owned by other accounts must be removed
 by those owners. `setupPHCEP()` also provisions Forms and their submit triggers
@@ -307,7 +308,9 @@ The guarded manual deployment below instead rejects blocks outside M.
 The column references below describe the M-start layout. When first created,
 the system columns K (Event Key) and L (操作狀態) are hidden. Editors then see
 B (questionnaire checkbox), H (suggestion), I (draft), J (latest reply) and the
-controls M:S side by side. K/L are not moved or changed; unhide them at any time
+controls side by side. M (legacy action) and O (legacy source) are now hidden on
+each migration, not deleted; existing values, column positions and history are
+preserved. Neither hidden field controls sending or collection. K/L are not moved or changed; unhide them at any time
 (click the arrows between J and M) when you need to diagnose a failure.
 
 | Column | Editable by editors? |
@@ -322,29 +325,42 @@ controls M:S side by side. K/L are not moved or changed; unhide them at any time
 
 | Header | Use |
 | --- | --- |
-| 操作動作 | `發送草稿`, `發送 CDR 邀請`, `發送每日健康邀請`, `建立新 CDR 邀請`, `建立新每日健康邀請`, `重新整理建議`, `收錄` |
-| 確認執行 (勾選) | Second step for **sending** actions: select the action first, then tick this box |
-| 收錄來源 | `最新回覆` (default), `病患訊息` (question only — fill 收錄集合 column D before approving), `草稿 (未發送)`, `歷史回覆 前1…前5` |
+| 操作動作 | Hidden, obsolete; existing values are preserved and never executed or automatically cleared |
+| 確認執行 (勾選) | Sends column I's draft immediately; no action selection needed |
+| 收錄來源 | Hidden, obsolete; collection always captures all conversation content |
 | 重要性 (1-5，選填) | Optional; blank = none. Only integers 1-5; anything else is cleared with a status |
 | 收錄 (勾選) | Collect this row into `收錄集合` immediately (non-sending) |
 | 媒體檔名 (修改即改名) | Type a new name to rename the private Drive media file linked in G |
 | 操作結果 | Status/result written by the script; never authoritative state (L is) |
 
-Changing 收錄來源 or 重要性 only prepares the collection settings and updates
-操作結果; neither edit sends or collects anything. Choose `草稿 (未發送)` to
-collect I, `最新回覆` to collect J, or `病患訊息` for a question without a reply.
-Then tick 收錄. A blank source means 最新回覆, so a row with no sent reply needs
-a different source. The checkbox resets after each attempt; check 操作結果 for
-success or the reason it was refused.
+Tick 確認執行 to send the draft, or tick 收錄 to collect without sending.
+For a batch, select multiple cells in **one checkbox column** and fill/paste
+`TRUE`: each selected row executes immediately. There is no second confirmation
+or queue. Rectangular pastes spanning other columns never send or collect and
+reset the pasted checkboxes with an explanatory status. Single-cell and batch
+operations require a verified trusted editor (`e.user` in
+`TRUSTED_EDITOR_EMAILS` or owner). Each checkbox resets after its attempt.
+The edit handler waits up to 20 seconds for a busy script lock; if it cannot
+acquire the lock, it resets the boxes and explicitly asks the operator to retry.
+If a batch approaches four minutes, remaining rows are left unsent/uncollected,
+their boxes reset, and their status asks for a smaller batch; completed rows
+are not rolled back. Inspect every selected row's status.
+Sending retains durable retry keys, deduplication and `MANUAL_REVIEW`.
+Questionnaire and suggestion-refresh operations remain available through their
+existing explicit menu/editor entrypoints, not the obsolete action dropdown.
 
-Sending is two-step: selecting a send action only arms it (status `⏸`), and
-nothing is sent until a verified trusted editor (`e.user` in
-`TRUSTED_EDITOR_EMAILS` or owner) ticks 確認執行. The confirm box resets after
-every attempt, the action clears, and the result appears in 操作結果 (detailed
-state stays in L). Multi-cell pastes never execute or arm actions: pasted
-actions are cleared and pasted confirmations reset. Sends reuse the existing durable operation/outbox path, so retry
-keys, deduplication and `MANUAL_REVIEW` behave exactly as with the menus.
-`重新整理建議` and `收錄` run immediately because they never contact patients.
+Collection works with no reply. Column C contains the question and a clickable
+media URL from LINE對話 G, including image/video rows. Column D captures the
+latest reply, unsent draft, visible history and full archived reply history,
+deduplicating identical text and labelling multiple parts. One collection entry
+is maintained per source message (Event Key/Message ID), not per question/reply
+text. Draft edits, importance changes and successful sends refresh an already
+collected entry automatically. A changed snapshot resets its status to 待審核
+and retains its QA ID; the published QA is untouched until explicit reapproval,
+which updates that same QA row rather than appending a duplicate. Check the
+`migratePHCEPLayout()` result's `collections.failed` count after upgrading;
+legacy entries are matched by their stored source identity and are not deleted.
+Older duplicate entries are retained for manual review.
 
 **Troubleshooting a failed draft send.** `SEND_FAILED` in older outbox rows
 does not identify the cause. New attempts record a safe code in `PHCEP寄件匣`
@@ -358,7 +374,7 @@ to check token authentication and monthly quota without sending a message.
 Its execution log contains only safe HTTP codes and quota counts. The token must
 be in Apps Script Script Properties as `LINE_CHANNEL_ACCESS_TOKEN` (or legacy
 `CHANNEL_ACCESS_TOKEN`); GitHub Actions secrets alone are not runtime properties.
-After fixing the reported cause, select 發送草稿 and confirm again on the same
+After fixing the reported cause, tick 確認執行 again on the same
 unchanged draft. Do not clear L, delete the outbox row, or generate a new retry
 key: pending sends retain their original key; expired ambiguous sends require
 manual reconciliation instead of a blind resend.
@@ -381,22 +397,30 @@ is **not** clinical urgency/triage and never escalates or alerts. Sheet validati
 1, 2, 3, 4, 5; 0, 6, negatives, decimals and text are rejected/cleared with a
 status. Existing invalid QA B values are ignored by ranking, not deleted.
 
-**Collections (`收錄集合`).** Collecting copies the patient question F and the
-selected reply source with provenance (Event Key, Message ID, `LINE對話!row`,
+**Collections (`收錄集合`).** Collecting copies the conversation snapshot with
+provenance (Event Key, Message ID, `LINE對話!row`,
 timestamp, collector email). The LINE user ID is never copied. Drafts are marked
-`未發送 (草稿)`. Rows are deduplicated by a SHA-256 key of the normalized
-question + reply. New rows start as `待審核` and are **not** used for suggestions.
+`未發送 (草稿)` when no latest sent reply exists. Entries are identified by their
+source message, and later content updates reuse the existing entry. New or changed
+rows start as `待審核` and are **not** used for suggestions.
 A trusted editor reviews/deidentifies the wording, then sets B to `核准`; the edit
-trigger publishes it once into `QA知識庫` (ID `COL-…`, importance in B) and marks
+trigger publishes or updates it in `QA知識庫` (ID `COL-…`, importance in B) and marks
 it `已發布`. Missing question/reply or invalid importance returns it to `待審核`
 with a note. `publishApprovedCollections()` publishes any remaining `核准` rows.
 Approval is an operator attestation of deidentification, not automatic scrubbing.
 
 **Media preview and rename.** G keeps a rich-text link to the private Drive file
 (set `IMAGE_FOLDER_ID` to your private LINE media folder; it must stay private).
-Typing a name in 媒體檔名 renames the file only if it is inside that configured
+Typing a name in LINE對話 媒體檔名 or QA知識庫 F (`Line Friend 連結備註`, linked
+to the file in H) renames the file only if it is inside that configured
 folder and still private, strips path/control characters (max 120), then updates
-the G link label. Other files, shared files and non-Drive links are refused. No
+all matching LINE G / QA H link labels, LINE filename controls, QA F and QA I.
+QA F displays a cell note and a toast with success/refusal details. QA D/E
+(`LINE Friend 訊息 1/2`) are alternate question phrasings for matching C; they
+do not send LINE messages. F is not a matcher question or reply.
+Images, videos, audio and uploaded files received through LINE are stored in the
+private media folder; ordinary web URLs remain links and are not downloaded.
+Other files, shared files and non-Drive links are refused. No
 sharing changes are made and no public links are created.
 
 ### Migration notes
@@ -407,7 +431,9 @@ sharing changes are made and no public links are created.
   empty columns, not overwritten) and hide K/L once. A complete existing block
   at a later offset is retained, not relocated, and repeat migration does not
   re-hide K/L. They also reorder tabs and apply validations. A:L and existing
-  rows/operation state are not moved.
+  rows/operation state are not moved. Obsolete M/O controls are hidden on every
+  migration. `migratePHCEPLayout()` additionally refreshes already-collected
+  source rows and reports any synchronization failures; no messages are sent.
 - Generic setup/migration rejects conflicting or incomplete block headers,
   unlabelled data where headers would go, and an unmanaged existing `總覽`,
   but may already have changed other sheets, protections or columns before
@@ -421,15 +447,20 @@ sharing changes are made and no public links are created.
 
 ### Operator verification checklist
 
-1. Run `setupPHCEP()`; confirm tab order and that `總覽` links open each sheet.
+1. Run `migratePHCEPLayout()`; confirm M/O are hidden, `collections.failed` is 0,
+   and that `總覽` links open each sheet.
 2. Add a synthetic QA row, send a synthetic text: H offers the reply; Executions
    show no extra network call besides the LINE profile lookup.
-3. Select H → I fills; choose `發送草稿`, then tick 確認執行 → 操作結果 shows ✅,
+3. Select H → I fills; tick 確認執行 → 操作結果 shows ✅,
    J updates, the previous reply moves to 前1, K/L unchanged.
 4. Enter `7` in 重要性 → cleared with status; enter `3` → accepted.
 5. Tick 收錄 → `收錄集合` row `待審核`; tick again → `已存在`; set `核准` → QA row.
-6. Send a synthetic image, type a new 媒體檔名 → Drive name and G label update;
-   file sharing remains private.
+6. Send a synthetic image, collect it without replying → C contains its clickable
+   media URL. Send a later draft → the same collection entry is updated.
+7. Type a new 媒體檔名 or linked QA F filename → Drive name and matching labels
+   update; file sharing remains private.
+8. Fill TRUE down N for draft sends or Q for collections, one checkbox column
+   per edit. Verify every selected row's 操作結果; rectangular pastes never send.
 
 `QA知識庫` preserves the uploaded 15 columns, with empty QA handled safely.
 Maintain only curated/deidentified education content there. Do not copy patient

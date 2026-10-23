@@ -27,12 +27,12 @@ function phcepLiteral_(text) {
 }
 
 var phcepLockDepth_ = 0;
-function phcepWithLock_(fn) {
+function phcepWithLock_(fn, waitMs) {
   if (phcepLockDepth_) return fn();
   var lock = LockService.getScriptLock();
   var acquired = false;
   try {
-    acquired = lock.tryLock(0);
+    acquired = lock.tryLock(waitMs || 0);
     if (!acquired) phcepFail_('BUSY');
     phcepLockDepth_++;
     return fn();
