@@ -59,6 +59,8 @@ function environment() {
           setValues: write,
           setValue: value => write([[value]]),
           setRichTextValue: value => write([[value]]),
+          setFontWeight(value) { state.formats ||= {}; state.formats[`${name}:${row}:weight`] = value; return this; },
+          setBackground(value) { state.formats ||= {}; state.formats[`${name}:${row}:background`] = value; return this; },
           clearDataValidations() { delete state.validations[`${name}:${row}:${column}`]; return this; },
           setDataValidation(rule) { state.validations[`${name}:${row}:${column}`] = rule; return this; }
         };
@@ -222,6 +224,8 @@ test('new messages go below the header with controls; existing rows and retries 
   assert.ok(state.validations['LINE對話:2:15'].values.includes('草稿 (未發送)'));
   assert.deepEqual(state.validations['LINE對話:2:16'].values, ['1', '2', '3', '4', '5']);
   assert.equal(state.validations['LINE對話:2:13'].allowInvalid, false);
+  assert.equal(state.formats['LINE對話:2:weight'], 'normal');
+  assert.equal(state.formats['LINE對話:2:background'], null);
   assert.equal(post(sign([event('first'), event('second')])).ok, true);
   assert.deepEqual(inbox.data.slice(1, 3).map(row => row[0]), ['second', 'first']);
   assert.equal(inbox.data.length, 4);

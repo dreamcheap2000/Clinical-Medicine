@@ -172,6 +172,8 @@ function phcepAcceptEvent_(ss, event) {
     var profile = phcepProfile_(userId);
     inbox.insertRowsAfter(1, 1);
     inboxRow = 2;
+    // A row inserted under the header inherits its bold/blue styling.
+    inbox.getRange(inboxRow, 1, 1, inbox.getMaxColumns()).setFontWeight('normal').setBackground(null);
     inbox.getRange(inboxRow, 1, 1, 11).setValues([[
       phcepLiteral_(message.id), false, phcepLiteral_(userId),
       new Date(typeof event.timestamp === 'number' ? event.timestamp : Date.now()),
