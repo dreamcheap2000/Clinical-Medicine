@@ -483,25 +483,43 @@ trigger publishes or updates it in `QA知識庫` (ID `COL-…`, importance in B)
 it `已發布`. Missing question/reply or invalid importance returns it to `待審核`
 with a note. `publishApprovedCollections()` publishes any remaining `核准` rows.
 Approval is an operator attestation of deidentification, not automatic scrubbing.
+Latest, draft and historical replies remain in one cell, with each HTTP(S) URL
+made independently clickable using rich-text links. Collection and publishing
+retain URLs behind named source links too. No extra QA rows are created.
 
 **Media preview and rename.** G keeps a rich-text link to the private Drive file
 (set `IMAGE_FOLDER_ID` to your private LINE media folder; it must stay private).
-Typing a name in LINE對話 媒體檔名 or QA知識庫 `連結備註` renames the private
+Typing a name in LINE對話 媒體檔名 or QA知識庫 `連結備註` renames the
 managed Drive file linked in `回覆` (old G; compact E). `Line Friend 連結備註`
 also remains a compatible rename control; neither note column is a matcher
 question or reply. Legacy QA rows can fall back to 檔案/媒體連結 until migration.
-The file must be inside the configured folder and still private. Names lose
+The file must be directly inside the configured folder and editable by the
+script operator. Public and private files are both accepted, regardless of
+upload date; renaming never changes file or folder sharing. Keep the patient
+media folder private even though the rename operation does not enforce that.
+Names lose
 path/control characters (max 120); matching single-file link labels, LINE
 filename controls and QA filename metadata are synchronized. Mixed prose and
 multi-link replies are not replaced with a filename, and suggestions preserve
 the underlying URLs even when a cell displays a rich-text label.
 Each QA edit displays a cell note and toast with success/refusal details.
-Multiple distinct Drive targets in a reply are refused rather than guessing
-which file to rename; split them into separate rows first. The exact
+For multiple distinct Drive targets, put the target Drive URL on the first line
+of `連結備註`, then the new filename on the next line (use Alt+Enter inside a
+Sheets cell). The selected file must already be linked in that row's reply;
+unlinked targets and ambiguous name-only edits are refused. Example:
+
+```text
+https://drive.google.com/file/d/FILE_ID/view
+New filename
+```
+
+For one Drive file, just the new filename still works. Multi-file reply prose
+and URLs stay intact, and row-wide filename metadata is not overwritten with
+one file's name. The exact
 `APPROVED_DEIDENTIFIED_QA` marker in 連結備註 is reserved for embeddings, not a filename.
 Images, videos, audio and uploaded files received through LINE are stored in the
 private media folder; ordinary web URLs remain links and are not downloaded.
-Other files, shared files and non-Drive links are refused. No
+Files outside the configured folder and non-Drive links are refused. No
 sharing changes are made and no public links are created.
 
 ### Migration notes
@@ -525,6 +543,28 @@ sharing changes are made and no public links are created.
      transactional: if a later write fails, keep the backup and rerun after
      resolving the reported error; do not delete the original or backup tab.
   3. `migratePHCEPLayout()` repairs the edit trigger and refreshes controls/notes.
+  4. `migratePHCEPReplyLinks()` restores independent clickable URLs in existing
+     QA/collection reply cells. It preserves text, existing named links, review
+     states and QA IDs; formula cells are skipped. New collected/published
+     replies and single-column QA reply edits get clickable links automatically.
+  5. Optional `migratePHCEPRawResponses()` archives both configured raw Form
+     response tabs into protected `PHCEP_原始回覆備份_CDR_…` / `…VITALS_…` tabs
+     before disconnecting either spreadsheet destination and deleting the
+     originals. It selects tabs by their stored sheet IDs, not their names, and
+     refuses mismatched tabs, missing form-level submit triggers or invalid
+     server-record headers. No unrelated response tab is removed.
+     Google Forms still accepts submissions and retains its internal responses;
+     form-level triggers continue validation and writes to `PHCEP表單紀錄`.
+     Invalid invitations still go to `PHCEP隔離`. Existing invitations and form
+     questions are unchanged. Setup, identity migration and anonymous-form
+     configuration support this server-record-only mode and do not recreate raw
+     tabs. Backups remain sensitive: sheet protection limits editing, not
+     viewing, so retain the workbook's private sharing settings.
+     This migration is not transactional. On a reported failure, preserve
+     backups and rerun after resolving it; a source tab still present gets a
+     fresh protected copy on retry. Completed reruns do not delete more tabs.
+     Run during a quiet period and verify a fresh questionnaire submission
+     reaches `PHCEP表單紀錄` before considering the migration complete.
   These migrations send no patient messages. Repeat QA migration is a no-op.
 - Compact QA order is **A ID, B 重要性分級 (1-5), C 訊息,
   D Line Friend 連結備註, E 回覆, F 連結備註, G 問題 Embedding,
@@ -565,7 +605,8 @@ sharing changes are made and no public links are created.
 6. Send a synthetic image, collect it without replying → C contains its clickable
    media URL. Send a later draft → the same collection entry is updated.
 7. Type a new 媒體檔名 or linked QA 連結備註 filename → Drive name and matching labels
-   update; file sharing remains private.
+   update; existing sharing permissions are unchanged. For multiple Drive files,
+   use the explicit URL/new-name format and confirm only the selected file changes.
 8. Fill TRUE down B for questionnaires, N for draft sends or Q for collections, one checkbox column
    per edit. Verify every selected row's 操作結果; rectangular pastes never send.
 9. Recheck B after successful delivery: a fresh invitation arrives. After a

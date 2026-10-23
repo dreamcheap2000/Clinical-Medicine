@@ -265,6 +265,44 @@ function phcepCellLinks_(cell) {
   return phcepRichLinks_(phcepCellText_(cell), cell.getRichTextValue());
 }
 
+function phcepSetLinkedText_(cell, text) {
+  var existing = cell.getRichTextValue();
+  if (!/https?:\/\//i.test(text) && !(existing && existing.getText() === text && phcepCellLinks_(cell).length)) {
+    cell.setValue(phcepLiteral_(text));
+    return;
+  }
+  var builder = existing && existing.getText() === text ? existing.copy() :
+    SpreadsheetApp.newRichTextValue().setText(text);
+  var pattern = /https?:\/\/[^\s<>"']+/gi;
+  var match;
+  while ((match = pattern.exec(text)) !== null) {
+    builder.setLinkUrl(match.index, match.index + match[0].length, match[0]);
+  }
+  cell.setRichTextValue(builder.build());
+}
+
+function migratePHCEPReplyLinks() {
+  phcepAuthorizeClinician_();
+  return phcepWithLock_(function() {
+    var ss = phcepSpreadsheet_();
+    var updated = 0;
+    ['QA知識庫', PHCEP_COLLECTION_SHEET_].forEach(function(name) {
+      var sheet = ss.getSheetByName(name);
+      if (!sheet) return;
+      var column = name === 'QA知識庫' ? phcepQALayout_(sheet).reply : 4;
+      for (var row = 2; row <= sheet.getLastRow(); row++) {
+        var cell = sheet.getRange(row, column);
+        if (cell.getFormulas()[0][0]) continue;
+        var text = phcepCellText_(cell);
+        if (!/https?:\/\//i.test(text)) continue;
+        phcepSetLinkedText_(cell, text);
+        updated++;
+      }
+    });
+    return { updated: updated };
+  });
+}
+
 function phcepConversationSnapshot_(ss, sheet, row, layout) {
   var values = sheet.getRange(row, 1, 1, 12).getValues()[0];
   var question = phcepPlainText_(values[5]).trim();
@@ -279,15 +317,20 @@ function phcepConversationSnapshot_(ss, sheet, row, layout) {
       parts.push({ label: label, text: text });
     }
   };
-  add('最新回覆', values[9]);
-  add('草稿 (未發送)', values[8]);
-  sheet.getRange(row, layout.historyStart, 1, PHCEP_LINE_HISTORY_HEADERS_.length).getValues()[0]
-    .forEach(function(value, index) { add('歷史回覆 前' + (index + 1), value); });
+  var linkedText = function(cell) { return phcepLinkedText_(cell.getValue(), cell.getRichTextValue()); };
+  add('最新回覆', linkedText(sheet.getRange(row, 10)));
+  add('草稿 (未發送)', linkedText(sheet.getRange(row, 9)));
+  PHCEP_LINE_HISTORY_HEADERS_.forEach(function(header, index) {
+    add('歷史回覆 前' + (index + 1), linkedText(sheet.getRange(row, layout.historyStart + index)));
+  });
   var history = ss.getSheetByName('PHCEP回覆歷史');
   var identity = String(values[10] || values[0] || '');
   if (history && history.getLastRow() > 1) {
-    history.getRange(2, 1, history.getLastRow() - 1, 4).getValues().reverse().forEach(function(record) {
-      if (String(record[1]) === identity) add('歷史回覆', record[3]);
+    history.getRange(2, 1, history.getLastRow() - 1, 4).getValues().reverse().forEach(function(record, index) {
+      var historyRow = history.getLastRow() - index;
+      if (String(record[1]) === identity) {
+        add('歷史回覆', linkedText(history.getRange(historyRow, 4)));
+      }
     });
   }
   var importance = phcepNormalizeImportance_(sheet.getRange(row, layout.importance).getValue());
@@ -340,6 +383,7 @@ function phcepCollectRow_(ss, sheet, row, layout, collector, onlyExisting) {
   }
   collections.getRange(targetRow, 3, 1, 5).setValues([[phcepLiteral_(snapshot.question),
     phcepLiteral_(snapshot.reply), '全部內容', snapshot.sent, snapshot.importance]]);
+  phcepSetLinkedText_(collections.getRange(targetRow, 4), snapshot.reply);
   if (snapshot.mediaUrl) {
     collections.getRange(targetRow, 3).setRichTextValue(SpreadsheetApp.newRichTextValue()
       .setText(snapshot.question).setLinkUrl(snapshot.mediaUrl).build());
@@ -400,7 +444,7 @@ function phcepWithLineEditLock_(e, fn) {
 function phcepPublishCollectionRow_(ss, sheet, row, editor) {
   var values = sheet.getRange(row, 1, 1, 14).getValues()[0];
   var question = phcepCellText_(sheet.getRange(row, 3)).trim();
-  var reply = phcepPlainText_(values[3]).trim();
+  var reply = phcepLinkedText_(values[3], sheet.getRange(row, 4).getRichTextValue()).trim();
   var importance = phcepNormalizeImportance_(values[6]);
   var problem = !question || !reply ? '需有問題與回覆才能發布。' : (!importance.ok ? importance.error : '');
   if (problem) {
@@ -430,7 +474,7 @@ function phcepPublishCollectionRow_(ss, sheet, row, editor) {
   }
   qa.getRange(qaRow, qaLayout.importance).setValue(importance.value === null ? '' : importance.value);
   qa.getRange(qaRow, qaLayout.question).setValue(phcepLiteral_(question));
-  qa.getRange(qaRow, qaLayout.reply).setValue(phcepLiteral_(reply));
+  phcepSetLinkedText_(qa.getRange(qaRow, qaLayout.reply), reply);
   [qaLayout.questionEmbedding, qaLayout.replyEmbedding, qaLayout.notesEmbedding].forEach(function(column) {
     qa.getRange(qaRow, column).clearContent();
   });
@@ -474,9 +518,13 @@ function phcepDriveFileId_(url) {
   return match ? match[1] : '';
 }
 
-/** Rename only private files inside the configured media folder; links stay private. */
+/** Rename files inside the configured media folder without changing sharing. */
 function phcepRenameManagedFile_(ss, cell, newName) {
-  var name = phcepSanitizeFileName_(newName);
+  var input = String(newName == null ? '' : newName);
+  var lines = input.split(/\r?\n/);
+  var targetId = lines.length > 1 ? phcepDriveFileId_(lines[0].trim()) : '';
+  if (lines.length > 1 && /^https?:/i.test(lines[0]) && !targetId) return '❌ 第一行必須是有效的 Drive 檔案連結。';
+  var name = phcepSanitizeFileName_(targetId ? lines.slice(1).join(' ') : input);
   if (!name) return '❌ 檔名無效或為空，未改名。';
   var files = {};
   phcepCellLinks_(cell).forEach(function(url) {
@@ -485,8 +533,9 @@ function phcepRenameManagedFile_(ss, cell, newName) {
   });
   var ids = Object.keys(files);
   if (!ids.length) return '⚠️ 此列沒有系統管理的媒體檔案。';
-  if (ids.length !== 1) return '⚠️ 回覆中有多個 Drive 檔案，無法判定要改名哪一個；請先拆成每列一個檔案。';
-  var fileId = ids[0];
+  if (targetId && !files[targetId]) return '❌ 指定的 Drive 連結不在此列回覆中，未改名。';
+  if (!targetId && ids.length !== 1) return '⚠️ 回覆中有多個 Drive 檔案；請在連結備註第一行貼上目標 Drive URL，下一行輸入新檔名。';
+  var fileId = targetId || ids[0];
   var folderId = phcepProperty_('IMAGE_FOLDER_ID', ['DRIVE_FOLDER_ID']);
   if (!folderId) return '❌ 未設定 IMAGE_FOLDER_ID。';
   var file;
@@ -500,22 +549,20 @@ function phcepRenameManagedFile_(ss, cell, newName) {
   while (parents.hasNext()) {
     if (parents.next().getId() === folderId) managed = true;
   }
-  if (!managed) return '❌ 僅能改名私人媒體資料夾中的系統檔案。';
-  if (file.getSharingAccess() !== DriveApp.Access.PRIVATE) return '❌ 檔案不是私人檔案，拒絕改名；請先檢查分享設定。';
-  if (DriveApp.getFolderById(folderId).getSharingAccess() !== DriveApp.Access.PRIVATE) {
-    return '❌ 媒體資料夾不是私人資料夾，未改名。';
-  }
+  if (!managed) return '❌ 僅能改名 IMAGE_FOLDER_ID 指定資料夾內的檔案。';
   try {
     file.setName(name);
   } catch (error) {
     return '❌ Drive 改名失敗，請確認檔案編輯權限。';
   }
-  ['LINE對話', 'QA知識庫'].forEach(function(sheetName) {
+  ['LINE對話', 'QA知識庫', PHCEP_COLLECTION_SHEET_].forEach(function(sheetName) {
     var sheet = ss.getSheetByName(sheetName);
     if (!sheet) return;
     var layout = sheetName === 'LINE對話' ? phcepLineLayout_(sheet) : null;
     var qaLayout = sheetName === 'QA知識庫' ? phcepQALayout_(sheet) : null;
-    var columns = qaLayout ? [qaLayout.reply, qaLayout.media].filter(Boolean) : [7];
+    var columns = qaLayout ? [qaLayout.reply, qaLayout.media].filter(Boolean) :
+      layout ? [7] : [3, 4];
+    var singleTarget = true;
     for (var row = 2; row <= sheet.getLastRow(); row++) {
       var matched = false;
       columns.forEach(function(column) {
@@ -524,15 +571,18 @@ function phcepRenameManagedFile_(ss, cell, newName) {
         var url = links.find(function(link) { return phcepDriveFileId_(link) === fileId; });
         if (!url) return;
         matched = true;
+        if (links.filter(phcepDriveFileId_).length > 1) singleTarget = false;
         var text = phcepCellText_(linkedCell).trim();
         // Preserve prose and multi-link replies rather than replacing the whole reply with a filename.
         if (links.length === 1 && (text === url || (text.indexOf('http') === -1 && text.indexOf('\n') === -1))) {
           linkedCell.setRichTextValue(SpreadsheetApp.newRichTextValue().setText(name).setLinkUrl(url).build());
+        } else {
+          phcepSetLinkedText_(linkedCell, phcepCellText_(linkedCell));
         }
       });
       if (!matched) continue;
       if (layout) sheet.getRange(row, layout.mediaName).setValue(phcepLiteral_(name));
-      if (qaLayout) {
+      if (qaLayout && singleTarget) {
         sheet.getRange(row, qaLayout.friendNotes).setValue(phcepLiteral_(name));
         if (qaLayout.filename) sheet.getRange(row, qaLayout.filename).setValue(phcepLiteral_(name));
       }
@@ -549,11 +599,15 @@ function phcepHandleQAEdit_(e) {
   var range = e.range;
   var sheet = range.getSheet();
   var layout = phcepQALayout_(sheet);
-  if ([layout.friendNotes, layout.notes].indexOf(range.getColumn()) === -1 ||
+  if ([layout.friendNotes, layout.notes, layout.reply].indexOf(range.getColumn()) === -1 ||
       range.getNumColumns() !== 1 || range.getRow() < 2) return;
   return phcepWithLock_(function() {
     for (var row = range.getRow(); row < range.getRow() + range.getNumRows(); row++) {
       var cell = sheet.getRange(row, range.getColumn());
+      if (range.getColumn() === layout.reply) {
+        if (!cell.getFormulas()[0][0]) phcepSetLinkedText_(cell, phcepCellText_(cell));
+        continue;
+      }
       if (!String(cell.getValue() || '').trim()) continue;
       if (range.getColumn() === layout.notes && cell.getValue() === 'APPROVED_DEIDENTIFIED_QA') {
         cell.setNote('Embedding 核准標記已設定；未改名 Drive 檔案。');
@@ -691,6 +745,10 @@ function phcepHandleCollectionEdit_(e) {
   var row = range.getRow();
   var col = range.getColumn();
   return phcepWithLock_(function() {
+    if (col === 4) {
+      if (!range.getFormulas()[0][0]) phcepSetLinkedText_(range, phcepCellText_(range));
+      return;
+    }
     if (col === 7) {
       var importance = phcepNormalizeImportance_(range.getValue());
       if (!importance.ok) {

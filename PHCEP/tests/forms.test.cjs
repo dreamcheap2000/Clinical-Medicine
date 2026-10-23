@@ -9,6 +9,30 @@ const root = path.join(__dirname, '..');
 const USER = 'U' + 'a'.repeat(32);
 const OWNER = 'owner@example.org';
 
+function richBuilder(text = '', links = []) {
+  return {
+    setText(value) { text = value; links = []; return this; },
+    setLinkUrl(...args) {
+      const [start, end, url] = args.length === 1 ? [0, text.length, args[0]] : args;
+      assert.ok(start >= 0 && end <= text.length && start < end);
+      links = links.filter(link => link.start !== start || link.end !== end);
+      links.push({ start, end, url });
+      return this;
+    },
+    build() {
+      const value = text;
+      const runs = links.map(link => ({ ...link }));
+      const url = runs.length === 1 && runs[0].start === 0 && runs[0].end === value.length ? runs[0].url : null;
+      return { text: value, url, getText: () => value, getLinkUrl: () => url,
+        getRuns: () => runs.map(link => ({
+          getText: () => value.slice(link.start, link.end), getLinkUrl: () => link.url,
+          getStartIndex: () => link.start, getEndIndex: () => link.end
+        })),
+        copy: () => richBuilder(value, runs) };
+    }
+  };
+}
+
 function environment(options = {}) {
   const properties = new Map(Object.entries({
     TRUSTED_EDITOR_EMAILS: 'clinician@example.org,' + OWNER,
@@ -44,11 +68,18 @@ function environment(options = {}) {
     getNumColumns() { return this.cols; }
     getValues() {
       return Array.from({ length: this.rows }, (_, r) =>
-        Array.from({ length: this.cols }, (_, c) => this.sheet.data[this.row + r - 1]?.[this.col + c - 1] ?? ''));
+        Array.from({ length: this.cols }, (_, c) => {
+          const value = this.sheet.data[this.row + r - 1]?.[this.col + c - 1] ?? '';
+          return typeof value.getText === 'function' ? value.getText() : value;
+        }));
     }
     getValue() { return this.getValues()[0][0]; }
     getRichTextValues() {
-      return this.getValues().map(row => row.map(value => value && typeof value.getText === 'function' ? value : null));
+      return Array.from({ length: this.rows }, (_, r) =>
+        Array.from({ length: this.cols }, (_, c) => {
+          const value = this.sheet.data[this.row + r - 1]?.[this.col + c - 1];
+          return value && typeof value.getText === 'function' ? value : null;
+        }));
     }
     getFormulas() {
       return Array.from({ length: this.rows }, (_, r) =>
@@ -64,7 +95,7 @@ function environment(options = {}) {
     setValue(value) { return this.setValues([[value]]); }
     clearContent() { return this.setValues(Array.from({ length: this.rows }, () => Array(this.cols).fill(''))); }
     setRichTextValue(value) { return this.setValue(value); }
-    getRichTextValue() { const value = this.getValue(); return value && typeof value === 'object' ? value : null; }
+    getRichTextValue() { return this.getRichTextValues()[0][0]; }
     setDataValidation(rule) { this.sheet.rules.set(`${this.row}:${this.col}`, rule); return this; }
     clearDataValidations() { this.sheet.rules.delete(`${this.row}:${this.col}`); return this; }
     setFontWeight(value) { this.sheet.headerWeight = value; return this; }
@@ -143,6 +174,10 @@ function environment(options = {}) {
     getSheets() { return this.sheets; }
     getSheetByName(name) { return this.sheets.find(sheet => sheet.name === name) || null; }
     insertSheet(name) { const sheet = new Sheet(this, name); this.sheets.push(sheet); return sheet; }
+    deleteSheet(sheet) {
+      assert.ok(!sheet.getFormUrl(), 'must disconnect form before deleting raw sheet');
+      this.sheets.splice(this.sheets.indexOf(sheet), 1);
+    }
     getActiveSheet() { return this.activeRange?.getSheet() || this.sheets[0]; }
     getActiveRange() { return this.activeRange; }
     setActiveSheet(sheet) { this.activeSheet = sheet; return sheet; }
@@ -198,6 +233,12 @@ function environment(options = {}) {
       this.items.splice(this.items.indexOf(item), 1);
     }
     getDestinationId() { return this.destination || null; }
+    removeDestination() {
+      if (this.destination) books.get(this.destination).sheets.forEach(sheet => {
+        if (sheet.formUrl === this.getPublishedUrl()) sheet.formUrl = null;
+      });
+      this.destination = null;
+    }
     setDestination(type, id) {
       this.destination = id;
       const sheet = books.get(id).insertSheet('unexpected arbitrary response ' + this.id);
@@ -257,11 +298,7 @@ function environment(options = {}) {
       create: () => new Book('standalone-book'),
       openById: id => { assert.ok(books.has(id)); return books.get(id); },
       newDataValidation: validation, flush() {}, ProtectionType: { SHEET: 'SHEET' }, getUi: () => ui,
-      newRichTextValue: () => ({
-        setText(text) { this.text = text; return this; },
-        setLinkUrl(url) { this.url = url; return this; },
-        build() { const { text, url } = this; return { text, url, getText: () => text, getLinkUrl: () => url }; }
-      })
+      newRichTextValue: () => richBuilder()
     },
     FormApp: {
       create: title => new Form(title),
@@ -480,7 +517,7 @@ test('anonymous form configuration preflights missing IDs, upload questions and 
     if (mode === 'unauthorized') env.context.Session.getEffectiveUser = () => ({ getEmail: () => 'stranger@example.org' });
     env.context.UrlFetchApp = { fetch() { assert.fail('preflight must precede permission changes'); } };
     assert.throws(() => env.context.configurePHCEPAnonymousForms(),
-      /FORM_NOT_CONFIGURED|FORM_FILE_UPLOAD_REQUIRES_LOGIN|FORM_DESTINATION_MISMATCH|Trusted clinician/);
+      /FORM_NOT_CONFIGURED|FORM_FILE_UPLOAD_REQUIRES_LOGIN|destination mismatch|Trusted clinician/);
     assert.equal(form.emailCollection, true);
   }
 });
@@ -766,6 +803,77 @@ test('identity migration preflights both forms before deleting anything', () => 
   vitals.destination = 'different-spreadsheet';
   assert.throws(() => env.context.migratePHCEPFormIdentity(), /destination mismatch/);
   assert.ok(cdr.items.includes(item));
+});
+
+test('raw response migration protects backups, disconnects only configured tabs and preserves form submissions', () => {
+  const env = setup();
+  const book = env.book();
+  const unrelated = book.insertSheet('表單回覆3').appendRow(['unrelated']);
+  const originals = ['CDR', 'VITALS'].map(type => {
+    const id = env.properties.get(type + '_RESPONSE_SHEET_ID');
+    const sheet = book.getSheets().find(sheet => String(sheet.id) === id);
+    sheet.appendRow(['historical timestamp', 'historical answer']);
+    return sheet;
+  });
+  const result = env.context.migratePHCEPRawResponses();
+  for (const [index, type] of ['CDR', 'VITALS'].entries()) {
+    assert.ok(!book.getSheets().includes(originals[index]));
+    const backup = book.getSheetByName(result[type].backupSheet);
+    assert.deepEqual(backup.data, originals[index].data);
+    assert.equal(backup.protections[0].warning, false);
+    assert.equal(backup.protections[0].domain, false);
+    assert.equal(env.forms.get(env.properties.get(type + '_FORM_ID')).getDestinationId(), null);
+    assert.equal(env.properties.get(type + '_RAW_RESPONSES_DISABLED'), 'true');
+  }
+  assert.ok(book.getSheets().includes(unrelated));
+  const sheetCount = book.getSheets().length;
+  env.context.migratePHCEPRawResponses();
+  assert.equal(book.getSheets().length, sheetCount);
+  env.context.setupPHCEP();
+  env.context.migratePHCEPFormIdentity();
+  mockResponderPermissions(env);
+  env.context.configurePHCEPAnonymousForms();
+  assert.equal(book.getSheets().length, sheetCount);
+  assert.equal(book.getSheets().filter(sheet => sheet.formUrl).length, 0);
+  for (const type of ['CDR', 'VITALS']) {
+    const invitation = invite(env, type);
+    assert.equal(env.context.phcepHandleFormSubmit(submission(env, type, invitation.token, 'after-' + type)).status, 'linked');
+  }
+  assert.deepEqual(book.getSheetByName('PHCEP表單紀錄').getRange(2, 5, 2, 1).getValues(), [[USER], [USER]]);
+  assert.equal(env.pushes.length, 0);
+});
+
+test('raw response migration fails before disconnection on missing triggers, schemas, mismatched tabs or backup protection', () => {
+  for (const mode of ['trigger', 'schema', 'tab', 'protection']) {
+    const env = setup();
+    const book = env.book();
+    const form = env.forms.get(env.properties.get('VITALS_FORM_ID'));
+    if (mode === 'trigger') env.triggers.splice(0, env.triggers.length);
+    if (mode === 'schema') book.getSheetByName('PHCEP表單紀錄').getRange(1, 5).setValue('wrong');
+    if (mode === 'tab') env.properties.set('VITALS_RESPONSE_SHEET_ID', String(book.getSheetByName('LINE對話').id));
+    if (mode === 'protection') env.setProtectionFailure(true);
+    assert.throws(() => env.context.migratePHCEPRawResponses(), /trigger missing|schema mismatch|sheet mismatch|Protection denied/);
+    assert.equal(form.getDestinationId(), book.getId());
+    assert.equal(book.getSheets().filter(sheet => sheet.formUrl).length, 2);
+    assert.equal(env.properties.get('CDR_RAW_RESPONSES_DISABLED'), undefined);
+    assert.equal(env.pushes.length, 0);
+  }
+});
+
+test('raw response migration resumes safely after deletion fails and refreshes the backup before deleting', () => {
+  const env = setup();
+  const book = env.book();
+  const originalDelete = book.deleteSheet;
+  book.deleteSheet = () => { throw new Error('delete denied'); };
+  assert.throws(() => env.context.migratePHCEPRawResponses(), /delete denied/);
+  assert.equal(env.forms.get(env.properties.get('CDR_FORM_ID')).getDestinationId(), null);
+  const raw = book.getSheets().find(sheet => String(sheet.id) === env.properties.get('CDR_RESPONSE_SHEET_ID'));
+  raw.appendRow(['late response', 'retained answer']);
+  book.deleteSheet = originalDelete;
+  const report = env.context.migratePHCEPRawResponses();
+  assert.deepEqual(book.getSheetByName(report.CDR.backupSheet).data, raw.data);
+  assert.ok(!book.getSheets().includes(raw));
+  assert.equal(env.pushes.length, 0);
 });
 
 test('invitation signing rejects short or reused LINE channel secrets', () => {
@@ -1749,7 +1857,7 @@ test('QA column migration refuses formulas and does not mutate source when backu
   assert.equal(qa.getMaxColumns(), 15);
 });
 
-test('media rename from LINE or QA updates only private managed Drive files and all linked labels', () => {
+test('media rename from LINE or QA accepts public and private managed files without changing sharing', () => {
   const env = setup();
   const line = env.book().getSheetByName('LINE對話');
   const folderId = env.properties.get('IMAGE_FOLDER_ID');
@@ -1776,12 +1884,13 @@ test('media rename from LINE or QA updates only private managed Drive files and 
     editAs(env, line.getRange(row, COL.mediaName));
   }
   assert.equal(managed.name, '復健照片1');
-  assert.equal(line.getRange(2, 7).getValue().text, '復健照片1');
-  assert.equal(line.getRange(2, 7).getValue().url, 'https://drive.google.com/file/d/managedFile123/view');
+  assert.equal(line.getRange(2, 7).getRichTextValue().getText(), '復健照片1');
+  assert.equal(line.getRange(2, 7).getRichTextValue().getLinkUrl(), 'https://drive.google.com/file/d/managedFile123/view');
   assert.equal(outside.name, 'LINE_original');
-  assert.equal(shared.name, 'LINE_original');
+  assert.equal(shared.name, '復健照片1');
+  assert.equal(shared.getSharingAccess(), 'ANYONE_WITH_LINK');
   assert.match(line.getRange(3, COL.status).getValue(), /❌/);
-  assert.match(line.getRange(4, COL.status).getValue(), /私人/);
+  assert.match(line.getRange(4, COL.status).getValue(), /✅/);
   const qa = env.book().getSheetByName('QA知識庫');
   qa.appendRow(['qa-id', '', 'question', '', 'https://drive.google.com/file/d/managedFile123/view']);
   qa.getRange(2, 6).setValue('new file name');
@@ -1846,6 +1955,100 @@ test('QA reply-file rename preserves prose in both layouts, retains usable reply
     assert.match(qa.notes.get('2:' + layout.notes), /多個 Drive/);
     assert.equal(qa.getRange(2, layout.reply).getValue(), url + '\n' + otherUrl);
   }
+});
+
+test('explicit URL/name rename selects only a linked in-folder target and never changes file or folder sharing', () => {
+  const env = setup();
+  const qa = env.book().getSheetByName('QA知識庫');
+  const first = 'https://drive.google.com/file/d/firstFile12345/view';
+  const second = 'https://drive.google.com/file/d/secondFile1234/view';
+  const folder = env.properties.get('IMAGE_FOLDER_ID');
+  env.folders.get(folder).access = 'ANYONE_WITH_LINK';
+  const renamed = [];
+  env.context.DriveApp.getFileById = id => ({
+    getParents: () => {
+      let done = false;
+      return { hasNext: () => !done, next: () => { done = true; return { getId: () => folder }; } };
+    },
+    setName: name => renamed.push({ id, name })
+  });
+  qa.appendRow(['id', '', 'question', '', '【最新回覆】\n' + first + '\n【歷史回覆】\n' + second]);
+  const text = qa.getRange(2, 5).getValue();
+  qa.getRange(2, 6).setValue(second + '\nSelected file name');
+  editAs(env, qa.getRange(2, 6));
+  assert.deepEqual(renamed, [{ id: 'secondFile1234', name: 'Selected file name' }]);
+  assert.equal(qa.getRange(2, 5).getValue(), text);
+  assert.equal(qa.getRange(2, 4).getValue(), '');
+  assert.equal(env.folders.get(folder).access, 'ANYONE_WITH_LINK');
+  assert.match(qa.notes.get('2:6'), /✅/);
+  qa.getRange(2, 6).setValue('https://drive.google.com/file/d/unlinkedFile123/view\nWrong target');
+  editAs(env, qa.getRange(2, 6));
+  assert.equal(renamed.length, 1);
+  assert.match(qa.notes.get('2:6'), /不在此列/);
+  qa.getRange(2, 6).setValue(second + '\n');
+  editAs(env, qa.getRange(2, 6));
+  assert.equal(renamed.length, 1);
+  assert.match(qa.notes.get('2:6'), /無效|多個 Drive/);
+});
+
+test('collection and publication keep each latest/history URL clickable, including hidden rich-link targets', () => {
+  const env = setup();
+  const book = env.book();
+  const line = book.getSheetByName('LINE對話');
+  const latest = 'https://drive.google.com/file/d/latestFile1234/view';
+  const older = 'https://example.org/guide';
+  const hidden = 'https://example.org/named-link';
+  line.appendRow(['m', false, USER, '', '', 'question', '', '', '', latest, 'e']);
+  line.getRange(2, COL.history).setValue(older);
+  const history = book.getSheetByName('PHCEP回覆歷史');
+  history.appendRow(['op', 'e', new Date(), env.context.SpreadsheetApp.newRichTextValue()
+    .setText('Named guide').setLinkUrl(hidden).build()]);
+  line.getRange(2, COL.collect).setValue(true);
+  editAs(env, line.getRange(2, COL.collect));
+  const collections = book.getSheetByName('收錄集合');
+  const cell = collections.getRange(2, 4);
+  assert.match(cell.getValue(), /【最新回覆】/);
+  assert.match(cell.getValue(), /【歷史回覆/);
+  assert.match(cell.getValue(), /Named guide/);
+  const urls = rich => rich.getRuns().map(run => run.getLinkUrl()).filter(Boolean);
+  assert.deepEqual(Array.from(urls(cell.getRichTextValue())), [latest, older, hidden]);
+  collections.getRange(2, 2).setValue('核准');
+  editAs(env, collections.getRange(2, 2));
+  const qaCell = book.getSheetByName('QA知識庫').getRange(2, 5);
+  assert.equal(qaCell.getValue(), cell.getValue());
+  assert.deepEqual(Array.from(urls(qaCell.getRichTextValue())), [latest, older, hidden]);
+  assert.equal(env.context.phcepReadQA_(book)[0].reply, cell.getValue());
+  assert.equal(env.pushes.length, 0);
+});
+
+test('reply-link migration and edits preserve text and named links, skip formulas and leave review states intact', () => {
+  const env = setup();
+  const book = env.book();
+  const qa = book.getSheetByName('QA知識庫');
+  const collections = book.getSheetByName('收錄集合');
+  const url = 'https://example.org/guide';
+  const hidden = 'https://example.org/hidden';
+  const text = 'Named link\n【最新回覆】\n' + url;
+  qa.appendRow(['qa', '', 'question']);
+  qa.getRange(2, 5).setRichTextValue(env.context.SpreadsheetApp.newRichTextValue()
+    .setText(text).setLinkUrl(0, 10, hidden).build());
+  qa.appendRow(['formula', '', 'question', '', url]);
+  qa.formulas = [[], [], ['', '', '', '', '=A1']];
+  collections.appendRow(['key', '已發布', 'question', '【歷史回覆】\n' + url]);
+  const report = env.context.migratePHCEPReplyLinks();
+  assert.equal(report.updated, 2);
+  assert.equal(qa.getRange(2, 5).getValue(), text);
+  assert.deepEqual(Array.from(env.context.phcepCellLinks_(qa.getRange(2, 5))), [hidden, url]);
+  assert.equal(qa.getRange(3, 5).getRichTextValue(), null);
+  assert.equal(collections.getRange(2, 2).getValue(), '已發布');
+  env.context.migratePHCEPReplyLinks();
+  assert.equal(qa.getRange(2, 5).getValue(), text);
+  for (const cell of [qa.getRange(2, 5), collections.getRange(2, 4)]) {
+    cell.setValue('Two links:\n' + url + '\n' + hidden);
+    editAs(env, cell);
+    assert.equal(cell.getRichTextValue().getRuns().length, 2);
+  }
+  assert.equal(env.pushes.length, 0);
 });
 
 const MANUAL_TARGET = '12ksl5GvgM_YVc1NjrPE9LRe_YvUgqttLl0R41z5dazo';

@@ -26,13 +26,94 @@ function phcepEnsureForm_(ss, type) {
     .setRequired(true).setHelpText('邀請碼由連結帶入；修改或過期的邀請將不會連結病患紀錄。');
   const destination = form.getDestinationId();
   if (destination && destination !== ss.getId()) throw new Error('Existing form belongs to another spreadsheet.');
-  if (!destination) form.setDestination(FormApp.DestinationType.SPREADSHEET, ss.getId());
+  const serverOnly = props.getProperty(type + '_RAW_RESPONSES_DISABLED') === 'true';
+  if (!destination && !serverOnly) form.setDestination(FormApp.DestinationType.SPREADSHEET, ss.getId());
   const responseSheet = ss.getSheets().find(function(sheet) {
     const associated = sheet.getFormUrl();
     return associated && FormApp.openByUrl(associated).getId() === form.getId();
   });
   if (responseSheet) props.setProperty(type + '_RESPONSE_SHEET_ID', String(responseSheet.getSheetId()));
   return form;
+}
+
+function phcepCheckFormDestination_(form, ss, type) {
+  const destination = form.getDestinationId();
+  if (destination === ss.getId()) return;
+  if (!destination && phcepProperty_(type + '_RAW_RESPONSES_DISABLED') === 'true') return;
+  throw new Error('Form destination mismatch: ' + type);
+}
+
+function migratePHCEPRawResponses() {
+  phcepAuthorizeClinician_();
+  return phcepWithLock_(function() {
+    const ss = phcepSpreadsheet_();
+    const props = PropertiesService.getScriptProperties();
+    const trusted = phcepTrustedEditors_();
+    ['PHCEP邀請', 'PHCEP表單紀錄', 'PHCEP隔離', 'PHCEP臨床評分'].forEach(function(name) {
+      const sheet = ss.getSheetByName(name);
+      const headers = PHCEP_SCHEMAS_[name];
+      if (!sheet || sheet.getFormUrl() || sheet.getMaxColumns() < headers.length ||
+          !sheet.getRange(1, 1, 1, headers.length).getValues()[0].every(function(value, index) {
+            return value === headers[index];
+          })) throw new Error('Submission record schema mismatch: ' + name);
+    });
+    const triggers = ScriptApp.getProjectTriggers();
+    const plans = ['CDR', 'VITALS'].map(function(type) {
+      const formId = props.getProperty(type + '_FORM_ID');
+      if (!formId) throw new Error('Missing configured form: ' + type);
+      const form = FormApp.openById(formId);
+      phcepCheckFormDestination_(form, ss, type);
+      if (!triggers.some(function(trigger) {
+        return trigger.getHandlerFunction() === 'phcepHandleFormSubmit' &&
+          trigger.getEventType() === ScriptApp.EventType.ON_FORM_SUBMIT &&
+          trigger.getTriggerSourceId() === formId;
+      })) throw new Error('Form submission trigger missing: ' + type);
+      const sheetId = props.getProperty(type + '_RESPONSE_SHEET_ID');
+      const sheet = ss.getSheets().find(function(candidate) { return String(candidate.getSheetId()) === sheetId; });
+      const backupId = props.getProperty(type + '_RAW_RESPONSE_BACKUP_ID');
+      const backup = ss.getSheets().find(function(candidate) { return String(candidate.getSheetId()) === backupId; });
+      if (sheet && (Object.prototype.hasOwnProperty.call(PHCEP_SCHEMAS_, sheet.getName()) ||
+          (sheet.getFormUrl() ? FormApp.openByUrl(sheet.getFormUrl()).getId() !== formId :
+            form.getDestinationId() || props.getProperty(type + '_RAW_RESPONSES_DISABLED') !== 'true'))) {
+        throw new Error('Raw response sheet mismatch: ' + type);
+      }
+      if (!sheet && !backup) throw new Error('Raw response sheet or backup missing: ' + type);
+      if (backup && (backup === sheet || backup.getFormUrl() ||
+          backup.getName().indexOf('PHCEP_原始回覆備份_' + type + '_') !== 0)) {
+        throw new Error('Raw response backup mismatch: ' + type);
+      }
+      return { type: type, form: form, sheet: sheet, backup: backup };
+    });
+    // Back up both tabs before either destination is disconnected or tab deleted.
+    plans.forEach(function(plan) {
+      if (plan.sheet) {
+        plan.backup = plan.sheet.copyTo(ss).setName('PHCEP_原始回覆備份_' + plan.type + '_' +
+          Date.now() + '_' + Utilities.getUuid().slice(0, 8));
+      }
+      phcepProtectSheet_(ss, plan.backup, trusted);
+      props.setProperty(plan.type + '_RAW_RESPONSE_BACKUP_ID', String(plan.backup.getSheetId()));
+    });
+    SpreadsheetApp.flush();
+    const report = {};
+    plans.forEach(function(plan) {
+      // Persist intent first so setup cannot recreate a raw tab after a partial failure.
+      props.setProperty(plan.type + '_RAW_RESPONSES_DISABLED', 'true');
+      if (plan.form.getDestinationId()) plan.form.removeDestination();
+      if (plan.form.getDestinationId()) throw new Error('Form destination was not disconnected: ' + plan.type);
+      if (plan.sheet && plan.sheet.getLastRow() !== plan.backup.getLastRow()) {
+        plan.backup = plan.sheet.copyTo(ss).setName('PHCEP_原始回覆備份_' + plan.type + '_' +
+          Date.now() + '_' + Utilities.getUuid().slice(0, 8));
+        phcepProtectSheet_(ss, plan.backup, trusted);
+        props.setProperty(plan.type + '_RAW_RESPONSE_BACKUP_ID', String(plan.backup.getSheetId()));
+        SpreadsheetApp.flush();
+      }
+      if (plan.sheet) ss.deleteSheet(plan.sheet);
+      report[plan.type] = { rawResponses: 'disconnected', backupSheet: plan.backup.getName(),
+        submissionRecords: 'PHCEP表單紀錄' };
+    });
+    console.log(JSON.stringify(report));
+    return report;
+  }, 20000);
 }
 
 function migratePHCEPFormIdentity() {
@@ -45,7 +126,7 @@ function migratePHCEPFormIdentity() {
       const id = props.getProperty(type + '_FORM_ID');
       if (!id) throw new Error('Missing configured form: ' + type);
       const form = FormApp.openById(id);
-      if (form.getDestinationId() !== ss.getId()) throw new Error('Form destination mismatch: ' + type);
+      phcepCheckFormDestination_(form, ss, type);
       const token = form.getItemById(Number(props.getProperty(type + '_TOKEN_ITEM_ID')));
       if (!token || token.getTitle() !== 'PHCEP 邀請碼') throw new Error('Invitation item mismatch: ' + type);
       token.asTextItem();
@@ -115,7 +196,7 @@ function configurePHCEPAnonymousForms() {
       if (form.getItems().some(function(item) { return String(item.getType()) === 'FILE_UPLOAD'; })) {
         phcepFail_('FORM_FILE_UPLOAD_REQUIRES_LOGIN');
       }
-      if (form.getDestinationId() !== phcepSpreadsheet_().getId()) phcepFail_('FORM_DESTINATION_MISMATCH');
+      phcepCheckFormDestination_(form, phcepSpreadsheet_(), type);
       return { type: type, form: form };
     });
     const report = [];
