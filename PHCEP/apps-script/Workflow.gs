@@ -94,19 +94,20 @@ function phcepListValidation_(values) {
   return SpreadsheetApp.newDataValidation().requireValueInList(values, true).setAllowInvalid(false).build();
 }
 
-function phcepApplyColumnValidation_(sheet, column, rule) {
+function phcepApplyColumnValidation_(sheet, column, rule, row) {
   if (sheet.getMaxRows() < 2) sheet.insertRowsAfter(1, 1);
-  sheet.getRange(2, column, sheet.getMaxRows() - 1, 1).setDataValidation(rule);
+  sheet.getRange(row || 2, column, row ? 1 : sheet.getMaxRows() - 1, 1).setDataValidation(rule);
 }
 
-function phcepApplyLineValidations_(sheet, layout) {
+function phcepApplyLineValidations_(sheet, layout, row) {
   var checkbox = SpreadsheetApp.newDataValidation().requireCheckbox().build();
-  phcepApplyColumnValidation_(sheet, 2, checkbox);
-  phcepApplyColumnValidation_(sheet, layout.action, phcepListValidation_(phcepActionValues_()));
-  phcepApplyColumnValidation_(sheet, layout.confirm, checkbox);
-  phcepApplyColumnValidation_(sheet, layout.source, phcepListValidation_(PHCEP_COLLECTION_SOURCES_));
-  phcepApplyColumnValidation_(sheet, layout.importance, phcepListValidation_(PHCEP_IMPORTANCE_VALUES_));
-  phcepApplyColumnValidation_(sheet, layout.collect, checkbox);
+  phcepApplyColumnValidation_(sheet, 2, checkbox, row);
+  if (!layout) return;
+  phcepApplyColumnValidation_(sheet, layout.action, phcepListValidation_(phcepActionValues_()), row);
+  phcepApplyColumnValidation_(sheet, layout.confirm, checkbox, row);
+  phcepApplyColumnValidation_(sheet, layout.source, phcepListValidation_(PHCEP_COLLECTION_SOURCES_), row);
+  phcepApplyColumnValidation_(sheet, layout.importance, phcepListValidation_(PHCEP_IMPORTANCE_VALUES_), row);
+  phcepApplyColumnValidation_(sheet, layout.collect, checkbox, row);
 }
 
 function phcepEnsureOverview_(ss) {
@@ -213,7 +214,11 @@ function phcepMigrateLayout_(ss, trusted) {
 function migratePHCEPLayout() {
   phcepAuthorizeClinician_();
   return phcepWithLock_(function() {
-    return phcepMigrateLayout_(phcepSpreadsheet_(), phcepTrustedEditors_());
+    var ss = phcepSpreadsheet_();
+    var report = phcepMigrateLayout_(ss, phcepTrustedEditors_());
+    phcepEnsureEditTrigger_(ss);
+    report.editTrigger = 'ready';
+    return report;
   });
 }
 
@@ -389,6 +394,16 @@ function phcepHandleLineControlEdit_(e, sheet, row, col, layout) {
   var range = e.range;
   var value = range.getValue();
   var ss = sheet.getParent();
+  if (field === 'source') {
+    if (value && PHCEP_COLLECTION_SOURCES_.indexOf(String(value)) === -1) {
+      range.clearContent();
+      phcepSetLineStatus_(sheet, row, layout, '❌ 收錄來源無效，已清除。');
+    } else {
+      phcepSetLineStatus_(sheet, row, layout, 'ℹ️ 收錄來源：' + (value || '最新回覆') +
+        '。可選填重要性，再勾選「收錄」；不會自動收錄或發送。');
+    }
+    return;
+  }
   if (field === 'importance') {
     var importance = phcepNormalizeImportance_(value);
     if (!importance.ok) {

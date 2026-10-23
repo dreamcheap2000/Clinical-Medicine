@@ -169,16 +169,19 @@ function phcepAcceptEvent_(ss, event) {
     } else {
       text = '其他訊息';
     }
-    inboxRow = inbox.getLastRow() + 1;
+    var profile = phcepProfile_(userId);
+    inbox.insertRowsAfter(1, 1);
+    inboxRow = 2;
     inbox.getRange(inboxRow, 1, 1, 11).setValues([[
       phcepLiteral_(message.id), false, phcepLiteral_(userId),
       new Date(typeof event.timestamp === 'number' ? event.timestamp : Date.now()),
-      phcepLiteral_(phcepProfile_(userId)), phcepLiteral_(text), '', '', '', '',
+      phcepLiteral_(profile), phcepLiteral_(text), '', '', '', '',
       phcepLiteral_(key)
     ]]);
     SpreadsheetApp.flush();
     journal.getRange(journalRow, 2).setValue('STORED');
   }
+  phcepApplyLineValidations_(inbox, phcepLineLayout_(inbox), inboxRow);
   // Rebuild the optional link after a crash between the row write and decoration.
   var link = inbox.getRange(inboxRow, 7);
   if (!link.getValue()) {

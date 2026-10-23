@@ -921,6 +921,42 @@ test('no-menu questionnaire actions reuse existing send semantics and multi-cell
   assert.notEqual(env.pushes[0].key, env.pushes[1].key);
 });
 
+test('layout migration repairs only the edit trigger and makes controls operational without setup', () => {
+  const env = setup();
+  const book = env.book();
+  const formTriggers = env.triggers.filter(t => t.getHandlerFunction() === 'phcepHandleFormSubmit');
+  const formIds = [...env.forms.keys()];
+  env.triggers.splice(0, env.triggers.length, ...formTriggers);
+  const report = env.context.migratePHCEPLayout();
+  assert.equal(report.editTrigger, 'ready');
+  const editTrigger = env.triggers.find(t => t.getHandlerFunction() === 'phcepHandleEdit');
+  assert.equal(editTrigger.getTriggerSourceId(), book.getId());
+  env.triggers.push(editTrigger);
+  env.context.migratePHCEPLayout();
+  assert.equal(env.triggers.filter(t => t.getHandlerFunction() === 'phcepHandleEdit').length, 1);
+  assert.deepEqual(env.triggers.filter(t => t.getHandlerFunction() === 'phcepHandleFormSubmit'), formTriggers);
+  assert.deepEqual([...env.forms.keys()], formIds);
+  const line = book.getSheetByName('LINE對話');
+  line.appendRow(['message', false, USER, '', '', 'question', '', '', 'draft', '', 'event-1']);
+  line.getRange(2, COL.source).setValue('草稿 (未發送)');
+  editAs(env, line.getRange(2, COL.source));
+  assert.match(line.getRange(2, COL.status).getValue(), /草稿.*勾選「收錄」/);
+  assert.equal(book.getSheetByName('收錄集合').getLastRow(), 1);
+  line.getRange(2, COL.importance).setValue('5');
+  editAs(env, line.getRange(2, COL.importance));
+  line.getRange(2, COL.collect).setValue(true);
+  editAs(env, line.getRange(2, COL.collect));
+  assert.equal(line.getRange(2, COL.collect).getValue(), false);
+  assert.equal(book.getSheetByName('收錄集合').getRange(2, 7).getValue(), 5);
+  line.getRange(2, COL.action).setValue('發送草稿');
+  editAs(env, line.getRange(2, COL.action));
+  assert.equal(env.pushes.length, 0);
+  line.getRange(2, COL.confirm).setValue(true);
+  editAs(env, line.getRange(2, COL.confirm));
+  assert.equal(line.getRange(2, COL.confirm).getValue(), false);
+  assert.equal(env.pushes.length, 1);
+});
+
 test('collection workflow captures provenance, deduplicates, validates importance and publishes only after approval', () => {
   const env = setup();
   const book = env.book();

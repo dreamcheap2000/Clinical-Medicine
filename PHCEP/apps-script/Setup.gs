@@ -141,15 +141,30 @@ function setupPHCEP() {
   });
 }
 
+function phcepEnsureEditTrigger_(ss) {
+  let found = false;
+  ScriptApp.getProjectTriggers().forEach(function(trigger) {
+    if (trigger.getHandlerFunction() !== 'phcepHandleEdit') return;
+    if (!found && trigger.getTriggerSourceId() === ss.getId() &&
+        trigger.getEventType() === ScriptApp.EventType.ON_EDIT) {
+      found = true;
+    } else {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
+  if (!found) ScriptApp.newTrigger('phcepHandleEdit').forSpreadsheet(ss).onEdit().create();
+}
+
 function phcepEnsureTriggers_(ss, forms) {
-  const wanted = [{ handler: 'phcepHandleEdit', id: ss.getId(), type: ScriptApp.EventType.ON_EDIT }];
+  phcepEnsureEditTrigger_(ss);
+  const wanted = [];
   forms.forEach(function(form) {
     wanted.push({ handler: 'phcepHandleFormSubmit', id: form.getId(), type: ScriptApp.EventType.ON_FORM_SUBMIT });
   });
   const found = {};
   ScriptApp.getProjectTriggers().forEach(function(trigger) {
     const handler = trigger.getHandlerFunction();
-    if (handler !== 'phcepHandleEdit' && handler !== 'phcepHandleFormSubmit') return;
+    if (handler !== 'phcepHandleFormSubmit') return;
     const match = wanted.find(function(item) {
       return item.handler === handler && item.id === trigger.getTriggerSourceId() && item.type === trigger.getEventType();
     });
@@ -160,8 +175,7 @@ function phcepEnsureTriggers_(ss, forms) {
   wanted.forEach(function(item) {
     if (found[item.handler + ':' + item.id]) return;
     const builder = ScriptApp.newTrigger(item.handler);
-    if (item.handler === 'phcepHandleEdit') builder.forSpreadsheet(ss).onEdit().create();
-    else builder.forForm(forms.find(function(form) { return form.getId() === item.id; })).onFormSubmit().create();
+    builder.forForm(forms.find(function(form) { return form.getId() === item.id; })).onFormSubmit().create();
   });
 }
 

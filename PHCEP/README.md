@@ -263,6 +263,12 @@ The previous latest reply is right-shifted only inside the dedicated history are
 controls never move. Older entries drop off that visible area but stay in
 `PHCEP回覆歷史`.
 
+New incoming messages are inserted at row 2, immediately below the frozen header.
+Existing rows move down intact, including drafts, private media links, operation
+state, controls and reply history. Each new row receives its own checkbox and
+dropdown validation rules; duplicate webhook retries do not insert another row.
+Existing messages are not sorted or otherwise reordered by deployment.
+
 H selects a curated QA reply and populates I; it does not send.
 Use the explicit clinician draft-send menu to confirm sending, or enable the
 clearly labelled I send-on-edit menu after confirmation. Only approved identified
@@ -279,8 +285,13 @@ Clinician drafts are text; formula strings are not executed as outbound content.
 
 ### No-menu workflow (edit-trigger cells)
 
-Run `setupPHCEP()` (or `migratePHCEPLayout()` for layout only) once after updating
-the code. Tab order becomes **`總覽`, `LINE對話`, `QA知識庫`**, then the rest.
+Run `migratePHCEPLayout()` once after updating the code to repair the layout,
+validations and the spreadsheet edit trigger without creating Forms or changing
+form-submit triggers. Run it as the designated trigger owner: Google only exposes
+that account's triggers, so old triggers owned by other accounts must be removed
+by those owners. `setupPHCEP()` also provisions Forms and their submit triggers
+and is not needed just to repair these controls.
+Tab order becomes **`總覽`, `LINE對話`, `QA知識庫`**, then the rest.
 
 **`總覽`** (first tab) links to `LINE對話`, `QA知識庫`, `收錄集合` and every
 `PHCEP*` ledger, shows row counts and safe counters only (outbox pending/failed,
@@ -318,6 +329,13 @@ controls M:S side by side. K/L are not moved or changed; unhide them at any time
 | 收錄 (勾選) | Collect this row into `收錄集合` immediately (non-sending) |
 | 媒體檔名 (修改即改名) | Type a new name to rename the private Drive media file linked in G |
 | 操作結果 | Status/result written by the script; never authoritative state (L is) |
+
+Changing 收錄來源 or 重要性 only prepares the collection settings and updates
+操作結果; neither edit sends or collects anything. Choose `草稿 (未發送)` to
+collect I, `最新回覆` to collect J, or `病患訊息` for a question without a reply.
+Then tick 收錄. A blank source means 最新回覆, so a row with no sent reply needs
+a different source. The checkbox resets after each attempt; check 操作結果 for
+success or the reason it was refused.
 
 Sending is two-step: selecting a send action only arms it (status `⏸`), and
 nothing is sent until a verified trusted editor (`e.user` in

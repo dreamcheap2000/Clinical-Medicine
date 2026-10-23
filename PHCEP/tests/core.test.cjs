@@ -37,6 +37,11 @@ function environment() {
     return {
       name, data,
       getLastRow: () => data.length,
+      getMaxRows: () => Math.max(20, data.length),
+      getMaxColumns: () => data[0].length,
+      insertRowsAfter: (row, count) => {
+        data.splice(row, 0, ...Array.from({ length: count }, () => []));
+      },
       deleteRow: row => { data.splice(row - 1, 1); },
       getRange(row, column, height = 1, width = 1) {
         const write = values => {
@@ -89,6 +94,7 @@ function environment() {
         const rule = {};
         return {
           requireValueInList(values) { rule.values = [...values]; return this; },
+          requireCheckbox() { rule.checkbox = true; return this; },
           setAllowInvalid(value) { rule.allowInvalid = value; return this; },
           build: () => rule
         };
@@ -163,7 +169,7 @@ function environment() {
     console: { log() { throw new Error('No logging allowed'); }, error() { throw new Error('No logging allowed'); } },
     Logger: { log() { throw new Error('No logging allowed'); } }
   });
-  for (const name of ['Storage.gs', 'Matcher.gs', 'Core.gs'])
+  for (const name of ['Storage.gs', 'Matcher.gs', 'Workflow.gs', 'Core.gs'])
     vm.runInContext(fs.readFileSync(path.join(__dirname, '../apps-script', name), 'utf8'), context);
   const sign = (events = [], changes = {}, raw) => {
     const envelope = {
@@ -194,6 +200,31 @@ test('only authenticated signed envelopes accept events', () => {
   assert.equal(state.sheets['LINE對話'].data.length, 2);
   assert.equal(state.sheets['LINE對話'].data[1][5], '中文 text');
   assert.equal(post({ events: [event()] }).error, 'INVALID_ENVELOPE');
+});
+
+test('new messages go below the header with controls; existing rows and retries stay intact', () => {
+  const { post, sign, state, context } = environment();
+  const inbox = state.sheets['LINE對話'];
+  const headers = Array.from({ length: 12 }, (_, i) => `Header ${i}`);
+  headers.push(...context.PHCEP_LINE_CONTROL_HEADERS_, ...context.PHCEP_LINE_HISTORY_HEADERS_);
+  inbox.data[0] = headers;
+  const previous = ['older', false, recipient, '', '', 'old question', { url: 'private-link' },
+    '', 'pending draft', 'latest reply', 'event:older', '{"reply":{"status":"PENDING"}}',
+    '發送草稿', false, '草稿 (未發送)', 4, false, '', 'pending', 'previous reply'];
+  inbox.data.push([...previous]);
+  assert.equal(post(sign([event('first'), event('second')])).ok, true);
+  assert.deepEqual(inbox.data[0], headers);
+  assert.deepEqual(inbox.data.slice(1, 3).map(row => row[0]), ['second', 'first']);
+  assert.deepEqual(inbox.data[3], previous);
+  assert.equal(state.validations['LINE對話:2:2'].checkbox, true);
+  assert.equal(state.validations['LINE對話:2:14'].checkbox, true);
+  assert.equal(state.validations['LINE對話:2:17'].checkbox, true);
+  assert.ok(state.validations['LINE對話:2:15'].values.includes('草稿 (未發送)'));
+  assert.deepEqual(state.validations['LINE對話:2:16'].values, ['1', '2', '3', '4', '5']);
+  assert.equal(state.validations['LINE對話:2:13'].allowInvalid, false);
+  assert.equal(post(sign([event('first'), event('second')])).ok, true);
+  assert.deepEqual(inbox.data.slice(1, 3).map(row => row[0]), ['second', 'first']);
+  assert.equal(inbox.data.length, 4);
 });
 
 test('actual gateway envelope authenticates exact UTF8 bytes and deduplicates fresh-nonce retries', () => {
@@ -344,13 +375,15 @@ test('fallback message id also deduplicates changed webhook IDs', () => {
 
 test('retry completes after partially accepted multi-event batch', () => {
   const { post, sign, state } = environment();
-  state.failWrite = (name, row) => name === 'LINE對話' && row === 3;
+  state.failWrite = (name, row, column, values) =>
+    name === 'LINE對話' && column === 1 && values[0][0] === 'message-2';
   assert.equal(post(sign([event(), event('message-2')])).error, 'ACCEPTANCE_FAILED');
-  assert.equal(state.sheets['LINE對話'].data.length, 2);
+  assert.equal(state.sheets['LINE對話'].data.filter(row => row[0] === 'message-1').length, 1);
   assert.equal(state.releases, 1);
   state.failWrite = null;
   assert.equal(post(sign([event(), event('message-2')])).ok, true);
-  assert.equal(state.sheets['LINE對話'].data.length, 3);
+  assert.deepEqual(state.sheets['LINE對話'].data.slice(1).filter(row => row[0]).map(row => row[0]),
+    ['message-2', 'message-1']);
 });
 
 test('K event key deduplicates crash after inbox write before journal update', () => {
