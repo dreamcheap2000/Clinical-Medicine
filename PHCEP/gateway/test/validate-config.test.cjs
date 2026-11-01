@@ -75,3 +75,12 @@ test('CLI is read-only, deterministic, returns exit status, and never prints val
   assert.equal(result.status, 1);
   assert.equal(result.stderr.includes('synthetic-private'), false);
 });
+
+test('patient preflight is opt-in and reports static guidance only', () => {
+  assert.equal(passes({ ...env, PATIENT_API_ENABLED: 'false' }), true);
+  assert.equal(passes({ ...env, PATIENT_API_ENABLED: 'yes' }), false);
+  const results = validate({ ...env, PATIENT_API_ENABLED: 'true',
+    PATIENT_API_TOKEN: 'synthetic-private' });
+  assert.equal(results.some(([name, ok]) => name === 'PATIENT_API_CONFIGURATION' && !ok), true);
+  assert.equal(JSON.stringify(results).includes('synthetic-private'), false);
+});

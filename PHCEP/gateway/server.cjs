@@ -28,10 +28,17 @@ function configuration(env = process.env) {
   if (env.GATEWAY_SIGNING_SECRET.length < 32 ||
       env.GATEWAY_SIGNING_SECRET === env.LINE_CHANNEL_SECRET)
     throw new Error('GATEWAY_SIGNING_SECRET must be distinct and at least 32 characters');
-  return {
+  const config = {
     mode, lineSecret: env.LINE_CHANNEL_SECRET, signingSecret: env.GATEWAY_SIGNING_SECRET,
     url: configuredUrl(env[required[2]], mode)
   };
+  if (env.PATIENT_API_ENABLED && !['true', 'false'].includes(env.PATIENT_API_ENABLED))
+    throw new Error('PATIENT_API_ENABLED must be true or false');
+  if (env.PATIENT_API_ENABLED === 'true') {
+    try { config.patientConfig = require('./patient-api.cjs').configuration(env); }
+    catch { throw new Error('Patient API configuration invalid; check patient environment variables'); }
+  }
+  return config;
 }
 
 function verifyLine(raw, signature, secret) {
@@ -132,8 +139,22 @@ async function forward(raw, config, fetcher, pause = ms => new Promise(resolve =
   }
 }
 
-function createServer(config, fetcher = fetch) {
+function createServer(config, fetcher = fetch, patientApp = null) {
+  if (!patientApp && config.patientConfig) {
+    const { createApp, appsScriptBackend, sheetsBackend } = require('./patient-api.cjs');
+    const patientConfig = config.patientConfig;
+    const backend = patientConfig.mode === 'APPS_SCRIPT' ?
+      appsScriptBackend(patientConfig, fetcher) : sheetsBackend(patientConfig, fetcher);
+    patientApp = createApp(patientConfig, backend);
+  }
   return http.createServer(async (request, response) => {
+    const path = request.url.split('?')[0];
+    if (path === '/api' || path.startsWith('/api/')) {
+      if (patientApp) return patientApp(request, response);
+      response.writeHead(503, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+      response.end(JSON.stringify({ success: false, error: 'PATIENT_API_DISABLED' }));
+      return;
+    }
     const reply = (status, ok, reason) => {
       if (reason) console.log('gateway_response', JSON.stringify({ status, reason }));
       response.writeHead(status, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; }
+    body { font: 14px system-ui, sans-serif; color: #202124; margin: 16px; }
+    h1 { font-size: 18px; margin: 0 0 8px; }
+    p, li { margin: 6px 0; }
+    .hint { color: #5f6368; font-size: 13px; }
+    button, input { font: inherit; padding: 8px; }
+    button { border: 1px solid #dadce0; border-radius: 8px; background: #174ea6; color: white; cursor: pointer; }
+    button:disabled { opacity: .6; cursor: default; }
+    #status { white-space: pre-wrap; min-height: 24px; margin-top: 12px; }
+    #status.error { color: #b3261e; }
+    #skipped { max-height: 220px; overflow-y: auto; }
+  </style>
+</head>
+<body>
+  <h1>匯入 HIS 醫令明細（P8901B 新收案／P8902B 追蹤管理）</h1>
+  <p class="hint">選擇 HIS 匯出的「特殊處置明細表」（.xlsx，或副檔名為 .xls 的 xlsx）。
+    只會讀取：院內代碼、病患姓名、身分證號、出生日期、看診日期、主診斷、性別、醫師姓名、病歷號碼；
+    地址、電話、健保卡號不會上傳。民國日期會轉為西元 YYYY/MM/DD。</p>
+  <p class="hint">P8901B 建立新收案列（診療階段 1，每位病人一次）；P8902B 建立追蹤管理列（診療階段 2），
+    沿用該病人新收案的收案日期、主診斷與病史，檢查／檢驗等本次資料留白。
+    所有新列狀態為 <b>DRAFT</b>，請自 HIS 補齊後改為 <b>PENDING</b>，Tampermonkey 才會載入。</p>
+  <input id="file" type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+  <button id="import" type="button" disabled>匯入</button>
+  <div id="status" role="status" aria-live="polite"></div>
+  <ul id="skipped"></ul>
+  <script>
+    var NHI_MAX_BYTES = 5 * 1024 * 1024;
+    var NHI_COLUMNS = {
+      orderCode: '院內代碼', name: '病患姓名', patientId: '身分證號', birthday: '出生日期',
+      visitDate: '看診日期', diagnosis: '主診斷', gender: '性別', physicianName: '醫師姓名',
+      chartNo: '病歷號碼'
+    };
+
+    function nhiXmlText(text) {
+      return text.replace(/&(#x[0-9a-fA-F]+|#\d+|amp|lt|gt|quot|apos);/g, function(all, entity) {
+        if (entity[0] === '#') {
+          var code = entity[1] === 'x' ? parseInt(entity.slice(2), 16) : parseInt(entity.slice(1), 10);
+          return String.fromCodePoint(code);
+        }
+        return { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" }[entity];
+      });
+    }
+
+    function nhiTexts(xml) {
+      var parts = [];
+      xml.replace(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/g, function(all, text) { parts.push(nhiXmlText(text)); });
+      return parts.join('');
+    }
+
+    function nhiColumnIndex(reference) {
+      var letters = /^([A-Z]+)/.exec(reference)[1];
+      var index = 0;
+      for (var i = 0; i < letters.length; i++) index = index * 26 + letters.charCodeAt(i) - 64;
+      return index - 1;
+    }
+
+    async function nhiUnzip(buffer) {
+      var bytes = new Uint8Array(buffer);
+      var view = new DataView(buffer);
+      var end = -1;
+      for (var i = bytes.length - 22; i >= Math.max(0, bytes.length - 65557); i--) {
+        if (view.getUint32(i, true) === 0x06054b50) { end = i; break; }
+      }
+      if (end < 0) throw new Error('檔案不是有效的 xlsx。');
+      var count = view.getUint16(end + 10, true);
+      var offset = view.getUint32(end + 16, true);
+      var files = {};
+      var decoder = new TextDecoder('utf-8');
+      for (var n = 0; n < count; n++) {
+        if (view.getUint32(offset, true) !== 0x02014b50) throw new Error('xlsx 目錄損毀。');
+        var method = view.getUint16(offset + 10, true);
+        var size = view.getUint32(offset + 20, true);
+        var nameLength = view.getUint16(offset + 28, true);
+        var extraLength = view.getUint16(offset + 30, true);
+        var commentLength = view.getUint16(offset + 32, true);
+        var local = view.getUint32(offset + 42, true);
+        var name = decoder.decode(bytes.subarray(offset + 46, offset + 46 + nameLength));
+        offset += 46 + nameLength + extraLength + commentLength;
+        if (!/^(xl\/workbook\.xml|xl\/_rels\/workbook\.xml\.rels|xl\/sharedStrings\.xml|xl\/worksheets\/[^/]+\.xml)$/.test(name)) continue;
+        var start = local + 30 + view.getUint16(local + 26, true) + view.getUint16(local + 28, true);
+        var data = bytes.subarray(start, start + size);
+        if (method === 8) {
+          var stream = new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+          data = new Uint8Array(await new Response(stream).arrayBuffer());
+        } else if (method !== 0) {
+          throw new Error('不支援的 xlsx 壓縮格式。');
+        }
+        files[name] = decoder.decode(data);
+      }
+      return files;
+    }
+
+    async function nhiReadWorkbook(buffer) {
+      if (!buffer || buffer.byteLength < 4 || buffer.byteLength > NHI_MAX_BYTES) {
+        throw new Error('檔案須小於 5 MB。');
+      }
+      var head = new Uint8Array(buffer, 0, 4);
+      if (head[0] === 0xd0 && head[1] === 0xcf && head[2] === 0x11 && head[3] === 0xe0) {
+        throw new Error('這是舊版 Excel 97–2003 .xls，請在 Excel「另存新檔」為 .xlsx 後再匯入。');
+      }
+      if (head[0] !== 0x50 || head[1] !== 0x4b) throw new Error('檔案不是 xlsx 格式。');
+      var files = await nhiUnzip(buffer);
+      var workbook = files['xl/workbook.xml'] || '';
+      var firstSheet = /<sheet\b[^>]*\br:id="([^"]+)"/.exec(workbook);
+      var path = 'xl/worksheets/sheet1.xml';
+      if (firstSheet) {
+        var rels = files['xl/_rels/workbook.xml.rels'] || '';
+        var rel = new RegExp('<Relationship\\b[^>]*\\bId="' + firstSheet[1] + '"[^>]*>').exec(rels);
+        var target = rel && /\bTarget="([^"]+)"/.exec(rel[0]);
+        if (target) path = target[1].charAt(0) === '/' ? target[1].slice(1) : 'xl/' + target[1];
+      }
+      var sheet = files[path];
+      if (!sheet) throw new Error('找不到第一個工作表。');
+      var shared = [];
+      (files['xl/sharedStrings.xml'] || '').replace(/<si>([\s\S]*?)<\/si>/g, function(all, item) {
+        shared.push(nhiTexts(item));
+      });
+      var rows = [];
+      sheet.replace(/<row\b([^>]*)>([\s\S]*?)<\/row>/g, function(all, attributes, body) {
+        var line = Number((/\br="(\d+)"/.exec(attributes) || [])[1]);
+        var values = [];
+        body.replace(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g, function(cell, cellAttributes, content) {
+          var reference = (/\br="([A-Z]+\d+)"/.exec(cellAttributes) || [])[1];
+          if (!reference) return;
+          var type = (/\bt="([^"]+)"/.exec(cellAttributes) || [])[1] || '';
+          var raw = /<v>([\s\S]*?)<\/v>/.exec(content || '');
+          var value = type === 'inlineStr' ? nhiTexts(content || '') :
+            raw ? nhiXmlText(raw[1]) : '';
+          if (type === 's') value = shared[Number(value)] || '';
+          values[nhiColumnIndex(reference)] = value.trim();
+        });
+        rows.push({ line: line, values: values });
+      });
+      var headerRow = rows.find(function(row) {
+        return row.values.indexOf('身分證號') !== -1 && row.values.indexOf('院內代碼') !== -1;
+      });
+      if (!headerRow) throw new Error('找不到標題列（需包含「院內代碼」與「身分證號」）。');
+      var indexes = {};
+      var missing = [];
+      Object.keys(NHI_COLUMNS).forEach(function(key) {
+        indexes[key] = headerRow.values.indexOf(NHI_COLUMNS[key]);
+        if (indexes[key] === -1) missing.push(NHI_COLUMNS[key]);
+      });
+      if (missing.length) throw new Error('缺少欄位：' + missing.join('、'));
+      return rows.filter(function(row) {
+        return row.line > headerRow.line && row.values.some(function(value) { return value; });
+      }).map(function(row) {
+        var values = {};
+        Object.keys(indexes).forEach(function(key) { values[key] = row.values[indexes[key]] || ''; });
+        return { line: row.line, values: values };
+      });
+    }
+
+    if (typeof document !== 'undefined') {
+      var fileInput = document.getElementById('file');
+      var importButton = document.getElementById('import');
+      var statusBox = document.getElementById('status');
+      var skippedList = document.getElementById('skipped');
+      var pending = null;
+      var setStatus = function(text, error) {
+        statusBox.textContent = text;
+        statusBox.className = error ? 'error' : '';
+      };
+      fileInput.addEventListener('change', async function() {
+        pending = null;
+        importButton.disabled = true;
+        skippedList.textContent = '';
+        var file = fileInput.files[0];
+        if (!file) return setStatus('');
+        try {
+          setStatus('讀取中…');
+          pending = await nhiReadWorkbook(await file.arrayBuffer());
+          if (!pending.length) throw new Error('標題列之後沒有資料。');
+          setStatus('找到 ' + pending.length + ' 列，按「匯入」寫入工作表（狀態 DRAFT）。');
+          importButton.disabled = false;
+        } catch (error) {
+          setStatus(error.message, true);
+        }
+      });
+      importButton.addEventListener('click', function() {
+        if (!pending) return;
+        importButton.disabled = true;
+        setStatus('匯入中…');
+        google.script.run.withSuccessHandler(function(result) {
+          pending = null;
+          fileInput.value = '';
+          setStatus('已匯入 ' + result.imported + ' 列到「' + result.sheetName + '」' +
+            (result.imported ? '（rowId ' + result.firstRowId + '–' + result.lastRowId + '）' : '') +
+            '：新收案 ' + result.intake + ' 列、追蹤管理 ' + result.followUp + ' 列。' +
+            (result.followUpsWithoutIntake ?
+              '\n其中 ' + result.followUpsWithoutIntake + ' 列追蹤找不到新收案列，請手動補收案日期與病史。' : '') +
+            '\n未能自動判斷主診斷類別：' + result.uncategorized + ' 列（請手動選 1–4 並填 ICD）。' +
+            '\n略過：' + result.skipped.length + ' 列。');
+          result.skipped.forEach(function(item) {
+            var li = document.createElement('li');
+            li.textContent = 'Excel 第 ' + item.line + ' 列：' + item.reason;
+            skippedList.appendChild(li);
+          });
+        }).withFailureHandler(function(error) {
+          importButton.disabled = false;
+          setStatus('匯入失敗：' + (error && error.message ? error.message : error), true);
+        }).importNhiHisExport({ rows: pending });
+      });
+    }
+  </script>
+</body>
+</html>

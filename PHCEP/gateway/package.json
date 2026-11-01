@@ -11,5 +11,11 @@
   "keywords": [],
   "author": "",
   "private": true,
+  "dependencies": {
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "google-auth-library": "^10.3.0",
+    "helmet": "^8.1.0"
+  },
   "engines": { "node": ">=22" }
 }

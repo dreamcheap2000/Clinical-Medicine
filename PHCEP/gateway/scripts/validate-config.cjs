@@ -28,6 +28,19 @@ function validate(env = process.env) {
       ? 'expected https://script.google.com/macros/s/<id>/exec'
       : 'expected HTTPS URL ending in /internal/events; no credentials, query, or fragment']);
   }
+  if (env.PATIENT_API_ENABLED) {
+    results.push(['PATIENT_API_ENABLED', ['true', 'false'].includes(env.PATIENT_API_ENABLED),
+      'true or false; default disabled']);
+    if (env.PATIENT_API_ENABLED === 'true') {
+      let valid = false;
+      try {
+        require('../patient-api.cjs').configuration(env);
+        valid = true;
+      } catch { /* Only static guidance is reported, never credentials. */ }
+      results.push(['PATIENT_API_CONFIGURATION', valid,
+        'configure a separate clinician token and the selected patient backend variables']);
+    }
+  }
   return results;
 }
 
