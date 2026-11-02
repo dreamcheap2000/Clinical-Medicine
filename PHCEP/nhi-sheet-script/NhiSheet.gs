@@ -30,14 +30,15 @@ const NHI_HEADERS_ = [
   'smoking', 'alcohol', 'betelNut'
 ].concat(
   NHI_HISTORY_KEYS_.map(function(key) { return 'history.' + key; }),
-  NHI_LIFESTYLE_KEYS_.map(function(key) { return 'lifestyleScores.' + key; })
+  NHI_LIFESTYLE_KEYS_.map(function(key) { return 'lifestyleScores.' + key; }),
+  ['extractionRequestId']
 );
 // Stored as plain text so Sheets never turns dates or IDs into serial numbers.
 const NHI_TEXT_COLUMNS_ = [
   'workflowStatus', 'patientId', 'name', 'birthday', 'gender', 'visitDate', 'enrollmentDate',
   'physicianName', 'physicianId', 'primaryDiagnosisCategory', 'primaryDiagnosisCode',
   'hisDiagnosisCode', 'chartNo', 'importedAt', 'careStage', 'acuteAdmissionDate', 'examDate',
-  'labDate'
+  'labDate', 'extractionRequestId'
 ];
 // Patient-level baseline repeated on every 追蹤管理 row. Everything else (visitDate,
 // exam/lab values, blood pressure, habits, lifestyle scores) is per time point.
@@ -72,12 +73,16 @@ function onOpen() {
 }
 
 function nhiWithLock_(fn) {
-  const lock = LockService.getDocumentLock();
+  const lock = LockService.getScriptLock();
   if (!lock.tryLock(10000)) throw new Error('其他人正在寫入工作表，請稍後再試。');
   try {
     return fn();
   } finally {
-    lock.releaseLock();
+    try {
+      SpreadsheetApp.flush();
+    } finally {
+      lock.releaseLock();
+    }
   }
 }
 
@@ -85,8 +90,29 @@ function nhiColumn_(key) {
   return NHI_HEADERS_.indexOf(key) + 1;
 }
 
+function nhiRecordValidation_(sheet, start, count) {
+  const choices = {
+    workflowStatus: ['DRAFT', 'PENDING', 'COMPLETE'], primaryDiagnosisCategory: ['1', '2', '3', '4'],
+    careStage: ['1', '2'], gender: ['男', '女']
+  };
+  Object.keys(choices).forEach(function(key) {
+    const rule = SpreadsheetApp.newDataValidation().requireValueInList(choices[key], true)
+      .setAllowInvalid(false).build();
+    sheet.getRange(start, nhiColumn_(key), count, 1).setDataValidation(rule);
+  });
+}
+
+function nhiSpreadsheet_() {
+  const active = SpreadsheetApp.getActiveSpreadsheet();
+  if (active) return active;
+  const id = PropertiesService.getScriptProperties().getProperty('NHI_PATIENT_SHEET_ID');
+  if (!id) throw new Error('請先從試算表執行 nhiSetupSheet。');
+  return SpreadsheetApp.openById(id);
+}
+
 function nhiPrepareSheet_() {
-  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const properties = PropertiesService.getScriptProperties();
+  const spreadsheet = nhiSpreadsheet_();
   let sheet = spreadsheet.getSheetByName(NHI_TAB_);
   const width = NHI_HEADERS_.length;
   if (!sheet) sheet = spreadsheet.insertSheet(NHI_TAB_);
@@ -96,7 +122,6 @@ function nhiPrepareSheet_() {
     }
     sheet.getRange(1, 1, 1, width).setValues([NHI_HEADERS_]).setFontWeight('bold');
     sheet.setFrozenRows(1);
-    sheet.setFrozenColumns(4);
     NHI_HEADERS_.forEach(function(key, index) {
       if (NHI_LABELS_[key]) sheet.getRange(1, index + 1).setNote(NHI_LABELS_[key]);
     });
@@ -104,21 +129,23 @@ function nhiPrepareSheet_() {
     NHI_TEXT_COLUMNS_.forEach(function(key) {
       sheet.getRange(2, nhiColumn_(key), rows, 1).setNumberFormat('@');
     });
-    const list = function(values) {
-      return SpreadsheetApp.newDataValidation().requireValueInList(values, true)
-        .setAllowInvalid(false).build();
-    };
-    sheet.getRange(2, nhiColumn_('workflowStatus'), rows, 1)
-      .setDataValidation(list(['DRAFT', 'PENDING', 'COMPLETE']));
-    sheet.getRange(2, nhiColumn_('primaryDiagnosisCategory'), rows, 1)
-      .setDataValidation(list(['1', '2', '3', '4']));
-    sheet.getRange(2, nhiColumn_('careStage'), rows, 1).setDataValidation(list(['1', '2']));
-    sheet.getRange(2, nhiColumn_('gender'), rows, 1).setDataValidation(list(['男', '女']));
+  }
+  if (sheet.getMaxColumns() < width) {
+    sheet.insertColumnsAfter(sheet.getMaxColumns(), width - sheet.getMaxColumns());
   }
   const headers = sheet.getRange(1, 1, 1, width).getValues()[0];
+  if (headers[width - 1] === '' &&
+      headers.slice(0, -1).every(function(header, i) { return header === NHI_HEADERS_[i]; })) {
+    sheet.getRange(1, width).setValues([['extractionRequestId']]);
+    headers[width - 1] = 'extractionRequestId';
+  }
   if (headers.some(function(header, index) { return header !== NHI_HEADERS_[index]; })) {
     throw new Error('「' + NHI_TAB_ + '」第 1 列標題與 NHI 格式不符，請勿改動標題或欄位順序。');
   }
+  sheet.setFrozenColumns(0);
+  sheet.setFrozenRows(1);
+  nhiRecordValidation_(sheet, 2, Math.max(sheet.getLastRow() - 1, 1));
+  properties.setProperty('NHI_PATIENT_SHEET_ID', spreadsheet.getId());
   return sheet;
 }
 
@@ -229,9 +256,12 @@ function nhiLoadState_(sheet) {
     nhiRemember_(state, record);
   });
   // A persisted high-water mark keeps rowId values unique even after rows are deleted.
-  const stored = Number(PropertiesService.getDocumentProperties()
+  const stored = Number(PropertiesService.getScriptProperties()
     .getProperty('NHI_PATIENT_LAST_ROW_ID') || 0);
-  state.nextId = Math.max(Number.isSafeInteger(stored) ? stored : 0, state.maxRowId);
+  const documentProperties = PropertiesService.getDocumentProperties();
+  const legacy = Number(documentProperties && documentProperties.getProperty('NHI_PATIENT_LAST_ROW_ID') || 0);
+  state.nextId = Math.max(Number.isSafeInteger(stored) ? stored : 0,
+    Number.isSafeInteger(legacy) ? legacy : 0, state.maxRowId);
   return state;
 }
 
@@ -259,11 +289,15 @@ function nhiBaseline_(record) {
 
 function nhiAppendRows_(sheet, state, records) {
   if (!records.length) return;
-  const start = state.lastRow + 1;
-  const rows = records.map(function(record) {
+  if (records.some(function(record) { return !Number.isSafeInteger(record.rowId) || record.rowId < 1; })) {
+    throw new Error('rowId 超出安全整數範圍，無法新增資料。');
+  }
+  const start = 2;
+  sheet.insertRowsBefore(start, records.length);
+  const rows = records.slice().reverse().map(function(record) {
     return NHI_HEADERS_.map(function(key) {
       if (Object.prototype.hasOwnProperty.call(record, key)) return record[key];
-      return key.indexOf('history.') === 0 ? false : '';
+      return key.indexOf('history.') === 0 && !record.extractionRequestId ? false : '';
     });
   });
   const formats = rows.map(function() {
@@ -274,10 +308,13 @@ function nhiAppendRows_(sheet, state, records) {
   const range = sheet.getRange(start, 1, rows.length, NHI_HEADERS_.length);
   range.setNumberFormats(formats);
   range.setValues(rows);
+  nhiRecordValidation_(sheet, start, rows.length);
+  // Validation does not reset copied true values (insertCheckboxes can reset them).
+  const checkbox = SpreadsheetApp.newDataValidation().requireCheckbox().build();
   sheet.getRange(start, nhiColumn_('history.' + NHI_HISTORY_KEYS_[0]),
-    rows.length, NHI_HISTORY_KEYS_.length).insertCheckboxes();
+    rows.length, NHI_HISTORY_KEYS_.length).setDataValidation(checkbox);
   state.lastRow += rows.length;
-  PropertiesService.getDocumentProperties()
+  PropertiesService.getScriptProperties()
     .setProperty('NHI_PATIENT_LAST_ROW_ID', String(state.nextId));
 }
 
@@ -376,7 +413,7 @@ function nhiAddFollowUp_(sheetRow) {
       rowId: state.nextId, workflowStatus: 'DRAFT', careStage: '2', importedAt: nhiNow_()
     });
     nhiAppendRows_(sheet, state, [record]);
-    return { rowId: record.rowId, sheetRow: state.lastRow, fromRowId: source.rowId };
+    return { rowId: record.rowId, sheetRow: 2, fromRowId: source.rowId };
   });
 }
 

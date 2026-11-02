@@ -166,7 +166,7 @@ test('projection excludes phone, unknown columns, secrets, and extra nested fiel
   assert.throws(() => validateResult({ success: true }, true));
 });
 
-test('Sheets adapter finds stable IDs, writes only status, and retries idempotently', async () => {
+test('Sheets adapter reads pending but refuses unlocked writes', async () => {
   let status = 'PENDING';
   const requests = [];
   const fetcher = async (url, options) => {
@@ -185,11 +185,9 @@ test('Sheets adapter finds stable IDs, writes only status, and retries idempoten
   const auth = { getRequestHeaders: async () => new Headers({ Authorization: 'Bearer synthetic-google-token' }) };
   const backend = sheetsBackend({ sheetId: 'synthetic-sheet', tab: 'Patients' }, fetcher, auth);
   assert.deepEqual(await backend.pending(), { success: true, patient });
-  assert.deepEqual(await backend.complete(123), { success: true });
-  assert.deepEqual(await backend.complete(123), { success: true });
-  assert.equal(requests.filter(request => request.options.method === 'PUT').length, 1);
-  assert.deepEqual(await backend.pending(), { success: true, patient: null });
-  await assert.rejects(backend.complete(999), /PATIENT_NOT_FOUND/);
+  await assert.rejects(backend.complete(123), /LOCKED_WRITER_REQUIRED/);
+  await assert.rejects(backend.complete(999), /LOCKED_WRITER_REQUIRED/);
+  assert.equal(requests.filter(request => request.options.method === 'PUT').length, 0);
   assert.equal(columnName(26), 'AA');
 });
 
@@ -211,11 +209,11 @@ test('Sheets adapter skips DRAFT rows, serves the top-most PENDING row, refuses 
   const backend = sheetsBackend({ sheetId: 'synthetic-sheet', tab: 'Patients' }, fetcher, auth);
   assert.deepEqual(await backend.pending(), { success: true, patient: {
     rowId: 9, patientId: 'TEST009', name: 'FIRST PENDING', birthday: '1961/02/02' } });
-  await assert.rejects(backend.complete(7), error => error.status === 409 &&
-    error.code === 'PATIENT_NOT_PENDING');
+  await assert.rejects(backend.complete(7), error => error.status === 503 &&
+    error.code === 'LOCKED_WRITER_REQUIRED');
   assert.deepEqual(writes, []);
-  assert.deepEqual(await backend.complete(8), { success: true });
-  assert.match(writes[0], /'Patients'!E4\?/);
+  await assert.rejects(backend.complete(8), /LOCKED_WRITER_REQUIRED/);
+  assert.deepEqual(writes, []);
 });
 
 test('Sheets schema rejects duplicate IDs, headers, invalid statuses and boolean strings', () => {
@@ -265,4 +263,48 @@ test('configuration fails closed for placeholder tokens and invalid backend URLs
     PHCEP_PATIENT_APPS_SCRIPT_URL: 'https://example.invalid/',
     PATIENT_APPS_SCRIPT_SIGNING_SECRET: 'synthetic-separate-backend-signing-key'
   }));
+});
+
+test('reverse routes authorize, validate sparse payloads, project responses and reject unavailable writers', async t => {
+  const sparse = { patientId: 'A100000002', ldlCMgDl: 0, history: { acuteCoronarySyndrome: false } };
+  let previewCalls = 0;
+  const previewToken = 'a'.repeat(43) + '=';
+  const request = await running(t, {
+    preview: async record => {
+      previewCalls++;
+      assert.deepEqual(record, sparse);
+      return { success: true, existingCount: 2, sameVisitExists: false,
+        previousVisitDate: '2026/11/01', suggestedEnrollmentDate: '2026/09/01',
+        previewToken, secret: 'must-not-be-returned' };
+    },
+    extract: async body => {
+      assert.deepEqual(body.patient, sparse);
+      return { success: true, rowId: 321, workflowStatus: 'DRAFT', extra: 'excluded' };
+    }
+  });
+  const headers = { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' };
+  const post = (path, body, h = headers) => request(path, { method: 'POST', headers: h, body: JSON.stringify(body) });
+  assert.equal((await post('/api/preview', { patient: sparse }, {})).status, 401);
+  assert.equal(previewCalls, 0);
+  for (const body of [
+    { patient: { ...sparse, rowId: 1 } }, { patient: { patientId: 'invalid' } },
+    { patient: { ...sparse, phone: 'not-allowed' } },
+    { patient: { ...sparse, history: { acuteCoronarySyndrome: 'FALSE' } } }
+  ]) {
+    assert.equal((await post('/api/preview', body)).status, 400);
+  }
+  const preview = await (await post('/api/preview', { patient: sparse })).json();
+  assert.equal(preview.existingCount, 2);
+  assert.equal(preview.secret, undefined);
+  const payload = {
+    patient: sparse, previewToken, useSuggestedEnrollmentDate: true,
+    requestId: 'synthetic-extraction-request-0001'
+  };
+  assert.deepEqual(await (await post('/api/extract', payload)).json(),
+    { success: true, rowId: 321, workflowStatus: 'DRAFT' });
+  assert.equal((await post('/api/extract', { ...payload, useSuggestedEnrollmentDate: 'yes' })).status, 400);
+  const readOnly = await running(t, {});
+  assert.equal((await readOnly('/api/preview', {
+    method: 'POST', headers, body: JSON.stringify({ patient: sparse })
+  })).status, 503);
 });

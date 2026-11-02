@@ -28,6 +28,11 @@ automatic importer. Existing PHCEP `LINE對話`, `PHCEP表單紀錄`, and clinic
 must not be treated as these patient columns without explicit clinical review and
 normalization. Do not send national IDs, tokens, or patient clinical records via LINE.
 
+Reverse path: NHI form values → Tampermonkey preview/confirmation → authenticated
+Render `/api/preview` and `/api/extract` → signed, locked NHI Apps Script → new
+top-of-sheet DRAFT row. Only the server-to-server signing secret authenticates the
+Apps Script transport; it is never sent to Tampermonkey.
+
 ## B. Render Express implementation and deployment
 
 Files:
@@ -100,10 +105,25 @@ Only mapped form fields are returned; phone and unknown columns are excluded.
 Confirmed completion: `{ "success": true }`.
 Completion means **PHCEP workflow complete**, never “the NHI form was saved”.
 Mark Complete is clinician-confirmed, not triggered automatically by Fill Form.
-Unknown IDs return 404. Already-complete records succeed idempotently in Sheets mode.
+Unknown IDs return 404. Already-complete records succeed idempotently in Apps Script mode.
 No automatic backend retry, backend switching, or NHI submission is performed.
 
-Errors have HTTP status 400/401/404/413/415/429/502/503 and shape:
+`POST /api/preview` accepts `{ "patient": { "patientId": "A100000002" } }`.
+Only `patientId` is required; all supplied fields must be approved mapped fields.
+The response contains `existingCount`, the latest existing `previousVisitDate`,
+`suggestedEnrollmentDate` (earliest visit across matching rows plus this extraction),
+`sameVisitExists`, and a signed `previewToken`. No previous clinical fields are copied.
+
+`POST /api/extract` accepts the same `patient`, `previewToken`, a UUID `requestId`,
+and Boolean `useSuggestedEnrollmentDate`. The clinician explicitly confirms both saving
+and optionally replacing this new row's enrollment date. It returns
+`{ "success": true, "rowId": 124, "workflowStatus": "DRAFT" }`.
+Blank fields stay blank; a duplicate patient/visit is a reminder, not an overwrite.
+An identical request ID retries without creating another row. Changed same-patient
+data since preview returns 409 `PREVIEW_CHANGED`; review again before retrying.
+Existing rows are never changed by extraction. The userscript does not save to NHI.
+
+Errors have HTTP status 400/401/404/409/413/415/429/502/503 and shape:
 
 ```json
 { "success": false, "error": "SAFE_ERROR_CODE" }
@@ -112,11 +132,16 @@ Errors have HTTP status 400/401/404/413/415/429/502/503 and shape:
 The API does not return backend exception messages, Google response bodies,
 credentials, or access tokens. Responses use `Cache-Control: no-store`.
 
-### Direct Google Sheets mode — fully implemented adapter
+### Direct Google Sheets mode — read-only compatibility
 
 Set `PATIENT_BACKEND=GOOGLE_SHEETS`. Enable Google Sheets API in the approved Google
 project. Give the service account editor access **only to the intended spreadsheet**.
 Do not make the spreadsheet public.
+
+**Use `APPS_SCRIPT` for the new workflow.** Direct Sheets mode can still read
+`/api/pending`, but completion and reverse extraction return 503
+`LOCKED_WRITER_REQUIRED`. The former read-then-write completion could update the
+wrong row during top insertion, so it is intentionally disabled.
 
 Required unique headers in the named worksheet:
 
@@ -152,28 +177,32 @@ Blank optional cells stay absent; they do not become zero/false.
 
 The adapter reads the whole named worksheet, validates IDs/headers/statuses, selects
 the **top-most** `PENDING` row in physical sheet order (not lowest `rowId`, not oldest
-date), and updates **only** that record's `workflowStatus` cell. Other columns, such as
-`hisDiagnosisCode`, `chartNo` and `importedAt`, are allowed but never returned.
+date). With newest-at-top insertion, this means newest pending first. Other columns,
+such as `hisDiagnosisCode`, `chartNo`, `importedAt` and `extractionRequestId`,
+are allowed but never returned.
 There is no destructive row deletion or rewrite of clinical data.
 
 ### Importing HIS exports and follow-up time points
 
 The importer is a separate **container-bound** script in the NHI spreadsheet itself
 ([`../nhi-sheet-script/`](../nhi-sheet-script/)), not part of the LINE Apps Script
-project. It uses only the `spreadsheets.currentonly` and `script.container.ui` scopes,
-needs no Script Properties, and is visible only to editors of that spreadsheet.
+project. Its menu is visible only to spreadsheet editors. Its signed web app uses
+`spreadsheets` (needed for `openById` without an active UI) and `script.container.ui`.
+Keep its deployer account's access limited to approved spreadsheets.
 
 Install once: open the NHI spreadsheet → **擴充功能 → Apps Script** → paste
-`NhiSheet.gs` (replace `Code.gs`), add an HTML file named `NhiImportDialog` with
+`NhiSheet.gs` (replace `Code.gs`), add `NhiPatientApi.gs`, add an HTML file named `NhiImportDialog` with
 `NhiImportDialog.html`, enable *Show "appsscript.json"* in Project Settings and paste
 `appsscript.json` → save → reload the spreadsheet. The **🏥 NHI 高血脂** menu then offers:
 
 - **🧱 建立／檢查個案工作表** creates this tab with the full header row, plain-text date/ID
   columns, status/category/careStage/gender validation and history checkboxes.
+  Running it again unfreezes all columns, keeps header row 1 frozen, and safely adds
+  the `extractionRequestId` column to older sheets without changing patient rows.
 - **📥 匯入 HIS 醫令明細** uploads the HIS 「特殊處置明細表」 xlsx export. The browser reads
   only 院內代碼, 病患姓名, 身分證號, 出生日期, 看診日期, 主診斷, 性別, 醫師姓名 and 病歷號碼;
   address, phone and NHI card number are never uploaded.
-- **➕ 為選取列新增追蹤管理列** appends a follow-up row for the selected patient.
+- **➕ 為選取列新增追蹤管理列** inserts a follow-up row immediately below the header.
 
 **One row = one NHI submission (time point).** `careStage` `1` 新收案 occurs once per
 patient; `2` 追蹤管理 may repeat:
@@ -189,21 +218,24 @@ patient; `2` 追蹤管理 may repeat:
   re-importing a file is harmless. Rows are processed chronologically.
 - ROC dates become `YYYY/MM/DD`. 主診斷 suggests the NHI category: `I63`/`G45` → 1,
   `I25` → 2, `I20.0`/`I21`/`I22`/`I24` → 3, `I70.2`/`I73.9`/`I74` → 4.
-- New rows get `rowId` = max(existing, Document Property `NHI_PATIENT_LAST_ROW_ID`) + 1
-  under the document lock, start as `DRAFT`, and are appended below existing rows.
+- New rows get `rowId` = max(existing, Script Property `NHI_PATIENT_LAST_ROW_ID`,
+  legacy document counter) + 1 under the script lock and start as `DRAFT`.
+  All creation paths insert below the header; a batch is displayed highest new
+  rowId first. Existing rowIds remain unchanged.
 
 Synthetic test workbook: `node tests/fixtures/p8901b-synthetic.cjs P8901B_synthetic.xlsx`.
 
-**Concurrency limit:** Sheets read-then-write is not a transaction. Use one clinician,
-one gateway replica, and no concurrent sorting, insertion, deletion, or status writer.
-Use filter views instead of physically sorting rows. Keep `rowId` immutable and do
-not reuse it. For multi-user operation, use a transactional backend or a locked
-Apps Script receiver with record versioning/leases. A 1 MiB upstream response limit
-fails explicitly if this prototype worksheet becomes too large.
+**Concurrency:** imports, follow-ups, extraction and completion use the same
+`ScriptLock`. Completion resolves immutable rowId under that lock and flushes before
+releasing it, so scripted insertion cannot make it complete a different row.
+Manual sheet edits and external API writers do not respect Apps Script locks:
+do not sort/delete/edit rows concurrently with API operations; use filter views.
+Two Load Patient calls can still receive the same record; this is not a multi-user
+claim/lease system. A 1 MiB upstream response limit fails explicitly for large sheets.
 
 ### Apps Script mode — forwarding adapter and required receiver contract
 
-Set `PATIENT_BACKEND=APPS_SCRIPT`. The gateway forwards both client operations as
+Set `PATIENT_BACKEND=APPS_SCRIPT`. The gateway forwards all four client operations as
 POSTs to the configured `/exec` deployment URL, **not** `/exec/api/pending`.
 Native Apps Script implementations must route using the envelope `action`, not
 assume Express-style paths.
@@ -225,6 +257,8 @@ Actions:
 
 - `patient.pending`: `rawBody` encodes `{}`.
 - `patient.complete`: `rawBody` encodes `{ "rowId": 123 }`.
+- `patient.preview`: `rawBody` encodes `{ "patient": { ... } }`.
+- `patient.extract`: `rawBody` encodes the confirmed extraction payload described above.
 
 HMAC input, UTF-8, using `PATIENT_APPS_SCRIPT_SIGNING_SECRET`:
 
@@ -236,19 +270,32 @@ The receiver must:
 
 1. Validate the exact envelope schema, version/action/body types and signature
    **before** any patient Sheet access.
-2. Reject stale timestamps (five-minute window) and replayed nonces using durable
-   replay storage under an Apps Script lock.
+2. Reject timestamps outside a two-minute window and cache replayed nonces under
+   the script lock. Cache eviction is possible; extraction additionally has a durable
+   request ID stored in its row, and completion is idempotent.
 3. Restrict access to the configured patient worksheet; validate immutable IDs.
 4. Make completion idempotent, serialize conflicting writes with `ScriptLock`, and
    return the same `success`/`patient` contract above.
 5. Never log raw envelopes, patient data, or credentials.
 
-**Receiver not added/deployed by this refactor.** The existing canonical PHCEP
-`Core.gs` accepts only its signed LINE `events` contract, not these patient actions.
-Do not send these actions to that deployment until an authorized operator adds
-a compatible patient handler without bypassing the existing LINE authentication.
-Do not upload a second `doPost` function into that project. Until then, use the
-implemented direct Sheets mode or leave patient API use disabled.
+**Receiver implemented in `../nhi-sheet-script/NhiPatientApi.gs`, not yet deployed.**
+Do not add it to the LINE project or change the LINE endpoint.
+After installing the four bound-project files:
+
+1. Run `nhiSetupSheet` once from the spreadsheet to authorize and capture its ID in
+   the bound project's `NHI_PATIENT_SHEET_ID` Script Property.
+2. Privately generate a separate random server secret. Put it in this bound project's
+   Script Property `NHI_GATEWAY_SIGNING_SECRET` and Render environment variable
+   `PATIENT_APPS_SCRIPT_SIGNING_SECRET`. Never put it in the userscript or source.
+3. Deploy this NHI bound project as a **Web app**, **Execute as: Me**,
+   **Who has access: Anyone**. The public transport endpoint rejects unsigned,
+   expired and malformed requests before reading the sheet. Keep the spreadsheet
+   itself restricted. Follow institutional policy; do not make a public deployment
+   if that policy forbids it.
+4. Put its `/exec` URL in Render `PHCEP_PATIENT_APPS_SCRIPT_URL`; set
+   `PATIENT_BACKEND=APPS_SCRIPT`. Keep `PATIENT_API_TOKEN` unchanged.
+5. Deploy the changed Render gateway and update the userscript to 2.2.0. Test with
+   synthetic data first. Update the web-app deployment version after future code changes.
 
 Render holds its signing key only in an Environment Variable. A compatible
 Apps Script receiver needs the corresponding key in its own protected Script
@@ -266,7 +313,7 @@ without forwarding the signed POST body or clinician token.
 | `PORT` | Render runtime env | Render supplies this; local default 8080 |
 | `PATIENT_API_ENABLED` | Render runtime env | `false` while setting up; `true` to enable patient routes in the existing service |
 | `PATIENT_API_TOKEN` | Render runtime env | Random prototype clinician bearer token, at least 32 non-whitespace characters; rejects placeholders |
-| `PATIENT_BACKEND` | Render runtime env | `GOOGLE_SHEETS` (default) or `APPS_SCRIPT` |
+| `PATIENT_BACKEND` | Render runtime env | `APPS_SCRIPT` required for writes; `GOOGLE_SHEETS` is legacy read-only (runtime default) |
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | Render runtime env | Sheets mode only; full service-account JSON, never a committed/file-path credential |
 | `GOOGLE_SHEET_ID` | Render runtime env | Sheets mode only; approved spreadsheet ID |
 | `GOOGLE_SHEET_TAB` | Render runtime env | Sheets mode; default `NHI高血脂個案` |

@@ -121,7 +121,7 @@ async function jsonResponse(response) {
 function validPatient(patient) {
   return patient && typeof patient === 'object' && !Array.isArray(patient) &&
     Number.isSafeInteger(patient.rowId) && patient.rowId > 0 &&
-    ['patientId', 'name', 'birthday'].every(key =>
+    ['patientId'].every(key =>
       typeof patient[key] === 'string' && patient[key].trim().length > 0);
 }
 
@@ -156,7 +156,7 @@ function appsScriptBackend(config, fetcher = fetch) {
     const canonical = `1\n${action}\n${envelope.timestamp}\n${envelope.nonce}\n${envelope.rawBody}`;
     envelope.signature = crypto.createHmac('sha256', config.signingSecret)
       .update(canonical).digest('base64');
-    const signal = AbortSignal.timeout(TIMEOUT_MS);
+    const signal = AbortSignal.timeout(30000);
     let response = await fetcher(config.url, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(envelope), redirect: 'manual', signal
@@ -176,11 +176,19 @@ function appsScriptBackend(config, fetcher = fetch) {
       }
       response = await fetcher(location.href, { method: 'GET', redirect: 'error', signal });
     }
-    return validateResult(await jsonResponse(response), action === 'patient.pending');
+    const result = await jsonResponse(response);
+    if (result.success !== true && Number.isInteger(result.status) &&
+        [400, 404, 409, 503].includes(result.status) && /^[A-Z_]+$/.test(result.error || '')) {
+      throw new ApiError(result.status, result.error);
+    }
+    return action === 'patient.pending' || action === 'patient.complete' ?
+      validateResult(result, action === 'patient.pending') : result;
   }
   return {
     pending: () => call('patient.pending', {}),
-    complete: rowId => call('patient.complete', { rowId })
+    complete: rowId => call('patient.complete', { rowId }),
+    preview: patient => call('patient.preview', { patient }),
+    extract: payload => call('patient.extract', payload)
   };
 }
 
@@ -268,16 +276,8 @@ function sheetsBackend(config, fetcher = fetch, auth = new GoogleAuth({
       return validateResult({ success: true, patient: next ? next.patient : null }, true);
     },
     async complete(rowId) {
-      const { records, headers } = await read();
-      const record = records.find(candidate => candidate.patient.rowId === rowId);
-      if (!record) throw new ApiError(404, 'PATIENT_NOT_FOUND');
-      if (record.status === 'COMPLETE') return { success: true };
-      // DRAFT rows are still being completed from the HIS and were never served.
-      if (record.status !== 'PENDING') throw new ApiError(409, 'PATIENT_NOT_PENDING');
-      const range = `${tab}!${columnName(headers.indexOf('workflowStatus'))}${record.sheetRow}`;
-      const result = await call(range, 'PUT', { range, majorDimension: 'ROWS', values: [['COMPLETE']] });
-      if (result.updatedCells !== 1) throw new ApiError(502, 'COMPLETION_NOT_CONFIRMED');
-      return { success: true };
+      // Row insertion cannot be made atomic with this API's read-then-write.
+      throw new ApiError(503, 'LOCKED_WRITER_REQUIRED');
     }
   };
 }
@@ -316,6 +316,35 @@ function createApp(config, backend) {
     }
     res.json(validateResult(await backend.complete(req.body.rowId), false));
   });
+  for (const [path, method] of [['preview', 'preview'], ['extract', 'extract']]) {
+    app.post('/api/' + path, express.json({ limit: '16kb', strict: true }), async (req, res) => {
+      if (!req.is('application/json')) throw new ApiError(415, 'JSON_REQUIRED');
+      if (Object.keys(req.query).length) throw new ApiError(400, 'INVALID_QUERY');
+      const payload = validateExtraction(req.body, method === 'extract');
+      if (typeof backend[method] !== 'function') throw new ApiError(503, 'LOCKED_WRITER_REQUIRED');
+      const result = await backend[method](method === 'preview' ? payload.patient : payload);
+      if (!result || result.success !== true) throw new ApiError(502, 'BACKEND_REJECTED');
+      if (method === 'preview') {
+        if (!Number.isSafeInteger(result.existingCount) || result.existingCount < 0 ||
+            typeof result.sameVisitExists !== 'boolean' ||
+            typeof result.previewToken !== 'string' || !/^[A-Za-z0-9+/]{43}=$/.test(result.previewToken) ||
+            ['previousVisitDate', 'suggestedEnrollmentDate'].some(key => result[key] !== null &&
+              (typeof result[key] !== 'string' || !/^\d{4}\/\d{2}\/\d{2}$/.test(result[key])))) {
+          throw new ApiError(502, 'INVALID_PREVIEW');
+        }
+        res.json({
+          success: true, existingCount: result.existingCount, sameVisitExists: result.sameVisitExists,
+          previousVisitDate: result.previousVisitDate, suggestedEnrollmentDate: result.suggestedEnrollmentDate,
+          previewToken: result.previewToken
+        });
+      } else {
+        if (!Number.isSafeInteger(result.rowId) || result.rowId < 1 || result.workflowStatus !== 'DRAFT') {
+          throw new ApiError(502, 'INVALID_EXTRACTION_RESULT');
+        }
+        res.json({ success: true, rowId: result.rowId, workflowStatus: 'DRAFT' });
+      }
+    });
+  }
   app.use((req, res) => res.status(404).json({ success: false, error: 'NOT_FOUND' }));
   app.use((error, req, res, next) => {
     const status = error instanceof ApiError ? error.status :
@@ -330,5 +359,38 @@ function createApp(config, backend) {
   return app;
 }
 
-module.exports = { configuration, authorized, createApp, appsScriptBackend,
+function validateExtraction(body, saving) {
+  const allowed = saving ? ['patient', 'previewToken', 'useSuggestedEnrollmentDate', 'requestId'] : ['patient'];
+  if (!body || Array.isArray(body) || Object.keys(body).some(key => !allowed.includes(key)) ||
+      !body.patient || Array.isArray(body.patient) || typeof body.patient !== 'object') {
+    throw new ApiError(400, 'INVALID_EXTRACTION');
+  }
+  const patient = body.patient;
+  if (typeof patient.patientId !== 'string' || !/^[A-Z][A-Z0-9]\d{8}$/.test(patient.patientId) ||
+      Object.keys(patient).some(key => key === 'rowId' ||
+        (!PATIENT_KEYS.includes(key) && !Object.hasOwn(NESTED_KEYS, key)))) {
+    throw new ApiError(400, 'INVALID_EXTRACTION');
+  }
+  for (const [key, value] of Object.entries(patient)) {
+    if (Object.hasOwn(NESTED_KEYS, key)) {
+      if (!value || Array.isArray(value) || typeof value !== 'object' ||
+          Object.entries(value).some(([field, v]) => !NESTED_KEYS[key].includes(field) ||
+            (key === 'history' ? typeof v !== 'boolean' :
+              !Number.isInteger(v) || v < 0 || v > 10))) throw new ApiError(400, 'INVALID_EXTRACTION');
+    } else if (!['string', 'number'].includes(typeof value) ||
+        (typeof value === 'number' && !Number.isFinite(value)) ||
+        String(value).length > 100 || /^[=+\-@]/.test(String(value)) ||
+        /[\u0000-\u001f\u007f]/.test(String(value))) {
+      throw new ApiError(400, 'INVALID_EXTRACTION');
+    }
+  }
+  if (saving && (typeof body.previewToken !== 'string' || body.previewToken.length > 200 ||
+      typeof body.useSuggestedEnrollmentDate !== 'boolean' ||
+      typeof body.requestId !== 'string' || !/^[a-zA-Z0-9-]{20,80}$/.test(body.requestId))) {
+    throw new ApiError(400, 'INVALID_EXTRACTION');
+  }
+  return body;
+}
+
+module.exports = { configuration, authorized, createApp, appsScriptBackend, validateExtraction,
   sheetsBackend, sheetRecords, columnName, validateResult };
