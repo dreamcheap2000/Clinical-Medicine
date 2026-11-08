@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "NHI Clinic Workflow",
+  "description": "Clinic-isolated Google Sheet and NHI VPN workflow. No automatic NHI submission.",
+  "version": "0.1.0",
+  "permissions": ["identity", "storage"],
+  "host_permissions": [],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_title": "NHI setup", "default_popup": "options.html" },
+  "options_page": "options.html",
+  "content_scripts": [{
+    "matches": ["https://medvpn.nhi.gov.tw/qmue1000/QMUE1002S01.aspx*"],
+    "js": ["content.js"],
+    "run_at": "document_idle"
+  }]
+}

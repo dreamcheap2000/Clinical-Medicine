@@ -6,6 +6,10 @@ All IDs/URLs returned by setup come from the authorized operator's actual accoun
 The clinical frontend (`app.js`, `index.html`, `style.css`) and reference documents
 are unchanged. The Central/Peripheral **clinical** route is unrelated to backend mode.
 
+For the independent multi-clinic NHI/Edge pilot, see
+[`nhi-cloud/`](nhi-cloud/README.md). It is separate from this LINE gateway and
+requires its own service, database, OAuth client and approved clinic onboarding.
+
 ## Architecture
 
 ```text

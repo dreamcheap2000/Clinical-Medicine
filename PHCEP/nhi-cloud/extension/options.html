@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NHI 診所設定</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main>
+    <h1>NHI 診所工作流程</h1>
+    <p>各診所資料獨立。系統不會登入 NHI VPN，也不會替您送出 NHI 表單。</p>
+    <button id="login">Google 登入／授權</button>
+    <button id="logout">登出並撤銷本次登入</button>
+    <button id="forget">清除本機登入與個案暫存</button>
+    <p id="identity"></p>
+    <label>診所工作區 <select id="clinics"><option value="">請選擇</option></select></label>
+    <button id="select">使用此診所</button>
+    <label>建立新診所 <input id="clinicName" maxlength="80" placeholder="診所名稱"></label>
+    <button id="create">建立工作區</button>
+    <section id="admin" hidden>
+      <h2>管理員首次設定</h2>
+      <p>一般成員不需設定 Sheet、網址或密鑰。</p>
+      <button id="newSheet">建立標準 Google Sheet</button>
+      <label>或連接既有相容 Sheet <input id="sheetId" placeholder="Google Sheet ID"></label>
+      <button id="connectSheet">驗證並連接</button>
+      <p><a id="sheetLink" hidden target="_blank" rel="noopener noreferrer">開啟診所 Sheet</a></p>
+      <details>
+        <summary>一次性 Google Apps Script 部署（診所擁有者）</summary>
+        <ol>
+          <li>在診所 Sheet 開啟「擴充功能 → Apps Script」，先確認沒有要保留的其他程式。</li>
+          <li>下載並安裝下列檔案；既有程式不可直接覆蓋，請由管理員先檢查。</li>
+          <li>執行 <code>nhiCloudPair</code>，確認權限，輸入下方配對密鑰。密鑰只寫入 Script Properties。</li>
+          <li>部署為「網頁應用程式／以我執行／任何人」。Sheet 本身保持私人，不改分享設定。</li>
+          <li>把 /exec 網址輸入下方，系統會驗證簽章及 Sheet 是否正確。</li>
+        </ol>
+        <div id="downloads"></div>
+        <button id="key">顯示一次性設定用密鑰</button>
+        <input id="setupKey" type="password" readonly aria-label="診所配對密鑰">
+        <button id="copyKey">複製密鑰</button>
+        <button id="hideKey">清除畫面密鑰</button>
+        <p>不要將密鑰傳給一般成員、放進 Sheet 儲存格、聊天或程式碼。</p>
+      </details>
+      <label>診所 Apps Script /exec 網址 <input id="receiverUrl" type="url"></label>
+      <button id="receiver">驗證並啟用連線</button>
+      <h2>診所成員</h2>
+      <label>Google 帳戶 email <input id="memberEmail" type="email"></label>
+      <label>角色 <select id="memberRole"><option value="clinician">醫師</option><option value="admin">管理員</option></select></label>
+      <button id="invite">新增／更新成員</button>
+      <button id="revoke">撤銷此成員</button>
+      <pre id="members"></pre>
+    </section>
+    <p id="status" role="status"></p>
+    <button id="refresh">重新檢查連線</button>
+    <p>登入有效 8 小時；更換診所或登入帳戶會清除個案暫存。完成設定後重新整理 NHI 頁面。請停用舊 Tampermonkey 腳本，避免重複填入。</p>
+  </main>
+  <script src="config.js"></script><script src="options.js"></script>
+</body>
+</html>

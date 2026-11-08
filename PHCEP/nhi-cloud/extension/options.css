@@ -1,0 +1,9 @@
+body { font-family: system-ui, sans-serif; margin: 0; color: #202124; background: #f8fafc; min-width: 380px; }
+main { max-width: 760px; padding: 20px; margin: auto; }
+label { display: block; margin-top: 12px; }
+input, select { display: block; padding: 8px; width: 94%; margin-top: 4px; }
+button { padding: 8px 12px; margin: 6px 4px 6px 0; cursor: pointer; }
+section { border-top: 1px solid #ddd; margin-top: 16px; }
+details { background: white; padding: 12px; }
+#status { white-space: pre-wrap; font-weight: 600; }
+a { display: inline-block; margin-right: 12px; }

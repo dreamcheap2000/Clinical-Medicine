@@ -1,0 +1,22 @@
+{
+  "name": "nhi-clinic-cloud",
+  "version": "0.1.0",
+  "private": true,
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node server.cjs",
+    "test": "node --test --test-concurrency=1 test/*.test.cjs",
+    "build": "node build.cjs",
+    "migrate": "node migrate.cjs"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "google-auth-library": "^10.3.0",
+    "helmet": "^8.1.0",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.3.0"
+  }
+}
